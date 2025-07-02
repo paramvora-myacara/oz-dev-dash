@@ -1,103 +1,147 @@
 import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+export default function InvestmentDashboard() {
+  const investmentCards = [
+    {
+      id: "financial-returns",
+      title: "Financial Returns",
+      icon: "📈",
+      keyMetrics: [
+        { label: "10-Yr Equity Multiple", value: "2.8–3.2x" },
+        { label: "3-Yr Equity Multiple", value: "2.1x" },
+        { label: "Preferred Return", value: "7%" }
+      ],
+      summary: "Projected post-construction returns for OZ investors",
+      gradient: "from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20",
+      textColor: "text-emerald-900 dark:text-emerald-300"
+    },
+    {
+      id: "property-overview", 
+      title: "Property Overview",
+      icon: "🏢",
+      keyMetrics: [
+        { label: "Total Units", value: "439" },
+        { label: "Location", value: "Mesa, AZ" },
+        { label: "Delivery", value: "2027" }
+      ],
+      summary: "The Edge on Main – 2-phase, transit-oriented development",
+      gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
+      textColor: "text-indigo-900 dark:text-indigo-300"
+    },
+    {
+      id: "market-analysis",
+      title: "Market Analysis", 
+      icon: "🎯",
+      keyMetrics: [
+        { label: "Housing Shortage", value: "56K+ units" },
+        { label: "Occupancy", value: "96%" },
+        { label: "Rent Growth", value: "+8% YoY" }
+      ],
+      summary: "Phoenix-Mesa market with strong demand drivers",
+      gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20", 
+      textColor: "text-purple-900 dark:text-purple-300"
+    },
+    {
+      id: "investment-terms",
+      title: "Investment Terms",
+      icon: "💼",
+      keyMetrics: [
+        { label: "Min Investment", value: "$250K" },
+        { label: "Hold Period", value: "10 Years" },
+        { label: "Promote", value: "20% > 7%" }
+      ],
+      summary: "Tax-advantaged OZ structure with 7% preferred return",
+      gradient: "from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20",
+      textColor: "text-orange-900 dark:text-orange-300"
+    }
+  ];
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-bg-main dark:bg-black">
+      {/* Hero Section with Property Image - 60% of viewport */}
+      <section className="h-[60vh] relative overflow-hidden">
+        {/* Property Image Background */}
+        <div className="absolute inset-0">
+          <Image
+            src="/property-hero.jpg"
+            alt="The Edge on Main - Premium Multifamily Property"
+            fill
+            className="object-cover"
+            priority
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        
+        {/* Dark Overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70 z-10" />
+        
+        {/* Content Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="text-center text-white max-w-4xl px-8">
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+              <h1 className="text-5xl md:text-6xl font-semibold mb-4 tracking-tight">
+                ACARA Opportunity Zone Fund I LLC
+              </h1>
+              <p className="text-xl md:text-2xl font-light opacity-90 mb-6">
+                Premium Multifamily Investment Opportunity
+              </p>
+              <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 border border-white/20">
+                <span className="text-brand-accent">●</span>
+                <span className="text-lg">Mesa, Arizona</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Investment Cards Section - 40% of viewport */}
+      <section className="h-[40vh] px-8 py-8">
+        <div className="max-w-7xl mx-auto h-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full">
+            {investmentCards.map((card, idx) => (
+              <Link key={card.id} href={`/details/${card.id}`}>
+                <div
+                  className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-8 lg:p-10 h-full min-h-[260px] hover:scale-[1.03] transition-transform duration-300 cursor-pointer border border-black/5 dark:border-white/5 shadow-sm hover:shadow-lg animate-fadeIn`}
+                  style={{ animationDelay: `${idx * 100}ms` }}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="text-3xl">{card.icon}</div>
+                    <svg 
+                      className={`w-5 h-5 ${card.textColor} opacity-60`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  
+                  <h3 className={`text-xl font-semibold ${card.textColor} mb-4`}>
+                    {card.title}
+                  </h3>
+                  
+                  <div className="space-y-2 mb-4">
+                    {card.keyMetrics.map((metric, metricIdx) => (
+                      <div key={metricIdx} className="flex justify-between items-center">
+                        <span className={`text-base ${card.textColor} opacity-70`}>
+                          {metric.label}
+                        </span>
+                        <span className={`text-xl font-bold ${card.textColor}`}>
+                          {metric.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <p className={`text-xs ${card.textColor} opacity-60 leading-relaxed`}>
+                    {card.summary}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
