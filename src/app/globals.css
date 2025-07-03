@@ -36,8 +36,21 @@ body {
   }
 }
 
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
 }
 
 .glass-card {

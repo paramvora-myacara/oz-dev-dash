@@ -2,6 +2,44 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function InvestmentDashboard() {
+  const tickerMetrics = [
+    { label: "10-Yr Equity Multiple", value: "2.8–3.2x", change: "+12%" },
+    { label: "3-Yr Equity Multiple", value: "2.1x", change: "+8%" },
+    { label: "Preferred Return", value: "7%", change: "Guaranteed" },
+    { label: "Min Investment", value: "$250K", change: "Minimum" },
+    { label: "Total Units", value: "439", change: "Phase I & II" },
+    { label: "Location", value: "Mesa, AZ", change: "Prime Location" },
+    { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
+    { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
+  ];
+
+  const compellingReasons = [
+    {
+      title: "100% Tax-Free Growth",
+      description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period.",
+      icon: "🚀",
+      highlight: "Tax-Free Exit",
+      gradient: "from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20",
+      textColor: "text-emerald-900 dark:text-emerald-300"
+    },
+    {
+      title: "Massive Housing Shortage",
+      description: "Arizona faces 56,000+ unit housing deficit. Mesa is one of the fastest-growing cities with sustained population growth driving demand.",
+      icon: "📊",
+      highlight: "56K+ Unit Shortage",
+      gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
+      textColor: "text-indigo-900 dark:text-indigo-300"
+    },
+    {
+      title: "Prime Transit Location",
+      description: "Located directly adjacent to Country Club & Main Street Light Rail Station, providing unmatched regional connectivity and transit access.",
+      icon: "🚆",
+      highlight: "Light Rail Adjacent",
+      gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20",
+      textColor: "text-purple-900 dark:text-purple-300"
+    }
+  ];
+
   const investmentCards = [
     {
       id: "financial-returns",
@@ -35,23 +73,23 @@ export default function InvestmentDashboard() {
       icon: "🎯",
       keyMetrics: [
         { label: "Housing Shortage", value: "56K+ units" },
-        { label: "Occupancy", value: "96%" },
-        { label: "Rent Growth", value: "+8% YoY" }
+        { label: "Population Growth", value: "500K+" },
+        { label: "Major Employers", value: "Banner, Boeing" }
       ],
-      summary: "Phoenix-Mesa market with strong demand drivers",
+      summary: "Phoenix-Mesa market with strong demographic drivers",
       gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20", 
       textColor: "text-purple-900 dark:text-purple-300"
     },
     {
-      id: "investment-terms",
-      title: "Investment Terms",
-      icon: "💼",
+      id: "sponsor-profile",
+      title: "Sponsor Profile",
+      icon: "👥",
       keyMetrics: [
-        { label: "Min Investment", value: "$250K" },
-        { label: "Hold Period", value: "10 Years" },
-        { label: "Promote", value: "20% > 7%" }
+        { label: "Todd Vitzthum", value: "ACARA Management" },
+        { label: "Jeff Richmond", value: "Operations & Strategy" },
+        { label: "Michael Krueger", value: "Legal & Compliance" }
       ],
-      summary: "Tax-advantaged OZ structure with 7% preferred return",
+      summary: "Experienced team with proven OZ development expertise",
       gradient: "from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20",
       textColor: "text-orange-900 dark:text-orange-300"
     }
@@ -59,55 +97,128 @@ export default function InvestmentDashboard() {
 
   return (
     <div className="min-h-screen bg-bg-main dark:bg-black">
-      {/* Hero Section with Property Image - 60% of viewport */}
-      <section className="h-[60vh] relative overflow-hidden">
-        {/* Property Image Background */}
-        <div className="absolute inset-0">
+      {/* Header with Title */}
+      <header className="absolute top-0 left-0 z-30 p-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+          ACARA Opportunity Zone Fund I LLC
+        </h1>
+        <p className="text-lg text-white/90 mt-2 drop-shadow-md">
+          Premium Multifamily Investment Opportunity
+        </p>
+      </header>
+
+      {/* Hero Image Section */}
+      <section className="h-[50vh] relative overflow-hidden">
+        <div className="absolute inset-0 p-8">
           <Image
             src="/property-hero.jpg"
             alt="The Edge on Main - Premium Multifamily Property"
             fill
-            className="object-cover"
+            className="object-cover rounded-3xl"
             priority
           />
         </div>
-        
-        {/* Dark Overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70 z-10" />
-        
-        {/* Content Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center z-20">
-          <div className="text-center text-white max-w-4xl px-8">
-            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-              <h1 className="text-5xl md:text-6xl font-semibold mb-4 tracking-tight">
-                ACARA Opportunity Zone Fund I LLC
-              </h1>
-              <p className="text-xl md:text-2xl font-light opacity-90 mb-6">
-                Premium Multifamily Investment Opportunity
-              </p>
-              <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 border border-white/20">
-                <span className="text-brand-accent">●</span>
-                <span className="text-lg">Mesa, Arizona</span>
+      </section>
+
+      {/* Stock Market Ticker */}
+      <section className="py-6 bg-bg-main dark:bg-black">
+        <div className="max-w-7xl mx-auto">
+          <div className="overflow-hidden">
+            <div className="flex animate-scroll">
+              <div className="flex space-x-12 text-black dark:text-white whitespace-nowrap font-mono text-lg tracking-wider uppercase">
+                {[...tickerMetrics, ...tickerMetrics].map((metric, idx) => (
+                  <div key={idx} className="flex items-center space-x-3 whitespace-nowrap">
+                    <span className="font-bold text-red-500">{metric.label}:</span>
+                    <span className="font-bold text-green-500">{metric.value}</span>
+                    <span className="text-xs bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full font-sans text-gray-600 dark:text-gray-400 normal-case">
+                      {metric.change}
+                    </span>
+                    <span className="text-gray-400 text-xl">•</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Investment Cards Section - 40% of viewport */}
-      <section className="h-[40vh] px-8 py-8">
-        <div className="max-w-7xl mx-auto h-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full">
+      {/* Three Compelling Reasons Cards */}
+      <section className="py-16 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center mb-12 text-text-primary dark:text-white">
+            Why Invest in The Edge on Main
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {compellingReasons.map((reason, idx) => (
+              <div
+                key={idx}
+                className={`bg-gradient-to-br ${reason.gradient} rounded-3xl p-8 h-full hover:scale-[1.02] transition-transform duration-300 border border-black/5 dark:border-white/5 shadow-lg animate-fadeIn`}
+                style={{ animationDelay: `${idx * 200}ms` }}
+              >
+                <div className="text-5xl mb-6">{reason.icon}</div>
+                <div className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${reason.textColor} bg-white/50 mb-4`}>
+                  {reason.highlight}
+                </div>
+                <h3 className={`text-2xl font-bold ${reason.textColor} mb-4`}>
+                  {reason.title}
+                </h3>
+                <p className={`${reason.textColor} opacity-80 leading-relaxed text-lg`}>
+                  {reason.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Executive Summary */}
+      <section className="py-16 px-8 bg-bg-main dark:bg-black">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-4xl font-bold mb-8 text-text-primary dark:text-white text-center">
+            Executive Summary
+          </h2>
+          <div className="prose prose-lg max-w-none text-text-secondary dark:text-gray-300">
+            <p className="text-xl leading-relaxed mb-6 italic">
+              "What if we could solve Arizona's housing crisis while creating generational wealth for our investors?"
+            </p>
+            <p className="mb-6">
+              This question sparked the vision for <strong>The Edge on Main</strong> — a transformative development 
+              that stands at the intersection of unprecedented opportunity and pressing social need. In the heart 
+              of Mesa, where the city's ambitious light rail expansion meets a community hungry for quality housing, 
+              we're not just building apartments — we're architecting the future.
+            </p>
+            <p className="mb-6">
+              Our <strong>two-phase journey</strong> delivers 439 new multifamily units directly adjacent to Mesa's 
+              light rail station. Phase I introduces 161 residences with retail frontage, while Phase II adds 278 
+              additional homes including family-sized layouts. This isn't just convenience — it's a lifestyle 
+              transformation that connects residents to opportunity across the Phoenix Valley.
+            </p>
+            <p className="font-semibold text-lg">
+              With all entitlements secured and Opportunity Zone incentives offering tax-free growth potential, 
+              The Edge on Main represents the rare convergence where profit meets purpose in one of America's 
+              fastest-growing markets.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Investment Cards Section */}
+      <section className="py-16 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center mb-12 text-text-primary dark:text-white">
+            Investment Details
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {investmentCards.map((card, idx) => (
               <Link key={card.id} href={`/details/${card.id}`}>
                 <div
-                  className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-8 lg:p-10 h-full min-h-[260px] hover:scale-[1.03] transition-transform duration-300 cursor-pointer border border-black/5 dark:border-white/5 shadow-sm hover:shadow-lg animate-fadeIn`}
+                  className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-10 lg:p-12 h-full min-h-[320px] hover:scale-[1.03] transition-transform duration-300 cursor-pointer border border-black/5 dark:border-white/5 shadow-sm hover:shadow-lg animate-fadeIn`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-3xl">{card.icon}</div>
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="text-4xl">{card.icon}</div>
                     <svg 
-                      className={`w-5 h-5 ${card.textColor} opacity-60`} 
+                      className={`w-6 h-6 ${card.textColor} opacity-60`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -116,24 +227,24 @@ export default function InvestmentDashboard() {
                     </svg>
                   </div>
                   
-                  <h3 className={`text-xl font-semibold ${card.textColor} mb-4`}>
+                  <h3 className={`text-2xl font-semibold ${card.textColor} mb-6`}>
                     {card.title}
                   </h3>
                   
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-3 mb-6">
                     {card.keyMetrics.map((metric, metricIdx) => (
                       <div key={metricIdx} className="flex justify-between items-center">
-                        <span className={`text-base ${card.textColor} opacity-70`}>
+                        <span className={`text-lg ${card.textColor} opacity-70`}>
                           {metric.label}
                         </span>
-                        <span className={`text-xl font-bold ${card.textColor}`}>
+                        <span className="text-2xl font-bold text-white text-right">
                           {metric.value}
                         </span>
                       </div>
                     ))}
                   </div>
                   
-                  <p className={`text-xs ${card.textColor} opacity-60 leading-relaxed`}>
+                  <p className={`text-sm ${card.textColor} opacity-60 leading-relaxed`}>
                     {card.summary}
                   </p>
                 </div>
