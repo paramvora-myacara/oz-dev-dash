@@ -85,9 +85,9 @@ export default function InvestmentDashboard() {
       title: "Sponsor Profile",
       icon: "👥",
       keyMetrics: [
-        { label: "Todd Vitzthum", value: "ACARA Management" },
-        { label: "Jeff Richmond", value: "Operations & Strategy" },
-        { label: "Michael Krueger", value: "Legal & Compliance" }
+        { label: "Fund Name", value: "ACARA OZ Fund I" },
+        { label: "Developer", value: "Juniper Mountain Capital" },
+        { label: "Track Record", value: "1,158+ Units Delivered" }
       ],
       summary: "Experienced team with proven OZ development expertise",
       gradient: "from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20",
