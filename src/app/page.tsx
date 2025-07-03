@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import Marquee from "react-fast-marquee";
 
 export default function InvestmentDashboard() {
   const tickerMetrics = [
@@ -122,24 +123,23 @@ export default function InvestmentDashboard() {
 
       {/* Stock Market Ticker */}
       <section className="py-6 bg-white dark:bg-black">
-        <div className="max-w-7xl mx-auto">
-          <div className="overflow-hidden">
-            <div className="flex animate-scroll">
-              <div className="flex space-x-12 text-black dark:text-white whitespace-nowrap font-mono text-lg tracking-wider uppercase">
-                {[...tickerMetrics, ...tickerMetrics].map((metric, idx) => (
-                  <div key={idx} className="flex items-center space-x-3 whitespace-nowrap">
-                    <span className="font-bold text-red-500">{metric.label}:</span>
-                    <span className="font-bold text-green-500">{metric.value}</span>
-                    <span className="text-xs bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full font-sans text-gray-600 dark:text-gray-400 normal-case">
-                      {metric.change}
-                    </span>
-                    <span className="text-gray-400 text-xl">•</span>
-                  </div>
-                ))}
-              </div>
+        <Marquee 
+          speed={50}
+          gradient={false}
+          pauseOnHover={true}
+          className="text-black dark:text-white font-mono text-lg tracking-wider uppercase"
+        >
+          {tickerMetrics.map((metric, idx) => (
+            <div key={idx} className="flex items-center space-x-3 whitespace-nowrap mx-6">
+              <span className="font-bold text-red-500">{metric.label}:</span>
+              <span className="font-bold text-green-500">{metric.value}</span>
+              <span className="text-xs bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full font-sans text-gray-600 dark:text-gray-400 normal-case">
+                {metric.change}
+              </span>
+              <span className="text-gray-400 text-xl">•</span>
             </div>
-          </div>
-        </div>
+          ))}
+        </Marquee>
       </section>
 
       {/* Three Compelling Reasons Cards */}
