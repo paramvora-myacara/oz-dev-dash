@@ -179,23 +179,23 @@ export default function InvestmentDashboard() {
           </h2>
           <div className="prose prose-lg max-w-none text-black/70 dark:text-white/70">
             <p className="text-xl leading-relaxed mb-6 italic">
-              "What if we could solve Arizona's housing crisis while creating generational wealth for our investors?"
+              &quot;What if we could solve Arizona&apos;s housing crisis while creating generational wealth for our investors?&quot;
             </p>
             <p className="mb-6">
               This question sparked the vision for <strong>The Edge on Main</strong> — a transformative development 
               that stands at the intersection of unprecedented opportunity and pressing social need. In the heart 
-              of Mesa, where the city's ambitious light rail expansion meets a community hungry for quality housing, 
-              we're not just building apartments — we're architecting the future.
+              of Mesa, where the city&apos;s ambitious light rail expansion meets a community hungry for quality housing, 
+              we&apos;re not just building apartments — we&apos;re architecting the future.
             </p>
             <p className="mb-6">
-              Our <strong>two-phase journey</strong> delivers 439 new multifamily units directly adjacent to Mesa's 
+              Our <strong>two-phase journey</strong> delivers 439 new multifamily units directly adjacent to Mesa&apos;s 
               light rail station. Phase I introduces 161 residences with retail frontage, while Phase II adds 278 
-              additional homes including family-sized layouts. This isn't just convenience — it's a lifestyle 
+              additional homes including family-sized layouts. This isn&apos;t just convenience — it&apos;s a lifestyle 
               transformation that connects residents to opportunity across the Phoenix Valley.
             </p>
             <p className="font-semibold text-lg">
               With all entitlements secured and Opportunity Zone incentives offering tax-free growth potential, 
-              The Edge on Main represents the rare convergence where profit meets purpose in one of America's 
+              The Edge on Main represents the rare convergence where profit meets purpose in one of America&apos;s 
               fastest-growing markets.
             </p>
           </div>
