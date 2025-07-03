@@ -1,30 +1,118 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* Primary palette - inspired by Apple's subtle gradients */
+  --primary-bg: #000000;
+  --secondary-bg: #0a0a0a;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-hover-bg: rgba(255, 255, 255, 0.05);
+  
+  /* Glass effects */
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  
+  /* Accent colors - minimal and purposeful */
+  --accent-blue: #0071e3;
+  --accent-green: #30d158;
+  --accent-red: #ff375f;
+  --accent-purple: #bf5af2;
+  
+  /* Subtle accent usage */
+  --accent-blue-subtle: rgba(0, 113, 227, 0.15);
+  --accent-green-subtle: rgba(48, 209, 88, 0.15);
+}
+
+/* Light mode styles */
+:root:not(.dark) {
+  /* Primary palette for light mode */
+  --primary-bg: #ffffff;
+  --secondary-bg: #f8f9fa;
+  --card-bg: rgba(0, 0, 0, 0.03);
+  --card-hover-bg: rgba(0, 0, 0, 0.05);
+  
+  /* Glass effects for light mode */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  
+  /* Text colors for light mode */
+  --text-primary: #000000;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --text-tertiary: rgba(0, 0, 0, 0.5);
+  
+  /* Accent colors remain the same but subtle versions change */
+  --accent-blue-subtle: rgba(0, 113, 227, 0.1);
+  --accent-green-subtle: rgba(48, 209, 88, 0.1);
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  background: var(--primary-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer base {
+  body {
+    @apply bg-white dark:bg-black text-black dark:text-white font-sans antialiased;
+  }
+  h1,h2,h3,h4,h5,h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+/* Glass Card Component */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Subtle Glow Effect */
+.glow-subtle {
+  filter: drop-shadow(0 0 20px rgba(48, 209, 88, 0.3));
+}
+
+/* Smooth Transitions */
+* {
+  transition: border-color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Custom Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -36,24 +124,108 @@ body {
   }
 }
 
-@keyframes scroll {
-  0% {
-    transform: translateX(0);
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
   }
-  100% {
-    transform: translateX(-50%);
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(48, 209, 88, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(48, 209, 88, 0.6));
   }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.6s ease-out forwards;
+  animation: fadeIn 0.6s ease-out;
 }
 
-.animate-scroll {
-  animation: scroll 30s linear infinite;
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
 }
 
-.glass-card {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-black/10 dark:bg-white/10 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-black/20 dark:bg-white/20;
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure dark mode styles apply */
+html.dark {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+/* Force Tailwind classes to work properly */
+.bg-white { background-color: #ffffff !important; }
+.bg-black { background-color: #000000 !important; }
+.text-white { color: #ffffff !important; }
+.text-black { color: #000000 !important; }
+
+/* Text with opacity variants */
+.text-black\/70 { color: rgba(0, 0, 0, 0.7) !important; }
+.text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
+.text-white\/90 { color: rgba(255, 255, 255, 0.9) !important; }
+
+/* Gray colors - these should invert */
+.text-gray-400 { color: #9ca3af !important; }
+.text-gray-600 { color: #4b5563 !important; }
+.text-gray-800 { color: #1f2937 !important; }
+.text-gray-900 { color: #111827 !important; }
+
+/* Dark mode overrides */
+.dark .bg-white { background-color: #000000 !important; }
+.dark .bg-black { background-color: #ffffff !important; }
+.dark .text-white { color: #000000 !important; }
+.dark .text-black { color: #ffffff !important; }
+
+/* Text with opacity variants in dark mode */
+.dark .text-black\/70 { color: rgba(255, 255, 255, 0.7) !important; }
+.dark .text-white\/70 { color: rgba(0, 0, 0, 0.7) !important; }
+.dark .text-white\/90 { color: rgba(0, 0, 0, 0.9) !important; }
+
+/* Gray colors in dark mode */
+.dark .text-gray-400 { color: #d1d5db !important; }
+.dark .text-gray-600 { color: #e5e7eb !important; }
+.dark .text-gray-800 { color: #f3f4f6 !important; }
+.dark .text-gray-900 { color: #f9fafb !important; }
+
+/* Color variations for card text */
+.text-emerald-200 { color: #a7f3d0 !important; }
+.text-indigo-200 { color: #c7d2fe !important; }
+.text-purple-200 { color: #e9d5ff !important; }
+.text-orange-200 { color: #fed7aa !important; }
+
+
