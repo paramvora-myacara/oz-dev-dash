@@ -215,8 +215,13 @@ export default function InvestmentDashboard() {
                   className={`glass-card bg-gradient-to-br ${card.gradient} border border-black/10 dark:border-white/10 rounded-2xl p-10 lg:p-12 h-full min-h-[320px] hover:scale-[1.03] transition-all duration-300 cursor-pointer animate-fadeIn`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="text-4xl">{card.icon}</div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-4xl">{card.icon}</div>
+                      <h3 className={`text-2xl font-bold ${card.textColor}`}>
+                        {card.title}
+                      </h3>
+                    </div>
                     <svg 
                       className={`w-6 h-6 ${card.textColor} opacity-60`}
                       fill="none" 
@@ -226,10 +231,6 @@ export default function InvestmentDashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
-                  
-                  <h3 className={`text-2xl font-semibold ${card.textColor} mb-6`}>
-                    {card.title}
-                  </h3>
                   
                   <div className="space-y-0 mb-6">
                     {card.keyMetrics.map((metric, metricIdx) => (
