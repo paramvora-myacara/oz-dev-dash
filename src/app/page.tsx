@@ -152,17 +152,17 @@ export default function InvestmentDashboard() {
             {compellingReasons.map((reason, idx) => (
               <div
                 key={idx}
-                className="glass-card bg-white/80 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-3xl p-8 h-full hover:scale-[1.02] transition-all duration-300 animate-fadeIn"
+                className={`glass-card bg-gradient-to-br ${reason.gradient} border border-black/10 dark:border-white/10 rounded-3xl p-8 h-full hover:scale-[1.02] transition-all duration-300 animate-fadeIn`}
                 style={{ animationDelay: `${idx * 200}ms` }}
               >
                 <div className="text-5xl mb-6">{reason.icon}</div>
-                <div className="inline-block px-4 py-2 rounded-full text-sm font-medium bg-black/10 dark:bg-white/10 text-black/70 dark:text-white/70 mb-4">
+                <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium bg-black/10 dark:bg-white/10 ${reason.textColor} opacity-70 mb-4`}>
                   {reason.highlight}
                 </div>
-                <h3 className="text-2xl font-semibold text-black dark:text-white mb-4">
+                <h3 className={`text-2xl font-semibold ${reason.textColor} mb-4`}>
                   {reason.title}
                 </h3>
-                <p className="text-black/70 dark:text-white/70 leading-relaxed text-lg font-light">
+                <p className={`${reason.textColor} opacity-80 leading-relaxed text-lg font-light`}>
                   {reason.description}
                 </p>
               </div>
