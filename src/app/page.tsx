@@ -107,13 +107,13 @@ export default function InvestmentDashboard() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Header with Title */}
-      <header className="absolute top-0 left-0 right-0 z-30 p-8">
+      <header className="relative z-30 p-8 bg-white dark:bg-black">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold text-black dark:text-white drop-shadow-lg tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-semibold text-black dark:text-white tracking-tight">
               ACARA Opportunity Zone Fund I LLC
             </h1>
-            <p className="text-lg text-black/70 dark:text-white/70 mt-2 drop-shadow-md font-light">
+            <p className="text-lg text-black/70 dark:text-white/70 mt-2 font-light">
               Premium Multifamily Investment Opportunity
             </p>
           </div>
@@ -158,9 +158,6 @@ export default function InvestmentDashboard() {
       {/* Three Compelling Reasons Cards */}
       <section className="py-16 px-8 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-semibold text-center mb-12 text-black dark:text-white tracking-tight">
-            Why Invest in The Edge on Main
-          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {compellingReasons.map((reason, idx) => (
               <div
@@ -191,7 +188,7 @@ export default function InvestmentDashboard() {
             Executive Summary
           </h2>
           <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border border-black/10 dark:border-white/10">
-            <div className="prose prose-xl max-w-none text-black/70 dark:text-white/70">
+            <div className="prose prose-xl max-w-none text-black dark:text-white">
               <p className="text-2xl leading-relaxed mb-6 italic font-light">
                 &quot;What if we could solve Arizona&apos;s housing crisis while creating generational wealth for our investors?&quot;
               </p>
@@ -220,9 +217,6 @@ export default function InvestmentDashboard() {
       {/* Investment Cards Section */}
       <section className="py-16 px-4 bg-white dark:bg-black">
         <div className="max-w-8xl mx-auto">
-          <h2 className="text-5xl font-semibold text-center mb-12 text-black dark:text-white tracking-tight">
-            Investment Details
-          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {investmentCards.map((card, idx) => (
               <Link key={card.id} href={`/details/${card.id}`}>
