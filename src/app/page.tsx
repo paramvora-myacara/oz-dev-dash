@@ -232,13 +232,13 @@ export default function InvestmentDashboard() {
                     </svg>
                   </div>
                   
-                  <div className="space-y-0 mb-6">
+                  <div className="space-y-4 mb-6">
                     {card.keyMetrics.map((metric, metricIdx) => (
-                      <div key={metricIdx} className="flex justify-between items-center h-16">
-                        <span className={`text-lg font-medium ${card.textColor} opacity-80`}>
+                      <div key={metricIdx} className="flex items-center h-20">
+                        <span className={`text-xl font-medium ${card.textColor} opacity-80 flex-1`}>
                           {metric.label}
                         </span>
-                        <span className={`text-2xl font-semibold ${card.textColor} text-right`}>
+                        <span className="text-2xl font-semibold text-white text-right ml-8 min-w-[120px]">
                           {metric.value}
                         </span>
                       </div>
