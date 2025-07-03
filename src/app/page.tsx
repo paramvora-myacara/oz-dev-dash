@@ -191,23 +191,23 @@ export default function InvestmentDashboard() {
             Executive Summary
           </h2>
           <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border border-black/10 dark:border-white/10">
-            <div className="prose prose-lg max-w-none text-black/70 dark:text-white/70">
-              <p className="text-xl leading-relaxed mb-6 italic font-light">
+            <div className="prose prose-xl max-w-none text-black/70 dark:text-white/70">
+              <p className="text-2xl leading-relaxed mb-6 italic font-light">
                 &quot;What if we could solve Arizona&apos;s housing crisis while creating generational wealth for our investors?&quot;
               </p>
-              <p className="mb-6 font-light">
+              <p className="mb-6 font-light text-lg">
                 This question sparked the vision for <strong>The Edge on Main</strong> — a transformative development 
                 that stands at the intersection of unprecedented opportunity and pressing social need. In the heart 
                 of Mesa, where the city&apos;s ambitious light rail expansion meets a community hungry for quality housing, 
                 we&apos;re not just building apartments — we&apos;re architecting the future.
               </p>
-              <p className="mb-6 font-light">
+              <p className="mb-6 font-light text-lg">
                 Our <strong>two-phase journey</strong> delivers 439 new multifamily units directly adjacent to Mesa&apos;s 
                 light rail station. Phase I introduces 161 residences with retail frontage, while Phase II adds 278 
                 additional homes including family-sized layouts. This isn&apos;t just convenience — it&apos;s a lifestyle 
                 transformation that connects residents to opportunity across the Phoenix Valley.
               </p>
-              <p className="font-semibold text-lg text-black dark:text-white">
+              <p className="font-semibold text-xl text-black dark:text-white">
                 With all entitlements secured and Opportunity Zone incentives offering tax-free growth potential, 
                 The Edge on Main represents the rare convergence where profit meets purpose in one of America&apos;s 
                 fastest-growing markets.
@@ -247,20 +247,20 @@ export default function InvestmentDashboard() {
                     </svg>
                   </div>
                   
-                  <div className="space-y-4 mb-6 flex-1">
+                  <div className="space-y-8 mb-6 flex-1">
                     {card.keyMetrics.map((metric, metricIdx) => (
                       <div key={metricIdx} className="flex items-center justify-between">
-                        <span className={`text-base font-medium ${card.accentColor}`}>
+                        <span className={`text-lg font-medium ${card.accentColor}`}>
                           {metric.label}
                         </span>
-                        <span className="text-lg font-semibold text-black dark:text-white">
+                        <span className="text-xl font-semibold text-black dark:text-white">
                           {metric.value}
                         </span>
                       </div>
                     ))}
                   </div>
                   
-                  <p className={`text-sm leading-relaxed font-light ${card.accentColor}`}>
+                  <p className={`text-base leading-relaxed font-light ${card.accentColor}`}>
                     {card.summary}
                   </p>
                 </div>
