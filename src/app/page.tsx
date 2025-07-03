@@ -96,13 +96,13 @@ export default function InvestmentDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-bg-main dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-black">
       {/* Header with Title */}
       <header className="absolute top-0 left-0 z-30 p-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+        <h1 className="text-3xl md:text-4xl font-semibold text-white drop-shadow-lg tracking-tight">
           ACARA Opportunity Zone Fund I LLC
         </h1>
-        <p className="text-lg text-white/90 mt-2 drop-shadow-md">
+        <p className="text-lg text-white/90 mt-2 drop-shadow-md font-light">
           Premium Multifamily Investment Opportunity
         </p>
       </header>
@@ -121,7 +121,7 @@ export default function InvestmentDashboard() {
       </section>
 
       {/* Stock Market Ticker */}
-      <section className="py-6 bg-bg-main dark:bg-black">
+      <section className="py-6 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
           <div className="overflow-hidden">
             <div className="flex animate-scroll">
@@ -143,26 +143,26 @@ export default function InvestmentDashboard() {
       </section>
 
       {/* Three Compelling Reasons Cards */}
-      <section className="py-16 px-8">
+      <section className="py-16 px-8 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-text-primary dark:text-white">
+          <h2 className="text-5xl font-semibold text-center mb-12 text-black dark:text-white tracking-tight">
             Why Invest in The Edge on Main
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {compellingReasons.map((reason, idx) => (
               <div
                 key={idx}
-                className={`bg-gradient-to-br ${reason.gradient} rounded-3xl p-8 h-full hover:scale-[1.02] transition-transform duration-300 border border-black/5 dark:border-white/5 shadow-lg animate-fadeIn`}
+                className="glass-card bg-white/80 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-3xl p-8 h-full hover:scale-[1.02] transition-all duration-300 animate-fadeIn"
                 style={{ animationDelay: `${idx * 200}ms` }}
               >
                 <div className="text-5xl mb-6">{reason.icon}</div>
-                <div className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${reason.textColor} bg-white/50 mb-4`}>
+                <div className="inline-block px-4 py-2 rounded-full text-sm font-medium bg-black/10 dark:bg-white/10 text-black/70 dark:text-white/70 mb-4">
                   {reason.highlight}
                 </div>
-                <h3 className={`text-2xl font-bold ${reason.textColor} mb-4`}>
+                <h3 className="text-2xl font-semibold text-black dark:text-white mb-4">
                   {reason.title}
                 </h3>
-                <p className={`${reason.textColor} opacity-80 leading-relaxed text-lg`}>
+                <p className="text-black/70 dark:text-white/70 leading-relaxed text-lg font-light">
                   {reason.description}
                 </p>
               </div>
@@ -172,12 +172,12 @@ export default function InvestmentDashboard() {
       </section>
 
       {/* Executive Summary */}
-      <section className="py-16 px-8 bg-bg-main dark:bg-black">
+      <section className="py-16 px-8 bg-white dark:bg-black">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold mb-8 text-text-primary dark:text-white text-center">
+          <h2 className="text-5xl font-semibold mb-8 text-black dark:text-white text-center tracking-tight">
             Executive Summary
           </h2>
-          <div className="prose prose-lg max-w-none text-text-secondary dark:text-gray-300">
+          <div className="prose prose-lg max-w-none text-black/70 dark:text-white/70">
             <p className="text-xl leading-relaxed mb-6 italic">
               "What if we could solve Arizona's housing crisis while creating generational wealth for our investors?"
             </p>
@@ -203,22 +203,22 @@ export default function InvestmentDashboard() {
       </section>
 
       {/* Investment Cards Section */}
-      <section className="py-16 px-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-text-primary dark:text-white">
+      <section className="py-16 px-4 bg-white dark:bg-black">
+        <div className="max-w-8xl mx-auto">
+          <h2 className="text-5xl font-semibold text-center mb-12 text-black dark:text-white tracking-tight">
             Investment Details
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {investmentCards.map((card, idx) => (
               <Link key={card.id} href={`/details/${card.id}`}>
                 <div
-                  className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-10 lg:p-12 h-full min-h-[320px] hover:scale-[1.03] transition-transform duration-300 cursor-pointer border border-black/5 dark:border-white/5 shadow-sm hover:shadow-lg animate-fadeIn`}
+                  className={`glass-card bg-gradient-to-br ${card.gradient} border border-black/10 dark:border-white/10 rounded-2xl p-10 lg:p-12 h-full min-h-[320px] hover:scale-[1.03] transition-all duration-300 cursor-pointer animate-fadeIn`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="flex items-start justify-between mb-6">
                     <div className="text-4xl">{card.icon}</div>
                     <svg 
-                      className={`w-6 h-6 ${card.textColor} opacity-60`} 
+                      className={`w-6 h-6 ${card.textColor} opacity-60`}
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -231,20 +231,20 @@ export default function InvestmentDashboard() {
                     {card.title}
                   </h3>
                   
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-0 mb-6">
                     {card.keyMetrics.map((metric, metricIdx) => (
-                      <div key={metricIdx} className="flex justify-between items-center">
-                        <span className={`text-lg ${card.textColor} opacity-70`}>
+                      <div key={metricIdx} className="flex justify-between items-center h-16">
+                        <span className={`text-lg font-medium ${card.textColor} opacity-80`}>
                           {metric.label}
                         </span>
-                        <span className="text-2xl font-bold text-white text-right">
+                        <span className={`text-2xl font-semibold ${card.textColor} text-right`}>
                           {metric.value}
                         </span>
                       </div>
                     ))}
                   </div>
                   
-                  <p className={`text-sm ${card.textColor} opacity-60 leading-relaxed`}>
+                  <p className={`text-sm leading-relaxed font-light ${card.textColor} opacity-70`}>
                     {card.summary}
                   </p>
                 </div>
