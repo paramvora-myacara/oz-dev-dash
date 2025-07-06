@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { TrendingUp } from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler);
 
@@ -71,7 +72,9 @@ export default function FinancialReturnsPage() {
           </Link>
           
           <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl">📈</div>
+            <div className="text-current">
+              <TrendingUp className="w-12 h-12" />
+            </div>
             <div>
               <h1 className="text-5xl font-semibold text-emerald-900 dark:text-emerald-300 tracking-tight">
                 Financial Returns

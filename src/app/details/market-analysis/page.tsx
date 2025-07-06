@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { Target, Laptop, GraduationCap, DollarSign, Sun } from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler);
 
@@ -82,25 +83,25 @@ export default function MarketAnalysisPage() {
   const marketDrivers = [
     {
       title: "Growing Tech Sector",
-      icon: "💻",
+      icon: <Laptop className="w-8 h-8" />,
       description: "Major companies including Intel, Apple, and GoDaddy expanding operations in Phoenix Metro",
       impact: "High"
     },
     {
       title: "Arizona State University",
-      icon: "🎓", 
+      icon: <GraduationCap className="w-8 h-8" />, 
       description: "80,000+ students creating consistent rental demand in surrounding areas",
       impact: "High"
     },
     {
       title: "Tax-Friendly Environment",
-      icon: "💰",
+      icon: <DollarSign className="w-8 h-8" />,
       description: "Arizona's business-friendly tax structure attracting companies and residents",
       impact: "Medium"
     },
     {
       title: "Year-Round Climate",
-      icon: "☀️",
+      icon: <Sun className="w-8 h-8" />,
       description: "Desert climate and outdoor lifestyle attracting retirees and young professionals",
       impact: "Medium"
     }
@@ -119,7 +120,9 @@ export default function MarketAnalysisPage() {
           </Link>
           
           <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl">🎯</div>
+            <div className="text-current">
+              <Target className="w-12 h-12" />
+            </div>
             <div>
               <h1 className="text-5xl font-semibold text-purple-900 dark:text-purple-300 tracking-tight">
                 Market Analysis
@@ -201,7 +204,9 @@ export default function MarketAnalysisPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {marketDrivers.map((driver, idx) => (
                 <div key={idx} className="flex items-start space-x-4 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-3xl">{driver.icon}</div>
+                  <div className="text-current">
+                    {driver.icon}
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-gray-900 dark:text-gray-100">{driver.title}</h4>

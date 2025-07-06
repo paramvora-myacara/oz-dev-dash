@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
+import { Rocket, BarChart3, Train, TrendingUp, Building, Target, Users } from "lucide-react";
 import ThemeToggle from "../components/theme-toggle";
 
 export default function InvestmentDashboard() {
@@ -19,7 +20,7 @@ export default function InvestmentDashboard() {
     {
       title: "100% Tax-Free Growth",
       description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period.",
-      icon: "🚀",
+      icon: <Rocket className="w-12 h-12" />,
       highlight: "Tax-Free Exit",
       gradient: "from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20",
       textColor: "text-emerald-900 dark:text-emerald-300",
@@ -28,7 +29,7 @@ export default function InvestmentDashboard() {
     {
       title: "Massive Housing Shortage",
       description: "Arizona faces 56,000+ unit housing deficit. Mesa is one of the fastest-growing cities with sustained population growth driving demand.",
-      icon: "📊",
+      icon: <BarChart3 className="w-12 h-12" />,
       highlight: "56K+ Unit Shortage",
       gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
       textColor: "text-indigo-900 dark:text-indigo-300",
@@ -37,7 +38,7 @@ export default function InvestmentDashboard() {
     {
       title: "Prime Transit Location",
       description: "Located directly adjacent to Country Club & Main Street Light Rail Station, providing unmatched regional connectivity and transit access.",
-      icon: "🚆",
+      icon: <Train className="w-12 h-12" />,
       highlight: "Light Rail Adjacent",
       gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20",
       textColor: "text-purple-900 dark:text-purple-300",
@@ -49,7 +50,7 @@ export default function InvestmentDashboard() {
     {
       id: "financial-returns",
       title: "Financial Returns",
-      icon: "📈",
+      icon: <TrendingUp className="w-10 h-10" />,
       keyMetrics: [
         { label: "10-Yr Equity Multiple", value: "2.8–3.2x" },
         { label: "3-Yr Equity Multiple", value: "2.1x" },
@@ -63,7 +64,7 @@ export default function InvestmentDashboard() {
     {
       id: "property-overview", 
       title: "Property Overview",
-      icon: "🏢",
+      icon: <Building className="w-10 h-10" />,
       keyMetrics: [
         { label: "Total Units", value: "439" },
         { label: "Location", value: "Mesa, AZ" },
@@ -77,7 +78,7 @@ export default function InvestmentDashboard() {
     {
       id: "market-analysis",
       title: "Market Analysis", 
-      icon: "🎯",
+      icon: <Target className="w-10 h-10" />,
       keyMetrics: [
         { label: "Housing Shortage", value: "56K+ units" },
         { label: "Population Growth", value: "500K+" },
@@ -91,7 +92,7 @@ export default function InvestmentDashboard() {
     {
       id: "sponsor-profile",
       title: "Sponsor Profile",
-      icon: "👥",
+      icon: <Users className="w-10 h-10" />,
       keyMetrics: [
         { label: "Fund Name", value: "ACARA OZ Fund I" },
         { label: "Developer", value: "Juniper Mountain Capital" },
@@ -165,7 +166,7 @@ export default function InvestmentDashboard() {
                 className={`glass-card rounded-3xl p-8 bg-gradient-to-br ${reason.gradient} border border-black/10 dark:border-white/10 hover:scale-[1.02] transition-all duration-300 animate-fadeIn flex flex-col`}
                 style={{ animationDelay: `${idx * 150}ms` }}
               >
-                <div className="text-5xl mb-6">{reason.icon}</div>
+                <div className="mb-6 text-current">{reason.icon}</div>
                 <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 ${reason.textColor} mb-4`}>
                   {reason.highlight}
                 </div>
@@ -226,7 +227,7 @@ export default function InvestmentDashboard() {
                 >
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
-                      <div className="text-4xl">{card.icon}</div>
+                      <div className="text-current">{card.icon}</div>
                       <h3 className={`text-2xl font-bold ${card.textColor}`}>
                         {card.title}
                       </h3>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Users, Building, User, Scale, Construction, Mountain, HardHat } from "lucide-react";
 
 export default function SponsorProfilePage() {
   const teamMembers = [
@@ -6,19 +7,19 @@ export default function SponsorProfilePage() {
       name: "Todd Vitzthum",
       role: "ACARA Management",
       expertise: "Real estate strategy, capital structuring, and fund deployment for high-net-worth investors and institutional partners.",
-      image: "👨‍💼"
+      image: <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
     },
     {
       name: "Michael Krueger",
       role: "Partner, Lucosky Brookman Law Firm",
       expertise: "SEC compliance, Opportunity Zone regulations, and legal structuring for complex real estate and private equity transactions.",
-      image: "⚖️"
+      image: <Scale className="w-8 h-8 text-purple-600 dark:text-purple-400" />
     },
     {
       name: "Jeff Richmond",
       role: "ACARA Management",
       expertise: "Operations, real estate execution, and investor strategy across private equity, development, and capital markets initiatives.",
-      image: "🏗️"
+      image: <Construction className="w-8 h-8 text-orange-600 dark:text-orange-400" />
     }
   ];
 
@@ -71,7 +72,7 @@ export default function SponsorProfilePage() {
           </Link>
           
           <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl">👥</div>
+            <div className="text-5xl"><Users className="w-12 h-12 text-orange-600 dark:text-orange-400" /></div>
             <div>
               <h1 className="text-5xl font-semibold text-orange-900 dark:text-orange-300 tracking-tight">
                 Sponsor Profile
@@ -90,7 +91,7 @@ export default function SponsorProfilePage() {
           {/* ACARA Management Overview */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-12">
             <div className="flex items-center space-x-4 mb-6">
-              <div className="text-4xl">🏛️</div>
+              <div className="text-4xl"><Building className="w-10 h-10 text-gray-600 dark:text-gray-400" /></div>
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">ACARA Management</h3>
                 <p className="text-orange-700 dark:text-orange-400">Fund Manager</p>
@@ -129,7 +130,7 @@ export default function SponsorProfilePage() {
           {/* Juniper Mountain Capital */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-12">
             <div className="flex items-center space-x-4 mb-6">
-              <div className="text-4xl">🏔️</div>
+              <div className="text-4xl"><Mountain className="w-10 h-10 text-green-600 dark:text-green-400" /></div>
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Juniper Mountain Capital</h3>
                 <p className="text-orange-700 dark:text-orange-400">Development Partner</p>
@@ -235,7 +236,7 @@ export default function SponsorProfilePage() {
           {/* General Contractor */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
             <div className="flex items-center space-x-4 mb-6">
-              <div className="text-4xl">🏗️</div>
+              <div className="text-4xl"><HardHat className="w-10 h-10 text-yellow-600 dark:text-yellow-400" /></div>
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{contractorInfo.name}</h3>
                 <p className="text-orange-700 dark:text-orange-400">General Contractor</p>
