@@ -289,6 +289,14 @@ export default function InvestmentDashboard() {
       {/* Investment Cards Section */}
       <section id="investment-cards" className="py-16 px-4 bg-white dark:bg-black scroll-mt-8">
         <div className="max-w-8xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-5xl font-semibold mb-4 text-black dark:text-white tracking-tight">
+              Due Diligence Vault
+            </h2>
+            <p className="text-lg text-black/70 dark:text-white/70 font-light">
+              Click any card to learn more and access documentation
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {investmentCards.map((card, idx) => (
               <div
