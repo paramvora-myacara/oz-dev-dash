@@ -1,15 +1,16 @@
 import Link from "next/link";
+import { Building, Waves, Dumbbell, Laptop, Dog, Building2, Bell, Zap, Package, MapPin, Car, Bus, Plane } from "lucide-react";
 
 export default function PropertyOverviewPage() {
   const amenities = [
-    { name: "Resort-Style Pool", icon: "🏊‍♂️" },
-    { name: "State-of-the-Art Fitness Center", icon: "💪" },
-    { name: "Co-working Spaces", icon: "💻" },
-    { name: "Dog Park & Pet Spa", icon: "🐕" },
-    { name: "Rooftop Terrace", icon: "🌆" },
-    { name: "Concierge Services", icon: "🛎️" },
-    { name: "Electric Vehicle Charging", icon: "⚡" },
-    { name: "Package Lockers", icon: "📦" }
+    { name: "Resort-Style Pool", icon: <Waves className="w-6 h-6" /> },
+    { name: "State-of-the-Art Fitness Center", icon: <Dumbbell className="w-6 h-6" /> },
+    { name: "Co-working Spaces", icon: <Laptop className="w-6 h-6" /> },
+    { name: "Dog Park & Pet Spa", icon: <Dog className="w-6 h-6" /> },
+    { name: "Rooftop Terrace", icon: <Building2 className="w-6 h-6" /> },
+    { name: "Concierge Services", icon: <Bell className="w-6 h-6" /> },
+    { name: "Electric Vehicle Charging", icon: <Zap className="w-6 h-6" /> },
+    { name: "Package Lockers", icon: <Package className="w-6 h-6" /> }
   ];
 
   const unitMix = [
@@ -24,7 +25,10 @@ export default function PropertyOverviewPage() {
       {/* Header */}
       <section className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 py-16">
         <div className="max-w-7xl mx-auto px-8">
-          <Link href="/" className="inline-flex items-center text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 mb-8">
+          <Link 
+            href="/#investment-cards" 
+            className="inline-flex items-center text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 mb-8"
+          >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -32,7 +36,7 @@ export default function PropertyOverviewPage() {
           </Link>
           
           <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl">🏢</div>
+            <div className="text-5xl"><Building className="w-12 h-12 text-indigo-600 dark:text-indigo-400" /></div>
             <div>
               <h1 className="text-5xl font-semibold text-indigo-900 dark:text-indigo-300 tracking-tight">
                 The Edge on Main
@@ -81,28 +85,28 @@ export default function PropertyOverviewPage() {
               <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Location & Transportation</h3>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="text-2xl">📍</div>
+                  <div className="text-2xl"><MapPin className="w-6 h-6 text-red-500" /></div>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">Prime Mesa Location</h4>
                     <p className="text-gray-600 dark:text-gray-400">15 minutes from downtown Phoenix</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="text-2xl">🚗</div>
+                  <div className="text-2xl"><Car className="w-6 h-6 text-blue-500" /></div>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">Highway Access</h4>
                     <p className="text-gray-600 dark:text-gray-400">Direct access to US-60 and Loop 202</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="text-2xl">🚌</div>
+                  <div className="text-2xl"><Bus className="w-6 h-6 text-green-500" /></div>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">Public Transit</h4>
                     <p className="text-gray-600 dark:text-gray-400">Valley Metro Light Rail nearby</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="text-2xl">✈️</div>
+                  <div className="text-2xl"><Plane className="w-6 h-6 text-purple-500" /></div>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">Phoenix Airport</h4>
                     <p className="text-gray-600 dark:text-gray-400">25 minutes to PHX Sky Harbor</p>

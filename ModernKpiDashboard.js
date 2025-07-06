@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler, ArcElement } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import { TrendingUp, Building, BarChart3, Users, Target, MapPin, CheckCircle, Home } from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler, ArcElement);
 
@@ -16,28 +17,28 @@ export default function ModernKpiDashboard() {
         value: "$110B+",
         change: "+10%",
         trend: "up",
-        icon: "📈"
+        icon: <TrendingUp className="w-6 h-6" />
       },
       {
         title: "Active QOFs",
         value: "14,000+",
         change: "+12%",
         trend: "up",
-        icon: "🏢"
+        icon: <Building className="w-6 h-6" />
       },
       {
         title: "Zones with Investment",
         value: "68%",
         change: "+3%",
         trend: "up",
-        icon: "🗺️"
+        icon: <MapPin className="w-6 h-6" />
       },
       {
         title: "New Housing Units",
         value: "313,000+",
         change: "+8%",
         trend: "up",
-        icon: "🏠"
+        icon: <Home className="w-6 h-6" />
       }
     ];
 
@@ -265,12 +266,12 @@ export default function ModernKpiDashboard() {
     };
 
     const tabs = [
-      { id: 'overview', label: 'Overview', icon: '📊' },
-      { id: 'qof-performance', label: 'QOF Performance', icon: '📈' },
-      { id: 'geographic', label: 'Geographic Analysis', icon: '🗺️' },
-      { id: 'social-impact', label: 'Social Impact', icon: '👥' },
-      { id: 'compliance', label: 'Compliance', icon: '✅' },
-      { id: 'market-intelligence', label: 'Market Intelligence', icon: '🎯' }
+      { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
+      { id: 'qof-performance', label: 'QOF Performance', icon: <TrendingUp className="w-5 h-5" /> },
+      { id: 'geographic', label: 'Geographic Analysis', icon: <MapPin className="w-5 h-5" /> },
+      { id: 'social-impact', label: 'Social Impact', icon: <Users className="w-5 h-5" /> },
+      { id: 'compliance', label: 'Compliance', icon: <CheckCircle className="w-5 h-5" /> },
+      { id: 'market-intelligence', label: 'Market Intelligence', icon: <Target className="w-5 h-5" /> }
     ];
 
     return (
@@ -306,7 +307,7 @@ export default function ModernKpiDashboard() {
                   </div>
                 </div>
                 
-                <h3 className="text-sm font-medium text-black/60 dark:text-white/60 mb-1">{kpi.title}</h3>
+                <h3 className="text-sm font-medium text-black dark:text-white/60 mb-1">{kpi.title}</h3>
                 <p className="text-3xl font-semibold text-black dark:text-white mb-1">{kpi.value}</p>
                 <p className="text-xs text-black/40 dark:text-white/40">{kpi.description}</p>
               </div>

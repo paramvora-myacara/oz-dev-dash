@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { TrendingUp } from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler);
 
@@ -63,7 +64,10 @@ export default function FinancialReturnsPage() {
       {/* Header */}
       <section className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20 py-16">
         <div className="max-w-7xl mx-auto px-8">
-          <Link href="/" className="inline-flex items-center text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 mb-8">
+          <Link 
+            href="/#investment-cards" 
+            className="inline-flex items-center text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 mb-8"
+          >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -71,7 +75,9 @@ export default function FinancialReturnsPage() {
           </Link>
           
           <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl">📈</div>
+            <div className="text-current">
+              <TrendingUp className="w-12 h-12" />
+            </div>
             <div>
               <h1 className="text-5xl font-semibold text-emerald-900 dark:text-emerald-300 tracking-tight">
                 Financial Returns
