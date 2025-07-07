@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
 import { Rocket, BarChart3, Train, TrendingUp, Building, Target, Users } from "lucide-react";
-import ThemeToggle from "../components/theme-toggle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -180,16 +179,13 @@ export default function InvestmentDashboard() {
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Header with Title */}
       <header className="relative z-30 p-8 bg-white dark:bg-black">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-semibold text-black dark:text-white tracking-tight">
-              ACARA Opportunity Zone Fund I LLC
-            </h1>
-            <p className="text-lg text-black/70 dark:text-white/70 mt-2 font-light">
-              Premium Multifamily Investment Opportunity
-            </p>
-          </div>
-          <ThemeToggle />
+        <div>
+          <h1 className="text-3xl md:text-4xl font-semibold text-black dark:text-white tracking-tight">
+            ACARA Opportunity Zone Fund I LLC
+          </h1>
+          <p className="text-lg text-black/70 dark:text-white/70 mt-2 font-light">
+            Premium Multifamily Investment Opportunity
+          </p>
         </div>
       </header>
 
