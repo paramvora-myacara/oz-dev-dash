@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
@@ -8,55 +8,31 @@ import {
   Rocket, BarChart3, Train, TrendingUp, Building, Target, Users, Expand,
   MapPin, DollarSign, Briefcase 
 } from "lucide-react";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import ImageCarousel from '../../components/ImageCarousel';
+import { getRandomImages } from '../../utils/supabaseImages';
 
-export default function Property2Page() {
+export default function InvestmentDashboard() {
   const [showContactModal, setShowContactModal] = useState(false);
+  const [heroImages, setHeroImages] = useState<string[]>([]);
   const router = useRouter();
   
-  // Store scroll position before navigation and restore on return
+  // Load hero images
   useEffect(() => {
-    // Restore scroll position when returning to the page
-    const restoreScroll = () => {
-      const savedScrollPosition = sessionStorage.getItem('dashboardScrollPosition');
-      const shouldScrollToCards = sessionStorage.getItem('scrollToInvestmentCards');
-      
-      if (shouldScrollToCards === 'true') {
-        // Clear the flag
-        sessionStorage.removeItem('scrollToInvestmentCards');
-        // Scroll to investment cards section
-        setTimeout(() => {
-          const cardsSection = document.getElementById('investment-cards');
-          if (cardsSection) {
-            cardsSection.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      } else if (savedScrollPosition) {
-        // Restore the previous scroll position
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(savedScrollPosition));
-        }, 100);
+    async function loadHeroImages() {
+      try {
+        const images = await getRandomImages('sogood-dallas-001', 'general', 5);
+        setHeroImages(images);
+      } catch (error) {
+        console.error('Error loading hero images:', error);
       }
-    };
-
-    // Check if we're returning from a detail page
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromDetail = urlParams.get('from-detail');
-    
-    if (fromDetail || window.location.hash === '#investment-cards') {
-      // Coming from a detail page, scroll to investment cards
-      setTimeout(() => {
-        const cardsSection = document.getElementById('investment-cards');
-        if (cardsSection) {
-          cardsSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    } else {
-      // Regular page load, restore scroll position
-      restoreScroll();
     }
 
+    loadHeroImages();
+  }, []);
+
+  // Store scroll position before navigation and restore on return
+  useEffect(() => {
     // Save scroll position before leaving the page
     const handleBeforeUnload = () => {
       sessionStorage.setItem('dashboardScrollPosition', window.scrollY.toString());
@@ -71,12 +47,43 @@ export default function Property2Page() {
       }, 100);
     };
 
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      setTimeout(() => {
+        const savedScrollPosition = sessionStorage.getItem('dashboardScrollPosition');
+        if (savedScrollPosition) {
+          window.scrollTo(0, parseInt(savedScrollPosition));
+        }
+      }, 100);
+    };
+
+    // Check if we're returning from a detail page (has #investment-cards hash)
+    if (window.location.hash === '#investment-cards') {
+      // Coming from a detail page, scroll to investment cards
+      setTimeout(() => {
+        const cardsSection = document.getElementById('investment-cards');
+        if (cardsSection) {
+          cardsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // Regular page load, restore scroll position
+      const savedScrollPosition = sessionStorage.getItem('dashboardScrollPosition');
+      if (savedScrollPosition) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScrollPosition));
+        }, 100);
+      }
+    }
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('popstate', handlePopState);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
@@ -212,13 +219,22 @@ export default function Property2Page() {
         {/* Hero Image Section */}
         <section className="h-[30vh] sm:h-[40vh] md:h-[50vh] relative overflow-hidden px-4 md:px-8">
           <div className="absolute inset-0">
-            <Image
-              src="/property-hero.jpg"
-              alt="SoGood Dallas - Mixed Use Innovation District"
-              fill
-              className="object-cover rounded-3xl"
-              priority
-            />
+            {heroImages.length > 0 ? (
+              <ImageCarousel
+                images={heroImages}
+                className="h-full rounded-3xl"
+                intervalMs={4000}
+                autoplay={true}
+              />
+            ) : (
+              <Image
+                src="/property-hero.jpg"
+                alt="SoGood Dallas - Mixed Use Innovation District"
+                fill
+                className="object-cover rounded-3xl"
+                priority
+              />
+            )}
           </div>
         </section>
 

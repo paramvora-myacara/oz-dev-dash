@@ -1,7 +1,33 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from "next/link";
 import { Target, TrendingUp, Users, Building } from "lucide-react";
+import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
+import { getRandomImages } from '../../../../utils/supabaseImages';
 
 export default function MarketAnalysisPage() {
+  const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadBackgroundImages() {
+      try {
+        console.log('[MarketAnalysis] Starting to load background images...');
+        // Get random 7 images for background slideshow
+        const images = await getRandomImages('marshall-st-louis-001', 'general', 7);
+        console.log('[MarketAnalysis] Loaded images:', images);
+        setBackgroundImages(images);
+      } catch (error) {
+        console.error('[MarketAnalysis] Error loading background images:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBackgroundImages();
+  }, []);
+
   const marketMetrics = [
     { label: "SLU Enrollment Growth", value: "25%", description: "Increase since 2020, with record highs in 2023-24" },
     { label: "Current Students", value: "15,200+", description: "Total enrollment with continued growth targets" },
@@ -73,34 +99,98 @@ export default function MarketAnalysisPage() {
     { company: "City Foundry Tenants", employees: "800+", sector: "Mixed", distance: "0.1 mi" }
   ];
 
-  return (
-    <div className="min-h-screen bg-bg-main dark:bg-black">
-      {/* Header */}
-      <section className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 py-16">
-        <div className="max-w-7xl mx-auto px-8">
-          <Link 
-                          href="/marshall-st-louis#investment-cards" 
-            className="inline-flex items-center text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 mb-8"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Overview
-          </Link>
-          
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl"><Target className="w-12 h-12 text-purple-600 dark:text-purple-400" /></div>
-            <div>
-              <h1 className="text-5xl font-semibold text-purple-900 dark:text-purple-300 tracking-tight">
-                Market Analysis
-              </h1>
-              <p className="text-xl text-purple-700 dark:text-purple-400 mt-2">
-                The Marshall St. Louis - St. Louis University Market Overview
-              </p>
-            </div>
+  const HeaderContent = () => (
+    <section className="py-16">
+      <div className="max-w-7xl mx-auto px-8">
+        <Link 
+          href="/marshall-st-louis#investment-cards" 
+          className="inline-flex items-center text-purple-300 hover:text-purple-100 mb-8 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Overview
+        </Link>
+        
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="text-5xl"><Target className="w-12 h-12 text-purple-400" /></div>
+          <div>
+            <h1 className="text-5xl font-semibold text-purple-300 tracking-tight">
+              Market Analysis
+            </h1>
+            <p className="text-xl text-purple-200 mt-2">
+              The Marshall St. Louis - St. Louis University Market Overview
+            </p>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+
+  return (
+    <div className="min-h-screen bg-bg-main dark:bg-black">
+      {/* Header with Background Slideshow */}
+      {loading ? (
+        <section className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 py-16">
+          <div className="max-w-7xl mx-auto px-8">
+            <Link 
+              href="/marshall-st-louis#investment-cards" 
+              className="inline-flex items-center text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 mb-8"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Overview
+            </Link>
+            
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="text-5xl"><Target className="w-12 h-12 text-purple-600 dark:text-purple-400" /></div>
+              <div>
+                <h1 className="text-5xl font-semibold text-purple-900 dark:text-purple-300 tracking-tight">
+                  Market Analysis
+                </h1>
+                <p className="text-xl text-purple-700 dark:text-purple-400 mt-2">
+                  The Marshall St. Louis - St. Louis University Market Overview
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : backgroundImages.length > 0 ? (
+        <BackgroundSlideshow 
+          images={backgroundImages}
+          className="py-16"
+          intervalMs={6000}
+        >
+          <HeaderContent />
+        </BackgroundSlideshow>
+      ) : (
+        <section className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 py-16">
+          <div className="max-w-7xl mx-auto px-8">
+            <Link 
+              href="/marshall-st-louis#investment-cards" 
+              className="inline-flex items-center text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 mb-8"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Overview
+            </Link>
+            
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="text-5xl"><Target className="w-12 h-12 text-purple-600 dark:text-purple-400" /></div>
+              <div>
+                <h1 className="text-5xl font-semibold text-purple-900 dark:text-purple-300 tracking-tight">
+                  Market Analysis
+                </h1>
+                <p className="text-xl text-purple-700 dark:text-purple-400 mt-2">
+                  The Marshall St. Louis - St. Louis University Market Overview
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Content */}
       <section className="py-16 px-8">

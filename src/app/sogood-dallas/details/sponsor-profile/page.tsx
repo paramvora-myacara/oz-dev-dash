@@ -1,7 +1,61 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { Users, Award, Building, TrendingUp } from "lucide-react";
+import { Users, Award, TrendingUp, Building } from "lucide-react";
+import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
+import { getRandomImages } from '../../../../utils/supabaseImages';
 
 export default function SponsorProfilePage() {
+  const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadBackgroundImages() {
+      try {
+        console.log('[SponsorProfile] Starting to load background images...');
+        // Get random 7 images for background slideshow
+        const images = await getRandomImages('sogood-dallas-001', 'general', 7);
+        console.log('[SponsorProfile] Loaded images:', images);
+        setBackgroundImages(images);
+      } catch (error) {
+        console.error('[SponsorProfile] Error loading background images:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBackgroundImages();
+  }, []);
+
+  const HeaderContent = () => (
+    <section className="py-16">
+      <div className="max-w-7xl mx-auto px-8">
+        <Link 
+          href="/sogood-dallas#investment-cards" 
+          className="inline-flex items-center text-orange-300 hover:text-orange-100 mb-8 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Overview
+        </Link>
+        
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="text-5xl"><Users className="w-12 h-12 text-orange-400" /></div>
+          <div>
+            <h1 className="text-5xl font-semibold text-orange-300 tracking-tight">
+              Sponsor Profile
+            </h1>
+            <p className="text-xl text-orange-200 mt-2">
+              Hoque Global - Experienced Development Team
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
   const trackRecord = [
     { value: "14 Acres", description: "Owned land in downtown Dallas" },
     { value: "$3.7B", description: "Kay Bailey Hutchison Convention Center expansion nearby" },
@@ -67,32 +121,68 @@ export default function SponsorProfilePage() {
 
   return (
     <div className="min-h-screen bg-bg-main dark:bg-black">
-      {/* Header */}
-      <section className="bg-gradient-to-br from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20 py-16">
-        <div className="max-w-7xl mx-auto px-8">
-          <Link 
-                          href="/sogood-dallas#investment-cards" 
-            className="inline-flex items-center text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100 mb-8"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Overview
-          </Link>
-          
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="text-5xl"><Users className="w-12 h-12 text-orange-600 dark:text-orange-400" /></div>
-            <div>
-              <h1 className="text-5xl font-semibold text-orange-900 dark:text-orange-300 tracking-tight">
-                Sponsor Profile
-              </h1>
-              <p className="text-xl text-orange-700 dark:text-orange-400 mt-2">
-                Hoque Global & ACARA Management Partnership
-              </p>
+      {/* Header with Background Slideshow */}
+      {loading ? (
+        <section className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 py-16">
+          <div className="max-w-7xl mx-auto px-8">
+            <Link 
+              href="/sogood-dallas#investment-cards" 
+              className="inline-flex items-center text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100 mb-8"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Overview
+            </Link>
+            
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="text-5xl"><Users className="w-12 h-12 text-orange-600 dark:text-orange-400" /></div>
+              <div>
+                <h1 className="text-5xl font-semibold text-orange-900 dark:text-orange-300 tracking-tight">
+                  Sponsor Profile
+                </h1>
+                <p className="text-xl text-orange-700 dark:text-orange-400 mt-2">
+                  Hoque Global - Experienced Development Team
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : backgroundImages.length > 0 ? (
+        <BackgroundSlideshow 
+          images={backgroundImages}
+          className="py-16"
+          intervalMs={6000}
+        >
+          <HeaderContent />
+        </BackgroundSlideshow>
+      ) : (
+        <section className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 py-16">
+          <div className="max-w-7xl mx-auto px-8">
+            <Link 
+              href="/sogood-dallas#investment-cards" 
+              className="inline-flex items-center text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100 mb-8"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Overview
+            </Link>
+            
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="text-5xl"><Users className="w-12 h-12 text-orange-600 dark:text-orange-400" /></div>
+              <div>
+                <h1 className="text-5xl font-semibold text-orange-900 dark:text-orange-300 tracking-tight">
+                  Sponsor Profile
+                </h1>
+                <p className="text-xl text-orange-700 dark:text-orange-400 mt-2">
+                  Hoque Global - Experienced Development Team
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Content */}
       <section className="py-16 px-8">
