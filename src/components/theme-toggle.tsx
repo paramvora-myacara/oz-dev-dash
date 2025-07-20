@@ -1,108 +1,62 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
 const THEME_MODES = {
   LIGHT: 'light',
-  DARK: 'dark',
-  SYSTEM: 'system'
+  DARK: 'dark'
 };
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState(THEME_MODES.SYSTEM);
+  const [theme, setTheme] = useState(THEME_MODES.DARK);
   const [mounted, setMounted] = useState(false);
-
-  // Detect system preference
-  const getSystemTheme = () => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? THEME_MODES.DARK 
-      : THEME_MODES.LIGHT;
-  };
 
   // Apply theme to document
   const applyTheme = (newTheme: string) => {
     const root = document.documentElement;
-    
-    if (newTheme === THEME_MODES.SYSTEM) {
-      const systemTheme = getSystemTheme();
-      root.classList.toggle('dark', systemTheme === THEME_MODES.DARK);
-    } else {
-      root.classList.toggle('dark', newTheme === THEME_MODES.DARK);
-    }
+    root.classList.toggle('dark', newTheme === THEME_MODES.DARK);
   };
 
   // Initialize theme on mount
   useEffect(() => {
     setMounted(true);
     
-    // Get saved theme or default to system
-    const savedTheme = localStorage.getItem('theme') || THEME_MODES.SYSTEM;
+    // Get saved theme or default to dark
+    const savedTheme = localStorage.getItem('theme') || THEME_MODES.DARK;
     setTheme(savedTheme);
     applyTheme(savedTheme);
+  }, []);
 
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSystemThemeChange = () => {
-      if (theme === THEME_MODES.SYSTEM) {
-        applyTheme(THEME_MODES.SYSTEM);
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleSystemThemeChange);
-    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  }, [theme]);
-
-  const cycleTheme = () => {
-    const themes = [THEME_MODES.LIGHT, THEME_MODES.DARK, THEME_MODES.SYSTEM];
-    const currentIndex = themes.indexOf(theme);
-    const nextTheme = themes[(currentIndex + 1) % themes.length];
-    
-    setTheme(nextTheme);
-    localStorage.setItem('theme', nextTheme);
-    applyTheme(nextTheme);
+  const toggleTheme = () => {
+    const newTheme = theme === THEME_MODES.DARK ? THEME_MODES.LIGHT : THEME_MODES.DARK;
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
   };
 
   // Don't render until mounted to avoid hydration issues
   if (!mounted) {
     return (
-      <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 animate-pulse" />
+      <div className="w-16 h-8 rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse" />
     );
   }
 
-  const getIcon = () => {
-    switch (theme) {
-      case THEME_MODES.LIGHT:
-        return <Sun className="h-5 w-5" />;
-      case THEME_MODES.DARK:
-        return <Moon className="h-5 w-5" />;
-      case THEME_MODES.SYSTEM:
-        return <Monitor className="h-5 w-5" />;
-      default:
-        return <Monitor className="h-5 w-5" />;
-    }
-  };
-
-  const getTooltip = () => {
-    switch (theme) {
-      case THEME_MODES.LIGHT:
-        return 'Light mode';
-      case THEME_MODES.DARK:
-        return 'Dark mode';
-      case THEME_MODES.SYSTEM:
-        return 'System theme';
-      default:
-        return 'System theme';
-    }
-  };
-
   return (
     <button
-      onClick={cycleTheme}
-      className="p-2.5 glass-card rounded-2xl text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-all hover:bg-black/10 dark:hover:bg-white/10 group bg-white/80 dark:bg-black/20 backdrop-blur-2xl border border-black/10 dark:border-white/10"
-      title={getTooltip()}
+      onClick={toggleTheme}
+      className="relative w-16 h-8 rounded-full bg-gray-200 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 transition-colors duration-200"
+      title={theme === THEME_MODES.DARK ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {getIcon()}
+      <div className="absolute inset-1 flex justify-between items-center px-1">
+        <Sun className="h-4 w-4 text-yellow-500" />
+        <Moon className="h-4 w-4 text-blue-400" />
+      </div>
+      <div 
+        className={`absolute top-1 w-6 h-6 rounded-full bg-white dark:bg-gray-900 shadow-md transition-transform duration-200 ${
+          theme === THEME_MODES.DARK ? 'translate-x-8' : 'translate-x-1'
+        }`}
+      />
     </button>
   );
 } 
