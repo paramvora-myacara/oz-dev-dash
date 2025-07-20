@@ -33,46 +33,6 @@ export default function InvestmentDashboard() {
 
   // Store scroll position before navigation and restore on return
   useEffect(() => {
-    // Restore scroll position when returning to the page
-    const restoreScroll = () => {
-      const savedScrollPosition = sessionStorage.getItem('dashboardScrollPosition');
-      const shouldScrollToCards = sessionStorage.getItem('scrollToInvestmentCards');
-      
-      if (shouldScrollToCards === 'true') {
-        // Clear the flag
-        sessionStorage.removeItem('scrollToInvestmentCards');
-        // Scroll to investment cards section
-        setTimeout(() => {
-          const cardsSection = document.getElementById('investment-cards');
-          if (cardsSection) {
-            cardsSection.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      } else if (savedScrollPosition) {
-        // Restore the previous scroll position
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(savedScrollPosition));
-        }, 100);
-      }
-    };
-
-    // Check if we're returning from a detail page
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromDetail = urlParams.get('from-detail');
-    
-    if (fromDetail || window.location.hash === '#investment-cards') {
-      // Coming from a detail page, scroll to investment cards
-      setTimeout(() => {
-        const cardsSection = document.getElementById('investment-cards');
-        if (cardsSection) {
-          cardsSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    } else {
-      // Regular page load, restore scroll position
-      restoreScroll();
-    }
-
     // Save scroll position before leaving the page
     const handleBeforeUnload = () => {
       sessionStorage.setItem('dashboardScrollPosition', window.scrollY.toString());
@@ -87,12 +47,43 @@ export default function InvestmentDashboard() {
       }, 100);
     };
 
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      setTimeout(() => {
+        const savedScrollPosition = sessionStorage.getItem('dashboardScrollPosition');
+        if (savedScrollPosition) {
+          window.scrollTo(0, parseInt(savedScrollPosition));
+        }
+      }, 100);
+    };
+
+    // Check if we're returning from a detail page (has #investment-cards hash)
+    if (window.location.hash === '#investment-cards') {
+      // Coming from a detail page, scroll to investment cards
+      setTimeout(() => {
+        const cardsSection = document.getElementById('investment-cards');
+        if (cardsSection) {
+          cardsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // Regular page load, restore scroll position
+      const savedScrollPosition = sessionStorage.getItem('dashboardScrollPosition');
+      if (savedScrollPosition) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScrollPosition));
+        }, 100);
+      }
+    }
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('popstate', handlePopState);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
