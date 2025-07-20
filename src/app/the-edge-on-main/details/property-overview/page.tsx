@@ -1,4 +1,6 @@
 // src/app/the-edge-on-main/details/property-overview/page.tsx
+'use client';
+
 import Link from "next/link";
 import { Building, Waves, Dumbbell, Laptop, Dog, Building2, Bell, Zap, Package, MapPin, Car, Bus, Plane } from "lucide-react";
 import FloorplanSitemapSection from '../../../../components/FloorplanSitemapSection';

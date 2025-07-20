@@ -392,15 +392,15 @@ export default function InvestmentDashboard() {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-center">
             <button
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
-              onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request%20Access%20to%20The%20Marshall%20St.%20Louis%20Investment%20Materials'}
+              onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access - The Marshall St. Louis'}
             >
-              Request Investment Materials
+              Request Vault Access
             </button>
             <button
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-gray-900 dark:text-white font-medium hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-300 text-lg shadow-md hover:shadow-lg"
+              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
               onClick={() => setShowContactModal(true)}
             >
-              Schedule Call with Team
+              Contact the Developer
             </button>
           </div>
         </section>

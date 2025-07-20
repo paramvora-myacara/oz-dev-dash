@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Map, Home, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Map, Home, ChevronLeft, ChevronRight, ZoomIn, Download } from 'lucide-react';
 import { getAvailableImages, type ProjectId, type ImageCategory } from '../utils/supabaseImages';
 
 interface FloorplanSitemapSectionProps {
@@ -16,6 +16,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
   const [floorplanIndex, setFloorplanIndex] = useState(0);
   const [sitemapIndex, setSitemapIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState({ floorplan: true, sitemap: true });
 
   useEffect(() => {
     async function loadImages() {
@@ -39,151 +40,260 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
 
   const nextFloorplan = () => {
     setFloorplanIndex((prev) => (prev + 1) % floorplanImages.length);
+    setImageLoading(prev => ({ ...prev, floorplan: true }));
   };
 
   const prevFloorplan = () => {
     setFloorplanIndex((prev) => (prev - 1 + floorplanImages.length) % floorplanImages.length);
+    setImageLoading(prev => ({ ...prev, floorplan: true }));
   };
 
   const nextSitemap = () => {
     setSitemapIndex((prev) => (prev + 1) % sitemapImages.length);
+    setImageLoading(prev => ({ ...prev, sitemap: true }));
   };
 
   const prevSitemap = () => {
     setSitemapIndex((prev) => (prev - 1 + sitemapImages.length) % sitemapImages.length);
+    setImageLoading(prev => ({ ...prev, sitemap: true }));
   };
 
   // Don't render if no images are available
   if (loading) {
-    return null; // Or a loading skeleton
+    return (
+      <section className="py-16 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6 w-48"></div>
+              <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+            </div>
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6 w-48"></div>
+              <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   if (floorplanImages.length === 0 && sitemapImages.length === 0) {
     return null;
   }
 
+  // Determine if we should center the content (when only one section has images)
+  const shouldCenter = (floorplanImages.length > 0 && sitemapImages.length === 0) || 
+                      (floorplanImages.length === 0 && sitemapImages.length > 0);
+
   return (
-    <section className="py-12 px-4 md:px-8 bg-white dark:bg-black">
+    <section className="py-16 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Property Plans & Layouts
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Explore detailed floor plans and site maps to understand the property layout and design
+          </p>
+        </div>
+
+        <div className={`grid gap-12 ${
+          shouldCenter 
+            ? 'grid-cols-1 max-w-4xl mx-auto' 
+            : 'grid-cols-1 lg:grid-cols-2'
+        }`}>
           
           {/* Floorplans */}
           {floorplanImages.length > 0 && (
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-3 mb-6">
-                <Home className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  Floor Plans
-                </h3>
-                {floorplanImages.length > 1 && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {floorplanIndex + 1} of {floorplanImages.length}
-                  </span>
-                )}
-              </div>
-              
-              <div className="relative aspect-[4/3] bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-                <Image
-                  src={floorplanImages[floorplanIndex]}
-                  alt={`Floor plan ${floorplanIndex + 1}`}
-                  fill
-                  className="object-contain p-4"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+            <div className="group">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg">
+                      <Home className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        Floor Plans
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">Detailed unit layouts</p>
+                    </div>
+                  </div>
+                  {floorplanImages.length > 1 && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-full">
+                      <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                        {floorplanIndex + 1}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">of</span>
+                      <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                        {floorplanImages.length}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
+                  {imageLoading.floorplan && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    </div>
+                  )}
+                  <Image
+                    src={floorplanImages[floorplanIndex]}
+                    alt={`Floor plan ${floorplanIndex + 1}`}
+                    fill
+                    className={`object-contain p-6 transition-opacity duration-300 ${
+                      imageLoading.floorplan ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    onLoad={() => setImageLoading(prev => ({ ...prev, floorplan: false }))}
+                  />
+                  
+                  {/* Image Actions */}
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                      <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                      <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                  </div>
+                  
+                  {floorplanImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevFloorplan}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={nextFloorplan}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
                 
                 {floorplanImages.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevFloorplan}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={nextFloorplan}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
+                  <div className="flex justify-center mt-6 space-x-3">
+                    {floorplanImages.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setFloorplanIndex(index);
+                          setImageLoading(prev => ({ ...prev, floorplan: true }));
+                        }}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          index === floorplanIndex 
+                            ? 'bg-indigo-600 dark:bg-indigo-400 scale-125' 
+                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
-              
-              {floorplanImages.length > 1 && (
-                <div className="flex justify-center mt-4 space-x-2">
-                  {floorplanImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setFloorplanIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === floorplanIndex 
-                          ? 'bg-indigo-600 dark:bg-indigo-400' 
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           )}
 
           {/* Sitemaps */}
           {sitemapImages.length > 0 && (
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-3 mb-6">
-                <Map className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  Site Map
-                </h3>
-                {sitemapImages.length > 1 && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {sitemapIndex + 1} of {sitemapImages.length}
-                  </span>
-                )}
-              </div>
-              
-              <div className="relative aspect-[4/3] bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-                <Image
-                  src={sitemapImages[sitemapIndex]}
-                  alt={`Site map ${sitemapIndex + 1}`}
-                  fill
-                  className="object-contain p-4"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+            <div className="group">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg">
+                      <Map className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        Site Map
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">Property layout & location</p>
+                    </div>
+                  </div>
+                  {sitemapImages.length > 1 && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        {sitemapIndex + 1}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">of</span>
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        {sitemapImages.length}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
+                  {imageLoading.sitemap && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                    </div>
+                  )}
+                  <Image
+                    src={sitemapImages[sitemapIndex]}
+                    alt={`Site map ${sitemapIndex + 1}`}
+                    fill
+                    className={`object-contain p-6 transition-opacity duration-300 ${
+                      imageLoading.sitemap ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    onLoad={() => setImageLoading(prev => ({ ...prev, sitemap: false }))}
+                  />
+                  
+                  {/* Image Actions */}
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                      <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                      <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+                  </div>
+                  
+                  {sitemapImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevSitemap}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={nextSitemap}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
                 
                 {sitemapImages.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevSitemap}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={nextSitemap}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
+                  <div className="flex justify-center mt-6 space-x-3">
+                    {sitemapImages.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSitemapIndex(index);
+                          setImageLoading(prev => ({ ...prev, sitemap: true }));
+                        }}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          index === sitemapIndex 
+                            ? 'bg-emerald-600 dark:bg-emerald-400 scale-125' 
+                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
-              
-              {sitemapImages.length > 1 && (
-                <div className="flex justify-center mt-4 space-x-2">
-                  {sitemapImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSitemapIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === sitemapIndex 
-                          ? 'bg-emerald-600 dark:bg-emerald-400' 
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </div>

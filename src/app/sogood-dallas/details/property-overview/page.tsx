@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Building, Waves, Dumbbell, Laptop, Coffee, Building2, Users, Utensils, Car, MapPin, Bus, Plane } from "lucide-react";
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
+import FloorplanSitemapSection from '../../../../components/FloorplanSitemapSection';
 
 export default function PropertyOverviewPage() {
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
@@ -181,6 +182,9 @@ export default function PropertyOverviewPage() {
           </div>
         </section>
       )}
+
+      {/* Floorplan & Sitemap Section - Only shows if images are available */}
+      <FloorplanSitemapSection projectId="sogood-dallas-001" />
 
       {/* Content */}
       <section className="py-16 px-8">
