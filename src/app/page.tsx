@@ -80,16 +80,16 @@ export default function PortfolioPage() {
 
               {/* Phoenix Gateway Plaza */}
               <Link
-                href="/property-2"
+                href="/sogood-dallas"
                 className="group bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:scale-[1.02]"
               >
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-6 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
                     <Building className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Phoenix Gateway Plaza</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">Mesa, AZ • 439 Units</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Strategic location with exceptional connectivity</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">SoGood Dallas</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">Dallas, TX • 388 Units</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Innovation district with mixed-use development</p>
                   <span className="text-purple-600 dark:text-purple-400 font-medium group-hover:underline">Explore Property →</span>
                 </div>
               </Link>

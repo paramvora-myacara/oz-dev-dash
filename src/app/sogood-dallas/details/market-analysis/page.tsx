@@ -3,28 +3,28 @@ import { Target, TrendingUp, Users, Home, Building, Factory } from "lucide-react
 
 export default function MarketAnalysisPage() {
   const marketMetrics = [
-    { label: "Population Growth (2020-2030)", value: "+18.5%", description: "Phoenix-Mesa MSA projected growth" },
-    { label: "Median Household Income", value: "$68,400", description: "Mesa city median (2023)" },
-    { label: "Job Growth Rate", value: "+3.2%", description: "Annual employment growth" },
-    { label: "Housing Shortage", value: "56,000+", description: "Units needed to meet demand" },
-    { label: "Rent Growth (5-year)", value: "+42%", description: "Class A multifamily rent appreciation" },
-    { label: "Occupancy Rate", value: "96.2%", description: "Current market occupancy" }
+    { label: "DFW Population", value: "7M+", description: "Metro area population leading US growth" },
+    { label: "Job Growth (5-Year)", value: "602,200", description: "Net new jobs added, leading all US metros" },
+    { label: "Fortune 1000 HQs", value: "43", description: "Companies headquartered in DFW" },
+    { label: "Tech Jobs Added", value: "59,000", description: "New technology positions in past 5 years" },
+    { label: "Annual Migration", value: "120,000+", description: "Net in-migration to Texas annually" },
+    { label: "Rent Growth", value: "+42%", description: "Class A multifamily rent appreciation (5-year)" }
   ];
 
   const employers = [
-    { name: "Banner Health", employees: "32,000+", industry: "Healthcare", distance: "8 mi" },
-    { name: "Boeing", employees: "15,000+", industry: "Aerospace", distance: "12 mi" },
-    { name: "Arizona State University", employees: "12,000+", industry: "Education", distance: "15 mi" },
-    { name: "Salt River Project", employees: "7,500+", industry: "Utilities", distance: "10 mi" },
-    { name: "City of Phoenix", employees: "14,000+", industry: "Government", distance: "18 mi" },
-    { name: "Intel", employees: "12,000+", industry: "Technology", distance: "20 mi" }
+    { name: "American Airlines", employees: "30,000+", industry: "Aviation", distance: "15 mi" },
+    { name: "AT&T", employees: "25,000+", industry: "Telecommunications", distance: "12 mi" },
+    { name: "Texas Instruments", employees: "15,000+", industry: "Technology", distance: "18 mi" },
+    { name: "Bank of America", employees: "12,000+", industry: "Financial Services", distance: "10 mi" },
+    { name: "Dallas County", employees: "14,000+", industry: "Government", distance: "8 mi" },
+    { name: "Baylor Scott & White", employees: "45,000+", industry: "Healthcare", distance: "20 mi" }
   ];
 
   const demographics = [
-    { category: "Age 25-34", percentage: "22%", description: "Prime renting demographic" },
-    { category: "Age 35-44", percentage: "18%", description: "Family formation years" },
-    { category: "College Educated", percentage: "34%", description: "Bachelor's degree or higher" },
-    { category: "Median Age", percentage: "36.8", description: "Years old" }
+    { category: "Age 25-34", percentage: "16.8%", description: "Prime renting demographic" },
+    { category: "Age 35-44", percentage: "14.2%", description: "Family formation years" },
+    { category: "College Educated", percentage: "38%", description: "Bachelor's degree or higher" },
+    { category: "Median Household Income", percentage: "$70,663", description: "DFW metro median" }
   ];
 
   return (
@@ -33,7 +33,7 @@ export default function MarketAnalysisPage() {
       <section className="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 py-16">
         <div className="max-w-7xl mx-auto px-8">
           <Link 
-            href="/property-2#investment-cards" 
+                          href="/sogood-dallas#investment-cards" 
             className="inline-flex items-center text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 mb-8"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +49,7 @@ export default function MarketAnalysisPage() {
                 Market Analysis
               </h1>
               <p className="text-xl text-purple-700 dark:text-purple-400 mt-2">
-                Phoenix Gateway Plaza - Phoenix-Mesa Market Overview
+                SoGood Dallas - Dallas-Fort Worth Market Overview
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function MarketAnalysisPage() {
             </div>
           </div>
 
-          {/* Demographics & Supply/Demand */}
+          {/* Demographics & Market Drivers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Demographics</h3>
@@ -115,71 +115,55 @@ export default function MarketAnalysisPage() {
             </div>
             
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Supply & Demand Analysis</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Economic Diversification</h3>
               <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Home className="w-6 h-6 text-red-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Housing Deficit</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Arizona needs 56,000+ additional housing units to meet current demand</p>
-                  </div>
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Technology Sector</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">One-third of Texas tech jobs located in DFW, with 59,000 new positions added in past 5 years</p>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><TrendingUp className="w-6 h-6 text-green-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Population Growth</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Phoenix-Mesa MSA adding 80,000+ new residents annually</p>
-                  </div>
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Corporate Headquarters</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Home to 43 Fortune 1000 companies, including 22 Fortune 500 companies</p>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Building className="w-6 h-6 text-blue-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Limited New Supply</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Construction constraints limit new multifamily development</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Factory className="w-6 h-6 text-purple-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Job Creation</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Major employers continuing expansion in Phoenix metro</p>
-                  </div>
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Population Growth</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">DFW leads all US metro areas in population growth, adding 120,000+ annually</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Market Drivers */}
+          {/* Market Opportunity */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Key Market Drivers</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Innovation District Opportunity</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
                   <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Migration</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Net in-migration of 120,000+ annually to Arizona</p>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Urban Revitalization</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Transforming Dallas' southern sector with catalytic development</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
                   <Building className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Development</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Transit-oriented development prioritized by Mesa</p>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Mixed-Use Development</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Combining residential, commercial, and innovation spaces</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
                   <Factory className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Industries</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Healthcare, aerospace, and tech driving job growth</p>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Job Creation</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Innovation center anchored by GSV Ventures creating tech ecosystem</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 </div>
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Rent Growth</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Strong rent appreciation across all asset classes</p>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Value Creation</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Master-planned approach maximizing long-term value appreciation</p>
               </div>
             </div>
           </div>
@@ -187,4 +171,4 @@ export default function MarketAnalysisPage() {
       </section>
     </div>
   );
-} 
+}

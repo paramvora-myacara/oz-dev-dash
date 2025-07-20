@@ -3,19 +3,19 @@ import { TrendingUp, DollarSign, Calendar, Users, Target, Building } from "lucid
 
 export default function FinancialReturnsPage() {
   const projections = [
-    { label: "10-Year Equity Multiple", value: "2.8–3.2x", description: "Projected returns for investors over full hold period" },
-    { label: "3-Year Equity Multiple", value: "2.1x", description: "Early returns for stabilization period" },
-    { label: "Preferred Return", value: "7.0%", description: "Guaranteed minimum annual return" },
-    { label: "IRR Target", value: "18-22%", description: "Internal rate of return over full cycle" },
-    { label: "Cash-on-Cash", value: "9-12%", description: "Annual cash distributions to investors" },
-    { label: "Tax Benefits", value: "100%", description: "Federal tax exemption on appreciation" }
+    { label: "10-Year Equity Multiple", value: "2.88x", description: "Projected returns for investors over full hold period" },
+    { label: "5-Year Equity Multiple", value: "2.5x", description: "Returns for stabilization period" },
+    { label: "Preferred Return", value: "9.0%", description: "Annual preferred return until stabilization" },
+    { label: "IRR Target (5-Year)", value: "20-21%", description: "Internal rate of return for mid-term hold" },
+    { label: "IRR Target (10-Year)", value: "19-20%", description: "Internal rate of return over full cycle" },
+    { label: "Unlevered Yield", value: "7.2%", description: "Yield on cost through conservative underwriting" }
   ];
 
   const timeline = [
-    { year: "Year 1-2", phase: "Development", distribution: "0%", description: "Construction and lease-up phase" },
-    { year: "Year 3-5", phase: "Stabilization", distribution: "8-10%", description: "Property reaches full occupancy" },
-    { year: "Year 6-8", phase: "Value Creation", distribution: "10-12%", description: "Rent growth and NOI expansion" },
-    { year: "Year 9-10", phase: "Exit Preparation", distribution: "12%+", description: "Optimization for sale or refinance" }
+    { year: "Year 1-2", phase: "Development", distribution: "0%", description: "Construction and innovation center lease-up" },
+    { year: "Year 3-4", phase: "Stabilization", distribution: "9%", description: "Property reaches stabilized occupancy" },
+    { year: "Year 5-7", phase: "Value Creation", distribution: "9%+", description: "NOI growth and rent appreciation" },
+    { year: "Year 8-10", phase: "Exit Preparation", distribution: "9%+", description: "Optimization for sale or refinance" }
   ];
 
   return (
@@ -24,7 +24,7 @@ export default function FinancialReturnsPage() {
       <section className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20 py-16">
         <div className="max-w-7xl mx-auto px-8">
           <Link 
-            href="/property-2#investment-cards" 
+                          href="/sogood-dallas#investment-cards" 
             className="inline-flex items-center text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 mb-8"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@ export default function FinancialReturnsPage() {
                 Financial Returns
               </h1>
               <p className="text-xl text-emerald-700 dark:text-emerald-400 mt-2">
-                Phoenix Gateway Plaza - Projected Investment Performance
+                SoGood Dallas - Projected Investment Performance
               </p>
             </div>
           </div>
@@ -75,7 +75,7 @@ export default function FinancialReturnsPage() {
                       <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{phase.year}</h4>
                       <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{phase.distribution}</span>
                     </div>
-                    <p className="text-lg font-medium text-emerald-800 dark:text-emerald-200 mb-2">{phase.phase}</p>
+                    <p className="text-emerald-700 dark:text-emerald-300 font-medium mb-2">{phase.phase}</p>
                     <p className="text-gray-600 dark:text-gray-400">{phase.description}</p>
                   </div>
                 </div>
@@ -83,28 +83,28 @@ export default function FinancialReturnsPage() {
             </div>
           </div>
 
-          {/* Tax Benefits Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Opportunity Zone Benefits */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Opportunity Zone Benefits</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Target className="w-6 h-6 text-emerald-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Tax Deferral</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Defer capital gains taxes until 2026 or sale date</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Opportunity Zone Tax Benefits</h3>
+              <div className="space-y-6">
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Capital Gains Deferral</h4>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400">Defer federal capital gains tax until 2026 or fund exit</p>
+                </div>
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Basis Step-Up</h4>
+                    <p className="text-gray-600 dark:text-gray-400">Partial forgiveness of deferred gains after 5+ years</p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><DollarSign className="w-6 h-6 text-emerald-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Step-Up in Basis</h4>
-                    <p className="text-gray-600 dark:text-gray-400">10% reduction in deferred taxes after 5 years, 15% after 7 years</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Calendar className="w-6 h-6 text-emerald-500" /></div>
-                  <div>
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">Tax-Free Appreciation</h4>
                     <p className="text-gray-600 dark:text-gray-400">100% federal tax exemption on all appreciation after 10 years</p>
                   </div>
@@ -117,23 +117,31 @@ export default function FinancialReturnsPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Minimum Investment</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">$250,000</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">$500,000</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Preferred Return</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">7.0% Annual</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">9.0% Annual</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Target Hold Period</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">10 Years</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">10+ Years</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Distribution Frequency</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Quarterly</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Annual</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Fund Structure</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Delaware LLC</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Dallas OZ Fund I LLC</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Management Fee</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">2.0% Annual</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Sponsor Promote</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">30% after pref</span>
                 </div>
               </div>
             </div>
@@ -142,4 +150,4 @@ export default function FinancialReturnsPage() {
       </section>
     </div>
   );
-} 
+}

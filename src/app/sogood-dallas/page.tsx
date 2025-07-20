@@ -11,7 +11,7 @@ import {
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function InvestmentDashboard() {
+export default function Property2Page() {
   const [showContactModal, setShowContactModal] = useState(false);
   const router = useRouter();
   
@@ -81,20 +81,20 @@ export default function InvestmentDashboard() {
   }, []);
 
   const tickerMetrics = [
-    { label: "10-Yr Equity Multiple", value: "2.8–3.2x", change: "+12%" },
-    { label: "3-Yr Equity Multiple", value: "2.1x", change: "+8%" },
-    { label: "Preferred Return", value: "7%", change: "Guaranteed" },
-    { label: "Min Investment", value: "$250K", change: "Minimum" },
-    { label: "Total Units", value: "439", change: "Phase I & II" },
-    { label: "Location", value: "Mesa, AZ", change: "Prime Location" },
-    { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
+    { label: "10-Yr Equity Multiple", value: "2.88x", change: "+20%" },
+    { label: "5-Yr Equity Multiple", value: "2.5x", change: "+15%" },
+    { label: "Preferred Return", value: "9%", change: "Guaranteed" },
+    { label: "Min Investment", value: "$500K", change: "Minimum" },
+    { label: "Total Units", value: "388", change: "Phase I & II" },
+    { label: "Location", value: "Dallas, TX", change: "Prime Location" },
+    { label: "Hold Period", value: "10+ Years", change: "OZ Qualified" },
     { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
   ];
 
   const compellingReasons = [
     {
       title: "100% Tax-Free Growth",
-      description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period.",
+      description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period, plus property tax abatement through PFC.",
       icon: <Rocket className="w-12 h-12" />,
       highlight: "Tax-Free Exit",
       gradient: "from-emerald-50/20 via-emerald-100/20 to-green-200/20 dark:from-emerald-900/10 dark:via-emerald-800/10 dark:to-green-900/10",
@@ -103,20 +103,20 @@ export default function InvestmentDashboard() {
       iconColor: "text-emerald-600 dark:text-emerald-400"
     },
     {
-      title: "Massive Housing Shortage",
-      description: "Arizona faces 56,000+ unit housing deficit. Mesa is one of the fastest-growing cities with sustained population growth driving demand.",
+      title: "Innovation District Creation",
+      description: "SoGood represents a major innovation district featuring a pre-leased innovation center to GSV Ventures, transforming Dallas' southern sector into a tech hub.",
       icon: <BarChart3 className="w-12 h-12" />,
-      highlight: "56K+ Unit Shortage",
+      highlight: "GSV Ventures Pre-Leased",
       gradient: "from-blue-50/20 via-blue-100/20 to-indigo-200/20 dark:from-blue-900/10 dark:via-blue-800/10 dark:to-indigo-900/10",
       textColor: "text-blue-900 dark:text-blue-200",
       accentColor: "text-blue-800 dark:text-blue-300",
       iconColor: "text-blue-600 dark:text-blue-400"
     },
     {
-      title: "Prime Transit Location",
-      description: "Located directly adjacent to Country Club & Main Street Light Rail Station, providing unmatched regional connectivity and transit access.",
+      title: "Strategic Dallas Location",
+      description: "Located near iconic neighborhoods including the Farmers Market, Deep Ellum, and Fair Park, with proximity to the $3.7B Convention Center expansion.",
       icon: <Train className="w-12 h-12" />,
-      highlight: "Light Rail Adjacent",
+      highlight: "Convention Center Adjacent",
       gradient: "from-purple-50/20 via-purple-100/20 to-pink-200/20 dark:from-purple-900/10 dark:via-purple-800/10 dark:to-pink-900/10",
       textColor: "text-purple-900 dark:text-purple-200",
       accentColor: "text-purple-800 dark:text-purple-300",
@@ -130,11 +130,11 @@ export default function InvestmentDashboard() {
       title: "Financial Returns",
       icon: <TrendingUp className="w-10 h-10" />,
       keyMetrics: [
-        { label: "10-Yr Equity Multiple", value: "2.8–3.2x" },
-        { label: "3-Yr Equity Multiple", value: "2.1x" },
-        { label: "Preferred Return", value: "7%" }
+        { label: "10-Yr Equity Multiple", value: "2.88x" },
+        { label: "5-Yr Equity Multiple", value: "2.5x" },
+        { label: "Preferred Return", value: "9%" }
       ],
-      summary: "Projected post-construction returns for OZ investors",
+      summary: "Conservative projections with 7.2% unlevered yield on cost",
       gradient: "from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20",
       textColor: "text-emerald-900 dark:text-emerald-300",
       accentColor: "text-emerald-700 dark:text-emerald-400"
@@ -144,11 +144,11 @@ export default function InvestmentDashboard() {
       title: "Property Overview",
       icon: <Building className="w-10 h-10" />,
       keyMetrics: [
-        { label: "Total Units", value: "439" },
-        { label: "Location", value: "Mesa, AZ" },
-        { label: "Delivery", value: "2027" }
+        { label: "Total Units", value: "388" },
+        { label: "Innovation Center", value: "35,264 SF" },
+        { label: "Retail Space", value: "49,592 SF" }
       ],
-      summary: "Phoenix Gateway Plaza – 2-phase, transit-oriented development",
+      summary: "SoGood Dallas – Master-planned innovation district in two phases",
       gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
       textColor: "text-indigo-900 dark:text-indigo-300",
       accentColor: "text-indigo-700 dark:text-indigo-400"
@@ -158,11 +158,11 @@ export default function InvestmentDashboard() {
       title: "Market Analysis", 
       icon: <Target className="w-10 h-10" />,
       keyMetrics: [
-        { label: "Housing Shortage", value: "56K+ units" },
-        { label: "Population Growth", value: "500K+" },
-        { label: "Major Employers", value: "Banner, Boeing" }
+        { label: "DFW Job Growth", value: "602K+ Jobs" },
+        { label: "Population", value: "7M+" },
+        { label: "Fortune 1000 HQs", value: "43" }
       ],
-      summary: "Phoenix-Mesa market with strong demographic drivers",
+      summary: "Dallas-Fort Worth leading nation in job and population growth",
       gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20", 
       textColor: "text-purple-900 dark:text-purple-300",
       accentColor: "text-purple-700 dark:text-purple-400"
@@ -172,11 +172,11 @@ export default function InvestmentDashboard() {
       title: "Sponsor Profile",
       icon: <Users className="w-10 h-10" />,
       keyMetrics: [
-        { label: "Fund Name", value: "ACARA OZ Fund I" },
-        { label: "Developer", value: "Juniper Mountain Capital" },
-        { label: "Track Record", value: "1,158+ Units Delivered" }
+        { label: "Fund Name", value: "Dallas OZ Fund I" },
+        { label: "Developer", value: "Hoque Global" },
+        { label: "Land Ownership", value: "14 Acres Owned" }
       ],
-      summary: "Experienced team with proven OZ development expertise",
+      summary: "Experienced team with proven track record and existing land ownership",
       gradient: "from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20",
       textColor: "text-orange-900 dark:text-orange-300",
       accentColor: "text-orange-700 dark:text-orange-400"
@@ -190,20 +190,20 @@ export default function InvestmentDashboard() {
         <header className="relative z-30 p-4 md:p-8 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-black dark:text-white tracking-tight mb-6">
-              Phoenix Gateway Plaza
+              SoGood Dallas
             </h1>
             <div className="flex flex-wrap gap-3">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                 <MapPin className="w-4 h-4" />
-                Mesa, AZ
+                Dallas, TX
               </span>
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                 <DollarSign className="w-4 h-4" />
-                $250K Minimum Investment
+                $500K Minimum Investment
               </span>
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                 <Briefcase className="w-4 h-4" />
-                ACARA OZ Fund I LLC
+                Dallas OZ Fund I LLC
               </span>
             </div>
           </div>
@@ -214,7 +214,7 @@ export default function InvestmentDashboard() {
           <div className="absolute inset-0">
             <Image
               src="/property-hero.jpg"
-              alt="Phoenix Gateway Plaza - Premium Multifamily Property"
+              alt="SoGood Dallas - Mixed Use Innovation District"
               fill
               className="object-cover rounded-3xl"
               priority
@@ -289,24 +289,24 @@ export default function InvestmentDashboard() {
             <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border border-black/10 dark:border-white/10">
               <div className="prose prose-xl max-w-none text-black dark:text-white">
                 <p className="text-2xl leading-relaxed mb-6 italic font-light">
-                  &quot;What if we could solve Arizona&apos;s housing crisis while creating generational wealth for our investors?&quot;
+                  &quot;What if we could transform Dallas&apos; southern sector while creating an innovation ecosystem that attracts global talent?&quot;
                 </p>
                 <p className="mb-6 font-light text-lg">
-                  This question sparked the vision for <strong>Phoenix Gateway Plaza</strong> — a transformative development 
-                  that stands at the intersection of unprecedented opportunity and pressing social need. In the heart 
-                  of Mesa, where the city&apos;s ambitious light rail expansion meets a community hungry for quality housing, 
-                  we&apos;re not just building apartments — we&apos;re architecting the future.
+                  This vision drives <strong>SoGood Dallas</strong> — an ambitious master-planned urban community that stands 
+                  as a catalyst for economic revitalization in one of Dallas&apos; most promising areas. Strategically located 
+                  near iconic neighborhoods including the Farmers Market, Deep Ellum, the Cedars, and Fair Park, SoGood 
+                  represents more than development — it&apos;s urban transformation.
                 </p>
                 <p className="mb-6 font-light text-lg">
-                  Our <strong>two-phase journey</strong> delivers 439 new multifamily units directly adjacent to Mesa&apos;s 
-                  light rail station. Phase I introduces 161 residences with retail frontage, while Phase II adds 278 
-                  additional homes including family-sized layouts. This isn&apos;t just convenience — it&apos;s a lifestyle 
-                  transformation that connects residents to opportunity across the Phoenix Valley.
+                  Our <strong>innovative two-phase approach</strong> delivers 388 residential units anchored by a 35,264 SF 
+                  innovation center fully pre-leased to GSV Ventures. Phase I introduces The Hub at SoGood with 116 units 
+                  plus the innovation center, while Phase II adds MKT Residences with 272 units and retail featuring 
+                  Farmers Commons. This isn&apos;t just mixed-use development — it&apos;s the creation of Dallas&apos; next great district.
                 </p>
                 <p className="font-semibold text-xl text-black dark:text-white">
-                  With all entitlements secured and Opportunity Zone incentives offering tax-free growth potential, 
-                  Phoenix Gateway Plaza represents the rare convergence where profit meets purpose in one of America&apos;s 
-                  fastest-growing markets.
+                  With Hoque Global&apos;s 14-acre land ownership eliminating acquisition risk, Opportunity Zone tax benefits, 
+                  and proximity to the $3.7B Convention Center expansion, SoGood Dallas represents the convergence of 
+                  visionary planning and exceptional investment opportunity in America&apos;s fastest-growing metropolitan area.
                 </p>
               </div>
             </div>
@@ -328,7 +328,7 @@ export default function InvestmentDashboard() {
               {investmentCards.map((card, idx) => (
                 <Link
                   key={idx}
-                  href={`/property-2/details/${card.id}`}
+                  href={`/sogood-dallas/details/${card.id}`}
                   className={`glass-card rounded-3xl p-8 bg-gradient-to-br ${card.gradient} border border-gray-200 dark:border-white/20 shadow-md dark:shadow-xl shadow-gray-200/50 dark:shadow-white/5 hover:shadow-lg dark:hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 animate-fadeIn group relative overflow-hidden`}
                   style={{ animationDelay: `${idx * 150}ms` }}
                 >
@@ -370,7 +370,7 @@ export default function InvestmentDashboard() {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-center">
             <button
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
-              onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access - Phoenix Gateway Plaza'}
+              onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access - SoGood Dallas'}
             >
               Request Vault Access
             </button>
@@ -397,10 +397,10 @@ export default function InvestmentDashboard() {
                 Contact Information
               </h3>
               <div className="space-y-4 text-black/70 dark:text-white/70">
-                <p><strong>Developer:</strong> Juniper Mountain Capital</p>
-                <p><strong>Fund:</strong> ACARA OZ Fund I LLC</p>
+                <p><strong>Developer:</strong> Hoque Global</p>
+                <p><strong>Fund:</strong> Dallas OZ Fund I LLC</p>
                 <p><strong>Email:</strong> <a href="mailto:deals@acaracap.com" className="text-blue-600 dark:text-blue-400 hover:underline">deals@acaracap.com</a></p>
-                <p><strong>Phone:</strong> <a href="tel:+14805551234" className="text-blue-600 dark:text-blue-400 hover:underline">(480) 555-1234</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+19258388826" className="text-blue-600 dark:text-blue-400 hover:underline">(925) 838-8826</a></p>
               </div>
             </div>
           </div>
@@ -408,4 +408,4 @@ export default function InvestmentDashboard() {
       </div>
     </div>
   );
-} 
+}
