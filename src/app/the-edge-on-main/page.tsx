@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
@@ -8,13 +8,29 @@ import {
   Rocket, BarChart3, Train, TrendingUp, Building, Target, Users, Expand,
   MapPin, DollarSign, Briefcase 
 } from "lucide-react";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import ImageCarousel from '../../components/ImageCarousel';
+import { getRandomImages } from '../../utils/supabaseImages';
 
 export default function InvestmentDashboard() {
   const [showContactModal, setShowContactModal] = useState(false);
+  const [heroImages, setHeroImages] = useState<string[]>([]);
   const router = useRouter();
   
+  // Load hero images
+  useEffect(() => {
+    async function loadHeroImages() {
+      try {
+        const images = await getRandomImages('edge-on-main-mesa-001', 'general', 5);
+        setHeroImages(images);
+      } catch (error) {
+        console.error('Error loading hero images:', error);
+      }
+    }
+
+    loadHeroImages();
+  }, []);
+
   // Store scroll position before navigation and restore on return
   useEffect(() => {
     // Restore scroll position when returning to the page
@@ -221,13 +237,22 @@ export default function InvestmentDashboard() {
         {/* Hero Image Section */}
         <section className="h-[30vh] sm:h-[40vh] md:h-[50vh] relative overflow-hidden px-4 md:px-8">
           <div className="absolute inset-0">
-            <Image
-              src="/property-hero.jpg"
-              alt="The Edge on Main - Premium Multifamily Property"
-              fill
-              className="object-cover rounded-3xl"
-              priority
-            />
+            {heroImages.length > 0 ? (
+              <ImageCarousel
+                images={heroImages}
+                className="h-full rounded-3xl"
+                intervalMs={4000}
+                autoplay={true}
+              />
+            ) : (
+              <Image
+                src="/property-hero.jpg"
+                alt="The Edge on Main - Premium Multifamily Property"
+                fill
+                className="object-cover rounded-3xl"
+                priority
+              />
+            )}
           </div>
         </section>
 

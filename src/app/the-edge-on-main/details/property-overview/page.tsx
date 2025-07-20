@@ -1,5 +1,7 @@
+// src/app/the-edge-on-main/details/property-overview/page.tsx
 import Link from "next/link";
 import { Building, Waves, Dumbbell, Laptop, Dog, Building2, Bell, Zap, Package, MapPin, Car, Bus, Plane } from "lucide-react";
+import FloorplanSitemapSection from '../../../../components/FloorplanSitemapSection';
 
 export default function PropertyOverviewPage() {
   const amenities = [
@@ -39,15 +41,18 @@ export default function PropertyOverviewPage() {
             <div className="text-5xl"><Building className="w-12 h-12 text-indigo-600 dark:text-indigo-400" /></div>
             <div>
               <h1 className="text-5xl font-semibold text-indigo-900 dark:text-indigo-300 tracking-tight">
-                The Edge on Main
+                Property Overview
               </h1>
               <p className="text-xl text-indigo-700 dark:text-indigo-400 mt-2">
-                Modern multifamily development in Mesa, Arizona
+                The Edge on Main - Modern multifamily development in Mesa, Arizona
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Floorplan & Sitemap Section - Only shows if images are available */}
+      <FloorplanSitemapSection projectId="edge-on-main-mesa-001" />
 
       {/* Content */}
       <section className="py-16 px-8">
@@ -74,94 +79,31 @@ export default function PropertyOverviewPage() {
             
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
               <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-2">Parking</h3>
-              <p className="text-4xl font-bold text-indigo-900 dark:text-indigo-300">468</p>
+              <p className="text-4xl font-bold text-indigo-900 dark:text-indigo-300">525</p>
               <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-2">Covered spaces</p>
-            </div>
-          </div>
-
-          {/* Location & Accessibility */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Location & Transportation</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><MapPin className="w-6 h-6 text-red-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Prime Mesa Location</h4>
-                    <p className="text-gray-600 dark:text-gray-400">15 minutes from downtown Phoenix</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Car className="w-6 h-6 text-blue-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Highway Access</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Direct access to US-60 and Loop 202</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Bus className="w-6 h-6 text-green-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Public Transit</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Valley Metro Light Rail nearby</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl"><Plane className="w-6 h-6 text-purple-500" /></div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Phoenix Airport</h4>
-                    <p className="text-gray-600 dark:text-gray-400">25 minutes to PHX Sky Harbor</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Nearby Attractions</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Downtown Phoenix</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">18 mi</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Arizona State University</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">12 mi</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Tempe Town Lake</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">8 mi</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Scottsdale Fashion Square</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">15 mi</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Mesa Arts Center</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">3 mi</span>
-                </div>
-              </div>
             </div>
           </div>
 
           {/* Unit Mix */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Unit Mix & Pricing</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Unit Mix</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 text-gray-900 dark:text-gray-100">Unit Type</th>
-                    <th className="text-left py-3 text-gray-900 dark:text-gray-100">Count</th>
-                    <th className="text-left py-3 text-gray-900 dark:text-gray-100">Square Feet</th>
-                    <th className="text-left py-3 text-gray-900 dark:text-gray-100">Market Rent</th>
+                    <th className="text-left py-3 text-gray-600 dark:text-gray-400">Unit Type</th>
+                    <th className="text-center py-3 text-gray-600 dark:text-gray-400">Count</th>
+                    <th className="text-center py-3 text-gray-600 dark:text-gray-400">Square Feet</th>
+                    <th className="text-right py-3 text-gray-600 dark:text-gray-400">Projected Rent</th>
                   </tr>
                 </thead>
                 <tbody>
                   {unitMix.map((unit, idx) => (
-                    <tr key={idx} className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">{unit.type}</td>
-                      <td className="py-3 text-gray-600 dark:text-gray-400">{unit.count}</td>
-                      <td className="py-3 text-gray-600 dark:text-gray-400">{unit.sqft}</td>
-                      <td className="py-3 text-gray-600 dark:text-gray-400">{unit.rent}</td>
+                    <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                      <td className="py-4 font-medium text-gray-900 dark:text-gray-100">{unit.type}</td>
+                      <td className="py-4 text-center text-gray-700 dark:text-gray-300">{unit.count}</td>
+                      <td className="py-4 text-center text-gray-700 dark:text-gray-300">{unit.sqft}</td>
+                      <td className="py-4 text-right font-semibold text-gray-900 dark:text-gray-100">{unit.rent}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -170,19 +112,47 @@ export default function PropertyOverviewPage() {
           </div>
 
           {/* Amenities */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Premium Amenities</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Community Amenities</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {amenities.map((amenity, idx) => (
-                <div key={idx} className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-2xl">{amenity.icon}</div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{amenity.name}</span>
+                <div key={idx} className="flex items-center space-x-3 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
+                  <div className="text-indigo-600 dark:text-indigo-400">
+                    {amenity.icon}
+                  </div>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {amenity.name}
+                  </span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Location Details */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Location & Transportation</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-6 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
+                <MapPin className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Prime Location</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Adjacent to Country Club & Main Light Rail Station</p>
+              </div>
+              
+              <div className="text-center p-6 bg-green-50 dark:bg-green-900/10 rounded-xl">
+                <Car className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-3" />
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Highway Access</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Direct access to Loop 202 and US-60</p>
+              </div>
+              
+              <div className="text-center p-6 bg-purple-50 dark:bg-purple-900/10 rounded-xl">
+                <Plane className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Airport Proximity</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">15 minutes to Phoenix Sky Harbor</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
     </div>
   );
-} 
+}

@@ -63,7 +63,7 @@ export default function PortfolioPage() {
               </Link>
 
               {/* The Meridian District */}
-              <Link
+                <Link
                 href="/marshall-st-louis"
                 className="group bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:scale-[1.02]"
               >
@@ -92,7 +92,7 @@ export default function PortfolioPage() {
                   <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Innovation district with mixed-use development</p>
                   <span className="text-purple-600 dark:text-purple-400 font-medium group-hover:underline">Explore Property →</span>
                 </div>
-              </Link>
+                </Link>
             </div>
           </div>
         </section>
@@ -113,12 +113,12 @@ export default function PortfolioPage() {
               >
                 Contact Investment Team
               </button>
-              <button
+            <button
                 className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
                 onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access'}
-              >
-                Request Vault Access
-              </button>
+            >
+              Request Vault Access
+            </button>
             </div>
           </div>
         </section>
