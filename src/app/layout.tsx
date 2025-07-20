@@ -30,6 +30,12 @@ export default function RootLayout({
           </div>
           
           <main>{children}</main>
+          {/* Persistent OZListings Pill */}
+          <div className="fixed bottom-6 right-6 z-50">
+            <span className="bg-gray-900 text-white dark:bg-white dark:text-gray-900 px-4 py-2 rounded-full shadow-lg text-sm font-semibold opacity-90 hover:opacity-100 transition-opacity cursor-pointer select-none">
+              Powered by OZListings
+            </span>
+          </div>
         </div>
       </body>
     </html>
