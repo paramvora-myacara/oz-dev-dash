@@ -64,16 +64,16 @@ export default function PortfolioPage() {
 
               {/* The Meridian District */}
               <Link
-                href="/property-1"
+                href="/marshall-st-louis"
                 className="group bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:scale-[1.02]"
               >
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-6 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center">
                     <Building className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">The Meridian District</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">Mesa, AZ • 439 Units</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Modern multifamily development with premium amenities</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">The Marshall St. Louis</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">St. Louis, MO • 177 Units</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Student housing adjacent to St. Louis University campus</p>
                   <span className="text-emerald-600 dark:text-emerald-400 font-medium group-hover:underline">Explore Property →</span>
                 </div>
               </Link>
