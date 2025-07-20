@@ -26,7 +26,7 @@ export default function PropertyOverviewPage() {
       <section className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 py-16">
         <div className="max-w-7xl mx-auto px-8">
           <Link 
-            href="/#investment-cards" 
+            href="/property-1#investment-cards" 
             className="inline-flex items-center text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 mb-8"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@ export default function PropertyOverviewPage() {
             <div className="text-5xl"><Building className="w-12 h-12 text-indigo-600 dark:text-indigo-400" /></div>
             <div>
               <h1 className="text-5xl font-semibold text-indigo-900 dark:text-indigo-300 tracking-tight">
-                The Edge on Main
+                The Meridian District
               </h1>
               <p className="text-xl text-indigo-700 dark:text-indigo-400 mt-2">
                 Modern multifamily development in Mesa, Arizona
