@@ -6,11 +6,11 @@ import { TrendingUp, DollarSign, Calendar, Users, Target, Building } from "lucid
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
-export const metadata = {
-  title: "Financial Returns – SoGood Dallas",
-};
-
 export default function FinancialReturnsPage() {
+  useEffect(() => {
+    document.title = "Financial Returns – SoGood Dallas";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 

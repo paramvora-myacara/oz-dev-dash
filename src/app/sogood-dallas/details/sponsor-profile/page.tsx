@@ -6,11 +6,11 @@ import { Users, Award, TrendingUp, Building } from "lucide-react";
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
-export const metadata = {
-  title: "Sponsor Profile – SoGood Dallas",
-};
-
 export default function SponsorProfilePage() {
+  useEffect(() => {
+    document.title = "Sponsor Profile – SoGood Dallas";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 

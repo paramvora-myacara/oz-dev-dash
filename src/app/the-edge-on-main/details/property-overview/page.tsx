@@ -4,12 +4,13 @@
 import Link from "next/link";
 import { Building, Waves, Dumbbell, Laptop, Dog, Building2, Bell, Zap, Package, MapPin, Car, Bus, Plane } from "lucide-react";
 import FloorplanSitemapSection from '../../../../components/FloorplanSitemapSection';
-
-export const metadata = {
-  title: "Property Overview – The Edge on Main",
-};
+import { useEffect } from 'react';
 
 export default function PropertyOverviewPage() {
+  useEffect(() => {
+    document.title = "Property Overview – The Edge on Main";
+  }, []);
+
   const amenities = [
     { name: "Resort-Style Pool", icon: <Waves className="w-6 h-6" /> },
     { name: "State-of-the-Art Fitness Center", icon: <Dumbbell className="w-6 h-6" /> },

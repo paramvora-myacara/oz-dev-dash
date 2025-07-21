@@ -6,11 +6,11 @@ import { Target, TrendingUp, Users, Building } from "lucide-react";
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
-export const metadata = {
-  title: "Market Analysis – SoGood Dallas",
-};
-
 export default function MarketAnalysisPage() {
+  useEffect(() => {
+    document.title = "Market Analysis – SoGood Dallas";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
