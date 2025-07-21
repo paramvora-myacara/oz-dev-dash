@@ -107,12 +107,12 @@ export default function PortfolioPage() {
               Contact our team to learn more about these exclusive opportunity zone investments
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
+              <Link
+                href={process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK || ''}
                 className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg"
-                onClick={() => window.location.href = 'mailto:deals@acaracap.com?subject=Investment Inquiry - ACARA OZ Portfolio'}
               >
                 Contact Investment Team
-              </button>
+              </Link>
             <button
                 className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
                 onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access'}
