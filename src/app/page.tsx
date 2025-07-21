@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Building, MapPin, DollarSign, Briefcase } from "lucide-react";
 
+export const metadata = {
+  title: "ACARA Opportunity Zone Portfolio",
+};
+
 export default function PortfolioPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">

@@ -6,6 +6,10 @@ import { Target, TrendingUp, Users, Home, Building, Factory } from "lucide-react
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
+export const metadata = {
+  title: "Market Analysis – The Edge on Main",
+};
+
 export default function MarketAnalysisPage() {
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
 

@@ -6,6 +6,10 @@ import { Users, Building, Award, Target, TrendingUp, MapPin } from "lucide-react
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
+export const metadata = {
+  title: "Sponsor Profile – The Edge on Main",
+};
+
 export default function SponsorProfilePage() {
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
 

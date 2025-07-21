@@ -12,6 +12,10 @@ import { useRouter } from "next/navigation";
 import ImageCarousel from '../../components/ImageCarousel';
 import { getRandomImages } from '../../utils/supabaseImages';
 
+export const metadata = {
+  title: "The Marshall St. Louis – ACARA Opportunity Zone Portfolio",
+};
+
 export default function InvestmentDashboard() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);

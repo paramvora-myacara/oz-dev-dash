@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Building, Waves, Dumbbell, Laptop, Dog, Building2, Bell, Zap, Package, MapPin, Car, Bus, Plane } from "lucide-react";
 import FloorplanSitemapSection from '../../../../components/FloorplanSitemapSection';
 
+export const metadata = {
+  title: "Property Overview – The Edge on Main",
+};
+
 export default function PropertyOverviewPage() {
   const amenities = [
     { name: "Resort-Style Pool", icon: <Waves className="w-6 h-6" /> },

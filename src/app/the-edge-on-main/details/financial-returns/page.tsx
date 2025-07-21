@@ -7,6 +7,10 @@ import { TrendingUp, DollarSign, Calendar, Users, Target, Building } from "lucid
 import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
+export const metadata = {
+  title: "Financial Returns – The Edge on Main",
+};
+
 export default function FinancialReturnsPage() {
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
