@@ -264,7 +264,7 @@ export default function InvestmentDashboard() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-12 md:mb-16 text-center">
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black dark:text-white mb-6 tracking-tight">
-                Ozzie AI Says
+                <span className="text-blue-500">OZ</span>zie AI <em>Says</em>
               </h2>
               <p className="text-xl md:text-2xl text-black/70 dark:text-white/70 font-light max-w-3xl mx-auto">
                 Upon reviewing this deal, here are the top 3 reasons to invest in this project
