@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { Building, MapPin, DollarSign, Briefcase } from "lucide-react";
+import { useEffect } from 'react';
 
 export default function PortfolioPage() {
+  useEffect(() => {
+    document.title = "ACARA Opportunity Zone Portfolio";
+  }, []);
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-[1920px] mx-auto">

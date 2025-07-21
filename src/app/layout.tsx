@@ -5,11 +5,6 @@ import ThemeToggle from "../components/theme-toggle";
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: "ACARA Opportunity Zone Fund I LLC",
-  description: "Premium Multifamily Investment Opportunity",
-};
-
 export default function RootLayout({
   children,
 }: {

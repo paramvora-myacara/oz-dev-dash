@@ -7,6 +7,10 @@ import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
 export default function MarketAnalysisPage() {
+  useEffect(() => {
+    document.title = "Market Analysis – The Edge on Main";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
 
   useEffect(() => {

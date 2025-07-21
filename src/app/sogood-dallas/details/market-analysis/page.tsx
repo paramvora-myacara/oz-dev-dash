@@ -7,6 +7,10 @@ import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
 export default function MarketAnalysisPage() {
+  useEffect(() => {
+    document.title = "Market Analysis – SoGood Dallas";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 

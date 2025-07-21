@@ -7,6 +7,10 @@ import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
 export default function FinancialReturnsPage() {
+  useEffect(() => {
+    document.title = "Financial Returns – The Marshall St. Louis";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 

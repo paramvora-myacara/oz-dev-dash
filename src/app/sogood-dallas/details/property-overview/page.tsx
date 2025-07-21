@@ -8,6 +8,10 @@ import { getRandomImages } from '../../../../utils/supabaseImages';
 import FloorplanSitemapSection from '../../../../components/FloorplanSitemapSection';
 
 export default function PropertyOverviewPage() {
+  useEffect(() => {
+    document.title = "Property Overview – SoGood Dallas";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
