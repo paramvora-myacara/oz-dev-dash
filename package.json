@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.52.0",
     "chart.js": "^4.5.0",
     "chartjs": "^0.3.24",
@@ -20,7 +21,7 @@
     "react-fast-marquee": "^1.6.5"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.9",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.21",

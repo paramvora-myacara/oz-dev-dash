@@ -3,11 +3,21 @@
 import Link from "next/link";
 import { Building, MapPin, DollarSign, Briefcase } from "lucide-react";
 import { useEffect } from 'react';
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal, ConfirmationModal } from "@/components/AuthModal";
+import { Suspense } from 'react'
 
-export default function PortfolioPage() {
-  useEffect(() => {
-    document.title = "ACARA Opportunity Zone Portfolio";
-  }, []);
+
+function PortfolioPageContent() {
+  const {
+    isAuthModalOpen,
+    isConfirmationModalOpen,
+    authError,
+    isLoading,
+    handleRequestVaultAccess,
+    handleSignInOrUp,
+    closeModal,
+  } = useAuth();
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -112,15 +122,15 @@ export default function PortfolioPage() {
               Contact our team to learn more about these exclusive opportunity zone investments
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
+              <Link
+                href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/portfolio_page`}
                 className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg"
-                onClick={() => window.location.href = 'mailto:deals@acaracap.com?subject=Investment Inquiry - ACARA OZ Portfolio'}
               >
                 Contact Investment Team
-              </button>
+              </Link>
             <button
                 className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
-                onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access'}
+                onClick={handleRequestVaultAccess}
             >
               Request Vault Access
             </button>
@@ -128,6 +138,28 @@ export default function PortfolioPage() {
           </div>
         </section>
       </div>
+       <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeModal}
+        onSubmit={handleSignInOrUp}
+        isLoading={isLoading}
+        authError={authError}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
+}
+
+export default function PortfolioPage() {
+   useEffect(() => {
+    document.title = "ACARA Opportunity Zone Portfolio";
+  }, []);
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PortfolioPageContent />
+    </Suspense>
+  )
 }

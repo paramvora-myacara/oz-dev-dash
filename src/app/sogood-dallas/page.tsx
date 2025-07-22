@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
@@ -11,14 +11,25 @@ import {
 import { useRouter } from "next/navigation";
 import ImageCarousel from '../../components/ImageCarousel';
 import { getRandomImages } from '../../utils/supabaseImages';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
 
-export default function InvestmentDashboard() {
-  useEffect(() => {
-    document.title = "SoGood Dallas";
-  }, []);
+
+
+function SoGoodDallasPage() {
+
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);
   const router = useRouter();
+  const {
+    isAuthModalOpen,
+    isConfirmationModalOpen,
+    authError,
+    isLoading,
+    handleRequestVaultAccess,
+    handleSignInOrUp,
+    closeModal,
+  } = useAuth();
   
   // Load hero images
   useEffect(() => {
@@ -389,16 +400,18 @@ export default function InvestmentDashboard() {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-center">
             <button
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
-              onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access - SoGood Dallas'}
+              onClick={handleRequestVaultAccess}
             >
               Request Vault Access
             </button>
-            <button
+            <a
+              href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/sogood-dallas`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
-              onClick={() => setShowContactModal(true)}
             >
               Contact the Developer
-            </button>
+            </a>
           </div>
         </section>
 
@@ -425,6 +438,29 @@ export default function InvestmentDashboard() {
           </div>
         )}
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeModal}
+        onSubmit={handleSignInOrUp}
+        isLoading={isLoading}
+        authError={authError}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
+}
+
+export default function InvestmentDashboard() {
+  useEffect(() => {
+    document.title = "SoGood Dallas";
+  }, []);
+return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SoGoodDallasPage />
+    </Suspense>
+  )
 }
