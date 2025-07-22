@@ -2,8 +2,22 @@
 
 import Link from "next/link";
 import { Building, MapPin, DollarSign, Briefcase } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal, ConfirmationModal } from "@/components/AuthModal";
+import { Suspense } from 'react'
 
-export default function PortfolioPage() {
+
+function PortfolioPageContent() {
+  const {
+    isAuthModalOpen,
+    isConfirmationModalOpen,
+    authError,
+    isLoading,
+    handleRequestVaultAccess,
+    handleSignInOrUp,
+    closeModal,
+  } = useAuth();
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-[1920px] mx-auto">
@@ -115,7 +129,7 @@ export default function PortfolioPage() {
               </Link>
             <button
                 className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
-                onClick={() => window.location.href = 'mailto:vault-access@acaracap.com?subject=Request Vault Access'}
+                onClick={handleRequestVaultAccess}
             >
               Request Vault Access
             </button>
@@ -123,6 +137,25 @@ export default function PortfolioPage() {
           </div>
         </section>
       </div>
+       <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeModal}
+        onSubmit={handleSignInOrUp}
+        isLoading={isLoading}
+        authError={authError}
+      />
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
+}
+
+export default function PortfolioPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PortfolioPageContent />
+    </Suspense>
+  )
 }
