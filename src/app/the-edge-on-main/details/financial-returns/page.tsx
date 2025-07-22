@@ -8,6 +8,10 @@ import BackgroundSlideshow from '../../../../components/BackgroundSlideshow';
 import { getRandomImages } from '../../../../utils/supabaseImages';
 
 export default function FinancialReturnsPage() {
+  useEffect(() => {
+    document.title = "Financial Returns – The Edge on Main";
+  }, []);
+
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 

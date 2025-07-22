@@ -16,6 +16,7 @@ import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
 
 
 function MarshallStLouisPage() {
+
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);
   const router = useRouter();
@@ -435,7 +436,10 @@ function MarshallStLouisPage() {
 }
 
 export default function InvestmentDashboard() {
-  return (
+useEffect(() => {
+    document.title = "The Marshall St. Louis";
+  }, []);  
+return (
     <Suspense fallback={<div>Loading...</div>}>
       <MarshallStLouisPage />
     </Suspense>

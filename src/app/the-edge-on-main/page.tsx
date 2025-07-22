@@ -16,6 +16,7 @@ import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
 
 
 function TheEdgeOnMainPage() {
+
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);
   const router = useRouter();
@@ -462,6 +463,9 @@ function TheEdgeOnMainPage() {
 }
 
 export default function InvestmentDashboard() {
+  useEffect(() => {
+    document.title = "The Edge on Main";
+  }, []);
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <TheEdgeOnMainPage />

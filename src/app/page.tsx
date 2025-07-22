@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Building, MapPin, DollarSign, Briefcase } from "lucide-react";
+import { useEffect } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal, ConfirmationModal } from "@/components/AuthModal";
 import { Suspense } from 'react'
@@ -153,6 +154,9 @@ function PortfolioPageContent() {
 }
 
 export default function PortfolioPage() {
+   useEffect(() => {
+    document.title = "ACARA Opportunity Zone Portfolio";
+  }, []);
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <PortfolioPageContent />

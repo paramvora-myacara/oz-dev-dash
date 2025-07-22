@@ -15,7 +15,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
 
 
+
 function SoGoodDallasPage() {
+
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);
   const router = useRouter();
@@ -453,7 +455,10 @@ function SoGoodDallasPage() {
 }
 
 export default function InvestmentDashboard() {
-  return (
+  useEffect(() => {
+    document.title = "SoGood Dallas";
+  }, []);
+return (
     <Suspense fallback={<div>Loading...</div>}>
       <SoGoodDallasPage />
     </Suspense>
