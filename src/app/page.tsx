@@ -122,7 +122,7 @@ function PortfolioPageContent() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href={process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK || ''}
+                href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/portfolio_page`}
                 className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg"
               >
                 Contact Investment Team

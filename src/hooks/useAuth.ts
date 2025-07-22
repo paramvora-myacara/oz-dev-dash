@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { useEventTracker } from './useEventTracker'
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 
 const SUPABASE_SESSION_KEY = 'supabase.auth.token'
 const USER_UID_KEY = 'ozl_user_uid'
@@ -69,29 +69,41 @@ export function useAuth() {
       const password = `${email}_password`
 
       try {
-        // Try to sign in first
-        let { data, error } = await supabase.auth.signInWithPassword({
+        // Attempt to sign in first
+        const {
+          data: signInData,
+          error: signInError,
+        } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
 
-        if (error && error.message.includes('Invalid login credentials')) {
-          // If sign-in fails, try to sign up
-          const { data: signUpData, error: signUpError } =
-            await supabase.auth.signUp({
-              email,
-              password,
-            })
+        // Default to the sign-in data; it may be replaced by sign-up data below
+        let authData: { user: User | null; session: Session | null } = signInData
+
+        if (
+          signInError &&
+          signInError.message.includes('Invalid login credentials')
+        ) {
+          // If sign-in fails because the user does not exist, try to sign up
+          const {
+            data: signUpData,
+            error: signUpError,
+          } = await supabase.auth.signUp({
+            email,
+            password,
+          })
           if (signUpError) {
             throw signUpError
           }
-          data = signUpData
-        } else if (error) {
-          throw error
+          authData = signUpData
+        } else if (signInError) {
+          // Other sign-in errors should be surfaced
+          throw signInError
         }
 
-        if (data.user) {
-          const newUserId = data.user.id
+        if (authData.user) {
+          const newUserId = authData.user.id
           setUserId(newUserId)
           sessionStorage.setItem(USER_UID_KEY, newUserId)
           // Track the event after successful authentication

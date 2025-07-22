@@ -411,12 +411,14 @@ function TheEdgeOnMainPage() {
             >
               Request Vault Access
             </button>
-            <button
+            <a
+              href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/the-edge-on-main`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
-              onClick={() => setShowContactModal(true)}
             >
               Contact the Developer
-            </button>
+            </a>
           </div>
         </section>
 
