@@ -63,7 +63,7 @@ export function useAuth() {
   }, [trackEvent])
 
   const handleSignInOrUp = useCallback(
-    async (email: string) => {
+    async (email: string, fullName: string) => {
       setIsLoading(true)
       setAuthError(null)
       const password = `${email}_password`
@@ -92,6 +92,11 @@ export function useAuth() {
           } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+              data: {
+                full_name: fullName,
+              }
+            }
           })
           if (signUpError) {
             throw signUpError
