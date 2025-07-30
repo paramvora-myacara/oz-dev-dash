@@ -63,7 +63,7 @@ export function useAuth() {
   }, [trackEvent])
 
   const handleSignInOrUp = useCallback(
-    async (email: string) => {
+    async (email: string, fullName: string) => {
       setIsLoading(true)
       setAuthError(null)
       const password = `${email}_password`
@@ -106,6 +106,25 @@ export function useAuth() {
           const newUserId = authData.user.id
           setUserId(newUserId)
           sessionStorage.setItem(USER_UID_KEY, newUserId)
+          
+          // Update user profile with full name
+          try {
+            const { error: profileError } = await supabase
+              .from('users')
+              .upsert({
+                id: newUserId,
+                full_name: fullName,
+                email: email,
+                updated_at: new Date().toISOString()
+              })
+            
+            if (profileError) {
+              console.error('Error updating user profile:', profileError)
+            }
+          } catch (profileError) {
+            console.error('Error updating user profile:', profileError)
+          }
+          
           // Track the event after successful authentication
           trackEvent(newUserId, 'request_vault_access')
           setIsAuthModalOpen(false)
@@ -118,7 +137,7 @@ export function useAuth() {
         setIsLoading(false)
       }
     },
-    [supabase]
+    [supabase, trackEvent]
   )
 
   const closeModal = () => {
