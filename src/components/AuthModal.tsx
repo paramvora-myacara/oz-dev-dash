@@ -6,7 +6,7 @@ import { X } from 'lucide-react'
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (email: string) => void
+  onSubmit: (email: string, fullName: string) => void
   isLoading: boolean
   authError: string | null
 }
@@ -24,11 +24,12 @@ export function AuthModal({
   authError,
 }: AuthModalProps) {
   const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (email) {
-      onSubmit(email)
+    if (email && fullName) {
+      onSubmit(email, fullName)
     }
   }
 
@@ -51,6 +52,14 @@ export function AuthModal({
             Enter your email to express interest and receive updates.
           </p>
           <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Full Name"
+              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white mb-4"
+              required
+            />
             <input
               type="email"
               value={email}
