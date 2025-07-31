@@ -217,15 +217,7 @@ function MarshallStLouisPage() {
         {/* Header with Title */}
         <header className="relative z-30 p-4 md:p-8 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto">
-            <Link 
-              href="/" 
-              className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Portfolio
-            </Link>
+
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-black dark:text-white tracking-tight mb-6">
               The Marshall St. Louis
             </h1>
