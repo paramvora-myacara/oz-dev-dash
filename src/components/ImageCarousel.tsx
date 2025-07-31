@@ -10,6 +10,7 @@ interface ImageCarouselProps {
   intervalMs?: number;
   fadeTransition?: boolean;
   autoplay?: boolean;
+  onImageClick?: (index: number) => void;
 }
 
 export default function ImageCarousel({ 
@@ -17,7 +18,8 @@ export default function ImageCarousel({
   className = '',
   intervalMs = 4000,
   fadeTransition = true,
-  autoplay = true
+  autoplay = true,
+  onImageClick
 }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +52,12 @@ export default function ImageCarousel({
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div
+      className={`relative overflow-hidden ${className} ${
+        onImageClick ? 'cursor-pointer' : ''
+      }`}
+      onClick={() => onImageClick && onImageClick(currentIndex)}
+    >
       {images.map((image, index) => (
         <div
           key={index}
@@ -78,7 +85,10 @@ export default function ImageCarousel({
 
       {/* Dots indicator */}
       {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        <div
+          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {images.map((_, index) => (
             <button
               key={index}

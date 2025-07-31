@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ImageCarousel from '../../components/ImageCarousel';
+import Lightbox from '../../components/Lightbox';
 import { getRandomImages } from '../../utils/supabaseImages';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
@@ -19,6 +20,8 @@ function TheEdgeOnMainPage() {
 
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const router = useRouter();
   const {
     isAuthModalOpen,
@@ -43,6 +46,11 @@ function TheEdgeOnMainPage() {
 
     loadHeroImages();
   }, []);
+
+  const handleImageClick = (index: number) => {
+    setLightboxStartIndex(index);
+    setIsLightboxOpen(true);
+  };
 
   // Store scroll position before navigation and restore on return
   useEffect(() => {
@@ -209,15 +217,7 @@ function TheEdgeOnMainPage() {
         {/* Header with Title */}
         <header className="relative z-30 p-4 md:p-8 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto">
-            <Link 
-              href="/" 
-              className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Portfolio
-            </Link>
+
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-black dark:text-white tracking-tight mb-6">
               The Edge on Main
             </h1>
@@ -247,6 +247,7 @@ function TheEdgeOnMainPage() {
                 className="h-full rounded-3xl"
                 intervalMs={4000}
                 autoplay={true}
+                onImageClick={handleImageClick}
               />
             ) : (
               <Image
@@ -494,6 +495,13 @@ function TheEdgeOnMainPage() {
         isOpen={isConfirmationModalOpen}
         onClose={closeModal}
       />
+      {isLightboxOpen && (
+        <Lightbox
+          images={heroImages}
+          startIndex={lightboxStartIndex}
+          onClose={() => setIsLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
