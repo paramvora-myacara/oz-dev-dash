@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ImageCarousel from '../../components/ImageCarousel';
+import Lightbox from '../../components/Lightbox';
 import { getRandomImages } from '../../utils/supabaseImages';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
@@ -19,6 +20,8 @@ function MarshallStLouisPage() {
 
   const [showContactModal, setShowContactModal] = useState(false);
   const [heroImages, setHeroImages] = useState<string[]>([]);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const router = useRouter();
   const {
     isAuthModalOpen,
@@ -43,6 +46,11 @@ function MarshallStLouisPage() {
 
     loadHeroImages();
   }, []);
+
+  const handleImageClick = (index: number) => {
+    setLightboxStartIndex(index);
+    setIsLightboxOpen(true);
+  };
 
   // Store scroll position before navigation and restore on return
   useEffect(() => {
@@ -247,6 +255,7 @@ function MarshallStLouisPage() {
                 className="h-full rounded-3xl"
                 intervalMs={4000}
                 autoplay={true}
+                onImageClick={handleImageClick}
               />
             ) : (
               <Image
@@ -431,6 +440,13 @@ function MarshallStLouisPage() {
         isOpen={isConfirmationModalOpen}
         onClose={closeModal}
       />
+      {isLightboxOpen && (
+        <Lightbox
+          images={heroImages}
+          startIndex={lightboxStartIndex}
+          onClose={() => setIsLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
