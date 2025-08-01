@@ -72,12 +72,24 @@ function isImageFile(filename: string): boolean {
 }
 
 /**
- * Shuffle array using Fisher-Yates algorithm
+ * Shuffle array using Fisher-Yates algorithm. Can be seeded for deterministic shuffling.
  */
-function shuffleArray<T>(array: T[]): T[] {
+function shuffleArray<T>(array: T[], seed?: number): T[] {
   const shuffled = [...array];
+  let currentSeed = seed;
+
+  const seededRandom = () => {
+    // If no seed, use standard Math.random
+    if (currentSeed === undefined) {
+      return Math.random();
+    }
+    // Simple pseudo-random number generator
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+  };
+
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(seededRandom() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
@@ -177,20 +189,28 @@ export async function getAvailableImages(projectId: ProjectId, category: ImageCa
 }
 
 /**
- * Get random selection of images for background slideshow (max 7)
+ * Get a daily-random selection of images for background slideshow (max 7).
+ * The list of images is stable for a given day to allow for effective caching.
  */
 export async function getRandomImages(projectId: ProjectId, category: ImageCategory, maxCount: number = 7): Promise<string[]> {
-  debugLog(`Getting ${maxCount} random images for ${projectId}/${category}`);
+  debugLog(`Getting ${maxCount} daily random images for ${projectId}/${category}`);
   
   const allImages = await getAvailableImages(projectId, category);
   
-  if (allImages.length <= maxCount) {
-    debugLog(`Returning all ${allImages.length} images (less than max ${maxCount})`);
-    return shuffleArray(allImages);
+  // Use the current UTC date as a seed for shuffling. This ensures all users see the
+  // same "random" order for a full day, allowing Vercel's CDN to cache the images.
+  const now = new Date();
+  const seed = now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
+  
+  const shuffledImages = shuffleArray(allImages, seed);
+  
+  if (shuffledImages.length <= maxCount) {
+    debugLog(`Returning all ${shuffledImages.length} images (less than max ${maxCount}), shuffled daily.`);
+    return shuffledImages;
   }
   
-  const selectedImages = shuffleArray(allImages).slice(0, maxCount);
-  debugLog(`Returning ${selectedImages.length} random images`);
+  const selectedImages = shuffledImages.slice(0, maxCount);
+  debugLog(`Returning ${selectedImages.length} daily random images`);
   return selectedImages;
 }
 
