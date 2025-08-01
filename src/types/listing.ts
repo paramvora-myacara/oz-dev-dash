@@ -50,10 +50,7 @@ export interface FinancialReturns {
   pageTitle: string;
   pageSubtitle: string;
   backgroundImages: string[];
-  projections: FinancialProjection[];
-  distributionTimeline: DistributionPhase[];
-  taxBenefits: TaxBenefit[];
-  investmentStructure: InvestmentStructureItem[];
+  sections: FinancialReturnsSection[];
 }
 
 export interface KeyPropertyFact {
@@ -84,10 +81,7 @@ export interface PropertyOverview {
   pageTitle: string;
   pageSubtitle: string;
   backgroundImages: string[];
-  keyPropertyFacts: KeyPropertyFact[];
-  amenities: Amenity[];
-  unitMix: UnitMixItem[];
-  locationHighlights: LocationHighlight[];
+  sections: PropertyOverviewSection[];
 }
 
 export interface MarketMetric {
@@ -119,11 +113,7 @@ export interface MarketAnalysis {
   pageTitle: string;
   pageSubtitle: string;
   backgroundImages: string[];
-  marketMetrics: MarketMetric[];
-  majorEmployers: MajorEmployer[];
-  demographics: Demographic[];
-  supplyDemandAnalysis: { title: string; description: string; icon: string; }[];
-  keyMarketDrivers: MarketDriver[];
+  sections: MarketAnalysisSection[];
 }
 
 export interface TeamMember {
@@ -192,21 +182,250 @@ export type ListingOverviewSection =
   | { type: 'executiveSummary'; data: ExecutiveSummarySectionData }
   | { type: 'investmentCards'; data: InvestmentCardsSectionData };
 
+// --- Sponsor Profile Detail Page Sections ---
 
-export interface SponsorProfile {
+export interface SponsorIntroSectionData {
+  sponsorName: string;
+  content: {
+    paragraphs: string[];
+    // Can be a bulleted list or a list of items with icons
+    highlights: {
+      type: 'list' | 'icons';
+      items: Array<{
+        icon?: string; // Lucide icon name, e.g., "Award"
+        text: string;
+      }>;
+    };
+  };
+}
+
+export interface PartnershipOverviewSectionData {
+  partners: Array<{
+    name: string;
+    description: string[];
+  }>;
+}
+
+export interface TrackRecordSectionData {
+  // The grid of key stats
+  metrics: Array<{
+    label?: string; // Optional label/metric title
+    value: string;
+    description: string;
+  }>;
+}
+
+export interface LeadershipTeamSectionData {
+  teamMembers: TeamMember[]; // Re-using the existing TeamMember interface
+}
+
+export interface DevelopmentPortfolioSectionData {
+  projects: Array<{
+    name:string;
+    location: string;
+    units: string;
+    year: string;
+    status: 'Completed' | 'In Progress' | 'Planning' | 'Operating';
+    returnsOrFocus: string; // The last column can be "Returns" or "Focus"
+  }>;
+  // An optional summary box that appears below the table
+  investmentPhilosophy?: {
+    title: string;
+    description: string;
+  };
+}
+
+export interface KeyDevelopmentPartnersSectionData {
+  partners: Array<{
+    name: string;
+    role: string;
+    description: string;
+  }>;
+}
+
+export interface CompetitiveAdvantagesSectionData {
+  advantages: Array<{
+    icon: string; // Lucide icon name
+    title: string;
+    description: string;
+  }>;
+}
+
+
+export type SponsorProfileSection =
+  | { type: 'sponsorIntro'; data: SponsorIntroSectionData }
+  | { type: 'partnershipOverview'; data: PartnershipOverviewSectionData }
+  | { type: 'trackRecord'; data: TrackRecordSectionData }
+  | { type: 'leadershipTeam'; data: LeadershipTeamSectionData }
+  | { type: 'developmentPortfolio'; data: DevelopmentPortfolioSectionData }
+  | { type: 'keyDevelopmentPartners'; data: KeyDevelopmentPartnersSectionData }
+  | { type: 'competitiveAdvantages'; data: CompetitiveAdvantagesSectionData };
+
+
+// --- Financial Returns Detail Page Sections ---
+
+export interface ProjectionsSectionData {
+  projections: FinancialProjection[];
+}
+
+export interface DistributionTimelineSectionData {
+  timeline: DistributionPhase[];
+}
+
+export interface TaxBenefitsSectionData {
+  benefits: TaxBenefit[];
+}
+
+export interface InvestmentStructureSectionData {
+  structure: InvestmentStructureItem[];
+}
+
+export type FinancialReturnsSection =
+  | { type: 'projections'; data: ProjectionsSectionData }
+  | { type: 'distributionTimeline'; data: DistributionTimelineSectionData }
+  | { type: 'taxBenefits'; data: TaxBenefitsSectionData }
+  | { type: 'investmentStructure'; data: InvestmentStructureSectionData };
+
+
+// --- Property Overview Detail Page Sections ---
+
+export interface KeyFactsSectionData {
+  facts: KeyPropertyFact[]; // Re-uses existing KeyPropertyFact
+}
+
+export interface AmenitiesSectionData {
+  amenities: Amenity[]; // Re-uses existing Amenity
+}
+
+export interface UnitMixSectionData {
+  unitMix: UnitMixItem[]; // Re-uses existing UnitMixItem
+  specialFeatures?: {
+    title: string;
+    description: string;
+  };
+}
+
+export interface LocationHighlightsSectionData {
+  highlights: LocationHighlight[]; // Re-uses existing LocationHighlight
+}
+
+// This is for the more complex, multi-column layout seen in SoGood Dallas
+export interface LocationFeaturesSectionData {
+  featureSections: Array<{
+    category: string;
+    icon: string;
+    features: string[];
+  }>;
+}
+
+export interface DevelopmentTimelineSectionData {
+  timeline: Array<{
+    status: 'completed' | 'in_progress';
+    title: string;
+    description: string;
+  }>;
+}
+
+export interface DevelopmentPhasesSectionData {
+  phases: Array<{
+    phase: string;
+    units: number;
+    sqft: string;
+    features: string;
+    timeline: string;
+  }>;
+}
+
+
+export type PropertyOverviewSection =
+  | { type: 'keyFacts'; data: KeyFactsSectionData }
+  | { type: 'amenities'; data: AmenitiesSectionData }
+  | { type: 'unitMix'; data: UnitMixSectionData }
+  | { type: 'locationHighlights'; data: LocationHighlightsSectionData }
+  | { type: 'locationFeatures'; data: LocationFeaturesSectionData }
+  | { type: 'developmentTimeline'; data: DevelopmentTimelineSectionData }
+  | { type: 'developmentPhases'; data: DevelopmentPhasesSectionData };
+
+
+// --- Market Analysis Detail Page Sections ---
+
+export interface MarketMetricsSectionData {
+  metrics: MarketMetric[]; // Re-uses existing MarketMetric
+}
+
+export interface MajorEmployersSectionData {
+  employers: MajorEmployer[]; // Re-uses existing MajorEmployer
+}
+
+export interface DemographicsSectionData {
+  demographics: Demographic[]; // Re-uses existing Demographic
+}
+
+export interface KeyMarketDriversSectionData {
+  drivers: MarketDriver[]; // Re-uses existing MarketDriver
+}
+
+export interface SupplyDemandSectionData {
+  analysis: Array<{
+    icon: string;
+    title: string;
+    description: string;
+  }>;
+}
+
+export interface CompetitiveAnalysisSectionData {
+  competitors: Array<{
+    name: string;
+    built: string;
+    beds: string;
+    rent: string;
+    occupancy: string;
+    rentGrowth: string;
+  }>;
+  summary?: string;
+}
+
+export interface EconomicDiversificationSectionData {
+  sectors: Array<{
+    title: string;
+    description: string;
+  }>;
+}
+
+export type MarketAnalysisSection =
+  | { type: 'marketMetrics'; data: MarketMetricsSectionData }
+  | { type: 'majorEmployers'; data: MajorEmployersSectionData }
+  | { type: 'demographics'; data: DemographicsSectionData }
+  | { type: 'keyMarketDrivers'; data: KeyMarketDriversSectionData }
+  | { type: 'supplyDemand'; data: SupplyDemandSectionData }
+  | { type: 'competitiveAnalysis'; data: CompetitiveAnalysisSectionData }
+  | { type: 'economicDiversification'; data: EconomicDiversificationSectionData };
+
+
+export interface FinancialReturns {
   pageTitle: string;
   pageSubtitle: string;
   backgroundImages: string[];
-  sponsorOverview: {
-      title: string;
-      description: string;
-      points: string[];
-  };
-  trackRecord: TrackRecordItem[];
-  teamMembers: TeamMember[];
-  previousProjects: PreviousProject[];
-  developmentPartners?: DevelopmentPartner[];
-  investmentPhilosophy?: string;
+  sections: FinancialReturnsSection[];
+}
+
+export interface PropertyOverview {
+  pageTitle: string;
+  pageSubtitle: string;
+  backgroundImages: string[];
+  sections: PropertyOverviewSection[];
+}
+
+export interface MarketAnalysis {
+  pageTitle: string;
+  pageSubtitle: string;
+  backgroundImages: string[];
+  sections: MarketAnalysisSection[];
+}
+
+export interface SponsorProfile {
+  sponsorName: string;
+  sections: SponsorProfileSection[];
 }
 
 export interface Listing {

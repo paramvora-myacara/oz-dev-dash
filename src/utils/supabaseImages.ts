@@ -46,9 +46,9 @@ export function validateSupabaseConfig(): { isValid: boolean; errors: string[] }
 
 export type ProjectId = string;
 
-export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap'] as const;
+export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap', 'details'] as const;
 
-export type ImageCategory = typeof IMAGE_CATEGORIES[number];
+export type ImageCategory = string;
 
 /**
  * Get public URL for a Supabase storage object

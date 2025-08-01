@@ -112,4 +112,396 @@ These are the mandatory, fixed-order sections for the main listing overview page
         summary: string; // A short summary sentence for the card.
       }>;
     }
-    ``` 
+    ```
+
+---
+## Detail Page Sections: Sponsor Profile
+
+The Sponsor Profile page is composed of a flexible array of sections. The AI Agent can include any of the following blocks in any order to build the page.
+
+### Sponsor Introduction
+- **`type`**: `"sponsorIntro"`
+- **Description**: A detailed introduction to the sponsor. Includes paragraphs of text and a list of highlights, which can be either a simple bulleted list or a list with icons.
+- **Data Schema**:
+  ```typescript
+  interface SponsorIntroSectionData {
+    sponsorName: string; // e.g., "About Juniper Mountain Capital"
+    content: {
+      paragraphs: string[];
+      highlights: {
+        type: 'list' | 'icons';
+        items: Array<{
+          icon?: string; // Lucide icon name, required if type is 'icons'
+          text: string;
+        }>;
+      };
+    };
+  }
+  ```
+
+### Partnership Overview
+- **`type`**: `"partnershipOverview"`
+- **Description**: Used when there are multiple entities involved, like a developer and a fund manager. Renders a two-column layout detailing each partner.
+- **Data Schema**:
+  ```typescript
+  interface PartnershipOverviewSectionData {
+    partners: Array<{
+      name: string; // e.g., "Hoque Global (Developer)"
+      description: string[]; // Array of paragraphs describing the partner.
+    }>;
+  }
+  ```
+
+### Track Record
+- **`type`**: `"trackRecord"`
+- **Description**: A grid of key statistics and metrics that showcase the sponsor's track record. The grid will adapt up to 4 columns.
+- **Data Schema**:
+  ```typescript
+  interface TrackRecordSectionData {
+    metrics: Array<{
+      label?: string; // Optional title for the metric, e.g., "Total Units Developed".
+      value: string; // The main statistic, e.g., "1,158+".
+      description: string; // A short description for context.
+    }>;
+  }
+  ```
+
+### Leadership Team
+- **`type`**: `"leadershipTeam"`
+- **Description**: Displays profiles for the key members of the leadership team in a three-column grid.
+- **Data Schema**:
+  ```typescript
+  interface LeadershipTeamSectionData {
+    teamMembers: Array<{
+      name: string;
+      title: string;
+      experience: string; // e.g., "25+ years"
+      background: string; // A detailed paragraph about their background.
+    }>;
+  }
+  ```
+
+### Development Portfolio
+- **`type`**: `"developmentPortfolio"`
+- **Description**: A table showcasing the sponsor's recent or relevant projects. Can optionally include a highlighted "Investment Philosophy" summary box below the table.
+- **Data Schema**:
+  ```typescript
+  interface DevelopmentPortfolioSectionData {
+    projects: Array<{
+      name: string;
+      location: string;
+      units: string;
+      year: string;
+      status: 'Completed' | 'In Progress' | 'Planning' | 'Operating';
+      returnsOrFocus: string; // The content for the final column, can be financial returns or a description of the project's focus.
+    }>;
+    investmentPhilosophy?: {
+      title: string;
+      description: string;
+    };
+  }
+  ```
+
+### Key Development Partners
+- **`type`**: `"keyDevelopmentPartners"`
+- **Description**: Highlights other key partners involved in the project, such as the General Contractor or Project Manager.
+- **Data Schema**:
+  ```typescript
+  interface KeyDevelopmentPartnersSectionData {
+    partners: Array<{
+      name: string;
+      role: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Competitive Advantages
+- **`type`**: `"competitiveAdvantages"`
+- **Description**: A two-column layout that lists key competitive advantages, each with an icon, title, and description.
+- **Data Schema**:
+  ```typescript
+  interface CompetitiveAdvantagesSectionData {
+    advantages: Array<{
+      icon: string; // Lucide icon name.
+      title: string;
+      description: string;
+    }>;
+  }
+  ```
+---
+
+## Detail Page Sections: Financial Returns
+
+The Financial Returns page is composed of the following sections. The recommended order is as follows, with `taxBenefits` and `investmentStructure` grouped together in a two-column layout.
+
+### Financial Projections
+- **`type`**: `"projections"`
+- **Description**: A grid of key financial projections for the project.
+- **Data Schema**:
+  ```typescript
+  interface ProjectionsSectionData {
+    projections: Array<{
+      label: string;
+      value: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Distribution Timeline
+- **`type`**: `"distributionTimeline"`
+- **Description**: A timeline outlining the expected distribution phases over the life of the investment.
+- **Data Schema**:
+  ```typescript
+  interface DistributionTimelineSectionData {
+    timeline: Array<{
+      year: string;
+      phase: string;
+      distribution: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Tax Benefits
+- **`type`**: `"taxBenefits"`
+- **Description**: Details the tax advantages of investing in the project, specifically related to Opportunity Zones.
+- **Data Schema**:
+  ```typescript
+  interface TaxBenefitsSectionData {
+    benefits: Array<{
+      title: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Investment Structure
+- **`type`**: `"investmentStructure"`
+- **Description**: A list of the key terms and structure of the investment.
+- **Data Schema**:
+  ```typescript
+  interface InvestmentStructureSectionData {
+    structure: Array<{
+      label: string;
+      value: string;
+    }>;
+  }
+  ```
+---
+
+## Detail Page Sections: Property Overview
+
+The Property Overview page is composed of a flexible array of sections. The AI Agent can include any of the following blocks in any order to build the page.
+
+### Key Facts
+- **`type`**: `"keyFacts"`
+- **Description**: A grid of top-level facts about the property (e.g., total units, year built).
+- **Data Schema**:
+  ```typescript
+  interface KeyFactsSectionData {
+    facts: Array<{
+      label: string;
+      value: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Community Amenities
+- **`type`**: `"amenities"`
+- **Description**: A grid showcasing the community amenities available at the property.
+- **Data Schema**:
+  ```typescript
+  interface AmenitiesSectionData {
+    amenities: Array<{
+      name: string;
+      icon: string; // Lucide icon name
+    }>;
+  }
+  ```
+
+### Unit Mix
+- **`type`**: `"unitMix"`
+- **Description**: A table detailing the different unit types, sizes, and rents. Can optionally include a "Special Features" summary box.
+- **Data Schema**:
+  ```typescript
+  interface UnitMixSectionData {
+    unitMix: Array<{
+      type: string;
+      count: number;
+      sqft: string;
+      rent: string;
+    }>;
+    specialFeatures?: {
+      title: string;
+      description: string;
+    };
+  }
+  ```
+
+### Location Highlights
+- **`type`**: `"locationHighlights"`
+- **Description**: A simple three-column layout for highlighting key location features, each with an icon.
+- **Data Schema**:
+  ```typescript
+  interface LocationHighlightsSectionData {
+    highlights: Array<{
+      title: string;
+      description: string;
+      icon: string; // Lucide icon name
+    }>;
+  }
+  ```
+
+### Location Features (Advanced)
+- **`type`**: `"locationFeatures"`
+- **Description**: A more detailed, multi-column layout for location features, where each column has a category and a list of specific points.
+- **Data Schema**:
+  ```typescript
+  interface LocationFeaturesSectionData {
+    featureSections: Array<{
+      category: string;
+      icon: string; // Lucide icon name
+      features: string[];
+    }>;
+  }
+  ```
+
+### Development Timeline
+- **`type`**: `"developmentTimeline"`
+- **Description**: A simple vertical timeline showing the progress of the development.
+- **Data Schema**:
+  ```typescript
+  interface DevelopmentTimelineSectionData {
+    timeline: Array<{
+      status: 'completed' | 'in_progress';
+      title: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Development Phases
+- **`type`**: `"developmentPhases"`
+- **Description**: A detailed breakdown of the different phases of a large-scale development.
+- **Data Schema**:
+  ```typescript
+  interface DevelopmentPhasesSectionData {
+    phases: Array<{
+      phase: string;
+      units: number;
+      sqft: string;
+      features: string;
+      timeline: string;
+    }>;
+  }
+  ```
+---
+
+## Detail Page Sections: Market Analysis
+
+The Market Analysis page is composed of a flexible array of sections that can be arranged in any order.
+
+### Market Metrics
+- **`type`**: `"marketMetrics"`
+- **Description**: A grid of top-level statistics about the target market.
+- **Data Schema**:
+  ```typescript
+  interface MarketMetricsSectionData {
+    metrics: Array<{
+      label: string;
+      value: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Major Employers
+- **`type`**: `"majorEmployers"`
+- **Description**: A table listing the major employers in the area.
+- **Data Schema**:
+  ```typescript
+  interface MajorEmployersSectionData {
+    employers: Array<{
+      name: string;
+      employees: string;
+      industry: string;
+      distance: string;
+    }>;
+  }
+  ```
+
+### Demographics
+- **`type`**: `"demographics"`
+- **Description**: Displays key demographic data points for the target market.
+- **Data Schema**:
+  ```typescript
+  interface DemographicsSectionData {
+    demographics: Array<{
+      category: string;
+      value: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Key Market Drivers
+- **`type`**: `"keyMarketDrivers"`
+- **Description**: A grid of icons and descriptions that highlight the primary factors driving the market's growth.
+- **Data Schema**:
+  ```typescript
+  interface KeyMarketDriversSectionData {
+    drivers: Array<{
+      title: string;
+      description: string;
+      icon: string; // Lucide icon name
+    }>;
+  }
+  ```
+
+### Supply & Demand Analysis
+- **`type`**: `"supplyDemand"`
+- **Description**: A list of points analyzing the supply and demand dynamics of the market.
+- **Data Schema**:
+  ```typescript
+  interface SupplyDemandSectionData {
+    analysis: Array<{
+      icon: string; // Lucide icon name
+      title: string;
+      description: string;
+    }>;
+  }
+  ```
+
+### Competitive Analysis
+- **`type`**: `"competitiveAnalysis"`
+- **Description**: A table comparing competitor properties. Can optionally include a summary paragraph.
+- **Data Schema**:
+  ```typescript
+  interface CompetitiveAnalysisSectionData {
+    competitors: Array<{
+      name: string;
+      built: string;
+      beds: string;
+      rent: string;
+      occupancy: string;
+      rentGrowth: string;
+    }>;
+    summary?: string;
+  }
+  ```
+
+### Economic Diversification
+- **`type`**: `"economicDiversification"`
+- **Description**: Highlights the different economic sectors contributing to the market's strength.
+- **Data Schema**:
+  ```typescript
+  interface EconomicDiversificationSectionData {
+    sectors: Array<{
+      title: string;
+      description: string;
+    }>;
+  }
+  ``` 
