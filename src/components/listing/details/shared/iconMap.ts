@@ -1,12 +1,8 @@
-import { 
-  TrendingUp, Building, Target, Users, Waves, Dumbbell, Laptop, Dog, Building2, 
-  Bell, Zap, Package, MapPin, Car, Bus, Plane, DollarSign, Calendar, Home, Factory,
-  Award, Coffee, Utensils, Sun
-} from "lucide-react";
 import React from "react";
+import * as allExports from "lucide-react";
 
-export const iconMap: { [key: string]: React.ComponentType<any> } = {
-    TrendingUp, Building, Target, Users, Waves, Dumbbell, Laptop, Dog, Building2,
-    Bell, Zap, Package, MapPin, Car, Bus, Plane, DollarSign, Calendar, Home, Factory,
-    Award, Coffee, Utensils, Sun
-}; 
+// `lucide-react` exports `createLucideIcon` and `icons` which are not icon components.
+// We destructure them out, so `iconComponents` only contains icon components.
+const { createLucideIcon, icons, ...iconComponents } = allExports;
+
+export const iconMap: { [key: string]: React.ComponentType<any> } = iconComponents; 
