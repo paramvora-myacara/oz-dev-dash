@@ -7,88 +7,115 @@ const theEdgeOnMainData: Listing = {
   listingName: "The Edge on Main",
   listingSlug: "the-edge-on-main",
   projectId: "edge-on-main-mesa-001",
-  location: "Mesa, AZ",
-  minInvestment: 250000,
-  fundName: "ACARA OZ Fund I LLC",
-  heroImages: [], 
-  tickerMetrics: [
-    { label: "10-Yr Equity Multiple", value: "2.8–3.2x", change: "+12%" },
-    { label: "3-Yr Equity Multiple", value: "2.1x", change: "+8%" },
-    { label: "Preferred Return", value: "7%", change: "Guaranteed" },
-    { label: "Min Investment", value: "$250K", change: "Minimum" },
-    { label: "Total Units", value: "439", change: "Phase I & II" },
-    { label: "Location", value: "Mesa, AZ", change: "Prime Location" },
-    { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
-    { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
-  ],
-  compellingReasons: [
+  sections: [
     {
-      title: "100% Tax-Free Growth",
-      description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period.",
-      icon: 'Rocket',
-      highlight: "Tax-Free Exit",
+        type: 'hero',
+        data: {
+            listingName: "The Edge on Main",
+            location: "Mesa, AZ",
+            minInvestment: 250000,
+            fundName: "ACARA OZ Fund I LLC",
+        }
     },
     {
-      title: "Massive Housing Shortage",
-      description: "Arizona faces 56,000+ unit housing deficit. Mesa is one of the fastest-growing cities with sustained population growth driving demand.",
-      icon: 'BarChart3',
-      highlight: "56K+ Unit Shortage",
+        type: 'tickerMetrics',
+        data: {
+            metrics: [
+                { label: "10-Yr Equity Multiple", value: "2.8–3.2x", change: "+12%" },
+                { label: "3-Yr Equity Multiple", value: "2.1x", change: "+8%" },
+                { label: "Preferred Return", value: "7%", change: "Guaranteed" },
+                { label: "Min Investment", value: "$250K", change: "Minimum" },
+                { label: "Total Units", value: "439", change: "Phase I & II" },
+                { label: "Location", value: "Mesa, AZ", change: "Prime Location" },
+                { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
+                { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
+            ]
+        }
     },
     {
-      title: "Prime Transit Location",
-      description: "Located directly adjacent to Country Club & Main Street Light Rail Station, providing unmatched regional connectivity and transit access.",
-      icon: 'Train',
-      highlight: "Light Rail Adjacent",
-    }
-  ],
-  executiveSummary: {
-    quote: "A landmark development poised to redefine urban living in downtown Mesa, The Edge on Main capitalizes on a critical housing shortage and a prime transit-oriented location.",
-    paragraphs: [
-      "This two-phase, 439-unit multifamily project is situated in a qualified Opportunity Zone, offering investors significant tax advantages, including the potential for a 100% tax-free exit on appreciation.",
-      "With Arizona's population booming and a housing deficit exceeding 56,000 units, The Edge on Main is perfectly positioned to meet the overwhelming demand for modern, accessible rental housing in one of the nation's fastest-growing cities."
-    ],
-    conclusion: "This development represents a rare opportunity to invest in a high-growth market with strong fundamentals and powerful tax incentives, promising substantial returns and lasting community value."
-  },
-  investmentCards: [
-    {
-      id: "financial-returns",
-      title: "Financial Returns",
-      keyMetrics: [
-        { label: "10-Yr Equity Multiple", value: "2.8–3.2x" },
-        { label: "3-Yr Equity Multiple", value: "2.1x" },
-        { label: "Preferred Return", value: "7%" }
-      ],
-      summary: "Projected post-construction returns for OZ investors",
+        type: 'compellingReasons',
+        data: {
+            reasons: [
+                {
+                  title: "100% Tax-Free Growth",
+                  description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period.",
+                  icon: 'Rocket',
+                  highlight: "Tax-Free Exit",
+                },
+                {
+                  title: "Massive Housing Shortage",
+                  description: "Arizona faces 56,000+ unit housing deficit. Mesa is one of the fastest-growing cities with sustained population growth driving demand.",
+                  icon: 'BarChart3',
+                  highlight: "56K+ Unit Shortage",
+                },
+                {
+                  title: "Prime Transit Location",
+                  description: "Located directly adjacent to Country Club & Main Street Light Rail Station, providing unmatched regional connectivity and transit access.",
+                  icon: 'Train',
+                  highlight: "Light Rail Adjacent",
+                }
+            ]
+        }
     },
     {
-      id: "property-overview", 
-      title: "Property Overview",
-      keyMetrics: [
-        { label: "Total Units", value: "439" },
-        { label: "Location", value: "Mesa, AZ" },
-        { label: "Delivery", value: "2027" }
-      ],
-      summary: "The Edge on Main – 2-phase, transit-oriented development",
+        type: 'executiveSummary',
+        data: {
+            summary: {
+                quote: "A landmark development poised to redefine urban living in downtown Mesa, The Edge on Main capitalizes on a critical housing shortage and a prime transit-oriented location.",
+                paragraphs: [
+                  "This two-phase, 439-unit multifamily project is situated in a qualified Opportunity Zone, offering investors significant tax advantages, including the potential for a 100% tax-free exit on appreciation.",
+                  "With Arizona's population booming and a housing deficit exceeding 56,000 units, The Edge on Main is perfectly positioned to meet the overwhelming demand for modern, accessible rental housing in one of the nation's fastest-growing cities."
+                ],
+                conclusion: "This development represents a rare opportunity to invest in a high-growth market with strong fundamentals and powerful tax incentives, promising substantial returns and lasting community value."
+            }
+        }
     },
     {
-      id: "market-analysis",
-      title: "Market Analysis", 
-      keyMetrics: [
-        { label: "Housing Shortage", value: "56K+ units" },
-        { label: "Population Growth", value: "500K+" },
-        { label: "Major Employers", value: "Banner, Boeing" }
-      ],
-      summary: "Phoenix-Mesa market with strong demographic drivers",
-    },
-    {
-      id: "sponsor-profile",
-      title: "Sponsor Profile",
-      keyMetrics: [
-          { label: "Fund Name", value: "ACARA OZ Fund I LLC" },
-          { label: "Developer", value: "Juniper Mountain" },
-          { label: "Track Record", value: "15+ Years Experience" }
-      ],
-      summary: "Experienced team with proven multifamily development expertise",
+        type: 'investmentCards',
+        data: {
+            cards: [
+                {
+                  id: "financial-returns",
+                  title: "Financial Returns",
+                  keyMetrics: [
+                    { label: "10-Yr Equity Multiple", value: "2.8–3.2x" },
+                    { label: "3-Yr Equity Multiple", value: "2.1x" },
+                    { label: "Preferred Return", value: "7%" }
+                  ],
+                  summary: "Projected post-construction returns for OZ investors",
+                },
+                {
+                  id: "property-overview", 
+                  title: "Property Overview",
+                  keyMetrics: [
+                    { label: "Total Units", value: "439" },
+                    { label: "Location", value: "Mesa, AZ" },
+                    { label: "Delivery", value: "2027" }
+                  ],
+                  summary: "The Edge on Main – 2-phase, transit-oriented development",
+                },
+                {
+                  id: "market-analysis",
+                  title: "Market Analysis", 
+                  keyMetrics: [
+                    { label: "Housing Shortage", value: "56K+ units" },
+                    { label: "Population Growth", value: "500K+" },
+                    { label: "Major Employers", value: "Banner, Boeing" }
+                  ],
+                  summary: "Phoenix-Mesa market with strong demographic drivers",
+                },
+                {
+                  id: "sponsor-profile",
+                  title: "Sponsor Profile",
+                  keyMetrics: [
+                      { label: "Fund Name", value: "ACARA OZ Fund I LLC" },
+                      { label: "Developer", value: "Juniper Mountain" },
+                      { label: "Track Record", value: "15+ Years Experience" }
+                  ],
+                  summary: "Experienced team with proven multifamily development expertise",
+                }
+            ]
+        }
     }
   ],
   details: {
@@ -281,88 +308,115 @@ const marshallStLouisData: Listing = {
     listingName: "The Marshall St. Louis",
     listingSlug: "marshall-st-louis",
     projectId: "marshall-st-louis-001",
-    location: "St. Louis, MO",
-    minInvestment: 250000,
-    fundName: "Aptitude St. Louis LLC",
-    heroImages: [],
-    tickerMetrics: [
-        { label: "10-Yr Equity Multiple", value: "4.29x", change: "+329%" },
-        { label: "IRR Target", value: "17.7%", change: "Strong" },
-        { label: "Preferred Return", value: "8%", change: "Guaranteed" },
-        { label: "Min Investment", value: "$250K", change: "Minimum" },
-        { label: "Total Units", value: "177", change: "508 Beds" },
-        { label: "Location", value: "St. Louis, MO", change: "Prime Location" },
-        { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
-        { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
-    ],
-    compellingReasons: [
+    sections: [
         {
-          title: "Strategic University Location",
-          description: "Located just 600 feet from St. Louis University with 15,200 students experiencing record enrollment growth. Adjacent to the $300M City Foundry mixed-use development.",
-          icon: 'Rocket',
-          highlight: "600ft from SLU Campus",
+            type: 'hero',
+            data: {
+                listingName: "The Marshall St. Louis",
+                location: "St. Louis, MO",
+                minInvestment: 250000,
+                fundName: "Aptitude St. Louis LLC",
+            }
         },
         {
-          title: "Strong Housing Demand",
-          description: "SLU has achieved record enrollment for 2023 and 2024, up nearly 25% since 2020, creating critical student housing undersupply in the market.",
-          icon: 'BarChart3',
-          highlight: "Critical Housing Shortage",
+            type: 'tickerMetrics',
+            data: {
+                metrics: [
+                    { label: "10-Yr Equity Multiple", value: "4.29x", change: "+329%" },
+                    { label: "IRR Target", value: "17.7%", change: "Strong" },
+                    { label: "Preferred Return", value: "8%", change: "Guaranteed" },
+                    { label: "Min Investment", value: "$250K", change: "Minimum" },
+                    { label: "Total Units", value: "177", change: "508 Beds" },
+                    { label: "Location", value: "St. Louis, MO", change: "Prime Location" },
+                    { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
+                    { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
+                ]
+            }
         },
         {
-          title: "Innovation District Proximity",
-          description: "0.5 miles from Cortex Innovation District (200-acre tech hub with 5,700+ jobs) and 0.6 miles from BJC/Washington University Medical Campus ($1B expansion).",
-          icon: 'Users',
-          highlight: "Tech & Medical Hub Access",
-        }
-    ],
-    executiveSummary: {
-        quote: "What if we could capitalize on America's student housing crisis while generating exceptional returns for our investors?",
-        paragraphs: [
-            "This question sparked the vision for The Marshall St. Louis — a transformative student housing development that stands at the intersection of unprecedented opportunity and critical market need. Located just 600 feet from St. Louis University's main campus, we're not just building student housing — we're architecting the future of university life.",
-            "Our 177-unit development delivers 508 premium bedrooms directly adjacent to one of the nation's most prestigious universities. With SLU enrollment hitting record highs and a critical housing shortage, The Marshall represents the rare convergence where student demand meets institutional-quality development in a qualified Opportunity Zone."
-        ],
-        conclusion: "With construction 99% complete, >60% pre-leased, and Opportunity Zone incentives offering tax-free growth potential, The Marshall St. Louis represents the ideal intersection where exceptional returns meet transformative tax benefits."
-    },
-    investmentCards: [
-        {
-          id: "financial-returns",
-          title: "Financial Returns",
-          keyMetrics: [
-            { label: "10-Yr Equity Multiple", value: "4.29x" },
-            { label: "IRR Target", value: "17.7%" },
-            { label: "Preferred Return", value: "8%" }
-          ],
-          summary: "Projected pre-tax returns for OZ investors over 10-year hold",
+            type: 'compellingReasons',
+            data: {
+                reasons: [
+                    {
+                      title: "Strategic University Location",
+                      description: "Located just 600 feet from St. Louis University with 15,200 students experiencing record enrollment growth. Adjacent to the $300M City Foundry mixed-use development.",
+                      icon: 'Rocket',
+                      highlight: "600ft from SLU Campus",
+                    },
+                    {
+                      title: "Strong Housing Demand",
+                      description: "SLU has achieved record enrollment for 2023 and 2024, up nearly 25% since 2020, creating critical student housing undersupply in the market.",
+                      icon: 'BarChart3',
+                      highlight: "Critical Housing Shortage",
+                    },
+                    {
+                      title: "Innovation District Proximity",
+                      description: "0.5 miles from Cortex Innovation District (200-acre tech hub with 5,700+ jobs) and 0.6 miles from BJC/Washington University Medical Campus ($1B expansion).",
+                      icon: 'Users',
+                      highlight: "Tech & Medical Hub Access",
+                    }
+                ]
+            }
         },
         {
-          id: "property-overview", 
-          title: "Property Overview",
-          keyMetrics: [
-            { label: "Total Units", value: "177" },
-            { label: "Bedrooms", value: "508" },
-            { label: "Occupancy", value: "May 2025" }
-          ],
-          summary: "The Marshall St. Louis – Student housing adjacent to SLU campus",
+            type: 'executiveSummary',
+            data: {
+                summary: {
+                    quote: "What if we could capitalize on America's student housing crisis while generating exceptional returns for our investors?",
+                    paragraphs: [
+                        "This question sparked the vision for The Marshall St. Louis — a transformative student housing development that stands at the intersection of unprecedented opportunity and critical market need. Located just 600 feet from St. Louis University's main campus, we're not just building student housing — we're architecting the future of university life.",
+                        "Our 177-unit development delivers 508 premium bedrooms directly adjacent to one of the nation's most prestigious universities. With SLU enrollment hitting record highs and a critical housing shortage, The Marshall represents the rare convergence where student demand meets institutional-quality development in a qualified Opportunity Zone."
+                    ],
+                    conclusion: "With construction 99% complete, >60% pre-leased, and Opportunity Zone incentives offering tax-free growth potential, The Marshall St. Louis represents the ideal intersection where exceptional returns meet transformative tax benefits."
+                }
+            }
         },
         {
-          id: "market-analysis",
-          title: "Market Analysis", 
-          keyMetrics: [
-            { label: "SLU Enrollment", value: "15,200+" },
-            { label: "Growth Rate", value: "25%" },
-            { label: "Pre-Lease Rate", value: ">60%" }
-          ],
-          summary: "Strong market fundamentals driven by university growth",
-        },
-        {
-          id: "sponsor-profile",
-          title: "Sponsor Profile",
-          keyMetrics: [
-            { label: "Fund Name", value: "Aptitude St. Louis LLC" },
-            { label: "Developer", value: "Aptitude Development" },
-            { label: "Track Record", value: "20+ Years Experience" }
-          ],
-          summary: "Experienced team with proven student housing development expertise",
+            type: 'investmentCards',
+            data: {
+                cards: [
+                    {
+                      id: "financial-returns",
+                      title: "Financial Returns",
+                      keyMetrics: [
+                        { label: "10-Yr Equity Multiple", value: "4.29x" },
+                        { label: "IRR Target", value: "17.7%" },
+                        { label: "Preferred Return", value: "8%" }
+                      ],
+                      summary: "Projected pre-tax returns for OZ investors over 10-year hold",
+                    },
+                    {
+                      id: "property-overview", 
+                      title: "Property Overview",
+                      keyMetrics: [
+                        { label: "Total Units", value: "177" },
+                        { label: "Bedrooms", value: "508" },
+                        { label: "Occupancy", value: "May 2025" }
+                      ],
+                      summary: "The Marshall St. Louis – Student housing adjacent to SLU campus",
+                    },
+                    {
+                      id: "market-analysis",
+                      title: "Market Analysis", 
+                      keyMetrics: [
+                        { label: "SLU Enrollment", value: "15,200+" },
+                        { label: "Growth Rate", value: "25%" },
+                        { label: "Pre-Lease Rate", value: ">60%" }
+                      ],
+                      summary: "Strong market fundamentals driven by university growth",
+                    },
+                    {
+                      id: "sponsor-profile",
+                      title: "Sponsor Profile",
+                      keyMetrics: [
+                        { label: "Fund Name", value: "Aptitude St. Louis LLC" },
+                        { label: "Developer", value: "Aptitude Development" },
+                        { label: "Track Record", value: "20+ Years Experience" }
+                      ],
+                      summary: "Experienced team with proven student housing development expertise",
+                    }
+                ]
+            }
         }
     ],
     details: {
@@ -544,88 +598,115 @@ const soGoodDallasData: Listing = {
     listingName: "SoGood Dallas",
     listingSlug: "sogood-dallas",
     projectId: "sogood-dallas-001",
-    location: "Dallas, TX",
-    minInvestment: 500000,
-    fundName: "Dallas OZ Fund I LLC",
-    heroImages: [],
-    tickerMetrics: [
-        { label: "10-Yr Equity Multiple", value: "2.88x", change: "+20%" },
-        { label: "5-Yr Equity Multiple", value: "2.5x", change: "+15%" },
-        { label: "Preferred Return", value: "9%", change: "Guaranteed" },
-        { label: "Min Investment", value: "$500K", change: "Minimum" },
-        { label: "Total Units", value: "388", change: "Phase I & II" },
-        { label: "Location", value: "Dallas, TX", change: "Prime Location" },
-        { label: "Hold Period", value: "10+ Years", change: "OZ Qualified" },
-        { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
-    ],
-    compellingReasons: [
+    sections: [
         {
-          title: "100% Tax-Free Growth",
-          description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period, plus property tax abatement through PFC.",
-          icon: 'Rocket',
-          highlight: "Tax-Free Exit",
+            type: 'hero',
+            data: {
+                listingName: "SoGood Dallas",
+                location: "Dallas, TX",
+                minInvestment: 500000,
+                fundName: "Dallas OZ Fund I LLC"
+            }
         },
         {
-          title: "Innovation District Creation",
-          description: "SoGood represents a major innovation district featuring a pre-leased innovation center to GSV Ventures, transforming Dallas' southern sector into a tech hub.",
-          icon: 'BarChart3',
-          highlight: "GSV Ventures Pre-Leased",
+            type: 'tickerMetrics',
+            data: {
+                metrics: [
+                    { label: "10-Yr Equity Multiple", value: "2.88x", change: "+20%" },
+                    { label: "5-Yr Equity Multiple", value: "2.5x", change: "+15%" },
+                    { label: "Preferred Return", value: "9%", change: "Guaranteed" },
+                    { label: "Min Investment", value: "$500K", change: "Minimum" },
+                    { label: "Total Units", value: "388", change: "Phase I & II" },
+                    { label: "Location", value: "Dallas, TX", change: "Prime Location" },
+                    { label: "Hold Period", value: "10+ Years", change: "OZ Qualified" },
+                    { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
+                ]
+            }
         },
         {
-          title: "Strategic Dallas Location",
-          description: "Located near iconic neighborhoods including the Farmers Market, Deep Ellum, and Fair Park, with proximity to the $3.7B Convention Center expansion.",
-          icon: 'Train',
-          highlight: "Convention Center Adjacent",
-        }
-    ],
-    executiveSummary: {
-        quote: "What if we could transform Dallas' southern sector while creating an innovation ecosystem that attracts global talent?",
-        paragraphs: [
-            "This vision drives SoGood Dallas — an ambitious master-planned urban community that stands as a catalyst for economic revitalization in one of Dallas' most promising areas. Strategically located near iconic neighborhoods including the Farmers Market, Deep Ellum, the Cedars, and Fair Park, SoGood represents more than development — it's urban transformation.",
-            "Our innovative two-phase approach delivers 388 residential units anchored by a 35,264 SF innovation center fully pre-leased to GSV Ventures. Phase I introduces The Hub at SoGood with 116 units plus the innovation center, while Phase II adds MKT Residences with 272 units and retail featuring Farmers Commons. This isn't just mixed-use development — it's the creation of Dallas' next great district."
-        ],
-        conclusion: "With Hoque Global's 14-acre land ownership eliminating acquisition risk, Opportunity Zone tax benefits, and proximity to the $3.7B Convention Center expansion, SoGood Dallas represents the convergence of visionary planning and exceptional investment opportunity in America's fastest-growing metropolitan area."
-    },
-    investmentCards: [
-        {
-          id: "financial-returns",
-          title: "Financial Returns",
-          keyMetrics: [
-            { label: "10-Yr Equity Multiple", value: "2.88x" },
-            { label: "5-Yr Equity Multiple", value: "2.5x" },
-            { label: "Preferred Return", value: "9%" }
-          ],
-          summary: "Conservative projections with 7.2% unlevered yield on cost",
+            type: 'compellingReasons',
+            data: {
+                reasons: [
+                    {
+                      title: "100% Tax-Free Growth",
+                      description: "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period, plus property tax abatement through PFC.",
+                      icon: 'Rocket',
+                      highlight: "Tax-Free Exit",
+                    },
+                    {
+                      title: "Innovation District Creation",
+                      description: "SoGood represents a major innovation district featuring a pre-leased innovation center to GSV Ventures, transforming Dallas' southern sector into a tech hub.",
+                      icon: 'BarChart3',
+                      highlight: "GSV Ventures Pre-Leased",
+                    },
+                    {
+                      title: "Strategic Dallas Location",
+                      description: "Located near iconic neighborhoods including the Farmers Market, Deep Ellum, and Fair Park, with proximity to the $3.7B Convention Center expansion.",
+                      icon: 'Train',
+                      highlight: "Convention Center Adjacent",
+                    }
+                ]
+            }
         },
         {
-          id: "property-overview", 
-          title: "Property Overview",
-          keyMetrics: [
-            { label: "Total Units", value: "388" },
-            { label: "Innovation Center", value: "35,264 SF" },
-            { label: "Retail Space", value: "49,592 SF" }
-          ],
-          summary: "SoGood Dallas – Master-planned innovation district in two phases",
+            type: 'executiveSummary',
+            data: {
+                summary: {
+                    quote: "What if we could transform Dallas' southern sector while creating an innovation ecosystem that attracts global talent?",
+                    paragraphs: [
+                        "This vision drives SoGood Dallas — an ambitious master-planned urban community that stands as a catalyst for economic revitalization in one of Dallas' most promising areas. Strategically located near iconic neighborhoods including the Farmers Market, Deep Ellum, the Cedars, and Fair Park, SoGood represents more than development — it's urban transformation.",
+                        "Our innovative two-phase approach delivers 388 residential units anchored by a 35,264 SF innovation center fully pre-leased to GSV Ventures. Phase I introduces The Hub at SoGood with 116 units plus the innovation center, while Phase II adds MKT Residences with 272 units and retail featuring Farmers Commons. This isn't just mixed-use development — it's the creation of Dallas' next great district."
+                    ],
+                    conclusion: "With Hoque Global's 14-acre land ownership eliminating acquisition risk, Opportunity Zone tax benefits, and proximity to the $3.7B Convention Center expansion, SoGood Dallas represents the convergence of visionary planning and exceptional investment opportunity in America's fastest-growing metropolitan area."
+                }
+            }
         },
         {
-          id: "market-analysis",
-          title: "Market Analysis", 
-          keyMetrics: [
-            { label: "DFW Job Growth", value: "602K+ Jobs" },
-            { label: "Population", value: "7M+" },
-            { label: "Fortune 1000 HQs", value: "43" }
-          ],
-          summary: "Dallas-Fort Worth leading nation in job and population growth",
-        },
-        {
-          id: "sponsor-profile",
-          title: "Sponsor Profile",
-          keyMetrics: [
-            { label: "Fund Name", value: "Dallas OZ Fund I" },
-            { label: "Developer", value: "Hoque Global" },
-            { label: "Land Ownership", value: "14 Acres Owned" }
-          ],
-          summary: "Experienced team with proven track record and existing land ownership",
+            type: 'investmentCards',
+            data: {
+                cards: [
+                    {
+                      id: "financial-returns",
+                      title: "Financial Returns",
+                      keyMetrics: [
+                        { label: "10-Yr Equity Multiple", value: "2.88x" },
+                        { label: "5-Yr Equity Multiple", value: "2.5x" },
+                        { label: "Preferred Return", value: "9%" }
+                      ],
+                      summary: "Conservative projections with 7.2% unlevered yield on cost",
+                    },
+                    {
+                      id: "property-overview", 
+                      title: "Property Overview",
+                      keyMetrics: [
+                        { label: "Total Units", value: "388" },
+                        { label: "Innovation Center", value: "35,264 SF" },
+                        { label: "Retail Space", value: "49,592 SF" }
+                      ],
+                      summary: "SoGood Dallas – Master-planned innovation district in two phases",
+                    },
+                    {
+                      id: "market-analysis",
+                      title: "Market Analysis", 
+                      keyMetrics: [
+                        { label: "DFW Job Growth", value: "602K+ Jobs" },
+                        { label: "Population", value: "7M+" },
+                        { label: "Fortune 1000 HQs", value: "43" }
+                      ],
+                      summary: "Dallas-Fort Worth leading nation in job and population growth",
+                    },
+                    {
+                      id: "sponsor-profile",
+                      title: "Sponsor Profile",
+                      keyMetrics: [
+                        { label: "Fund Name", value: "Dallas OZ Fund I" },
+                        { label: "Developer", value: "Hoque Global" },
+                        { label: "Land Ownership", value: "14 Acres Owned" }
+                      ],
+                      summary: "Experienced team with proven track record and existing land ownership",
+                    }
+                ]
+            }
         }
     ],
     details: {

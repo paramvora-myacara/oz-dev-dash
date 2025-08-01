@@ -154,6 +154,45 @@ export interface DevelopmentPartner {
     description: string;
 }
 
+// =================================================================================================
+// SECTION TYPES FOR BLOCK-BASED RENDERING
+// =================================================================================================
+
+export interface HeroSectionData {
+  listingName: string;
+  location: string;
+  minInvestment: number;
+  fundName: string;
+}
+
+export interface TickerMetricsSectionData {
+  metrics: TickerMetric[];
+}
+
+export interface CompellingReasonsSectionData {
+  reasons: CompellingReason[];
+}
+
+export interface ExecutiveSummarySectionData {
+  summary: {
+    quote: string;
+    paragraphs: string[];
+    conclusion: string;
+  };
+}
+
+export interface InvestmentCardsSectionData {
+  cards: InvestmentCard[];
+}
+
+export type ListingOverviewSection = 
+  | { type: 'hero'; data: HeroSectionData }
+  | { type: 'tickerMetrics'; data: TickerMetricsSectionData }
+  | { type: 'compellingReasons'; data: CompellingReasonsSectionData }
+  | { type: 'executiveSummary'; data: ExecutiveSummarySectionData }
+  | { type: 'investmentCards'; data: InvestmentCardsSectionData };
+
+
 export interface SponsorProfile {
   pageTitle: string;
   pageSubtitle: string;
@@ -174,18 +213,7 @@ export interface Listing {
   listingName: string;
   listingSlug: string;
   projectId: string; 
-  location: string;
-  minInvestment: number;
-  fundName: string;
-  heroImages: string[];
-  tickerMetrics: TickerMetric[];
-  compellingReasons: CompellingReason[];
-  executiveSummary: {
-    quote: string;
-    paragraphs: string[];
-    conclusion: string;
-  };
-  investmentCards: InvestmentCard[];
+  sections: ListingOverviewSection[];
   details: {
     financialReturns: FinancialReturns;
     propertyOverview: PropertyOverview;
