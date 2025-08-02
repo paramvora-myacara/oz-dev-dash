@@ -307,10 +307,10 @@ const theEdgeOnMainData: Listing = {
                 highlights: {
                   type: 'icons',
                   items: [
-                    { icon: 'Award', text: 'NMHC Top 50 Developer (2021-2023)' },
-                    { icon: 'Building', text: 'Specialized in OZ Development' },
-                    { icon: 'Target', text: 'ESG-Focused Development' },
-                    { icon: 'MapPin', text: 'Phoenix Market Leader' }
+                    { text: 'NMHC Top 50 Developer (2021-2023)', icon: 'Award' },
+                    { text: 'Specialized in OZ Development', icon: 'Building' },
+                    { text: 'ESG-Focused Development', icon: 'Target' },
+                    { text: 'Phoenix Market Leader', icon: 'MapPin' },
                   ]
                 }
               }

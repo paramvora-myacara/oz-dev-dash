@@ -1,7 +1,13 @@
 import React from 'react';
-import { Users } from 'lucide-react';
+import { iconMap } from '../shared/iconMap';
 
-const SponsorIntroSection: React.FC<{ data: any }> = ({ data }) => (
+const SponsorIntroSection: React.FC<{ data: any }> = ({ data }) => {
+  const renderHighlightIcon = (iconName: string) => {
+    const IconComponent = iconMap[iconName];
+    return IconComponent ? <IconComponent className="w-6 h-6 text-orange-500" /> : null;
+  };
+
+  return (
   <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-12">
     <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6">{data.sponsorName}</h3>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -13,7 +19,7 @@ const SponsorIntroSection: React.FC<{ data: any }> = ({ data }) => (
       <div className="space-y-4">
         {data.content.highlights.type === 'icons' && data.content.highlights.items.map((item: any, i: number) => (
           <div key={i} className="flex items-center space-x-3">
-            <Users className="w-6 h-6 text-orange-500" />
+            {renderHighlightIcon(item.icon)}
             <span className="text-gray-900 dark:text-gray-100">{item.text}</span>
           </div>
         ))}
@@ -31,5 +37,6 @@ const SponsorIntroSection: React.FC<{ data: any }> = ({ data }) => (
     </div>
   </div>
 );
+};
 
 export default SponsorIntroSection; 
