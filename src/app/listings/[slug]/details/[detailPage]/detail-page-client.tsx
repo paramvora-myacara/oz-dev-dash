@@ -63,7 +63,7 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
     async function loadBackgroundImages() {
       if (!listing) return;
       try {
-        const images = await getRandomImages(listing.projectId, 'details', 7);
+        const images = await getRandomImages(listing.projectId, 'general', 7);
         setBackgroundImages(images);
       } catch (error) {
         console.error('Error loading background images:', error);
