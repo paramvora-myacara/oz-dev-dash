@@ -1137,4 +1137,4 @@ export const listings: Listing[] = [theEdgeOnMainData, marshallStLouisData, soGo
 
 export const getListingBySlug = (slug: string): Listing | undefined => {
     return listings.find(listing => listing.listingSlug === slug);
-} 
+}; 
