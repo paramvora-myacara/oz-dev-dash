@@ -122,11 +122,11 @@ These are the mandatory, fixed-order sections for the main listing overview page
 ---
 ## Detail Page Sections: Sponsor Profile
 
-The Sponsor Profile page is composed of a flexible array of sections. The AI Agent can include any of the following blocks in any order to build the page.
+The Sponsor Profile page is composed of a flexible array of sections. The AI Agent must adhere to the composition rules outlined at the end of this section.
 
 ### Sponsor Introduction
 - **`type`**: `"sponsorIntro"`
-- **Description**: A detailed introduction to the sponsor. Includes paragraphs of text and a list of highlights, which can be either a simple bulleted list or a list with icons.
+- **Description**: A full-page component providing a detailed introduction to the sponsor. Includes paragraphs of text and a list of highlights. At least one of `sponsorIntro` or `partnershipOverview` must be present.
 - **Data Schema**:
   ```typescript
   interface SponsorIntroSectionData {
@@ -146,7 +146,7 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ### Partnership Overview
 - **`type`**: `"partnershipOverview"`
-- **Description**: Used when there are multiple entities involved, like a developer and a fund manager. Renders a two-column layout detailing each partner.
+- **Description**: A full-page component used when there are multiple entities involved. Renders a two-column layout detailing each partner. At least one of `sponsorIntro` or `partnershipOverview` must be present.
 - **Data Schema**:
   ```typescript
   interface PartnershipOverviewSectionData {
@@ -159,10 +159,11 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ### Track Record
 - **`type`**: `"trackRecord"`
-- **Description**: A grid of key statistics and metrics that showcase the sponsor's track record. The grid will adapt up to 4 columns.
+- **Description**: A full-page component displaying a grid of key statistics and metrics that showcase the sponsor's track record.
 - **Data Schema**:
   ```typescript
   interface TrackRecordSectionData {
+    // This array must contain either 4 or 8 metrics.
     metrics: Array<{
       label?: string; // Optional title for the metric, e.g., "Total Units Developed".
       value: string; // The main statistic, e.g., "1,158+".
@@ -173,10 +174,11 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ### Leadership Team
 - **`type`**: `"leadershipTeam"`
-- **Description**: Displays profiles for the key members of the leadership team in a three-column grid.
+- **Description**: A full-page component displaying profiles for the key members of the leadership team in a grid.
 - **Data Schema**:
   ```typescript
   interface LeadershipTeamSectionData {
+    // This array must contain either 3 or 6 team members.
     teamMembers: Array<{
       name: string;
       title: string;
@@ -188,7 +190,7 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ### Development Portfolio
 - **`type`**: `"developmentPortfolio"`
-- **Description**: A table showcasing the sponsor's recent or relevant projects. Can optionally include a highlighted "Investment Philosophy" summary box below the table.
+- **Description**: A full-page component with a table showcasing the sponsor's recent or relevant projects. Can optionally include an "Investment Philosophy" summary box.
 - **Data Schema**:
   ```typescript
   interface DevelopmentPortfolioSectionData {
@@ -209,10 +211,11 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ### Key Development Partners
 - **`type`**: `"keyDevelopmentPartners"`
-- **Description**: Highlights other key partners involved in the project, such as the General Contractor or Project Manager.
+- **Description**: An optional, full-page component highlighting other key partners involved in the project.
 - **Data Schema**:
   ```typescript
   interface KeyDevelopmentPartnersSectionData {
+    // This array must contain exactly 2 partners if this section is used.
     partners: Array<{
       name: string;
       role: string;
@@ -223,10 +226,11 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ### Competitive Advantages
 - **`type`**: `"competitiveAdvantages"`
-- **Description**: A two-column layout that lists key competitive advantages, each with an icon, title, and description.
+- **Description**: An optional, full-page component that lists key competitive advantages in a two-column layout.
 - **Data Schema**:
   ```typescript
   interface CompetitiveAdvantagesSectionData {
+    // This array must contain 2, 4, or 6 advantages if this section is used.
     advantages: Array<{
       icon: string; // Lucide icon name.
       title: string;
@@ -551,3 +555,15 @@ To ensure a consistent and visually appealing layout, the AI Agent must adhere t
     -   **Half-Width Sections**:
         -   The `demographics`, `supplyDemand`, and `economicDiversification` sections are half-width components designed to appear in a two-column layout.
         -   **Rule**: To maintain the layout, these sections should **only** be included if data is available for **exactly two** of the three types. If data exists for only one, or for all three, they should be omitted entirely. 
+
+### Sponsor Profile Page Composition Rules
+
+-   **Compulsory Sections**: The page must always include the following sections, adhering to their specific constraints:
+    1.  **`sponsorIntro` and/or `partnershipOverview`**: At least one of these sections must be present. Both can be included if relevant data is available for both.
+    2.  `trackRecord` (must contain 4 or 8 metrics)
+    3.  `developmentPortfolio`
+    4.  `leadershipTeam` (must contain 3 or 6 members)
+
+-   **Optional Sections**: The following full-page sections are optional. They should only be included if their data is available and their content constraints are satisfied:
+    -   `competitiveAdvantages` (must contain 2, 4, or 6 advantages)
+    -   `keyDevelopmentPartners` (must contain exactly 2 partners) 
