@@ -50,6 +50,20 @@ These are the mandatory, fixed-order sections for the main listing overview page
     }
     ```
 
+**Example:**
+
+```json
+{
+  "type": "hero",
+  "data": {
+    "listingName": "The Edge on Main",
+    "location": "Mesa, AZ",
+    "minInvestment": 250000,
+    "fundName": "ACARA OZ Fund I LLC"
+  }
+}
+```
+
 ### 2. Ticker Metrics Section
 
 -   **`type`**: `"tickerMetrics"`
@@ -65,6 +79,24 @@ These are the mandatory, fixed-order sections for the main listing overview page
       }>;
     }
     ```
+
+**Example:**
+
+```json
+{
+  "type": "tickerMetrics",
+  "data": {
+    "metrics": [
+      { "label": "10-Yr Equity Multiple", "value": "4.29x", "change": "+329%" },
+      { "label": "Preferred Return", "value": "8%", "change": "Guaranteed" },
+      { "label": "Min Investment", "value": "$250K", "change": "Minimum" },
+      { "label": "Location", "value": "St. Louis, MO", "change": "Prime Location" },
+      { "label": "Hold Period", "value": "10 Years", "change": "OZ Qualified" },
+      { "label": "Tax Benefit", "value": "100%", "change": "Tax-Free Exit" }
+    ]
+  }
+}
+```
 
 ### 3. Compelling Reasons Section
 
@@ -82,6 +114,33 @@ These are the mandatory, fixed-order sections for the main listing overview page
     }
     ```
 
+**Example:**
+
+```json
+{
+  "type": "compellingReasons",
+  "data": {
+    "reasons": [
+      {
+        "title": "100% Tax-Free Growth",
+        "description": "Opportunity Zone benefits provide complete federal tax exemption on investment appreciation after 10-year hold period, plus property tax abatement through PFC.",
+        "icon": "Rocket"
+      },
+      {
+        "title": "Innovation District Creation",
+        "description": "SoGood represents a major innovation district featuring a pre-leased innovation center to GSV Ventures, transforming Dallas' southern sector into a tech hub.",
+        "icon": "BarChart3"
+      },
+      {
+        "title": "Strategic Dallas Location",
+        "description": "Located near iconic neighborhoods including the Farmers Market, Deep Ellum, and Fair Park, with proximity to the $3.7B Convention Center expansion.",
+        "icon": "Train"
+      }
+    ]
+  }
+}
+```
+
 ### 4. Executive Summary Section
 
 -   **`type`**: `"executiveSummary"`
@@ -96,6 +155,24 @@ These are the mandatory, fixed-order sections for the main listing overview page
       };
     }
     ```
+
+**Example:**
+
+```json
+{
+  "type": "executiveSummary",
+  "data": {
+    "summary": {
+      "quote": "A landmark development poised to redefine urban living in downtown Mesa, The Edge on Main capitalizes on a critical housing shortage and a prime transit-oriented location.",
+      "paragraphs": [
+        "This two-phase, 439-unit multifamily project is situated in a qualified Opportunity Zone, offering investors significant tax advantages, including the potential for a 100% tax-free exit on appreciation.",
+        "With Arizona's population booming and a housing deficit exceeding 56,000 units, The Edge on Main is perfectly positioned to meet the overwhelming demand for modern, accessible rental housing in one of the nation's fastest-growing cities."
+      ],
+      "conclusion": "This development represents a rare opportunity to invest in a high-growth market with strong fundamentals and powerful tax incentives, promising substantial returns and lasting community value."
+    }
+  }
+}
+```
 
 ### 5. Investment Cards Section
 
@@ -119,7 +196,60 @@ These are the mandatory, fixed-order sections for the main listing overview page
     }
     ```
 
+**Example:**
+
+```json
+{
+  "type": "investmentCards",
+  "data": {
+    "cards": [
+      {
+        "id": "financial-returns",
+        "title": "Financial Returns",
+        "keyMetrics": [
+          { "label": "10-Yr Equity Multiple", "value": "4.29x" },
+          { "label": "IRR Target", "value": "17.7%" },
+          { "label": "Preferred Return", "value": "8%" }
+        ],
+        "summary": "Projected pre-tax returns for OZ investors over 10-year hold"
+      },
+      {
+        "id": "property-overview",
+        "title": "Property Overview",
+        "keyMetrics": [
+          { "label": "Total Units", "value": "177" },
+          { "label": "Bedrooms", "value": "508" },
+          { "label": "Occupancy", "value": "May 2025" }
+        ],
+        "summary": "The Marshall St. Louis – Student housing adjacent to SLU campus"
+      },
+      {
+        "id": "market-analysis",
+        "title": "Market Analysis",
+        "keyMetrics": [
+          { "label": "SLU Enrollment", "value": "15,200+" },
+          { "label": "Growth Rate", "value": "25%" },
+          { "label": "Pre-Lease Rate", "value": ">60%" }
+        ],
+        "summary": "Strong market fundamentals driven by university growth"
+      },
+      {
+        "id": "sponsor-profile",
+        "title": "Sponsor Profile",
+        "keyMetrics": [
+          { "label": "Fund Name", "value": "Aptitude St. Louis LLC" },
+          { "label": "Developer", "value": "Aptitude Development" },
+          { "label": "Track Record", "value": "20+ Years Experience" }
+        ],
+        "summary": "Experienced team with proven student housing development expertise"
+      }
+    ]
+  }
+}
+```
+
 ---
+
 ## Detail Page Sections: Sponsor Profile
 
 The Sponsor Profile page is composed of a flexible array of sections. The AI Agent must adhere to the composition rules outlined at the end of this section.
@@ -144,6 +274,32 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "sponsorIntro",
+  "data": {
+    "sponsorName": "About Juniper Mountain Capital",
+    "content": {
+      "paragraphs": [
+        "Juniper Mountain Capital is a leading multifamily development firm specializing in Opportunity Zone investments across the Southwest United States. Founded in 2009, we have established ourselves as a trusted partner for institutional and individual investors seeking strong risk-adjusted returns in the multifamily sector.",
+        "Our focus on transit-oriented developments in high-growth markets has consistently delivered superior returns while creating lasting value for the communities we serve. We leverage our deep local market knowledge and proven execution capabilities to identify and capitalize on emerging opportunities."
+      ],
+      "highlights": {
+        "type": "icons",
+        "items": [
+          { "text": "NMHC Top 50 Developer (2021-2023)", "icon": "Award" },
+          { "text": "Specialized in OZ Development", "icon": "Building" },
+          { "text": "ESG-Focused Development", "icon": "Target" },
+          { "text": "Phoenix Market Leader", "icon": "MapPin" }
+        ]
+      }
+    }
+  }
+}
+```
+
 ### Partnership Overview
 - **`type`**: `"partnershipOverview"`
 - **Description**: A full-page component used when there are multiple entities involved. Renders a two-column layout detailing each partner. At least one of `sponsorIntro` or `partnershipOverview` must be present.
@@ -156,6 +312,32 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "partnershipOverview",
+  "data": {
+    "partners": [
+      {
+        "name": "Hoque Global (Developer)",
+        "description": [
+          "Diversified investment company with primary focus on catalytic enterprises in real estate. Parent company of HG Real Estate Solutions, DRG Concepts, iDesign Meetings and RideCentric.",
+          "Recognized leader in revitalization, redevelopment, and re-energization of properties with a focus on community impact and sustainable urban development."
+        ]
+      },
+      {
+        "name": "ACARA Management (Fund Manager)",
+        "description": [
+          "Provides accredited investors with direct investment opportunities in the multifamily industry through partnerships with top-tier development sponsors.",
+          "Vertically integrated platform capturing layers of profit from site selection to management, providing strong long-term cash flow for investors."
+        ]
+      }
+    ]
+  }
+}
+```
 
 ### Track Record
 - **`type`**: `"trackRecord"`
@@ -172,6 +354,22 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "trackRecord",
+  "data": {
+    "metrics": [
+      { "label": "Total Units Developed", "value": "1,158+", "description": "Across 8 successful projects" },
+      { "label": "Total Project Value", "value": "$485M", "description": "Combined development cost" },
+      { "label": "Average Project IRR", "value": "22.4%", "description": "Across completed projects" },
+      { "label": "OZ Projects Completed", "value": "3", "description": "Specialized OZ experience" }
+    ]
+  }
+}
+```
+
 ### Leadership Team
 - **`type`**: `"leadershipTeam"`
 - **Description**: A full-page component displaying profiles for the key members of the leadership team in a grid.
@@ -187,6 +385,36 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "leadershipTeam",
+  "data": {
+    "teamMembers": [
+      {
+        "name": "Todd Vitzthum",
+        "title": "President, ACARA",
+        "experience": "20+ years",
+        "background": "Corporate commercial real estate expert with extensive experience in institutional investments and fund management."
+      },
+      {
+        "name": "Jeff Richmond",
+        "title": "Partner, ACARA",
+        "experience": "15+ years",
+        "background": "Business development specialist with deep expertise in opportunity zone investments and investor relations."
+      },
+      {
+        "name": "Aptitude Development Team",
+        "title": "Development Sponsor",
+        "experience": "10+ years",
+        "background": "Specialized student housing developers with proven track record in university-adjacent properties and complex urban developments."
+      }
+    ]
+  }
+}
+```
 
 ### Development Portfolio
 - **`type`**: `"developmentPortfolio"`
@@ -209,6 +437,22 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "developmentPortfolio",
+  "data": {
+    "projects": [
+      { "name": "Phoenix Gateway Commons", "location": "Phoenix, AZ", "units": "324", "year": "2022", "status": "Completed", "returnsOrFocus": "24.1% IRR" },
+      { "name": "Tempe Station Apartments", "location": "Tempe, AZ", "units": "287", "year": "2021", "status": "Completed", "returnsOrFocus": "19.8% IRR" },
+      { "name": "Scottsdale Reserve", "location": "Scottsdale, AZ", "units": "196", "year": "2020", "status": "Completed", "returnsOrFocus": "21.3% IRR" },
+      { "name": "Mesa Transit Village", "location": "Mesa, AZ", "units": "351", "year": "2023", "status": "In Progress", "returnsOrFocus": "Projected 23%" }
+    ]
+  }
+}
+```
+
 ### Key Development Partners
 - **`type`**: `"keyDevelopmentPartners"`
 - **Description**: An optional, full-page component highlighting other key partners involved in the project.
@@ -224,6 +468,28 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "keyDevelopmentPartners",
+  "data": {
+    "partners": [
+      {
+        "name": "Aptitude Development",
+        "role": "Development Sponsor and Project Manager",
+        "description": "Specialized student housing developer with extensive experience in university-adjacent properties. Leading The Marshall project from conception through completion with proven execution capabilities."
+      },
+      {
+        "name": "Holland Construction",
+        "role": "General Contractor",
+        "description": "Experienced construction partner delivering The Marshall on schedule and on budget. Strong track record in complex urban student housing projects with quality finishes."
+      }
+    ]
+  }
+}
+```
+
 ### Competitive Advantages
 - **`type`**: `"competitiveAdvantages"`
 - **Description**: An optional, full-page component that lists key competitive advantages in a two-column layout.
@@ -238,6 +504,21 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "competitiveAdvantages",
+  "data": {
+    "advantages": [
+      { "icon": "Building", "title": "Land Ownership", "description": "Hoque Global already owns all 14 acres, eliminating acquisition risk and streamlining development" },
+      { "icon": "Award", "title": "Tax Abatements", "description": "Property tax abatement through Public Facility Corporation already established" }
+    ]
+  }
+}
+```
+
 ---
 
 ## Detail Page Sections: Financial Returns
@@ -260,6 +541,24 @@ The Financial Returns page is composed of a fixed set of sections that must all 
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "projections",
+  "data": {
+    "projections": [
+      { "label": "10-Yr Equity Multiple", "value": "4.29x", "description": "Projected gross return on initial investment over the full 10-year hold period." },
+      { "label": "Target IRR", "value": "17.7%", "description": "Projected Internal Rate of Return, net of fees." },
+      { "label": "Preferred Return", "value": "8.0%", "description": "Compounded annually to investors before sponsor participation." },
+      { "label": "Total Capital Requirement", "value": "$30.1M", "description": "New equity investment for recapitalization and stabilization." },
+      { "label": "Year 1 Stabilized NOI", "value": "$2.5M", "description": "Projected Net Operating Income for the first full year of operations." },
+      { "label": "10-Yr Avg. Cash-on-Cash", "value": "11.8%", "description": "Projected average annual pre-tax return on initial equity." }
+    ]
+  }
+}
+```
+
 ### Distribution Timeline
 - **`type`**: `"distributionTimeline"`
 - **Description**: A timeline outlining the expected distribution phases over the life of the investment.
@@ -274,6 +573,22 @@ The Financial Returns page is composed of a fixed set of sections that must all 
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "distributionTimeline",
+  "data": {
+    "timeline": [
+      { "year": "Years 1-2", "phase": "Development & Pre-Leasing", "distribution": "0%", "description": "Construction of Phase I and pre-leasing of residential and retail spaces." },
+      { "year": "Year 3", "phase": "Stabilization", "distribution": "7-9%", "description": "Property reaches stabilized occupancy and begins regular cash flow." },
+      { "year": "Years 4-9", "phase": "Growth & Phased Expansion", "distribution": "8-10%+", "description": "Organic rent growth and development of subsequent phases." },
+      { "year": "Year 10+", "phase": "Disposition", "distribution": "100% of net proceeds", "description": "At disposition, remaining capital and profits are distributed to investors." }
+    ]
+  }
+}
+```
 
 ### Tax Benefits
 - **`type`**: `"taxBenefits"`
@@ -290,31 +605,20 @@ The Financial Returns page is composed of a fixed set of sections that must all 
   }
   ```
 
-*   **Example:**
-    ```json
-    {
-      "type": "taxBenefits",
-      "data": {
-        "benefits": [
-          {
-            "icon": "Calendar",
-            "title": "Capital Gains Deferral",
-            "description": "Investors can defer capital gains taxes on the sale of any asset by reinvesting the gain into a Qualified Opportunity Fund within 180 days."
-          },
-          {
-            "icon": "Target",
-            "title": "Basis Step-Up",
-            "description": "The original deferred capital gains tax liability is reduced by 10% after a 5-year hold."
-          },
-          {
-            "icon": "DollarSign",
-            "title": "Tax-Free Growth",
-            "description": "After a 10-year hold, the appreciation on the Opportunity Zone investment is 100% free from capital gains tax."
-          }
-        ]
-      }
-    }
-    ```
+**Example:**
+
+```json
+{
+  "type": "taxBenefits",
+  "data": {
+    "benefits": [
+      { "icon": "Calendar", "title": "Capital Gains Deferral", "description": "Investors can defer capital gains taxes on the sale of any asset by reinvesting the gain into a Qualified Opportunity Fund within 180 days." },
+      { "icon": "Target", "title": "Basis Step-Up", "description": "The original deferred capital gains tax liability is reduced by 10% after a 5-year hold." },
+      { "icon": "DollarSign", "title": "Tax-Free Growth", "description": "After a 10-year hold, the appreciation on the Opportunity Zone investment is 100% free from capital gains tax." }
+    ]
+  }
+}
+```
 
 ### Investment Structure
 - **`type`**: `"investmentStructure"`
@@ -328,6 +632,23 @@ The Financial Returns page is composed of a fixed set of sections that must all 
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "investmentStructure",
+  "data": {
+    "structure": [
+      { "label": "Minimum Investment", "value": "$250,000" },
+      { "label": "Asset Type", "value": "Student Housing" },
+      { "label": "Target Hold Period", "value": "10 Years" },
+      { "label": "Distribution Frequency", "value": "Annual" },
+      { "label": "Sponsor Co-Invest", "value": "5%" }
+    ]
+  }
+}
+```
 
 ### Financial Returns Page Composition Rules
 - **Compulsory Sections**: The page must always include all of the following sections:
@@ -356,6 +677,22 @@ The Property Overview page is composed of a flexible array of sections. The AI A
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "keyFacts",
+  "data": {
+    "facts": [
+      { "label": "Total Units (Phase I & II)", "value": "388", "description": "Total residential units in the initial phases." },
+      { "label": "Total Commercial SF", "value": "84,856 SF", "description": "Retail and innovation center space." },
+      { "label": "Site Area", "value": "14 Acres", "description": "Total land area for the master-planned development." },
+      { "label": "Phase I-VI Total", "value": "1,720 Units", "description": "Total residential units planned across all phases." }
+    ]
+  }
+}
+```
+
 ### Community Amenities
 - **`type`**: `"amenities"`
 - **Description**: A full-page component showcasing the community amenities available at the property in a grid.
@@ -369,6 +706,26 @@ The Property Overview page is composed of a flexible array of sections. The AI A
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "amenities",
+  "data": {
+    "amenities": [
+      { "name": "Resort-Style Pool & Spa", "icon": "Sun" },
+      { "name": "24/7 Fitness Center", "icon": "Dumbbell" },
+      { "name": "Co-Working Lounge", "icon": "Laptop" },
+      { "name": "Dog Park & Pet Spa", "icon": "Dog" },
+      { "name": "Rooftop Terrace", "icon": "Building2" },
+      { "name": "Resident Clubhouse", "icon": "Users" },
+      { "name": "Secure Package Room", "icon": "Package" },
+      { "name": "EV Charging Stations", "icon": "Zap" }
+    ]
+  }
+}
+```
 
 ### Unit Mix
 - **`type`**: `"unitMix"`
@@ -389,6 +746,27 @@ The Property Overview page is composed of a flexible array of sections. The AI A
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "unitMix",
+  "data": {
+    "unitMix": [
+      { "type": "Studio", "count": 20, "sqft": "450", "rent": "$1,200" },
+      { "type": "1-Bedroom", "count": 15, "sqft": "680", "rent": "$1,500" },
+      { "type": "2-Bed / 2-Bath", "count": 40, "sqft": "950", "rent": "$2,200" },
+      { "type": "3-Bed / 3-Bath", "count": 30, "sqft": "1,200", "rent": "$3,000" },
+      { "type": "4-Bed / 4-Bath", "count": 80, "sqft": "1,400", "rent": "$3,800" }
+    ],
+    "specialFeatures": {
+      "title": "Unit Features",
+      "description": "All units are fully furnished and include granite countertops, stainless steel appliances, in-unit washer/dryer, and high-speed internet."
+    }
+  }
+}
+```
+
 ### Location Highlights
 - **`type`**: `"locationHighlights"`
 - **Description**: An optional, full-page component for highlighting key location features.
@@ -408,6 +786,21 @@ The Property Overview page is composed of a flexible array of sections. The AI A
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "locationHighlights",
+  "data": {
+    "highlights": [
+      { "title": "Transit-Oriented", "description": "Adjacent to the Main Street Light Rail station, offering direct access across the valley.", "icon": "Train", "colors": { "bg": "bg-blue-50 dark:bg-blue-900/10", "text": "text-blue-600 dark:text-blue-400" } },
+      { "title": "Downtown Mesa Hub", "description": "Walkable to dozens of restaurants, cafes, shops, and cultural venues.", "icon": "MapPin", "colors": { "bg": "bg-green-50 dark:bg-green-900/10", "text": "text-green-600 dark:text-green-400" } },
+      { "title": "Innovation District", "description": "Located within Mesa's growing Innovation District, home to top educational and tech institutions.", "icon": "Cpu", "colors": { "bg": "bg-purple-50 dark:bg-purple-900/10", "text": "text-purple-600 dark:text-purple-400" } }
+    ]
+  }
+}
+```
+
 ### Location Features (Advanced)
 - **`type`**: `"locationFeatures"`
 - **Description**: An optional, full-page component for a detailed, multi-column layout of location features.
@@ -423,6 +816,21 @@ The Property Overview page is composed of a flexible array of sections. The AI A
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "locationFeatures",
+  "data": {
+    "featureSections": [
+      { "category": "Transit & Connectivity", "icon": "Bus", "features": ["Adjacent to future IH-30 deck park", "Near Dallas Farmers Market", "Close to Deep Ellum entertainment district", "Walking distance to Fair Park"] },
+      { "category": "Urban Amenities", "icon": "MapPin", "features":["$3.7B Convention Center expansion nearby", "The Cedars historic district", "Farmers Market dining & shopping", "Multiple cultural venues"] },
+      { "category": "Economic Drivers", "icon": "Building", "features": ["Innovation center pre-leased to GSV Ventures", "Property tax abatement through PFC", "Adaptive reuse of former industrial property", "Master-planned community catalyst"] }
+    ]
+  }
+}
+```
+
 ### Development Timeline
 - **`type`**: `"developmentTimeline"`
 - **Description**: An optional, full-page component with a simple vertical timeline showing the progress of the development.
@@ -436,6 +844,22 @@ The Property Overview page is composed of a flexible array of sections. The AI A
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "developmentTimeline",
+  "data": {
+    "timeline": [
+      { "status": "completed", "title": "Groundbreaking", "description": "Q1 2023" },
+      { "status": "in_progress", "title": "Construction", "description": "99% Complete" },
+      { "status": "in_progress", "title": "Expected Delivery", "description": "April 2025" },
+      { "status": "in_progress", "title": "Occupancy Start", "description": "May 2025 (>60% Pre-leased)" }
+    ]
+  }
+}
+```
 
 ### Development Phases
 - **`type`**: `"developmentPhases"`
@@ -452,6 +876,20 @@ The Property Overview page is composed of a flexible array of sections. The AI A
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "developmentPhases",
+  "data": {
+    "phases": [
+      { "phase": "Phase I - The Hub", "units": 116, "sqft": "123,777", "features": "Innovation Center (35,264 SF) + Retail", "timeline": "Est. 2027" },
+      { "phase": "Phase II - MKT Residences", "units": 272, "sqft": "206,118", "features": "Retail Anchor + Farmers Commons", "timeline": "Est. 2027" }
+    ]
+  }
+}
+```
 
 ### Property Overview Page Composition Rules
 
@@ -486,6 +924,24 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "marketMetrics",
+  "data": {
+    "metrics": [
+      { "label": "Population Growth (2020-2030)", "value": "+18.5%", "description": "Phoenix-Mesa MSA projected growth" },
+      { "label": "Median Household Income", "value": "$68,400", "description": "Mesa city median (2023)" },
+      { "label": "Job Growth Rate", "value": "+3.2%", "description": "Annual employment growth" },
+      { "label": "Housing Shortage", "value": "56,000+", "description": "Units needed to meet demand" },
+      { "label": "Rent Growth (5-year)", "value": "+42%", "description": "Class A multifamily rent appreciation" },
+      { "label": "Occupancy Rate", "value": "96.2%", "description": "Current market occupancy" }
+    ]
+  }
+}
+```
+
 ### Major Employers
 - **`type`**: `"majorEmployers"`
 - **Description**: A table listing the major employers in the area. This should include between 4 and 8 of the closest and largest employers.
@@ -502,6 +958,22 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "majorEmployers",
+  "data": {
+    "employers": [
+      { "name": "Saint Louis University", "employees": "7,000+", "industry": "Education", "distance": "0.1 miles" },
+      { "name": "BJC HealthCare", "employees": "30,000+", "industry": "Healthcare", "distance": "0.5 miles" },
+      { "name": "Cortex Innovation District", "employees": "6,000+", "industry": "Tech/Biotech", "distance": "0.5 miles" },
+      { "name": "SSM Health", "employees": "40,000+", "industry": "Healthcare", "distance": "1 mile" }
+    ]
+  }
+}
+```
+
 ### Demographics
 - **`type`**: `"demographics"`
 - **Description**: A half-width component displaying key demographic data points for the target market.
@@ -515,6 +987,22 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "demographics",
+  "data": {
+    "demographics": [
+      { "category": "Median Age", "value": "32.1", "description": "Young and growing population." },
+      { "category": "College Educated", "value": "41%", "description": "Highly educated workforce." },
+      { "category": "Household Growth (5-Yr)", "value": "8.5%", "description": "Rapid formation of new households." },
+      { "category": "Job Growth (1-Year)", "value": "3.9%", "description": "Significantly above national average." }
+    ]
+  }
+}
+```
 
 ### Key Market Drivers
 - **`type`**: `"keyMarketDrivers"`
@@ -531,6 +1019,22 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "keyMarketDrivers",
+  "data": {
+    "drivers": [
+      { "title": "Migration", "description": "Net in-migration of 120,000+ annually to Arizona", "icon": "Users" },
+      { "title": "Development", "description": "Transit-oriented development prioritized by Mesa", "icon": "Building" },
+      { "title": "Industries", "description": "Healthcare, aerospace, and tech driving job growth", "icon": "Factory" },
+      { "title": "Rent Growth", "description": "Strong rent appreciation across all asset classes", "icon": "TrendingUp" }
+    ]
+  }
+}
+```
+
 ### Supply & Demand Analysis
 - **`type`**: `"supplyDemand"`
 - **Description**: A half-width component with a list of points analyzing the supply and demand dynamics of the market.
@@ -544,6 +1048,22 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
     }>;
   }
   ```
+
+**Example:**
+
+```json
+{
+  "type": "supplyDemand",
+  "data": {
+    "analysis": [
+      { "title": "Housing Deficit", "description": "Arizona needs 56,000+ additional housing units to meet current demand", "icon": "Home" },
+      { "title": "Population Growth", "description": "Phoenix-Mesa MSA adding 80,000+ new residents annually", "icon": "TrendingUp" },
+      { "title": "Limited New Supply", "description": "Construction constraints limit new multifamily development", "icon": "Building" },
+      { "title": "Job Creation", "description": "Major employers continuing expansion in Phoenix metro", "icon": "Factory" }
+    ]
+  }
+}
+```
 
 ### Competitive Analysis
 - **`type`**: `"competitiveAnalysis"`
@@ -563,6 +1083,22 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
   }
   ```
 
+**Example:**
+
+```json
+{
+  "type": "competitiveAnalysis",
+  "data": {
+    "competitors": [
+      { "name": "Verve St. Louis", "built": "2021", "beds": "162", "rent": "$1,115", "occupancy": "100%", "rentGrowth": "18.4%" },
+      { "name": "The Standard St. Louis", "built": "2015", "beds": "465", "rent": "$1,222", "occupancy": "96%", "rentGrowth": "37.1%" },
+      { "name": "City Lofts at Laclede", "built": "2006", "beds": "408", "rent": "$989", "occupancy": "100%", "rentGrowth": "30.3%" }
+    ],
+    "summary": "Limited supply with only 162 new beds since 2017, while SLU enrollment has grown 25%. Strong rent growth and occupancy rates demonstrate robust demand."
+  }
+}
+```
+
 ### Economic Diversification
 - **`type`**: `"economicDiversification"`
 - **Description**: A half-width component highlighting the different economic sectors contributing to the market's strength.
@@ -575,6 +1111,21 @@ The Market Analysis page is composed of a flexible array of sections. To ensure 
     }>;
   }
   ``` 
+
+**Example:**
+
+```json
+{
+  "type": "economicDiversification",
+  "data": {
+    "sectors": [
+      { "title": "Technology Sector", "description": "One-third of all Texas tech jobs are located in DFW, with 59,000 new positions added in the past 5 years." },
+      { "title": "Corporate Headquarters", "description": "Home to 43 Fortune 1000 and 22 Fortune 500 companies, providing a stable, high-income employment base." },
+      { "title": "Population Growth", "description": "DFW leads all U.S. metro areas in population growth, adding over 120,000 new residents annually." }
+    ]
+  }
+}
+```
 
 ### Market Analysis Page Composition Rules
 
@@ -603,3 +1154,407 @@ To ensure a consistent and visually appealing layout, the AI Agent must adhere t
 -   **Optional Sections**: The following full-page sections are optional. They should only be included if their data is available and their content constraints are satisfied:
     -   `competitiveAdvantages` (must contain 2, 4, or 6 advantages)
     -   `keyDevelopmentPartners` (must contain exactly 2 partners) 
+
+---
+## Full Listing JSON Skeleton
+
+This skeleton provides a complete example of a `Listing` object with all possible sections and their fields populated with placeholder data. Use this as a reference for constructing the full JSON payload.
+
+```json
+{
+  "listingName": "Example Listing Name",
+  "listingSlug": "example-listing-slug",
+  "projectId": "example-project-id-001",
+  "sections": [
+    {
+      "type": "hero",
+      "data": {
+        "listingName": "Example Listing Name",
+        "location": "City, ST",
+        "minInvestment": 100000,
+        "fundName": "Example OZ Fund I LLC"
+      }
+    },
+    {
+      "type": "tickerMetrics",
+      "data": {
+        "metrics": [
+          { "label": "10-Yr Equity Multiple", "value": "3.0x", "change": "+15%" },
+          { "label": "Preferred Return", "value": "8%", "change": "Guaranteed" },
+          { "label": "Min Investment", "value": "$100K", "change": "Minimum" },
+          { "label": "Location", "value": "City, ST", "change": "Prime Location" },
+          { "label": "Hold Period", "value": "10 Years", "change": "OZ Qualified" },
+          { "label": "Tax Benefit", "value": "100%", "change": "Tax-Free Exit" }
+        ]
+      }
+    },
+    {
+      "type": "compellingReasons",
+      "data": {
+        "reasons": [
+          {
+            "title": "Reason Title 1",
+            "description": "Short description for compelling reason 1.",
+            "icon": "IconName1"
+          },
+          {
+            "title": "Reason Title 2",
+            "description": "Short description for compelling reason 2.",
+            "icon": "IconName2"
+          },
+          {
+            "title": "Reason Title 3",
+            "description": "Short description for compelling reason 3.",
+            "icon": "IconName3"
+          }
+        ]
+      }
+    },
+    {
+      "type": "executiveSummary",
+      "data": {
+        "summary": {
+          "quote": "An impactful quote to lead the section.",
+          "paragraphs": [
+            "This is the first paragraph of the executive summary.",
+            "This is the second paragraph of the executive summary."
+          ],
+          "conclusion": "A concluding sentence or two for the summary."
+        }
+      }
+    },
+    {
+      "type": "investmentCards",
+      "data": {
+        "cards": [
+          {
+            "id": "financial-returns",
+            "title": "Financial Returns",
+            "keyMetrics": [
+              { "label": "10-Yr Equity Multiple", "value": "3.0x" },
+              { "label": "IRR", "value": "15%" },
+              { "label": "Preferred Return", "value": "8%" }
+            ],
+            "summary": "Summary for financial returns card."
+          },
+          {
+            "id": "property-overview",
+            "title": "Property Overview",
+            "keyMetrics": [
+              { "label": "Total Units", "value": "250" },
+              { "label": "Asset Class", "value": "Multifamily" },
+              { "label": "Year Built", "value": "2025" }
+            ],
+            "summary": "Summary for property overview card."
+          },
+          {
+            "id": "market-analysis",
+            "title": "Market Analysis",
+            "keyMetrics": [
+              { "label": "Population Growth", "value": "5%" },
+              { "label": "Job Growth", "value": "3%" },
+              { "label": "Median Income", "value": "$80,000" }
+            ],
+            "summary": "Summary for market analysis card."
+          },
+          {
+            "id": "sponsor-profile",
+            "title": "Sponsor Profile",
+            "keyMetrics": [
+              { "label": "Experience", "value": "20+ Years" },
+              { "label": "AUM", "value": "$500M+" },
+              { "label": "Track Record", "value": "Proven Success" }
+            ],
+            "summary": "Summary for sponsor profile card."
+          }
+        ]
+      }
+    }
+  ],
+  "details": {
+    "financialReturns": {
+      "pageTitle": "Financial Returns",
+      "pageSubtitle": "Detailed financial breakdown.",
+      "backgroundImages": [],
+      "sections": [
+        {
+          "type": "projections",
+          "data": {
+            "projections": [
+              { "label": "10-Yr Equity Multiple", "value": "3.0x", "description": "Description for equity multiple." },
+              { "label": "Target IRR", "value": "15%", "description": "Description for IRR." },
+              { "label": "Preferred Return", "value": "8%", "description": "Description for preferred return." },
+              { "label": "Metric 4", "value": "Value 4", "description": "Description 4" },
+              { "label": "Metric 5", "value": "Value 5", "description": "Description 5" },
+              { "label": "Metric 6", "value": "Value 6", "description": "Description 6" }
+            ]
+          }
+        },
+        {
+          "type": "distributionTimeline",
+          "data": {
+            "timeline": [
+              { "year": "Year 1-2", "phase": "Development", "distribution": "0%", "description": "Description for phase 1." },
+              { "year": "Year 3-5", "phase": "Stabilization", "distribution": "8%", "description": "Description for phase 2." }
+            ]
+          }
+        },
+        {
+          "type": "taxBenefits",
+          "data": {
+            "benefits": [
+              { "icon": "IconName1", "title": "Benefit 1", "description": "Description for tax benefit 1." },
+              { "icon": "IconName2", "title": "Benefit 2", "description": "Description for tax benefit 2." }
+            ]
+          }
+        },
+        {
+          "type": "investmentStructure",
+          "data": {
+            "structure": [
+              { "label": "Min. Investment", "value": "$100,000" },
+              { "label": "Asset Type", "value": "Multifamily" }
+            ]
+          }
+        }
+      ]
+    },
+    "propertyOverview": {
+        "pageTitle": "Property Overview",
+        "pageSubtitle": "Detailed property overview.",
+        "backgroundImages": [],
+        "sections": [
+            {
+                "type": "keyFacts",
+                "data": {
+                    "facts": [
+                        { "label": "Fact 1", "value": "Value 1", "description": "Description 1" },
+                        { "label": "Fact 2", "value": "Value 2", "description": "Description 2" },
+                        { "label": "Fact 3", "value": "Value 3", "description": "Description 3" },
+                        { "label": "Fact 4", "value": "Value 4", "description": "Description 4" }
+                    ]
+                }
+            },
+            {
+                "type": "amenities",
+                "data": {
+                    "amenities": [
+                        { "name": "Amenity 1", "icon": "IconName1" },
+                        { "name": "Amenity 2", "icon": "IconName2" },
+                        { "name": "Amenity 3", "icon": "IconName3" },
+                        { "name": "Amenity 4", "icon": "IconName4" }
+                    ]
+                }
+            },
+            {
+                "type": "unitMix",
+                "data": {
+                    "unitMix": [
+                        { "type": "Studio", "count": 50, "sqft": "500", "rent": "$1500" },
+                        { "type": "1-Bed", "count": 100, "sqft": "750", "rent": "$2000" }
+                    ],
+                    "specialFeatures": {
+                        "title": "Special Features",
+                        "description": "Description of special features."
+                    }
+                }
+            },
+            {
+                "type": "locationHighlights",
+                "data": {
+                    "highlights": [
+                        { "title": "Highlight 1", "description": "Description 1", "icon": "Icon1" },
+                        { "title": "Highlight 2", "description": "Description 2", "icon": "Icon2" },
+                        { "title": "Highlight 3", "description": "Description 3", "icon": "Icon3" }
+                    ]
+                }
+            },
+            {
+                "type": "locationFeatures",
+                "data": {
+                    "featureSections": [
+                        { "category": "Category 1", "icon": "Icon1", "features": ["Feature 1.1", "Feature 1.2"] },
+                        { "category": "Category 2", "icon": "Icon2", "features": ["Feature 2.1", "Feature 2.2"] },
+                        { "category": "Category 3", "icon": "Icon3", "features": ["Feature 3.1", "Feature 3.2"] }
+                    ]
+                }
+            },
+            {
+                "type": "developmentTimeline",
+                "data": {
+                    "timeline": [
+                        { "status": "completed", "title": "Phase 1", "description": "Description 1" },
+                        { "status": "in_progress", "title": "Phase 2", "description": "Description 2" }
+                    ]
+                }
+            },
+            {
+                "type": "developmentPhases",
+                "data": {
+                    "phases": [
+                        { "phase": "Phase 1", "units": 100, "sqft": "100,000", "features": "Features 1", "timeline": "2025" },
+                        { "phase": "Phase 2", "units": 150, "sqft": "150,000", "features": "Features 2", "timeline": "2026" }
+                    ]
+                }
+            }
+        ]
+    },
+    "marketAnalysis": {
+        "pageTitle": "Market Analysis",
+        "pageSubtitle": "Detailed market analysis.",
+        "backgroundImages": [],
+        "sections": [
+            {
+                "type": "marketMetrics",
+                "data": {
+                    "metrics": [
+                        { "label": "Metric 1", "value": "Value 1", "description": "Description 1" },
+                        { "label": "Metric 2", "value": "Value 2", "description": "Description 2" },
+                        { "label": "Metric 3", "value": "Value 3", "description": "Description 3" },
+                        { "label": "Metric 4", "value": "Value 4", "description": "Description 4" },
+                        { "label": "Metric 5", "value": "Value 5", "description": "Description 5" },
+                        { "label": "Metric 6", "value": "Value 6", "description": "Description 6" }
+                    ]
+                }
+            },
+            {
+                "type": "majorEmployers",
+                "data": {
+                    "employers": [
+                        { "name": "Employer 1", "employees": "1000+", "industry": "Industry 1", "distance": "1 mi" },
+                        { "name": "Employer 2", "employees": "2000+", "industry": "Industry 2", "distance": "2 mi" }
+                    ]
+                }
+            },
+            {
+                "type": "demographics",
+                "data": {
+                    "demographics": [
+                        { "category": "Category 1", "value": "Value 1", "description": "Description 1" },
+                        { "category": "Category 2", "value": "Value 2", "description": "Description 2" }
+                    ]
+                }
+            },
+            {
+                "type": "keyMarketDrivers",
+                "data": {
+                    "drivers": [
+                        { "title": "Driver 1", "description": "Description 1", "icon": "Icon1" },
+                        { "title": "Driver 2", "description": "Description 2", "icon": "Icon2" },
+                        { "title": "Driver 3", "description": "Description 3", "icon": "Icon3" },
+                        { "title": "Driver 4", "description": "Description 4", "icon": "Icon4" }
+                    ]
+                }
+            },
+            {
+                "type": "supplyDemand",
+                "data": {
+                    "analysis": [
+                        { "icon": "Icon1", "title": "Supply", "description": "Supply analysis." },
+                        { "icon": "Icon2", "title": "Demand", "description": "Demand analysis." }
+                    ]
+                }
+            },
+            {
+                "type": "competitiveAnalysis",
+                "data": {
+                    "competitors": [
+                        { "name": "Competitor 1", "built": "2020", "beds": "200", "rent": "$2000", "occupancy": "95%", "rentGrowth": "5%" }
+                    ],
+                    "summary": "Competitive analysis summary."
+                }
+            },
+            {
+                "type": "economicDiversification",
+                "data": {
+                    "sectors": [
+                        { "title": "Sector 1", "description": "Description 1" },
+                        { "title": "Sector 2", "description": "Description 2" }
+                    ]
+                }
+            }
+        ]
+    },
+    "sponsorProfile": {
+      "sponsorName": "Example Sponsor Name",
+      "sections": [
+        {
+          "type": "sponsorIntro",
+          "data": {
+            "sponsorName": "About Example Sponsor",
+            "content": {
+              "paragraphs": [ "Paragraph 1 about sponsor.", "Paragraph 2 about sponsor." ],
+              "highlights": {
+                "type": "icons",
+                "items": [
+                  { "text": "Highlight 1", "icon": "Icon1" },
+                  { "text": "Highlight 2", "icon": "Icon2" }
+                ]
+              }
+            }
+          }
+        },
+        {
+            "type": "partnershipOverview",
+            "data": {
+                "partners": [
+                    { "name": "Partner 1", "description": ["Description of partner 1."] },
+                    { "name": "Partner 2", "description": ["Description of partner 2."] }
+                ]
+            }
+        },
+        {
+          "type": "trackRecord",
+          "data": {
+            "metrics": [
+              { "label": "Metric 1", "value": "Value 1", "description": "Description 1" },
+              { "label": "Metric 2", "value": "Value 2", "description": "Description 2" },
+              { "label": "Metric 3", "value": "Value 3", "description": "Description 3" },
+              { "label": "Metric 4", "value": "Value 4", "description": "Description 4" }
+            ]
+          }
+        },
+        {
+          "type": "leadershipTeam",
+          "data": {
+            "teamMembers": [
+              { "name": "Member 1", "title": "Title 1", "experience": "10+ years", "background": "Background of member 1." },
+              { "name": "Member 2", "title": "Title 2", "experience": "15+ years", "background": "Background of member 2." }
+            ]
+          }
+        },
+        {
+          "type": "developmentPortfolio",
+          "data": {
+            "projects": [
+              { "name": "Project 1", "location": "Location 1", "units": "100", "year": "2022", "status": "Completed", "returnsOrFocus": "Focus 1" }
+            ],
+            "investmentPhilosophy": {
+              "title": "Investment Philosophy",
+              "description": "Description of investment philosophy."
+            }
+          }
+        },
+        {
+            "type": "keyDevelopmentPartners",
+            "data": {
+                "partners": [
+                    { "name": "Partner 1", "role": "Role 1", "description": "Description 1" },
+                    { "name": "Partner 2", "role": "Role 2", "description": "Description 2" }
+                ]
+            }
+        },
+        {
+            "type": "competitiveAdvantages",
+            "data": {
+                "advantages": [
+                    { "icon": "Icon1", "title": "Advantage 1", "description": "Description 1" },
+                    { "icon": "Icon2", "title": "Advantage 2", "description": "Description 2" }
+                ]
+            }
+        }
+      ]
+    }
+  }
+}
+``` 
