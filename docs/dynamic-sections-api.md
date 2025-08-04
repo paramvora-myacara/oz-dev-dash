@@ -412,14 +412,15 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ## Detail Page Sections: Market Analysis
 
-The Market Analysis page is composed of a flexible array of sections that can be arranged in any order.
+The Market Analysis page is composed of a flexible array of sections. To ensure a consistent and visually appealing layout, the AI Agent must adhere to the composition rules outlined at the end of this section.
 
 ### Market Metrics
 - **`type`**: `"marketMetrics"`
-- **Description**: A grid of top-level statistics about the target market.
+- **Description**: A grid of top-level statistics about the target market. The agent must select exactly 6 of the most high-impact metrics.
 - **Data Schema**:
   ```typescript
   interface MarketMetricsSectionData {
+    // This array must always contain exactly 6 items.
     metrics: Array<{
       label: string;
       value: string;
@@ -430,10 +431,11 @@ The Market Analysis page is composed of a flexible array of sections that can be
 
 ### Major Employers
 - **`type`**: `"majorEmployers"`
-- **Description**: A table listing the major employers in the area.
+- **Description**: A table listing the major employers in the area. This should include between 4 and 8 of the closest and largest employers.
 - **Data Schema**:
   ```typescript
   interface MajorEmployersSectionData {
+    // This array should contain between 4 and 8 items.
     employers: Array<{
       name: string;
       employees: string;
@@ -445,7 +447,7 @@ The Market Analysis page is composed of a flexible array of sections that can be
 
 ### Demographics
 - **`type`**: `"demographics"`
-- **Description**: Displays key demographic data points for the target market.
+- **Description**: A half-width component displaying key demographic data points for the target market.
 - **Data Schema**:
   ```typescript
   interface DemographicsSectionData {
@@ -459,10 +461,11 @@ The Market Analysis page is composed of a flexible array of sections that can be
 
 ### Key Market Drivers
 - **`type`**: `"keyMarketDrivers"`
-- **Description**: A grid of icons and descriptions that highlight the primary factors driving the market's growth.
+- **Description**: A grid of icons and descriptions that highlight the primary factors driving the market's growth. This section must contain exactly 4 high-impact drivers.
 - **Data Schema**:
   ```typescript
   interface KeyMarketDriversSectionData {
+    // This array must always contain exactly 4 items.
     drivers: Array<{
       title: string;
       description: string;
@@ -473,7 +476,7 @@ The Market Analysis page is composed of a flexible array of sections that can be
 
 ### Supply & Demand Analysis
 - **`type`**: `"supplyDemand"`
-- **Description**: A list of points analyzing the supply and demand dynamics of the market.
+- **Description**: A half-width component with a list of points analyzing the supply and demand dynamics of the market.
 - **Data Schema**:
   ```typescript
   interface SupplyDemandSectionData {
@@ -487,7 +490,7 @@ The Market Analysis page is composed of a flexible array of sections that can be
 
 ### Competitive Analysis
 - **`type`**: `"competitiveAnalysis"`
-- **Description**: A table comparing competitor properties. Can optionally include a summary paragraph.
+- **Description**: A full-width table comparing competitor properties. Can optionally include a summary paragraph.
 - **Data Schema**:
   ```typescript
   interface CompetitiveAnalysisSectionData {
@@ -505,7 +508,7 @@ The Market Analysis page is composed of a flexible array of sections that can be
 
 ### Economic Diversification
 - **`type`**: `"economicDiversification"`
-- **Description**: Highlights the different economic sectors contributing to the market's strength.
+- **Description**: A half-width component highlighting the different economic sectors contributing to the market's strength.
 - **Data Schema**:
   ```typescript
   interface EconomicDiversificationSectionData {
@@ -515,3 +518,19 @@ The Market Analysis page is composed of a flexible array of sections that can be
     }>;
   }
   ``` 
+
+### Market Analysis Page Composition Rules
+
+To ensure a consistent and visually appealing layout, the AI Agent must adhere to the following composition rules when constructing the Market Analysis page.
+
+-   **Compulsory Sections**: The page must always include the following three sections:
+    1.  `marketMetrics`
+    2.  `majorEmployers`
+    3.  `keyMarketDrivers`
+
+-   **Optional Sections & Layout Logic**:
+    -   **Full-Width Section**:
+        -   The `competitiveAnalysis` section is a full-width component. It is optional and should be included if relevant competitive data is available.
+    -   **Half-Width Sections**:
+        -   The `demographics`, `supplyDemand`, and `economicDiversification` sections are half-width components designed to appear in a two-column layout.
+        -   **Rule**: To maintain the layout, these sections should **only** be included if data is available for **exactly two** of the three types. If data exists for only one, or for all three, they should be omitted entirely. 
