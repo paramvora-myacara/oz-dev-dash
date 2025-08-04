@@ -53,13 +53,13 @@ These are the mandatory, fixed-order sections for the main listing overview page
 ### 2. Ticker Metrics Section
 
 -   **`type`**: `"tickerMetrics"`
--   **Description**: A scrolling marquee of key financial and property metrics. This section must contain a fixed set of 8 metrics. The `label` for each metric should be one of the following: '10-Yr Equity Multiple', '3-Yr Equity Multiple', 'Preferred Return', 'Min Investment', 'Total Units', 'Location', 'Hold Period', 'Tax Benefit'. Only the `value` and `change` fields should be customized per listing.
+-   **Description**: A scrolling marquee of key financial and property metrics. This section must contain a fixed set of 6 metrics. The `label` for each metric should be one of the following: '10-Yr Equity Multiple', 'Preferred Return', 'Min Investment', 'Location', 'Hold Period', 'Tax Benefit'. Only the `value` and `change` fields should be customized per listing.
 -   **Data Schema**:
     ```typescript
     interface TickerMetricsSectionData {
       // This array must always contain exactly 8 items with fixed labels.
       metrics: Array<{
-        label: "10-Yr Equity Multiple" | "3-Yr Equity Multiple" | "Preferred Return" | "Min Investment" | "Total Units" | "Location" | "Hold Period" | "Tax Benefit";
+        label: "10-Yr Equity Multiple" | "Preferred Return" | "Min Investment" | "Location" | "Hold Period" | "Tax Benefit";
         value: string;  // e.g., "2.8–3.2x"
         change: string; // A short descriptive string, e.g., "+12%" or "Guaranteed"
       }>;
