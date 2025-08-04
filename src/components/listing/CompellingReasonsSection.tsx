@@ -1,11 +1,7 @@
 'use client';
 
-import { Rocket, BarChart3, Train, TrendingUp, Building, Target, Users, Expand } from "lucide-react";
 import { CompellingReasonsSectionData } from '@/types/listing';
-
-const iconComponents: { [key: string]: React.ComponentType<any> } = {
-    Rocket, BarChart3, Train, TrendingUp, Building, Target, Users, Expand
-};
+import { iconMap } from '@/components/listing/details/shared/iconMap';
 
 const CompellingReasonsSection: React.FC<{ data: CompellingReasonsSectionData }> = ({ data }) => (
     <section className="py-12 md:py-20 px-4 md:px-8 bg-white dark:bg-black">
@@ -20,7 +16,7 @@ const CompellingReasonsSection: React.FC<{ data: CompellingReasonsSectionData }>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
           {data.reasons.map((reason, idx) => {
-              const IconComponent = iconComponents[reason.icon];
+              const IconComponent = iconMap[reason.icon];
               const cardStyles = [
                 {
                     gradient: "from-emerald-50/20 via-emerald-100/20 to-green-200/20 dark:from-emerald-900/10 dark:via-emerald-800/10 dark:to-green-900/10",

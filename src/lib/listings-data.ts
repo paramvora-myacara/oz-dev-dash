@@ -22,10 +22,10 @@ const theEdgeOnMainData: Listing = {
         data: {
             metrics: [
                 { label: "10-Yr Equity Multiple", value: "2.8–3.2x", change: "+12%" },
-                { label: "3-Yr Equity Multiple", value: "2.1x", change: "+8%" },
+               
                 { label: "Preferred Return", value: "7%", change: "Guaranteed" },
                 { label: "Min Investment", value: "$250K", change: "Minimum" },
-                { label: "Total Units", value: "439", change: "Phase I & II" },
+                
                 { label: "Location", value: "Mesa, AZ", change: "Prime Location" },
                 { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
                 { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
@@ -218,9 +218,9 @@ const theEdgeOnMainData: Listing = {
             type: 'locationHighlights',
             data: {
               highlights: [
-                { title: 'Transit-Oriented', description: 'Adjacent to the Main Street Light Rail station, offering direct access across the valley.', icon: 'Train' },
-                { title: 'Downtown Mesa Hub', description: 'Walkable to dozens of restaurants, cafes, shops, and cultural venues.', icon: 'MapPin' },
-                { title: 'Innovation District', description: 'Located within Mesa\'s growing Innovation District, home to top educational and tech institutions.', icon: 'Cpu' }
+                { title: 'Transit-Oriented', description: 'Adjacent to the Main Street Light Rail station, offering direct access across the valley.', icon: 'Train', colors: { bg: 'bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-600 dark:text-blue-400' } },
+                { title: 'Downtown Mesa Hub', description: 'Walkable to dozens of restaurants, cafes, shops, and cultural venues.', icon: 'MapPin', colors: { bg: 'bg-green-50 dark:bg-green-900/10', text: 'text-green-600 dark:text-green-400' } },
+                { title: 'Innovation District', description: 'Located within Mesa\'s growing Innovation District, home to top educational and tech institutions.', icon: 'Cpu', colors: { bg: 'bg-purple-50 dark:bg-purple-900/10', text: 'text-purple-600 dark:text-purple-400' } }
               ]
             }
           }
@@ -392,10 +392,10 @@ const marshallStLouisData: Listing = {
             data: {
                 metrics: [
                     { label: "10-Yr Equity Multiple", value: "4.29x", change: "+329%" },
-                    { label: "IRR Target", value: "17.7%", change: "Strong" },
+                   
                     { label: "Preferred Return", value: "8%", change: "Guaranteed" },
                     { label: "Min Investment", value: "$250K", change: "Minimum" },
-                    { label: "Total Units", value: "177", change: "508 Beds" },
+                   
                     { label: "Location", value: "St. Louis, MO", change: "Prime Location" },
                     { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
                     { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
@@ -593,9 +593,9 @@ const marshallStLouisData: Listing = {
             type: 'locationHighlights',
             data: {
               highlights: [
-                { title: 'Adjacent to SLU', description: 'Located directly across the street from the Saint Louis University campus.', icon: 'School' },
-                { title: 'Cortex Innovation District', description: 'A short walk to the premier tech and innovation hub in St. Louis.', icon: 'Cpu' },
-                { title: 'Grand Center Arts District', description: 'In the heart of St. Louis\'s premier arts and culture district.', icon: 'Palette' }
+                { title: 'Adjacent to SLU', description: 'Located directly across the street from the Saint Louis University campus.', icon: 'School', colors: { bg: 'bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-600 dark:text-blue-400' } },
+                { title: 'Cortex Innovation District', description: 'A short walk to the premier tech and innovation hub in St. Louis.', icon: 'Cpu', colors: { bg: 'bg-green-50 dark:bg-green-900/10', text: 'text-green-600 dark:text-green-400' } },
+                { title: 'Grand Center Arts District', description: 'In the heart of St. Louis\'s premier arts and culture district.', icon: 'Palette', colors: { bg: 'bg-purple-50 dark:bg-purple-900/10', text: 'text-purple-600 dark:text-purple-400' } }
               ]
             }
           },
@@ -783,10 +783,10 @@ const soGoodDallasData: Listing = {
             data: {
                 metrics: [
                     { label: "10-Yr Equity Multiple", value: "2.88x", change: "+20%" },
-                    { label: "5-Yr Equity Multiple", value: "2.5x", change: "+15%" },
+                  
                     { label: "Preferred Return", value: "9%", change: "Guaranteed" },
                     { label: "Min Investment", value: "$500K", change: "Minimum" },
-                    { label: "Total Units", value: "388", change: "Phase I & II" },
+                   
                     { label: "Location", value: "Dallas, TX", change: "Prime Location" },
                     { label: "Hold Period", value: "10+ Years", change: "OZ Qualified" },
                     { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }

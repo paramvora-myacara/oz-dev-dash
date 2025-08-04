@@ -75,6 +75,10 @@ export interface LocationHighlight {
   title: string;
   description: string;
   icon: string;
+  colors?: {
+    bg: string;
+    text: string;
+  };
 }
 
 export interface PropertyOverview {

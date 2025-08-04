@@ -53,12 +53,13 @@ These are the mandatory, fixed-order sections for the main listing overview page
 ### 2. Ticker Metrics Section
 
 -   **`type`**: `"tickerMetrics"`
--   **Description**: A scrolling marquee of key financial and property metrics.
+-   **Description**: A scrolling marquee of key financial and property metrics. This section must contain a fixed set of 8 metrics. The `label` for each metric should be one of the following: '10-Yr Equity Multiple', '3-Yr Equity Multiple', 'Preferred Return', 'Min Investment', 'Total Units', 'Location', 'Hold Period', 'Tax Benefit'. Only the `value` and `change` fields should be customized per listing.
 -   **Data Schema**:
     ```typescript
     interface TickerMetricsSectionData {
+      // This array must always contain exactly 8 items with fixed labels.
       metrics: Array<{
-        label: string;  // e.g., "10-Yr Equity Multiple"
+        label: "10-Yr Equity Multiple" | "3-Yr Equity Multiple" | "Preferred Return" | "Min Investment" | "Total Units" | "Location" | "Hold Period" | "Tax Benefit";
         value: string;  // e.g., "2.8–3.2x"
         change: string; // A short descriptive string, e.g., "+12%" or "Guaranteed"
       }>;
@@ -68,10 +69,11 @@ These are the mandatory, fixed-order sections for the main listing overview page
 ### 3. Compelling Reasons Section
 
 -   **`type`**: `"compellingReasons"`
--   **Description**: Three highlighted cards explaining the top reasons to invest.
+-   **Description**: Three highlighted cards explaining the top reasons to invest. This section must always contain exactly 3 reasons.
 -   **Data Schema**:
     ```typescript
     interface CompellingReasonsSectionData {
+      // This array must always contain exactly 3 items.
       reasons: Array<{
         title: string;       // The title of the reason, e.g., "100% Tax-Free Growth".
         description: string; // A short paragraph explaining the reason.
@@ -89,7 +91,7 @@ These are the mandatory, fixed-order sections for the main listing overview page
     interface ExecutiveSummarySectionData {
       summary: {
         quote: string;      // An impactful quote to lead the section.
-        paragraphs: string[]; // An array of paragraphs for the main body. HTML can be embedded.
+        paragraphs: [string, string]; // An array of exactly two paragraphs for the main body.
         conclusion: string; // A concluding sentence or two.
       };
     }
@@ -98,7 +100,10 @@ These are the mandatory, fixed-order sections for the main listing overview page
 ### 5. Investment Cards Section
 
 -   **`type`**: `"investmentCards"`
--   **Description**: A grid of cards that link to the detailed sub-pages (Due Diligence Vault).
+-   **Description**: A grid of cards that link to the detailed sub-pages (Due Diligence Vault). Each card has specific content requirements:
+    -   **Financial Returns Card**: The `keyMetrics` array must contain exactly 3 metrics with the labels: `"10-Yr Equity Multiple"`, `"IRR"`, and `"Preferred Return"`.
+    -   **Property Overview & Market Analysis Cards**: The `keyMetrics` array must contain the 3 highest-impact metrics for the property/market. The `summary` should pinpoint why these metrics are significant.
+    -   **Sponsor Profile Card**: The `keyMetrics` array must contain 3 pieces of information. The last metric should be a credibility stamp (e.g., track record, AUM, land ownership).
 -   **Data Schema**:
     ```typescript
     interface InvestmentCardsSectionData {
@@ -241,6 +246,7 @@ The Financial Returns page is composed of the following sections. The recommende
 - **Data Schema**:
   ```typescript
   interface ProjectionsSectionData {
+    // This array must always contain exactly 6 items.
     projections: Array<{
       label: string;
       value: string;
@@ -351,6 +357,10 @@ The Property Overview page is composed of a flexible array of sections. The AI A
       title: string;
       description: string;
       icon: string; // Lucide icon name
+      colors?: {
+        bg: string;   // TailwindCSS background color class, e.g., "bg-blue-50 dark:bg-blue-900/10"
+        text: string; // TailwindCSS text color class, e.g., "text-blue-600 dark:text-blue-400"
+      };
     }>;
   }
   ```
