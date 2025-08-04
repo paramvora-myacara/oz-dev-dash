@@ -242,15 +242,16 @@ The Sponsor Profile page is composed of a flexible array of sections. The AI Age
 
 ## Detail Page Sections: Financial Returns
 
-The Financial Returns page is composed of the following sections. The recommended order is as follows, with `taxBenefits` and `investmentStructure` grouped together in a two-column layout.
+The Financial Returns page is composed of a fixed set of sections that must all be present.
 
 ### Financial Projections
 - **`type`**: `"projections"`
-- **Description**: A grid of key financial projections for the project.
+- **Description**: A grid of key financial projections. It must contain exactly 6 of the highest-impact metrics for the deal. The first three metrics are fixed: "10-Yr Equity Multiple", "Target IRR", and "Preferred Return". The remaining three should be selected to best represent the project's financial strengths.
 - **Data Schema**:
   ```typescript
   interface ProjectionsSectionData {
     // This array must always contain exactly 6 items.
+    // The first 3 labels must be "10-Yr Equity Multiple", "Target IRR", and "Preferred Return".
     projections: Array<{
       label: string;
       value: string;
@@ -276,14 +277,15 @@ The Financial Returns page is composed of the following sections. The recommende
 
 ### Tax Benefits
 - **`type`**: `"taxBenefits"`
-- **Description**: Details the tax advantages of investing in the project, specifically related to Opportunity Zones.
+- **Description**: Details the tax advantages of investing in the project, specifically related to Opportunity Zones (OZ benefits).
 - **Data Schema**:
   ```typescript
   interface TaxBenefitsSectionData {
     benefits: Array<{
+      icon: string; // Lucide icon name
       title: string;
       description: string;
-      icon?: string; // Optional icon for the tax benefit
+      icon?: string; // Lucide icon for the tax benefit
     }>;
   }
   ```
@@ -326,6 +328,13 @@ The Financial Returns page is composed of the following sections. The recommende
     }>;
   }
   ```
+
+### Financial Returns Page Composition Rules
+- **Compulsory Sections**: The page must always include all of the following sections:
+    1. `projections`
+    2. `distributionTimeline`
+    3. `taxBenefits`
+    4. `investmentStructure`
 ---
 
 ## Detail Page Sections: Property Overview
