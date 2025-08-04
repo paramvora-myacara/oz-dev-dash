@@ -283,9 +283,36 @@ The Financial Returns page is composed of the following sections. The recommende
     benefits: Array<{
       title: string;
       description: string;
+      icon?: string; // Optional icon for the tax benefit
     }>;
   }
   ```
+
+*   **Example:**
+    ```json
+    {
+      "type": "taxBenefits",
+      "data": {
+        "benefits": [
+          {
+            "icon": "Calendar",
+            "title": "Capital Gains Deferral",
+            "description": "Investors can defer capital gains taxes on the sale of any asset by reinvesting the gain into a Qualified Opportunity Fund within 180 days."
+          },
+          {
+            "icon": "Target",
+            "title": "Basis Step-Up",
+            "description": "The original deferred capital gains tax liability is reduced by 10% after a 5-year hold."
+          },
+          {
+            "icon": "DollarSign",
+            "title": "Tax-Free Growth",
+            "description": "After a 10-year hold, the appreciation on the Opportunity Zone investment is 100% free from capital gains tax."
+          }
+        ]
+      }
+    }
+    ```
 
 ### Investment Structure
 - **`type`**: `"investmentStructure"`

@@ -39,6 +39,7 @@ export interface DistributionPhase {
 export interface TaxBenefit {
   title: string;
   description: string;
+  icon?: string;
 }
 
 export interface InvestmentStructureItem {

@@ -152,9 +152,9 @@ const theEdgeOnMainData: Listing = {
           type: 'taxBenefits',
           data: {
             benefits: [
-              { title: 'Capital Gains Deferral', description: 'Investors can defer capital gains taxes on the sale of any asset by reinvesting the gain into a Qualified Opportunity Fund within 180 days.' },
-              { title: 'Basis Step-Up', description: 'The original deferred capital gains tax liability is reduced by 10% after a 5-year hold.' },
-              { title: 'Tax-Free Growth', description: 'After a 10-year hold, the appreciation on the Opportunity Zone investment is 100% free from capital gains tax.' }
+              { icon: 'Calendar', title: 'Capital Gains Deferral', description: 'Investors can defer capital gains taxes on the sale of any asset by reinvesting the gain into a Qualified Opportunity Fund within 180 days.' },
+              { icon: 'Target', title: 'Basis Step-Up', description: 'The original deferred capital gains tax liability is reduced by 10% after a 5-year hold.' },
+              { icon: 'DollarSign', title: 'Tax-Free Growth', description: 'After a 10-year hold, the appreciation on the Opportunity Zone investment is 100% free from capital gains tax.' }
             ]
           }
         },
@@ -522,9 +522,9 @@ const marshallStLouisData: Listing = {
             type: 'taxBenefits',
             data: {
               benefits: [
-                { title: 'Capital Gains Deferral', description: 'Defer capital gains taxes on the sale of any asset until December 31, 2026.' },
-                { title: 'Basis Step-Up Discount', description: 'A 10% step-up in basis for investments held for 5 years, reducing the original deferred gain.' },
-                { title: 'Tax-Free Growth', description: 'After a 10-year hold, the appreciation on the Opportunity Zone investment is 100% free from capital gains tax.' }
+                { icon: 'Calendar', title: 'Capital Gains Deferral', description: 'Defer federal capital gains tax until 2026 or fund exit' },
+                { icon: 'Target', title: 'Basis Step-Up', description: 'Partial forgiveness of deferred gains after 5+ years' },
+                { icon: 'DollarSign', title: 'Tax-Free Appreciation', description: '100% federal tax exemption on all appreciation after 10 years' }
               ]
             }
           },
@@ -913,9 +913,9 @@ const soGoodDallasData: Listing = {
             type: 'taxBenefits',
             data: {
               benefits: [
-                { title: 'Capital Gains Tax Deferral', description: 'Reinvest gains from a prior investment into a QOF to defer paying taxes until 2026.' },
-                { title: 'Capital Gains Tax Reduction', description: 'After 5 years, the basis on the original investment increases by 10%, reducing the deferred gain.' },
-                { title: 'Tax-Free Growth', description: 'All capital gains earned from the QOF investment are permanently tax-free after a 10-year hold.' }
+                { icon: 'Calendar', title: 'Tax Deferral', description: 'Defer capital gains taxes until 2026 or property sale.' },
+                { icon: 'Target', title: 'Basis Step-Up', description: '10% reduction in deferred gains after 5 years.' },
+                { icon: 'DollarSign', title: 'Tax-Free Appreciation', description: '100% federal tax exemption on all appreciation after 10 years.' }
               ]
             }
           },
