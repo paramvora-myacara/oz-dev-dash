@@ -299,14 +299,15 @@ The Financial Returns page is composed of the following sections. The recommende
 
 ## Detail Page Sections: Property Overview
 
-The Property Overview page is composed of a flexible array of sections. The AI Agent can include any of the following blocks in any order to build the page.
+The Property Overview page is composed of a flexible array of sections. The AI Agent must adhere to the composition rules outlined at the end of this section.
 
 ### Key Facts
 - **`type`**: `"keyFacts"`
-- **Description**: A grid of top-level facts about the property (e.g., total units, year built).
+- **Description**: A full-page component showing a grid of top-level facts about the property.
 - **Data Schema**:
   ```typescript
   interface KeyFactsSectionData {
+    // This array must always contain exactly 4 items.
     facts: Array<{
       label: string;
       value: string;
@@ -317,10 +318,11 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ### Community Amenities
 - **`type`**: `"amenities"`
-- **Description**: A grid showcasing the community amenities available at the property.
+- **Description**: A full-page component showcasing the community amenities available at the property in a grid.
 - **Data Schema**:
   ```typescript
   interface AmenitiesSectionData {
+    // This array must contain either 4 or 8 items.
     amenities: Array<{
       name: string;
       icon: string; // Lucide icon name
@@ -330,7 +332,7 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ### Unit Mix
 - **`type`**: `"unitMix"`
-- **Description**: A table detailing the different unit types, sizes, and rents. Can optionally include a "Special Features" summary box.
+- **Description**: An optional, full-page component with a table detailing the different unit types, sizes, and rents. Can optionally include a "Special Features" summary box.
 - **Data Schema**:
   ```typescript
   interface UnitMixSectionData {
@@ -349,10 +351,11 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ### Location Highlights
 - **`type`**: `"locationHighlights"`
-- **Description**: A simple three-column layout for highlighting key location features, each with an icon.
+- **Description**: An optional, full-page component for highlighting key location features.
 - **Data Schema**:
   ```typescript
   interface LocationHighlightsSectionData {
+    // This array must always contain exactly 3 items if this section is used.
     highlights: Array<{
       title: string;
       description: string;
@@ -367,10 +370,11 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ### Location Features (Advanced)
 - **`type`**: `"locationFeatures"`
-- **Description**: A more detailed, multi-column layout for location features, where each column has a category and a list of specific points.
+- **Description**: An optional, full-page component for a detailed, multi-column layout of location features.
 - **Data Schema**:
   ```typescript
   interface LocationFeaturesSectionData {
+    // This array must always contain exactly 3 items if this section is used.
     featureSections: Array<{
       category: string;
       icon: string; // Lucide icon name
@@ -381,7 +385,7 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ### Development Timeline
 - **`type`**: `"developmentTimeline"`
-- **Description**: A simple vertical timeline showing the progress of the development.
+- **Description**: An optional, full-page component with a simple vertical timeline showing the progress of the development.
 - **Data Schema**:
   ```typescript
   interface DevelopmentTimelineSectionData {
@@ -395,7 +399,7 @@ The Property Overview page is composed of a flexible array of sections. The AI A
 
 ### Development Phases
 - **`type`**: `"developmentPhases"`
-- **Description**: A detailed breakdown of the different phases of a large-scale development.
+- **Description**: An optional, full-page component with a detailed breakdown of the different phases of a large-scale development.
 - **Data Schema**:
   ```typescript
   interface DevelopmentPhasesSectionData {
@@ -408,6 +412,19 @@ The Property Overview page is composed of a flexible array of sections. The AI A
     }>;
   }
   ```
+
+### Property Overview Page Composition Rules
+
+-   **Compulsory Sections**: The page must always include the following two full-page sections:
+    1.  `keyFacts` (must contain exactly 4 facts)
+    2.  `amenities` (must contain 4 or 8 amenities)
+
+-   **Optional Sections**: The following full-page sections are optional and can be included if relevant data is available:
+    -   `locationHighlights` (must contain exactly 3 highlights if included)
+    -   `locationFeatures` (must contain exactly 3 feature sections if included)
+    -   `unitMix`
+    -   `developmentTimeline`
+    -   `developmentPhases`
 ---
 
 ## Detail Page Sections: Market Analysis
