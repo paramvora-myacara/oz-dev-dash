@@ -76,4 +76,10 @@ Half-width components are designed to appear in a two-column layout. To maintain
 
 When updating the `dynamic-sections-api.md` file, be sure to specify the component's width and any layout rules that apply to it.
 
+### Components with Multiple Metrics
+
+For components that display a group of items, such as metrics or features, it is important to specify the number of items that should be displayed in a single row. This ensures that the layout remains consistent and that the number of items is always a multiple of the intended number.
+
+When updating the `dynamic-sections-api.md` file, be sure to specify the number of items that should be displayed in a single row and any layout rules that apply to it.
+
 By following these steps, you can ensure that your new reusable component is correctly integrated into the project and that it is easy for other developers to use and maintain. 
