@@ -44,17 +44,17 @@ export function validateSupabaseConfig(): { isValid: boolean; errors: string[] }
   };
 }
 
-export const PROJECTS = [
+export type ProjectId = string;
+
+export const PROJECTS: ProjectId[] = [
   'edge-on-main-mesa-001',
-  'marshall-st-louis-001', 
+  'marshall-st-louis-001',
   'sogood-dallas-001'
-] as const;
+];
 
-export type ProjectId = typeof PROJECTS[number];
+export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap', 'details'] as const;
 
-export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap'] as const;
-
-export type ImageCategory = typeof IMAGE_CATEGORIES[number];
+export type ImageCategory = string;
 
 /**
  * Get public URL for a Supabase storage object
@@ -227,11 +227,11 @@ export function getProjectIdFromPath(pathname: string): ProjectId | null {
 /**
  * Get all available images for all projects in a category (for main page carousel)
  */
-export async function getAllProjectImages(category: ImageCategory): Promise<Array<{ projectId: ProjectId; images: string[] }>> {
+export async function getAllProjectImages(category: ImageCategory, projects: ProjectId[]): Promise<Array<{ projectId: ProjectId; images: string[] }>> {
   debugLog(`Getting all project images for category: ${category}`);
   
   const results = await Promise.all(
-    PROJECTS.map(async (projectId) => ({
+    projects.map(async (projectId) => ({
       projectId,
       images: await getAvailableImages(projectId, category)
     }))

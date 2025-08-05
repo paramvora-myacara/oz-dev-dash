@@ -13,4 +13,6 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 
+eslintConfig.ignores = ["legacy_pages/**/*"];
+
 export default eslintConfig;

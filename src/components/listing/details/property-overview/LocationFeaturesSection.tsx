@@ -1,0 +1,28 @@
+import React from 'react';
+import { iconMap } from '../shared/iconMap';
+
+const LocationFeaturesSection: React.FC<{ data: any }> = ({ data }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {data.featureSections.map((highlight: any, idx: number) => {
+      const Icon = iconMap[highlight.icon];
+      return (
+        <div key={idx} className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+          <div className="flex items-center space-x-3 mb-6">
+            {Icon && <Icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{highlight.category}</h3>
+          </div>
+          <ul className="space-y-3">
+            {highlight.features.map((feature: string, featureIdx: number) => (
+              <li key={featureIdx} className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-600 dark:text-gray-400 text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    })}
+  </div>
+);
+
+export default LocationFeaturesSection; 
