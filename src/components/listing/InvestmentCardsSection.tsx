@@ -49,7 +49,7 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                     return (
                         <Link
                             key={idx}
-                            href={`/listings/${listingSlug}/details/${card.id}`}
+                            href={`/${listingSlug}/details/${card.id}`}
                             className={`glass-card rounded-3xl p-8 bg-gradient-to-br ${style.gradient} border border-gray-200 dark:border-white/20 shadow-md dark:shadow-xl shadow-gray-200/50 dark:shadow-white/5 hover:shadow-lg dark:hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 animate-fadeIn group relative overflow-hidden`}
                             style={{ animationDelay: `${idx * 150}ms` }}
                         >
