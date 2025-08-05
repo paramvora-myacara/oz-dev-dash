@@ -3,7 +3,7 @@ import { Listing } from "@/types/listing";
 const listingData = {
     "listingName": "University of Nevada, Reno Student Housing",
     "listingSlug": "up-campus-reno",
-    "projectId": "unv-reno-student-housing-401-highland",
+    "projectId": "up-campus-reno-001",
     "sections": [
       {
         "type": "hero",
