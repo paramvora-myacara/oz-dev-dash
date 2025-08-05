@@ -1,30 +1,31 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
 import { Listing, ListingOverviewSection } from '@/types/listing';
-import { 
-  HeroSection, 
-  TickerMetricsSection, 
-  CompellingReasonsSection, 
-  ExecutiveSummarySection, 
-  InvestmentCardsSection 
-} from '@/components/listing';
+import HeroSection from '@/components/listing/HeroSection';
+import TickerMetricsSection from '@/components/listing/TickerMetricsSection';
+import CompellingReasonsSection from '@/components/listing/CompellingReasonsSection';
+import ExecutiveSummarySection from '@/components/listing/ExecutiveSummarySection';
+import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection';
+import ContactDeveloperModal from '@/components/ContactDeveloperModal';
+
 
 interface ListingPageClientProps {
-    listing: Listing;
+  listing: Listing;
 }
 
 export default function ListingPageClient({ listing }: ListingPageClientProps) {
   const { isAuthModalOpen, isConfirmationModalOpen, authError, isLoading, handleRequestVaultAccess, handleSignInOrUp, closeModal } = useAuth();
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   useEffect(() => {
     if (listing) {
       document.title = listing.listingName;
     }
   }, [listing]);
-  
+
   const SectionRenderer = ({ section }: { section: ListingOverviewSection }) => {
     switch (section.type) {
         case 'hero':
@@ -57,14 +58,23 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
             >
               Request Vault Access
             </button>
-            <a
-              href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/${listing.listingSlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
-            >
-              Contact the Developer
-            </a>
+            {listing.listingSlug === 'the-edge-on-main' ? (
+              <button
+                onClick={() => setIsContactModalOpen(true)}
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
+              >
+                Contact the Developer
+              </button>
+            ) : (
+              <a
+                href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/${listing.listingSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
+              >
+                Contact the Developer
+              </a>
+            )}
           </div>
         </section>
       </div>
@@ -79,6 +89,10 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}
         onClose={closeModal}
+      />
+      <ContactDeveloperModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
       />
     </div>
   );
