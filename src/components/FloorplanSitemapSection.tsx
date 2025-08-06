@@ -107,8 +107,8 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
           
           {/* Floorplans */}
           {floorplanImages.length > 0 && (
-            <div className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="group h-full">
+              <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg">
@@ -134,7 +134,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   )}
                 </div>
                 
-                <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
+                <div className="relative flex-grow min-h-[300px] lg:min-h-[50vh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
                   {imageLoading.floorplan && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -179,32 +179,34 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   )}
                 </div>
                 
-                {floorplanImages.length > 1 && (
-                  <div className="flex justify-center mt-6 space-x-3">
-                    {floorplanImages.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setFloorplanIndex(index);
-                          setImageLoading(prev => ({ ...prev, floorplan: true }));
-                        }}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                          index === floorplanIndex 
-                            ? 'bg-indigo-600 dark:bg-indigo-400 scale-125' 
-                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="flex justify-center items-start pt-6 h-[36px]">
+                  {floorplanImages.length > 1 && (
+                    <div className="flex justify-center space-x-3">
+                      {floorplanImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setFloorplanIndex(index);
+                            setImageLoading(prev => ({ ...prev, floorplan: true }));
+                          }}
+                          className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                            index === floorplanIndex 
+                              ? 'bg-indigo-600 dark:bg-indigo-400 scale-125' 
+                              : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
           {/* Sitemaps */}
           {sitemapImages.length > 0 && (
-            <div className="group">
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="group h-full">
+              <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg">
@@ -230,7 +232,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   )}
                 </div>
                 
-                <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
+                <div className="relative flex-grow min-h-[300px] lg:min-h-[50vh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
                   {imageLoading.sitemap && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
@@ -275,24 +277,26 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   )}
                 </div>
                 
-                {sitemapImages.length > 1 && (
-                  <div className="flex justify-center mt-6 space-x-3">
-                    {sitemapImages.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setSitemapIndex(index);
-                          setImageLoading(prev => ({ ...prev, sitemap: true }));
-                        }}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                          index === sitemapIndex 
-                            ? 'bg-emerald-600 dark:bg-emerald-400 scale-125' 
-                            : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="flex justify-center items-start pt-6 h-[36px]">
+                  {sitemapImages.length > 1 && (
+                    <div className="flex justify-center space-x-3">
+                      {sitemapImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setSitemapIndex(index);
+                            setImageLoading(prev => ({ ...prev, sitemap: true }));
+                          }}
+                          className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                            index === sitemapIndex 
+                              ? 'bg-emerald-600 dark:bg-emerald-400 scale-125' 
+                              : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
