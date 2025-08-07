@@ -1,6 +1,7 @@
 import React from 'react';
+import { Editable } from '@/components/Editable';
 
-const UnitMixSection: React.FC<{ data: any }> = ({ data }) => (
+const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => (
   <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Unit Mix</h3>
     <div className="overflow-x-auto">
@@ -16,10 +17,35 @@ const UnitMixSection: React.FC<{ data: any }> = ({ data }) => (
         <tbody>
           {data.unitMix.map((unit: any, idx: number) => (
             <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-              <td className="py-4 font-medium text-gray-900 dark:text-gray-100">{unit.type}</td>
-              <td className="py-4 text-center text-gray-700 dark:text-gray-300">{unit.count}</td>
-              <td className="py-4 text-center text-gray-700 dark:text-gray-300">{unit.sqft}</td>
-              <td className="py-4 text-right font-semibold text-gray-900 dark:text-gray-100">{unit.rent}</td>
+              <td className="py-4 font-medium text-gray-900 dark:text-gray-100">
+                <Editable 
+                  dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].type`}
+                  value={unit.type}
+                  className="font-medium text-gray-900 dark:text-gray-100"
+                />
+              </td>
+              <td className="py-4 text-center text-gray-700 dark:text-gray-300">
+                <Editable 
+                  dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].count`}
+                  value={unit.count}
+                  inputType="number"
+                  className="text-center text-gray-700 dark:text-gray-300"
+                />
+              </td>
+              <td className="py-4 text-center text-gray-700 dark:text-gray-300">
+                <Editable 
+                  dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].sqft`}
+                  value={unit.sqft}
+                  className="text-center text-gray-700 dark:text-gray-300"
+                />
+              </td>
+              <td className="py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
+                <Editable 
+                  dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].rent`}
+                  value={unit.rent}
+                  className="text-right font-semibold text-gray-900 dark:text-gray-100"
+                />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -27,8 +53,17 @@ const UnitMixSection: React.FC<{ data: any }> = ({ data }) => (
     </div>
     {data.specialFeatures && (
       <div className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
-        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{data.specialFeatures.title}</h4>
-        <p className="text-gray-600 dark:text-gray-400">{data.specialFeatures.description}</p>
+        <Editable 
+          dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.title`}
+          value={data.specialFeatures.title}
+          className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+        />
+        <Editable 
+          dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.description`}
+          value={data.specialFeatures.description}
+          inputType="multiline"
+          className="text-gray-600 dark:text-gray-400"
+        />
       </div>
     )}
   </div>

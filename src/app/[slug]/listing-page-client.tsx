@@ -26,18 +26,18 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
     }
   }, [listing]);
 
-  const SectionRenderer = ({ section }: { section: ListingOverviewSection }) => {
+  const SectionRenderer = ({ section, sectionIndex }: { section: ListingOverviewSection; sectionIndex: number }) => {
     switch (section.type) {
         case 'hero':
-            return <HeroSection data={section.data} projectId={listing.projectId} />;
+            return <HeroSection data={section.data} projectId={listing.projectId} sectionIndex={sectionIndex} />;
         case 'tickerMetrics':
-            return <TickerMetricsSection data={section.data} />;
+            return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;
         case 'compellingReasons':
-            return <CompellingReasonsSection data={section.data} />;
+            return <CompellingReasonsSection data={section.data} sectionIndex={sectionIndex} />;
         case 'executiveSummary':
-            return <ExecutiveSummarySection data={section.data} />;
+            return <ExecutiveSummarySection data={section.data} sectionIndex={sectionIndex} />;
         case 'investmentCards':
-            return <InvestmentCardsSection data={section.data} listingSlug={listing.listingSlug} />;
+            return <InvestmentCardsSection data={section.data} listingSlug={listing.listingSlug} sectionIndex={sectionIndex} />;
         default:
             return null;
     }
@@ -47,7 +47,7 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-[1920px] mx-auto">
         {listing.sections.map((section, idx) => (
-            <SectionRenderer key={idx} section={section} />
+            <SectionRenderer key={idx} section={section} sectionIndex={idx} />
         ))}
         {/* Call to Action Buttons */}
         <section className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">

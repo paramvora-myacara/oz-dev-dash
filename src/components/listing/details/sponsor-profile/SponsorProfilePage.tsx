@@ -8,22 +8,22 @@ import DevelopmentPortfolioSection from './DevelopmentPortfolioSection';
 import KeyDevelopmentPartnersSection from './KeyDevelopmentPartnersSection';
 import CompetitiveAdvantagesSection from './CompetitiveAdvantagesSection';
 
-const SectionRenderer = ({ section }: { section: SponsorProfileSection }) => {
+const SectionRenderer = ({ section, sectionIndex }: { section: SponsorProfileSection; sectionIndex: number }) => {
   switch (section.type) {
     case 'sponsorIntro':
-      return <SponsorIntroSection data={section.data} />;
+      return <SponsorIntroSection data={section.data} sectionIndex={sectionIndex} />;
     case 'partnershipOverview':
-        return <PartnershipOverviewSection data={section.data} />
+        return <PartnershipOverviewSection data={section.data} sectionIndex={sectionIndex} />
     case 'trackRecord':
-      return <TrackRecordSection data={section.data} />;
+      return <TrackRecordSection data={section.data} sectionIndex={sectionIndex} />;
     case 'leadershipTeam':
-      return <LeadershipTeamSection data={section.data} />;
+      return <LeadershipTeamSection data={section.data} sectionIndex={sectionIndex} />;
     case 'developmentPortfolio':
-      return <DevelopmentPortfolioSection data={section.data} />;
+      return <DevelopmentPortfolioSection data={section.data} sectionIndex={sectionIndex} />;
     case 'keyDevelopmentPartners':
-        return <KeyDevelopmentPartnersSection data={section.data} />
+        return <KeyDevelopmentPartnersSection data={section.data} sectionIndex={sectionIndex} />
     case 'competitiveAdvantages':
-        return <CompetitiveAdvantagesSection data={section.data} />
+        return <CompetitiveAdvantagesSection data={section.data} sectionIndex={sectionIndex} />
     default:
       return null;
   }
@@ -37,7 +37,7 @@ const SponsorProfilePage: React.FC<{ data: SponsorProfile }> = ({ data }) => {
   return (
     <div className="max-w-7xl mx-auto">
       {data.sections.map((section, idx) => (
-          <SectionRenderer key={idx} section={section} />
+          <SectionRenderer key={idx} section={section} sectionIndex={idx} />
       ))}
     </div>
   );

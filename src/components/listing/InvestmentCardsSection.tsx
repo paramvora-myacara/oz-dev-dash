@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { TrendingUp, Building, Target, Users, Expand } from "lucide-react";
 import { InvestmentCardsSectionData } from '@/types/listing';
+import { Editable } from '@/components/Editable';
+import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 
-const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listingSlug: string }> = ({ data, listingSlug }) => (
+const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listingSlug: string, sectionIndex: number }> = ({ data, listingSlug, sectionIndex }) => {
+  const { isEditing } = useListingDraftStore();
+  
+  return (
     <section id="investment-cards" className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
@@ -49,7 +54,7 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                     return (
                         <Link
                             key={idx}
-                            href={`/${listingSlug}/details/${card.id}`}
+                            href={isEditing ? `/${listingSlug}/details/${card.id}/edit` : `/${listingSlug}/details/${card.id}`}
                             className={`glass-card rounded-3xl p-8 bg-gradient-to-br ${style.gradient} border border-gray-200 dark:border-white/20 shadow-md dark:shadow-xl shadow-gray-200/50 dark:shadow-white/5 hover:shadow-lg dark:hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 animate-fadeIn group relative overflow-hidden`}
                             style={{ animationDelay: `${idx * 150}ms` }}
                         >
@@ -64,18 +69,32 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                             <div className="space-y-8 mb-6 flex-1">
                                 {card.keyMetrics.map((metric, metricIdx) => (
                                     <div key={metricIdx} className="flex items-center justify-between">
-                                        <span className={`text-lg font-medium ${style.accentColor}`}>{metric.label}</span>
-                                        <span className="text-xl font-semibold text-black dark:text-white">{metric.value}</span>
+                                        <Editable 
+                                            dataPath={`sections[${sectionIndex}].data.cards[${idx}].keyMetrics[${metricIdx}].label`}
+                                            value={metric.label}
+                                            className={`text-lg font-medium ${style.accentColor}`}
+                                        />
+                                        <Editable 
+                                            dataPath={`sections[${sectionIndex}].data.cards[${idx}].keyMetrics[${metricIdx}].value`}
+                                            value={metric.value}
+                                            className="text-xl font-semibold text-black dark:text-white"
+                                        />
                                     </div>
                                 ))}
                             </div>
-                            <p className={`text-base leading-relaxed font-light ${style.accentColor}`}>{card.summary}</p>
+                            <Editable 
+                                dataPath={`sections[${sectionIndex}].data.cards[${idx}].summary`}
+                                value={card.summary}
+                                inputType="multiline"
+                                className={`text-base leading-relaxed font-light ${style.accentColor}`}
+                            />
                         </Link>
                     )
                 })}
             </div>
         </div>
     </section>
-);
+  );
+};
 
 export default InvestmentCardsSection; 

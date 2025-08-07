@@ -5,16 +5,16 @@ import DistributionTimelineSection from './DistributionTimelineSection';
 import TaxBenefitsSection from './TaxBenefitsSection';
 import InvestmentStructureSection from './InvestmentStructureSection';
 
-const SectionRenderer = ({ section }: { section: any }) => {
+const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex: number }) => {
   switch (section.type) {
     case 'projections':
-      return <ProjectionsSection data={section.data} />;
+      return <ProjectionsSection data={section.data} sectionIndex={sectionIndex} />;
     case 'distributionTimeline':
-      return <DistributionTimelineSection data={section.data} />;
+      return <DistributionTimelineSection data={section.data} sectionIndex={sectionIndex} />;
     case 'taxBenefits':
-      return <TaxBenefitsSection data={section.data} />;
+      return <TaxBenefitsSection data={section.data} sectionIndex={sectionIndex} />;
     case 'investmentStructure':
-      return <InvestmentStructureSection data={section.data} />;
+      return <InvestmentStructureSection data={section.data} sectionIndex={sectionIndex} />;
     default:
       return null;
   }
@@ -32,15 +32,15 @@ const FinancialReturnsPage: React.FC<{ data: FinancialReturns }> = ({ data }) =>
           if (idx === 0 || (data.sections[idx - 1].type !== 'taxBenefits' && data.sections[idx - 1].type !== 'investmentStructure')) {
             return (
               <div key={idx} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                <SectionRenderer section={section} />
+                <SectionRenderer section={section} sectionIndex={idx} />
                 {data.sections[idx + 1] && (data.sections[idx + 1].type === 'taxBenefits' || data.sections[idx + 1].type === 'investmentStructure') &&
-                  <SectionRenderer section={data.sections[idx + 1]} />
+                  <SectionRenderer section={data.sections[idx + 1]} sectionIndex={idx + 1} />
                 }
               </div>
             )
           }
         } else {
-          return <SectionRenderer key={idx} section={section} />
+          return <SectionRenderer key={idx} section={section} sectionIndex={idx} />
         }
         return null;
       })}

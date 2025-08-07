@@ -1,6 +1,7 @@
 import React from 'react';
+import { Editable } from '@/components/Editable';
 
-const DevelopmentPhasesSection: React.FC<{ data: any }> = ({ data }) => (
+const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => (
   <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Development Phases</h3>
     <div className="space-y-6">
@@ -8,19 +9,41 @@ const DevelopmentPhasesSection: React.FC<{ data: any }> = ({ data }) => (
         <div key={idx} className="p-6 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{phase.phase}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{phase.timeline}</p>
+              <Editable 
+                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].phase`}
+                value={phase.phase}
+                className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+              />
+              <Editable 
+                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].timeline`}
+                value={phase.timeline}
+                className="text-sm text-gray-600 dark:text-gray-400"
+              />
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{phase.units}</p>
+              <Editable 
+                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].units`}
+                value={phase.units}
+                inputType="number"
+                className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+              />
               <p className="text-sm text-gray-600 dark:text-gray-400">Units</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{phase.sqft}</p>
+              <Editable 
+                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].sqft`}
+                value={phase.sqft}
+                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+              />
               <p className="text-sm text-gray-600 dark:text-gray-400">Rentable SF</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{phase.features}</p>
+              <Editable 
+                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].features`}
+                value={phase.features}
+                inputType="multiline"
+                className="text-sm text-gray-600 dark:text-gray-400"
+              />
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
+import { Editable } from '@/components/Editable';
 
-const DevelopmentPortfolioSection: React.FC<{ data: any }> = ({ data }) => (
+const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => (
    <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Recent Development Portfolio</h3>
         <div className="overflow-x-auto">
@@ -18,20 +19,53 @@ const DevelopmentPortfolioSection: React.FC<{ data: any }> = ({ data }) => (
             <tbody>
               {data.projects.map((project: any, idx: number) => (
                 <tr key={idx} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">{project.name}</td>
-                  <td className="py-3 text-gray-600 dark:text-gray-400">{project.location}</td>
-                  <td className="py-3 text-gray-600 dark:text-gray-400">{project.units}</td>
-                  <td className="py-3 text-gray-600 dark:text-gray-400">{project.year}</td>
-                  <td className="py-3">
-                    <span className={`px-2 py-1 rounded text-sm ${
-                      project.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : project.status === 'Operating' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                      : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                    }`}>
-                      {project.status}
-                    </span>
+                  <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">
+                    <Editable 
+                      dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].name`}
+                      value={project.name}
+                      className="font-semibold text-gray-900 dark:text-gray-100"
+                    />
                   </td>
-                  <td className="py-3 font-semibold text-orange-600 dark:text-orange-400">{project.returnsOrFocus}</td>
+                  <td className="py-3 text-gray-600 dark:text-gray-400">
+                    <Editable 
+                      dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].location`}
+                      value={project.location}
+                      className="text-gray-600 dark:text-gray-400"
+                    />
+                  </td>
+                  <td className="py-3 text-gray-600 dark:text-gray-400">
+                    <Editable 
+                      dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].units`}
+                      value={project.units}
+                      className="text-gray-600 dark:text-gray-400"
+                    />
+                  </td>
+                  <td className="py-3 text-gray-600 dark:text-gray-400">
+                    <Editable 
+                      dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].year`}
+                      value={project.year}
+                      className="text-gray-600 dark:text-gray-400"
+                    />
+                  </td>
+                  <td className="py-3">
+                    <Editable 
+                      dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].status`}
+                      value={project.status}
+                      constraints={{ options: ['Completed', 'In Progress', 'Planning', 'Operating'] }}
+                      className={`px-2 py-1 rounded text-sm ${
+                        project.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                        : project.status === 'Operating' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                        : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                      }`}
+                    />
+                  </td>
+                  <td className="py-3 font-semibold text-orange-600 dark:text-orange-400">
+                    <Editable 
+                      dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].returnsOrFocus`}
+                      value={project.returnsOrFocus}
+                      className="font-semibold text-orange-600 dark:text-orange-400"
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -39,10 +73,17 @@ const DevelopmentPortfolioSection: React.FC<{ data: any }> = ({ data }) => (
         </div>
         {data.investmentPhilosophy && (
           <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-xl">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{data.investmentPhilosophy.title}</h4>
-            <p className="text-gray-600 dark:text-gray-400">
-              {data.investmentPhilosophy.description}
-            </p>
+            <Editable 
+              dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.investmentPhilosophy.title`}
+              value={data.investmentPhilosophy.title}
+              className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+            />
+            <Editable 
+              dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.investmentPhilosophy.description`}
+              value={data.investmentPhilosophy.description}
+              inputType="multiline"
+              className="text-gray-600 dark:text-gray-400"
+            />
           </div>
         )}
       </div>

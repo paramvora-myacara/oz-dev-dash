@@ -1,6 +1,6 @@
 import React from 'react';
 
-const InvestmentStructureSection: React.FC<{ data: any }> = ({ data }) => (
+const InvestmentStructureSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => (
   <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
       <h3 className="text-xl font-semibold text-gray-900 dark:text-emerald-300 mb-6">Investment Structure</h3>
       <div className="space-y-4">
