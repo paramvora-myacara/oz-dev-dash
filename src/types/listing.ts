@@ -149,6 +149,13 @@ export interface DevelopmentPartner {
     description: string;
 }
 
+export interface DeveloperInfo {
+  name: string;
+  role: string;
+  email: string;
+  phone?: string;
+}
+
 // =================================================================================================
 // SECTION TYPES FOR BLOCK-BASED RENDERING
 // =================================================================================================
@@ -437,6 +444,7 @@ export interface Listing {
   listingName: string;
   listingSlug: string;
   projectId: string; 
+  developerInfo?: DeveloperInfo;
   sections: ListingOverviewSection[];
   details: {
     financialReturns: FinancialReturns;

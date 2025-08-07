@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Map, Home, ChevronLeft, ChevronRight, ZoomIn, Download } from 'lucide-react';
 import { getAvailableImages, type ProjectId, type ImageCategory } from '../utils/supabaseImages';
+import Lightbox from './Lightbox';
 
 interface FloorplanSitemapSectionProps {
   projectId: ProjectId;
@@ -17,6 +18,15 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
   const [sitemapIndex, setSitemapIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [imageLoading, setImageLoading] = useState({ floorplan: true, sitemap: true });
+  const [lightbox, setLightbox] = useState<{
+    isOpen: boolean;
+    images: string[];
+    startIndex: number;
+  }>({
+    isOpen: false,
+    images: [],
+    startIndex: 0,
+  });
 
   useEffect(() => {
     async function loadImages() {
@@ -38,22 +48,45 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
     loadImages();
   }, [projectId]);
 
-  const nextFloorplan = () => {
+  const openLightbox = (images: string[], index: number) => {
+    setLightbox({ isOpen: true, images, startIndex: index });
+  };
+
+  const closeLightbox = () => {
+    setLightbox({ isOpen: false, images: [], startIndex: 0 });
+  };
+  
+  const downloadImage = (e: React.MouseEvent, imageUrl: string) => {
+    e.stopPropagation();
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.setAttribute('download', '');
+    link.setAttribute('target', '_blank');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const nextFloorplan = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setFloorplanIndex((prev) => (prev + 1) % floorplanImages.length);
     setImageLoading(prev => ({ ...prev, floorplan: true }));
   };
 
-  const prevFloorplan = () => {
+  const prevFloorplan = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setFloorplanIndex((prev) => (prev - 1 + floorplanImages.length) % floorplanImages.length);
     setImageLoading(prev => ({ ...prev, floorplan: true }));
   };
 
-  const nextSitemap = () => {
+  const nextSitemap = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSitemapIndex((prev) => (prev + 1) % sitemapImages.length);
     setImageLoading(prev => ({ ...prev, sitemap: true }));
   };
 
-  const prevSitemap = () => {
+  const prevSitemap = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSitemapIndex((prev) => (prev - 1 + sitemapImages.length) % sitemapImages.length);
     setImageLoading(prev => ({ ...prev, sitemap: true }));
   };
@@ -134,7 +167,10 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   )}
                 </div>
                 
-                <div className="relative flex-grow min-h-[300px] lg:min-h-[50vh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
+                <div
+                  className="relative flex-grow min-h-[300px] lg:min-h-[50vh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner cursor-zoom-in"
+                  onClick={() => openLightbox(floorplanImages, floorplanIndex)}
+                >
                   {imageLoading.floorplan && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -153,10 +189,18 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   
                   {/* Image Actions */}
                   <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openLightbox(floorplanImages, floorplanIndex); }}
+                      className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                      aria-label="Zoom in"
+                    >
                       <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
-                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                    <button 
+                      onClick={(e) => downloadImage(e, floorplanImages[floorplanIndex])}
+                      className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                      aria-label="Download image"
+                    >
                       <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
                   </div>
@@ -166,12 +210,14 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                       <button
                         onClick={prevFloorplan}
                         className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                        aria-label="Previous floorplan"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
                         onClick={nextFloorplan}
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                        aria-label="Next floorplan"
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
@@ -185,7 +231,8 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                       {floorplanImages.map((_, index) => (
                         <button
                           key={index}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setFloorplanIndex(index);
                             setImageLoading(prev => ({ ...prev, floorplan: true }));
                           }}
@@ -194,6 +241,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                               ? 'bg-indigo-600 dark:bg-indigo-400 scale-125' 
                               : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
                           }`}
+                          aria-label={`Go to floorplan ${index + 1}`}
                         />
                       ))}
                     </div>
@@ -232,7 +280,10 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   )}
                 </div>
                 
-                <div className="relative flex-grow min-h-[300px] lg:min-h-[50vh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner">
+                <div 
+                  className="relative flex-grow min-h-[300px] lg:min-h-[50vh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-2xl overflow-hidden shadow-inner cursor-zoom-in"
+                  onClick={() => openLightbox(sitemapImages, sitemapIndex)}
+                >
                   {imageLoading.sitemap && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
@@ -251,10 +302,18 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                   
                   {/* Image Actions */}
                   <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openLightbox(sitemapImages, sitemapIndex); }}
+                      className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                      aria-label="Zoom in"
+                    >
                       <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
-                    <button className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                    <button 
+                      onClick={(e) => downloadImage(e, sitemapImages[sitemapIndex])}
+                      className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                      aria-label="Download image"
+                    >
                       <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
                   </div>
@@ -264,12 +323,14 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                       <button
                         onClick={prevSitemap}
                         className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                        aria-label="Previous sitemap"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
                         onClick={nextSitemap}
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-lg transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100"
+                        aria-label="Next sitemap"
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
@@ -283,7 +344,8 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                       {sitemapImages.map((_, index) => (
                         <button
                           key={index}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSitemapIndex(index);
                             setImageLoading(prev => ({ ...prev, sitemap: true }));
                           }}
@@ -292,6 +354,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                               ? 'bg-emerald-600 dark:bg-emerald-400 scale-125' 
                               : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
                           }`}
+                          aria-label={`Go to sitemap ${index + 1}`}
                         />
                       ))}
                     </div>
@@ -302,6 +365,13 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
           )}
         </div>
       </div>
+      {lightbox.isOpen && (
+        <Lightbox
+          images={lightbox.images}
+          startIndex={lightbox.startIndex}
+          onClose={closeLightbox}
+        />
+      )}
     </section>
   );
 }

@@ -4,6 +4,11 @@ const listingData = {
     "listingName": "University of Nevada, Reno Student Housing",
     "listingSlug": "up-campus-reno",
     "projectId": "up-campus-reno-001",
+    "developerInfo": {
+      "name": "UP Campus Properties",
+      "role": "Development Team",
+      "email": "renoproject@upcampusproperties.com"
+    },
     "sections": [
       {
         "type": "hero",
@@ -389,6 +394,7 @@ const listingData = {
       listingName: data.listingName,
       listingSlug: data.listingSlug,
       projectId: data.projectId,
+      developerInfo: data.developerInfo,
       sections: data.sections,
       details: {
         financialReturns: data.details.financialReturns,
