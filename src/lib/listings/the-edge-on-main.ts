@@ -7,6 +7,12 @@ export const theEdgeOnMainData: Listing = {
   listingName: "The Edge on Main",
   listingSlug: "the-edge-on-main",
   projectId: "edge-on-main-mesa-001",
+  developerInfo: {
+    name: "Conrad Metz",
+    role: "Developer Representative",
+    email: "conrad@kcccapitalpartners.com",
+    phone: "949-572-9563"
+  },
   sections: [
     {
         type: 'hero',

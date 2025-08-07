@@ -58,7 +58,7 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
             >
               Request Vault Access
             </button>
-            {listing.listingSlug === 'the-edge-on-main' ? (
+            {(listing.listingSlug === 'the-edge-on-main' || listing.listingSlug === 'up-campus-reno') && listing.developerInfo ? (
               <button
                 onClick={() => setIsContactModalOpen(true)}
                 className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
@@ -90,10 +90,14 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
         isOpen={isConfirmationModalOpen}
         onClose={closeModal}
       />
-      <ContactDeveloperModal
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-      />
+      {listing.developerInfo && (
+          <ContactDeveloperModal
+            isOpen={isContactModalOpen}
+            onClose={() => setIsContactModalOpen(false)}
+            developerInfo={listing.developerInfo}
+            listingName={listing.listingName}
+          />
+      )}
     </div>
   );
 } 
