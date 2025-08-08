@@ -14,12 +14,12 @@ const LocationHighlightsSection: React.FC<{ data: any; sectionIndex: number }> =
             {Icon && <Icon className={`w-8 h-8 ${text} mx-auto mb-3`} />}
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.highlights[${idx}].title`}
-              
+              value={highlight.title}
               className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
             />
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.highlights[${idx}].description`}
-              
+              value={highlight.description}
               inputType="multiline"
               className="text-sm text-gray-600 dark:text-gray-400"
             />

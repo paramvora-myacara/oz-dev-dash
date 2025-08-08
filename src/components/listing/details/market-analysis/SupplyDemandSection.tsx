@@ -14,12 +14,12 @@ const SupplyDemandSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
             <div>
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.analysis[${idx}].title`}
-                
+                value={item.title}
                 className="font-semibold text-gray-900 dark:text-gray-100"
               />
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.analysis[${idx}].description`}
-                
+                value={item.description}
                 inputType="multiline"
                 className="text-gray-600 dark:text-gray-400"
               />

@@ -45,28 +45,28 @@ const MajorEmployersSection: React.FC<{ data: any; sectionIndex: number }> = ({ 
                 <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">
                   <Editable 
                     dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.employers[${idx}].name`}
-                    
+                    value={employer.name}
                     className="font-semibold text-gray-900 dark:text-gray-100"
                   />
                 </td>
                 <td className="py-3 text-gray-600 dark:text-gray-400">
                   <Editable 
                     dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.employers[${idx}].employees`}
-                    
+                    value={employer.employees}
                     className="text-gray-600 dark:text-gray-400"
                   />
                 </td>
                 <td className="py-3 text-gray-600 dark:text-gray-400">
                   <Editable 
                     dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.employers[${idx}].industry`}
-                    
+                    value={employer.industry}
                     className="text-gray-600 dark:text-gray-400"
                   />
                 </td>
                 <td className="py-3 text-gray-600 dark:text-gray-400">
                   <Editable 
                     dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.employers[${idx}].distance`}
-                    
+                    value={employer.distance}
                     className="text-gray-600 dark:text-gray-400"
                   />
                 </td>

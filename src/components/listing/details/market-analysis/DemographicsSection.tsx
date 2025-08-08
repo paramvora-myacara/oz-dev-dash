@@ -34,12 +34,12 @@ const DemographicsSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
             <div>
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].category`}
-                
+                value={demo.category}
                 className="font-semibold text-gray-900 dark:text-gray-100"
               />
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].description`}
-                
+                value={demo.description}
                 inputType="multiline"
                 className="text-sm text-gray-600 dark:text-gray-400"
               />
@@ -47,7 +47,7 @@ const DemographicsSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
             <div className="flex items-center gap-3">
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].value`}
-                
+                value={demo.value}
                 className="text-2xl font-bold text-purple-600 dark:text-purple-400"
               />
               {isEditing && (

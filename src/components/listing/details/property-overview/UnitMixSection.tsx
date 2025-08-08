@@ -45,14 +45,14 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                 <td className="py-4 font-medium text-gray-900 dark:text-gray-100">
                   <Editable 
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].type`}
-                    
+                    value={unit.type}
                     className="font-medium text-gray-900 dark:text-gray-100"
                   />
                 </td>
                 <td className="py-4 text-center text-gray-700 dark:text-gray-300">
                   <Editable 
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].count`}
-                    
+                    value={unit.count}
                     inputType="number"
                     className="text-center text-gray-700 dark:text-gray-300"
                   />
@@ -60,14 +60,14 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                 <td className="py-4 text-center text-gray-700 dark:text-gray-300">
                   <Editable 
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].sqft`}
-                    
+                    value={unit.sqft}
                     className="text-center text-gray-700 dark:text-gray-300"
                   />
                 </td>
                 <td className="py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
                   <Editable 
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].rent`}
-                    
+                    value={unit.rent}
                     className="text-right font-semibold text-gray-900 dark:text-gray-100"
                   />
                 </td>
@@ -85,12 +85,12 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
         <div className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
           <Editable 
             dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.title`}
-            
+            value={data.specialFeatures.title}
             className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
           />
           <Editable 
             dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.description`}
-            
+            value={data.specialFeatures.description}
             inputType="multiline"
             className="text-gray-600 dark:text-gray-400"
           />

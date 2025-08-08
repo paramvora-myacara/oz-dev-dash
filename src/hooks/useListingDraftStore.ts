@@ -24,6 +24,17 @@ interface DraftStore {
 
 const STORAGE_KEY_PREFIX = 'ozdash:draft:';
 
+// Helper function to validate Listing structure
+function validateListingStructure(data: any): boolean {
+  return data && 
+         typeof data.listingName === 'string' &&
+         typeof data.listingSlug === 'string' &&
+         typeof data.projectId === 'string' &&
+         Array.isArray(data.sections) &&
+         data.details &&
+         typeof data.details === 'object';
+}
+
 export const useListingDraftStore = create<DraftStore>((set, get) => ({
   // Initial state
   originalData: null,
@@ -34,6 +45,13 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
 
   // Actions
   initializeDraft: (listing: Listing) => {
+    console.log('🔧 initializeDraft called with:', {
+      listingName: listing.listingName,
+      listingSlug: listing.listingSlug,
+      hasSections: Array.isArray(listing.sections),
+      hasDetails: !!listing.details
+    });
+    
     set(
       produce((state) => {
         // If we're switching to a different listing, reset everything
@@ -54,10 +72,40 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
   },
 
   updateField: (path: string, value: unknown) => {
+    const { draftData } = get();
+    
+    // Validate draftData structure before update
+    if (draftData && !validateListingStructure(draftData)) {
+      console.error('❌ Invalid draftData structure before update:', {
+        hasListingName: !!draftData.listingName,
+        hasListingSlug: !!draftData.listingSlug,
+        hasProjectId: !!draftData.projectId,
+        hasSections: Array.isArray(draftData.sections),
+        hasDetails: !!draftData.details,
+        path,
+        value
+      });
+      return;
+    }
+    
     set(
       produce((state) => {
         if (state.draftData) {
           setByPath(state.draftData, path, value);
+          
+          // Validate after update
+          if (!validateListingStructure(state.draftData)) {
+            console.error('❌ Invalid draftData structure after update:', {
+              hasListingName: !!state.draftData.listingName,
+              hasListingSlug: !!state.draftData.listingSlug,
+              hasProjectId: !!state.draftData.projectId,
+              hasSections: Array.isArray(state.draftData.sections),
+              hasDetails: !!state.draftData.details,
+              path,
+              value
+            });
+          }
+          
           // Update isDirty based on actual comparison with original data
           state.isDirty = JSON.stringify(state.originalData) !== JSON.stringify(state.draftData);
         }
@@ -95,9 +143,29 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
       try {
         const { updatedAt, draftData: storedDraft } = JSON.parse(stored);
         
+        // Validate stored draft before loading
+        if (storedDraft && !validateListingStructure(storedDraft)) {
+          console.error('❌ Invalid stored draft structure:', {
+            hasListingName: !!storedDraft.listingName,
+            hasListingSlug: !!storedDraft.listingSlug,
+            hasProjectId: !!storedDraft.projectId,
+            hasSections: Array.isArray(storedDraft.sections),
+            hasDetails: !!storedDraft.details
+          });
+          // Don't load invalid data
+          return;
+        }
+        
         // Always load if we have stored draft data, regardless of current state
         // This ensures changes persist across page navigation
         if (storedDraft) {
+          console.log('📥 Loading draft from localStorage:', {
+            listingName: storedDraft.listingName,
+            listingSlug: storedDraft.listingSlug,
+            hasSections: Array.isArray(storedDraft.sections),
+            hasDetails: !!storedDraft.details
+          });
+          
           set(
             produce((state) => {
               state.draftData = storedDraft;
@@ -117,6 +185,18 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     
     if (!listingSlug || !draftData) return;
 
+    // Validate before persisting
+    if (!validateListingStructure(draftData)) {
+      console.error('❌ Cannot persist invalid draftData structure:', {
+        hasListingName: !!draftData.listingName,
+        hasListingSlug: !!draftData.listingSlug,
+        hasProjectId: !!draftData.projectId,
+        hasSections: Array.isArray(draftData.sections),
+        hasDetails: !!draftData.details
+      });
+      return;
+    }
+
     const storageKey = `${STORAGE_KEY_PREFIX}${listingSlug}`;
     const data = {
       updatedAt: new Date().toISOString(),
@@ -125,6 +205,12 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     
     try {
       localStorage.setItem(storageKey, JSON.stringify(data));
+      console.log('💾 Persisted draft to localStorage:', {
+        listingName: draftData.listingName,
+        listingSlug: draftData.listingSlug,
+        hasSections: Array.isArray(draftData.sections),
+        hasDetails: !!draftData.details
+      });
     } catch (error) {
       console.warn('Failed to persist draft to localStorage:', error);
     }
@@ -132,6 +218,14 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
 
   initializeDraftWithPersistence: (listing: Listing) => {
     const { listingSlug } = get();
+    
+    console.log('🔧 initializeDraftWithPersistence called:', {
+      currentSlug: listingSlug,
+      newSlug: listing.listingSlug,
+      listingName: listing.listingName,
+      hasSections: Array.isArray(listing.sections),
+      hasDetails: !!listing.details
+    });
     
     // If we're switching to a different listing, reset everything
     if (listingSlug !== listing.listingSlug) {
@@ -161,6 +255,12 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
         try {
           const { draftData: storedDraft } = JSON.parse(stored);
           if (storedDraft) {
+            // Validate stored draft before loading
+            if (!validateListingStructure(storedDraft)) {
+              console.error('❌ Invalid stored draft structure, resetting to original');
+              return;
+            }
+            
             set(
               produce((state) => {
                 state.draftData = storedDraft;

@@ -34,7 +34,7 @@ const InvestmentStructureSection: React.FC<{ data: any; sectionIndex: number }> 
             <span className="text-gray-600 dark:text-emerald-400">
               <Editable 
                 dataPath={`details.financialReturns.sections[${sectionIndex}].data.structure[${idx}].label`}
-                
+                value={item.label}
                 className="text-gray-600 dark:text-emerald-400"
               />
             </span>
@@ -42,7 +42,7 @@ const InvestmentStructureSection: React.FC<{ data: any; sectionIndex: number }> 
               <span className="font-semibold text-gray-900 dark:text-emerald-300">
                 <Editable 
                   dataPath={`details.financialReturns.sections[${sectionIndex}].data.structure[${idx}].value`}
-                  
+                  value={item.value}
                   className="font-semibold text-gray-900 dark:text-emerald-300"
                 />
               </span>
