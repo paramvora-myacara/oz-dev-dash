@@ -14,6 +14,8 @@ const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = (
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.featureSections[${idx}].category`}
               value={highlight.category}
               className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+              as="span"
+              spacing="none"
             />
           </div>
           <ul className="space-y-3">
@@ -24,6 +26,8 @@ const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = (
                   dataPath={`details.propertyOverview.sections[${sectionIndex}].data.featureSections[${idx}].features[${featureIdx}]`}
                   value={feature}
                   className="text-gray-600 dark:text-gray-400 text-sm"
+                  as="span"
+                  spacing="none"
                 />
               </li>
             ))}

@@ -47,6 +47,8 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].type`}
                     value={unit.type}
                     className="font-medium text-gray-900 dark:text-gray-100"
+                    as="span"
+                    spacing="none"
                   />
                 </td>
                 <td className="py-4 text-center text-gray-700 dark:text-gray-300">
@@ -55,6 +57,8 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                     value={unit.count}
                     inputType="number"
                     className="text-center text-gray-700 dark:text-gray-300"
+                    as="span"
+                    spacing="none"
                   />
                 </td>
                 <td className="py-4 text-center text-gray-700 dark:text-gray-300">
@@ -62,6 +66,8 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].sqft`}
                     value={unit.sqft}
                     className="text-center text-gray-700 dark:text-gray-300"
+                    as="span"
+                    spacing="none"
                   />
                 </td>
                 <td className="py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
@@ -69,6 +75,8 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                     dataPath={`details.propertyOverview.sections[${sectionIndex}].data.unitMix[${idx}].rent`}
                     value={unit.rent}
                     className="text-right font-semibold text-gray-900 dark:text-gray-100"
+                    as="span"
+                    spacing="none"
                   />
                 </td>
                 {isEditing && (
@@ -86,13 +94,17 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
           <Editable 
             dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.title`}
             value={data.specialFeatures.title}
-            className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+            className="font-semibold text-gray-900 dark:text-gray-100"
+            as="p"
+            spacing="small"
           />
           <Editable 
             dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.description`}
             value={data.specialFeatures.description}
             inputType="multiline"
             className="text-gray-600 dark:text-gray-400"
+            as="p"
+            spacing="none"
           />
         </div>
       )}

@@ -10,24 +10,34 @@ const LeadershipTeamSection: React.FC<{ data: any; sectionIndex: number }> = ({ 
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].name`}
             value={member.name}
-            className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2"
+            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+            as="p"
+            spacing="small"
           />
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].title`}
             value={member.title}
-            className="text-orange-600 dark:text-orange-400 font-medium mb-2"
+            className="text-orange-600 dark:text-orange-400 font-medium"
+            as="p"
+            spacing="small"
           />
-          <Editable 
-            dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].experience`}
-            value={member.experience}
-            className="text-sm text-gray-600 dark:text-gray-400 mb-3"
-          />
-          <span className="text-sm text-gray-600 dark:text-gray-400 mb-3"> experience</span>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <Editable 
+              dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].experience`}
+              value={member.experience}
+              className="text-sm text-gray-600 dark:text-gray-400"
+              as="span"
+              spacing="none"
+            />
+            <span> experience</span>
+          </div>
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].background`}
             value={member.background}
             inputType="multiline"
             className="text-sm text-gray-600 dark:text-gray-400"
+            as="p"
+            spacing="none"
           />
         </div>
       ))}

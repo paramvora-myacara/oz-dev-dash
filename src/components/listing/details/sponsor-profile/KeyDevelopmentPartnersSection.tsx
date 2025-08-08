@@ -10,13 +10,17 @@ const KeyDevelopmentPartnersSection: React.FC<{ data: any; sectionIndex: number 
                 <Editable 
                   dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.partners[${i}].name`}
                   value={partner.name}
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3"
+                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                  as="p"
+                  spacing="medium"
                 />
                 <div className="text-gray-600 dark:text-gray-400 mb-3">
                   <strong>Role:</strong> <Editable 
                     dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.partners[${i}].role`}
                     value={partner.role}
                     className="text-gray-600 dark:text-gray-400"
+                    as="span"
+                    spacing="none"
                   />
                 </div>
                 <Editable 
@@ -24,6 +28,8 @@ const KeyDevelopmentPartnersSection: React.FC<{ data: any; sectionIndex: number 
                   value={partner.description}
                   inputType="multiline"
                   className="text-gray-600 dark:text-gray-400"
+                  as="p"
+                  spacing="none"
                 />
               </div>
           ))}

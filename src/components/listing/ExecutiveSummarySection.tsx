@@ -12,13 +12,13 @@ const ExecutiveSummarySection: React.FC<{ data: ExecutiveSummarySectionData; sec
             <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border border-black/10 dark:border-white/10">
                 <div className="prose prose-xl max-w-none text-black dark:text-white">
                     <p className="text-2xl leading-relaxed mb-6 italic font-light">
-                        &quot;<Editable dataPath={`sections[${sectionIndex}].data.summary.quote`} value={data.summary.quote} inputType="multiline" className="text-2xl leading-relaxed italic font-light" />&quot;
+                        &quot;<Editable dataPath={`sections[${sectionIndex}].data.summary.quote`} value={data.summary.quote} inputType="multiline" className="text-2xl leading-relaxed italic font-light" as="span" spacing="none" />&quot;
                     </p>
                     {data.summary.paragraphs.map((p, i) => (
-                        <Editable key={i} dataPath={`sections[${sectionIndex}].data.summary.paragraphs[${i}]`} value={p} inputType="multiline" className="mb-6 font-light text-lg" />
+                        <Editable key={i} dataPath={`sections[${sectionIndex}].data.summary.paragraphs[${i}]`} value={p} inputType="multiline" className="font-light text-lg" as="p" spacing="large" />
                     ))}
                     <p className="font-semibold text-xl text-black dark:text-white">
-                        <Editable dataPath={`sections[${sectionIndex}].data.summary.conclusion`} value={data.summary.conclusion} inputType="multiline" className="font-semibold text-xl text-black dark:text-white" />
+                        <Editable dataPath={`sections[${sectionIndex}].data.summary.conclusion`} value={data.summary.conclusion} inputType="multiline" className="font-semibold text-xl text-black dark:text-white" as="span" spacing="none" />
                     </p>
                 </div>
             </div>

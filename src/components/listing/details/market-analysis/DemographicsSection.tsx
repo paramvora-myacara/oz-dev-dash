@@ -36,12 +36,16 @@ const DemographicsSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].category`}
                 value={demo.category}
                 className="font-semibold text-gray-900 dark:text-gray-100"
+                as="p"
+                spacing="small"
               />
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].description`}
                 value={demo.description}
                 inputType="multiline"
                 className="text-sm text-gray-600 dark:text-gray-400"
+                as="p"
+                spacing="none"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -49,6 +53,8 @@ const DemographicsSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].value`}
                 value={demo.value}
                 className="text-2xl font-bold text-purple-600 dark:text-purple-400"
+                as="span"
+                spacing="none"
               />
               {isEditing && (
                 <button onClick={() => handleRemove(idx)} className="px-2 py-1 text-sm rounded border border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20">-</button>

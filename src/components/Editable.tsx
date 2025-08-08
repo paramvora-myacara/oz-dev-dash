@@ -16,6 +16,8 @@ interface EditableProps {
     options?: string[];
   };
   className?: string;
+  as?: 'span' | 'p' | 'div';
+  spacing?: 'none' | 'small' | 'medium' | 'large';
 }
 
 export function Editable({
@@ -25,6 +27,8 @@ export function Editable({
   inputType = 'text',
   constraints,
   className = '',
+  as = 'span',
+  spacing = 'none',
 }: EditableProps) {
   const { isEditing, draftData, updateField } = useListingDraftStore();
   const [inputValue, setInputValue] = useState<string>('');
@@ -113,13 +117,44 @@ export function Editable({
     updateField(dataPath, newValue);
   };
 
-  // If not editing, render as plain text
+  // Get spacing classes based on spacing prop
+  const getSpacingClasses = () => {
+    switch (spacing) {
+      case 'small':
+        return 'mb-2';
+      case 'medium':
+        return 'mb-4';
+      case 'large':
+        return 'mb-6';
+      default:
+        return '';
+    }
+  };
+
+  // If not editing, render as appropriate element
   if (!isEditing) {
-    return (
-      <span className={className}>
-        {formatForDisplay(currentValue, inputType) || placeholder}
-      </span>
-    );
+    const spacingClasses = getSpacingClasses();
+    const combinedClassName = `${className} ${spacingClasses}`.trim();
+    
+    if (as === 'p') {
+      return (
+        <p className={combinedClassName}>
+          {formatForDisplay(currentValue, inputType) || placeholder}
+        </p>
+      );
+    } else if (as === 'div') {
+      return (
+        <div className={combinedClassName}>
+          {formatForDisplay(currentValue, inputType) || placeholder}
+        </div>
+      );
+    } else {
+      return (
+        <span className={combinedClassName}>
+          {formatForDisplay(currentValue, inputType) || placeholder}
+        </span>
+      );
+    }
   }
 
   // Render appropriate input based on type

@@ -12,12 +12,16 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].phase`}
                 value={phase.phase}
-                className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+                className="font-semibold text-gray-900 dark:text-gray-100"
+                as="p"
+                spacing="small"
               />
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].timeline`}
                 value={phase.timeline}
                 className="text-sm text-gray-600 dark:text-gray-400"
+                as="p"
+                spacing="none"
               />
             </div>
             <div className="text-center">
@@ -26,6 +30,8 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
                 value={phase.units}
                 inputType="number"
                 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+                as="p"
+                spacing="small"
               />
               <p className="text-sm text-gray-600 dark:text-gray-400">Units</p>
             </div>
@@ -33,17 +39,22 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].sqft`}
                 value={phase.sqft}
-                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                inputType="number"
+                className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+                as="p"
+                spacing="small"
               />
-              <p className="text-sm text-gray-600 dark:text-gray-400">Rentable SF</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Sq Ft</p>
             </div>
-            <div>
+            <div className="text-center">
               <Editable 
-                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].features`}
-                value={phase.features}
-                inputType="multiline"
-                className="text-sm text-gray-600 dark:text-gray-400"
+                dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].status`}
+                value={phase.status}
+                className="text-lg font-semibold text-indigo-600 dark:text-indigo-400"
+                as="p"
+                spacing="small"
               />
+              <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
             </div>
           </div>
         </div>

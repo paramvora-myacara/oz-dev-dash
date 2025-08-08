@@ -17,6 +17,8 @@ const AmenitiesSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.amenities[${idx}].name`}
               value={amenity.name}
               className="text-sm font-medium text-gray-900 dark:text-gray-100"
+              as="span"
+              spacing="none"
             />
           </div>
         );

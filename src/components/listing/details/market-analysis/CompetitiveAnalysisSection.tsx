@@ -24,6 +24,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].name`}
                   value={property.name}
                   className="font-semibold text-gray-900 dark:text-gray-100"
+                  as="span"
+                  spacing="none"
                 />
               </td>
               <td className="py-3 text-gray-600 dark:text-gray-400">
@@ -31,6 +33,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].built`}
                   value={property.built}
                   className="text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
                 />
               </td>
               <td className="py-3 text-gray-600 dark:text-gray-400">
@@ -38,6 +42,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].beds`}
                   value={property.beds}
                   className="text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
                 />
               </td>
               <td className="py-3 text-gray-600 dark:text-gray-400">
@@ -45,6 +51,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rent`}
                   value={property.rent}
                   className="text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
                 />
               </td>
               <td className="py-3 text-green-600 dark:text-green-400 font-semibold">
@@ -52,6 +60,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].occupancy`}
                   value={property.occupancy}
                   className="text-green-600 dark:text-green-400 font-semibold"
+                  as="span"
+                  spacing="none"
                 />
               </td>
               <td className="py-3 text-purple-600 dark:text-purple-400 font-semibold">
@@ -59,6 +69,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rentGrowth`}
                   value={property.rentGrowth}
                   className="text-purple-600 dark:text-purple-400 font-semibold"
+                  as="span"
+                  spacing="none"
                 />
               </td>
             </tr>
@@ -73,6 +85,8 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
           value={data.summary}
           inputType="multiline"
           className="text-gray-600 dark:text-gray-400"
+          as="p"
+          spacing="none"
         />
       </div>
     }

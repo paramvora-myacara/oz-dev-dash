@@ -10,13 +10,17 @@ const EconomicDiversificationSection: React.FC<{ data: any; sectionIndex: number
           <Editable 
             dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.sectors[${idx}].title`}
             value={sector.title}
-            className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+            className="font-semibold text-gray-900 dark:text-gray-100"
+            as="p"
+            spacing="small"
           />
           <Editable 
             dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.sectors[${idx}].description`}
             value={sector.description}
             inputType="multiline"
             className="text-sm text-gray-600 dark:text-gray-400"
+            as="p"
+            spacing="none"
           />
         </div>
       ))}

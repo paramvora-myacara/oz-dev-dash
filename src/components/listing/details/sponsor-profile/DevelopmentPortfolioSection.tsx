@@ -49,6 +49,8 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].name`}
                       value={project.name}
                       className="font-semibold text-gray-900 dark:text-gray-100"
+                      as="span"
+                      spacing="none"
                     />
                   </td>
                   <td className="py-3 text-gray-600 dark:text-gray-400">
@@ -56,6 +58,8 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].location`}
                       value={project.location}
                       className="text-gray-600 dark:text-gray-400"
+                      as="span"
+                      spacing="none"
                     />
                   </td>
                   <td className="py-3 text-gray-600 dark:text-gray-400">
@@ -63,6 +67,8 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].units`}
                       value={project.units}
                       className="text-gray-600 dark:text-gray-400"
+                      as="span"
+                      spacing="none"
                     />
                   </td>
                   <td className="py-3 text-gray-600 dark:text-gray-400">
@@ -70,6 +76,8 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].year`}
                       value={project.year}
                       className="text-gray-600 dark:text-gray-400"
+                      as="span"
+                      spacing="none"
                     />
                   </td>
                   <td className="py-3">
@@ -82,6 +90,8 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                         : project.status === 'Operating' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
                         : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
                       }`}
+                      as="span"
+                      spacing="none"
                     />
                   </td>
                   <td className="py-3 font-semibold text-orange-600 dark:text-orange-400">
@@ -89,6 +99,8 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].returnsOrFocus`}
                       value={project.returnsOrFocus}
                       className="font-semibold text-orange-600 dark:text-orange-400"
+                      as="span"
+                      spacing="none"
                     />
                   </td>
                   {isEditing && (
@@ -106,13 +118,17 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
             <Editable 
               dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.investmentPhilosophy.title`}
               value={data.investmentPhilosophy.title}
-              className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
+              className="font-semibold text-gray-900 dark:text-gray-100"
+              as="p"
+              spacing="small"
             />
             <Editable 
               dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.investmentPhilosophy.description`}
               value={data.investmentPhilosophy.description}
               inputType="multiline"
               className="text-gray-600 dark:text-gray-400"
+              as="p"
+              spacing="none"
             />
           </div>
         )}
