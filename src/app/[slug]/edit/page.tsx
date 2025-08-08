@@ -1,5 +1,6 @@
-import { notFound } from 'next/navigation';
-import { getListingBySlug } from '@/lib/listings-data';
+import { notFound, redirect } from 'next/navigation';
+import { getPublishedListingBySlug } from '@/lib/supabase/listings';
+import { verifyAdminCanEditSlug } from '@/lib/admin/auth';
 import ListingPageClient from '../listing-page-client';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import { EditModeProvider } from '@/components/editor/EditModeProvider';
@@ -12,7 +13,14 @@ interface EditPageProps {
 
 export default async function EditPage({ params }: EditPageProps) {
   const { slug } = await params;
-  const listing = await getListingBySlug(slug);
+  
+  // Check admin authorization
+  const adminUser = await verifyAdminCanEditSlug(slug);
+  if (!adminUser) {
+    redirect('/admin/login');
+  }
+  
+  const listing = await getPublishedListingBySlug(slug);
   
   if (!listing) {
     notFound();

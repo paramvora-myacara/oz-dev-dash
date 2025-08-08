@@ -1,5 +1,6 @@
-import { notFound } from 'next/navigation';
-import { getListingBySlug } from '@/lib/listings-data';
+import { notFound, redirect } from 'next/navigation';
+import { getPublishedListingBySlug } from '@/lib/supabase/listings';
+import { verifyAdminCanEditSlug } from '@/lib/admin/auth';
 import { EditModeProvider } from '@/components/editor/EditModeProvider';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import DetailPageClient from '../detail-page-client';
@@ -13,7 +14,14 @@ interface EditDetailPageProps {
 
 export default async function EditDetailPage({ params }: EditDetailPageProps) {
   const { slug, detailPage } = await params;
-  const listing = await getListingBySlug(slug);
+  
+  // Check admin authorization
+  const adminUser = await verifyAdminCanEditSlug(slug);
+  if (!adminUser) {
+    redirect('/admin/login');
+  }
+  
+  const listing = await getPublishedListingBySlug(slug);
   
   if (!listing) {
     notFound();
