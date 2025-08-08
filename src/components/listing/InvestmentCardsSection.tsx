@@ -9,6 +9,32 @@ import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listingSlug: string, sectionIndex: number }> = ({ data, listingSlug, sectionIndex }) => {
   const { isEditing } = useListingDraftStore();
   
+  const isInteractiveTarget = (target: HTMLElement, container: HTMLElement) => {
+    let el: HTMLElement | null = target;
+    while (el && el !== container) {
+      const tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return true;
+      if (el.isContentEditable) return true;
+      el = el.parentElement;
+    }
+    return false;
+  };
+  
+  const handleCardClickCapture = (e: React.MouseEvent<HTMLElement>) => {
+    const targetEl = e.target as HTMLElement;
+    const containerEl = e.currentTarget as HTMLElement;
+    const interactive = isInteractiveTarget(targetEl, containerEl);
+
+    if (isEditing && interactive) {
+      e.preventDefault();
+      e.stopPropagation();
+      // @ts-ignore
+      if (typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
+        (e.nativeEvent as any).stopImmediatePropagation();
+      }
+    }
+  };
+  
   return (
     <section id="investment-cards" className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
@@ -57,6 +83,7 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                             href={isEditing ? `/${listingSlug}/details/${card.id}/edit` : `/${listingSlug}/details/${card.id}`}
                             className={`glass-card rounded-3xl p-8 bg-gradient-to-br ${style.gradient} border border-gray-200 dark:border-white/20 shadow-md dark:shadow-xl shadow-gray-200/50 dark:shadow-white/5 hover:shadow-lg dark:hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 animate-fadeIn group relative overflow-hidden`}
                             style={{ animationDelay: `${idx * 150}ms` }}
+                            onClickCapture={handleCardClickCapture}
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/20 dark:from-white/[0.04] dark:to-white/[0.02] pointer-events-none" />
                             <div className="relative flex items-center justify-between mb-6">
