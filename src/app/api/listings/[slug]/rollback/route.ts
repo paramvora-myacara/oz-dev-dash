@@ -3,7 +3,8 @@ import { createAdminClient } from '@/utils/supabase/admin'
 import { verifyAdminCanEditSlug } from '@/lib/admin/auth'
 
 export async function POST(request: Request, context: any) {
-  const slug = context.params?.slug as string
+  const params = await context.params
+  const slug = params?.slug as string
   const user = await verifyAdminCanEditSlug(slug)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

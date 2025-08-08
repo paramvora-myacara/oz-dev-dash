@@ -20,6 +20,7 @@ interface DraftStore {
   loadDraftFromLocalStorage: () => void;
   persistDraftToLocalStorage: () => void;
   checkForUnsavedChanges: () => boolean;
+  markAsSaved: () => void;
 }
 
 const STORAGE_KEY_PREFIX = 'ozdash:draft:';
@@ -281,5 +282,28 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     
     // Simple deep comparison - in a real app you might want a more sophisticated comparison
     return JSON.stringify(originalData) !== JSON.stringify(draftData);
+  },
+
+  markAsSaved: () => {
+    const { listingSlug, draftData } = get();
+    
+    if (!listingSlug || !draftData) return;
+
+    set(
+      produce((state) => {
+        // Update original data to match the saved draft
+        state.originalData = draftData;
+        // Clear the dirty flag since changes are now saved
+        state.isDirty = false;
+      })
+    );
+
+    // Clear localStorage since the draft is now saved
+    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${listingSlug}`);
+    
+    console.log('✅ Marked draft as saved:', {
+      listingName: draftData.listingName,
+      listingSlug: draftData.listingSlug
+    });
   },
 })); 

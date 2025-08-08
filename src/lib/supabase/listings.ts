@@ -37,13 +37,14 @@ export interface ListingVersionMeta {
   version_number: number
   created_at: string
   published_at: string
+  is_current?: boolean
 }
 
 export async function listVersionsBySlug(slug: string): Promise<ListingVersionMeta[]> {
   const supabase = createAdminClient()
   const { data: listingRow, error: listingError } = await supabase
     .from('listings')
-    .select('id')
+    .select('id, current_version_id')
     .eq('slug', slug)
     .single()
   if (listingError || !listingRow) return []
@@ -54,7 +55,12 @@ export async function listVersionsBySlug(slug: string): Promise<ListingVersionMe
     .eq('listing_id', listingRow.id)
     .order('version_number', { ascending: false })
   if (error || !data) return []
-  return data as ListingVersionMeta[]
+  
+  // Mark the current version
+  return (data as ListingVersionMeta[]).map(version => ({
+    ...version,
+    is_current: version.id === listingRow.current_version_id
+  }))
 }
 
 export async function getVersionData(slug: string, versionId: string): Promise<Listing | null> {

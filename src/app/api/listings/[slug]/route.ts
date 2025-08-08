@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getPublishedListingBySlug, listVersionsBySlug } from '@/lib/supabase/listings'
 
 export async function GET(_: Request, context: any) {
-  const slug = context.params?.slug as string
+  const params = await context.params
+  const slug = params?.slug as string
   const [listing, versions] = await Promise.all([
     getPublishedListingBySlug(slug),
     listVersionsBySlug(slug),
