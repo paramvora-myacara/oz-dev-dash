@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnUrl = searchParams.get('returnUrl')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +27,9 @@ export default function AdminLoginPage() {
       })
 
       if (response.ok) {
-        router.push('/admin')
+        // Redirect to returnUrl if provided, otherwise to /admin
+        const redirectUrl = returnUrl || '/admin'
+        router.push(redirectUrl)
       } else {
         const data = await response.json()
         setError(data.error || 'Login failed')
@@ -103,5 +107,13 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   )
 } 

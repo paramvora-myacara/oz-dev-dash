@@ -74,8 +74,9 @@ export async function middleware(request: NextRequest) {
     // Check for admin cookie
     const adminCookie = request.cookies.get('oz_admin_basic')
     if (!adminCookie?.value) {
-      // Redirect to login
+      // Redirect to login with return URL
       const loginUrl = new URL('/admin/login', request.url)
+      loginUrl.searchParams.set('returnUrl', request.url)
       return NextResponse.redirect(loginUrl)
     }
     
