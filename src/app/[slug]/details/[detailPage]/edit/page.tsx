@@ -49,6 +49,7 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
             pageData={pageData}
             slug={slug}
             camelCasePage={camelCasePage}
+            isEditMode={true}
           />
         </div>
       </div>

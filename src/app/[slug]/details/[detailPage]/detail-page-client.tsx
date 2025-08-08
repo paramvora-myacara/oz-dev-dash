@@ -15,6 +15,8 @@ import PropertyOverviewPage from '@/components/listing/details/property-overview
 import MarketAnalysisPage from '@/components/listing/details/market-analysis/MarketAnalysisPage';
 import SponsorProfilePage from '@/components/listing/details/sponsor-profile/SponsorProfilePage';
 import HeaderContent from '@/components/listing/details/shared/HeaderContent';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
 
 const colorMap = {
     financialReturns: {
@@ -54,10 +56,12 @@ interface DetailPageClientProps {
     pageData: ListingDetail;
     slug: string;
     camelCasePage: keyof Listing['details'];
+    isEditMode?: boolean;
 }
 
-export default function DetailPageClient({ listing, pageData, slug, camelCasePage }: DetailPageClientProps) {
+export default function DetailPageClient({ listing, pageData, slug, camelCasePage, isEditMode = false }: DetailPageClientProps) {
   const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
+  const { isAdmin, canEditSlug, isLoading } = useAdminAuth();
   
   useEffect(() => {
     async function loadBackgroundImages() {
@@ -73,10 +77,14 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
   }, [listing]);
 
   const colorConfig = colorMap[camelCasePage] || colorMap.sponsorProfile;
+  const showAdminToolbar = !isLoading && isAdmin && canEditSlug(slug) && !isEditMode;
 
   return (
     <div className="min-h-screen bg-bg-main dark:bg-black">
-      <BackgroundSlideshow images={backgroundImages} className="py-16" intervalMs={6000}>
+      {showAdminToolbar && (
+        <ViewModeToolbar slug={slug} detailPage={camelCasePage} />
+      )}
+      <BackgroundSlideshow images={backgroundImages} className={`${showAdminToolbar ? 'pt-32' : 'pt-16'} pb-16`} intervalMs={6000}>
         <HeaderContent data={pageData} slug={slug} camelCasePage={camelCasePage} colorConfig={colorConfig} />
       </BackgroundSlideshow>
       <section className="py-16 px-8">

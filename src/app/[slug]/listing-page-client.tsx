@@ -10,14 +10,18 @@ import CompellingReasonsSection from '@/components/listing/CompellingReasonsSect
 import ExecutiveSummarySection from '@/components/listing/ExecutiveSummarySection';
 import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection';
 import ContactDeveloperModal from '@/components/ContactDeveloperModal';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
 
 
 interface ListingPageClientProps {
   listing: Listing;
+  isEditMode?: boolean;
 }
 
-export default function ListingPageClient({ listing }: ListingPageClientProps) {
+export default function ListingPageClient({ listing, isEditMode = false }: ListingPageClientProps) {
   const { isAuthModalOpen, isConfirmationModalOpen, authError, isLoading, handleRequestVaultAccess, handleSignInOrUp, closeModal } = useAuth();
+  const { isAdmin, canEditSlug } = useAdminAuth();
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   useEffect(() => {
@@ -25,6 +29,8 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
       document.title = listing.listingName;
     }
   }, [listing]);
+
+  const showAdminToolbar = !isLoading && isAdmin && canEditSlug(listing.listingSlug) && !isEditMode;
 
   const SectionRenderer = ({ section, sectionIndex }: { section: ListingOverviewSection; sectionIndex: number }) => {
     switch (section.type) {
@@ -45,7 +51,10 @@ export default function ListingPageClient({ listing }: ListingPageClientProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      <div className="max-w-[1920px] mx-auto">
+      {showAdminToolbar && (
+        <ViewModeToolbar slug={listing.listingSlug} />
+      )}
+      <div className={`max-w-[1920px] mx-auto ${showAdminToolbar ? 'pt-16' : ''}`}>
         {listing.sections.map((section, idx) => (
             <SectionRenderer key={idx} section={section} sectionIndex={idx} />
         ))}
