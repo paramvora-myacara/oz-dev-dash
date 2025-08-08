@@ -12,7 +12,7 @@ const SponsorIntroSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
   <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-12">
     <Editable 
       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.sponsorName`}
-      value={data.sponsorName}
+      
       className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6"
     />
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -21,7 +21,7 @@ const SponsorIntroSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
           <Editable 
             key={i}
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.content.paragraphs[${i}]`}
-            value={p}
+            
             inputType="multiline"
             className="text-lg text-gray-600 dark:text-gray-400 mb-6 last:mb-0"
           />
@@ -33,7 +33,7 @@ const SponsorIntroSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
             {renderHighlightIcon(item.icon)}
             <Editable 
               dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.content.highlights.items[${i}].text`}
-              value={item.text}
+              
               className="text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -46,7 +46,7 @@ const SponsorIntroSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
                     <li key={i}>
                       • <Editable 
                           dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.content.highlights.items[${i}].text`}
-                          value={item.text}
+                          
                           className="text-gray-600 dark:text-gray-400"
                         />
                     </li>

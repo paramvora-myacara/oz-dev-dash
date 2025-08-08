@@ -7,17 +7,14 @@ const KeyFactsSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, 
       <div key={idx} className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
         <Editable 
           dataPath={`details.propertyOverview.sections[${sectionIndex}].data.facts[${idx}].label`}
-          value={fact.label}
           className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-2"
         />
         <Editable 
           dataPath={`details.propertyOverview.sections[${sectionIndex}].data.facts[${idx}].value`}
-          value={fact.value}
           className="text-4xl font-bold text-indigo-900 dark:text-indigo-300"
         />
         <Editable 
           dataPath={`details.propertyOverview.sections[${sectionIndex}].data.facts[${idx}].description`}
-          value={fact.description}
           inputType="multiline"
           className="text-sm text-indigo-700 dark:text-indigo-400 mt-2"
         />

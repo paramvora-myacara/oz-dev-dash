@@ -15,12 +15,12 @@ const KeyMarketDriversSection: React.FC<{ data: any; sectionIndex: number }> = (
                 </div>
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.drivers[${idx}].title`}
-                  value={driver.title}
+                  
                   className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
                 />
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.drivers[${idx}].description`}
-                  value={driver.description}
+                  
                   inputType="multiline"
                   className="text-sm text-gray-600 dark:text-gray-400"
                 />

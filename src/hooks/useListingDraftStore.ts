@@ -46,8 +46,12 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     set(
       produce((state) => {
         if (state.draftData) {
+          const oldValue = getByPath(state.draftData, path);
           setByPath(state.draftData, path, value);
           state.isDirty = true;
+          
+          // Log the field update
+          console.log('[Editor] update', { path, oldValue, newValue: value });
         }
       })
     );

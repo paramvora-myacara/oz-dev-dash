@@ -8,18 +8,18 @@ const TrackRecordSection: React.FC<{ data: any; sectionIndex: number }> = ({ dat
         {record.label && (
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.metrics[${idx}].label`}
-            value={record.label}
+            
             className="text-lg font-semibold text-orange-900 dark:text-orange-300 mb-2"
           />
         )}
         <Editable 
           dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.metrics[${idx}].value`}
-          value={record.value}
+          
           className="text-4xl font-bold text-orange-900 dark:text-orange-300 mb-4"
         />
         <Editable 
           dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.metrics[${idx}].description`}
-          value={record.description}
+          
           inputType="multiline"
           className="text-sm text-orange-700 dark:text-orange-400"
         />

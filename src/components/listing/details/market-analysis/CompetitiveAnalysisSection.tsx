@@ -22,42 +22,42 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
               <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].name`}
-                  value={property.name}
+                  
                   className="font-semibold text-gray-900 dark:text-gray-100"
                 />
               </td>
               <td className="py-3 text-gray-600 dark:text-gray-400">
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].built`}
-                  value={property.built}
+                  
                   className="text-gray-600 dark:text-gray-400"
                 />
               </td>
               <td className="py-3 text-gray-600 dark:text-gray-400">
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].beds`}
-                  value={property.beds}
+                  
                   className="text-gray-600 dark:text-gray-400"
                 />
               </td>
               <td className="py-3 text-gray-600 dark:text-gray-400">
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rent`}
-                  value={property.rent}
+                  
                   className="text-gray-600 dark:text-gray-400"
                 />
               </td>
               <td className="py-3 text-green-600 dark:text-green-400 font-semibold">
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].occupancy`}
-                  value={property.occupancy}
+                  
                   className="text-green-600 dark:text-green-400 font-semibold"
                 />
               </td>
               <td className="py-3 text-purple-600 dark:text-purple-400 font-semibold">
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rentGrowth`}
-                  value={property.rentGrowth}
+                  
                   className="text-purple-600 dark:text-purple-400 font-semibold"
                 />
               </td>
@@ -70,7 +70,7 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
       <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl">
         <Editable 
           dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.summary`}
-          value={data.summary}
+          
           inputType="multiline"
           className="text-gray-600 dark:text-gray-400"
         />

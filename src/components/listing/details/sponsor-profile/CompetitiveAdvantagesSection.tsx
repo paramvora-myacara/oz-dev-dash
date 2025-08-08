@@ -15,12 +15,12 @@ const CompetitiveAdvantagesSection: React.FC<{ data: any; sectionIndex: number }
                   <div>
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.advantages[${i}].title`}
-                      value={advantage.title}
+                      
                       className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
                     />
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.advantages[${i}].description`}
-                      value={advantage.description}
+                      
                       inputType="multiline"
                       className="text-gray-600 dark:text-gray-400 text-sm"
                     />
@@ -37,12 +37,12 @@ const CompetitiveAdvantagesSection: React.FC<{ data: any; sectionIndex: number }
                   <div>
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.advantages[${i + 2}].title`}
-                      value={advantage.title}
+                      
                       className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
                     />
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.advantages[${i + 2}].description`}
-                      value={advantage.description}
+                      
                       inputType="multiline"
                       className="text-gray-600 dark:text-gray-400 text-sm"
                     />

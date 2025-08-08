@@ -40,14 +40,12 @@ const DistributionTimelineSection: React.FC<{ data: any; sectionIndex: number }>
                   <h4 className="font-semibold text-gray-900 dark:text-emerald-300">
                     <Editable 
                       dataPath={`details.financialReturns.sections[${sectionIndex}].data.timeline[${idx}].year`}
-                      value={phase.year}
                       className="font-semibold text-gray-900 dark:text-emerald-300"
                     />
                   </h4>
                   <p className="text-emerald-600 dark:text-emerald-400 font-medium">
                     <Editable 
                       dataPath={`details.financialReturns.sections[${sectionIndex}].data.timeline[${idx}].phase`}
-                      value={phase.phase}
                       className="text-emerald-600 dark:text-emerald-400 font-medium"
                     />
                   </p>
@@ -56,7 +54,6 @@ const DistributionTimelineSection: React.FC<{ data: any; sectionIndex: number }>
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                     <Editable 
                       dataPath={`details.financialReturns.sections[${sectionIndex}].data.timeline[${idx}].distribution`}
-                      value={phase.distribution}
                       className="text-2xl font-bold text-emerald-600 dark:text-emerald-400"
                     />
                   </p>
@@ -66,7 +63,6 @@ const DistributionTimelineSection: React.FC<{ data: any; sectionIndex: number }>
                   <p className="text-sm text-gray-600 dark:text-emerald-400">
                     <Editable 
                       dataPath={`details.financialReturns.sections[${sectionIndex}].data.timeline[${idx}].description`}
-                      value={phase.description}
                       inputType="multiline"
                       className="text-sm text-gray-600 dark:text-emerald-400"
                     />

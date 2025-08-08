@@ -15,7 +15,7 @@ const AmenitiesSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
             </div>
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.amenities[${idx}].name`}
-              value={amenity.name}
+              
               className="text-sm font-medium text-gray-900 dark:text-gray-100"
             />
           </div>

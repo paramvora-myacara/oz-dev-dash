@@ -47,35 +47,35 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                   <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].name`}
-                      value={project.name}
+                      
                       className="font-semibold text-gray-900 dark:text-gray-100"
                     />
                   </td>
                   <td className="py-3 text-gray-600 dark:text-gray-400">
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].location`}
-                      value={project.location}
+                      
                       className="text-gray-600 dark:text-gray-400"
                     />
                   </td>
                   <td className="py-3 text-gray-600 dark:text-gray-400">
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].units`}
-                      value={project.units}
+                      
                       className="text-gray-600 dark:text-gray-400"
                     />
                   </td>
                   <td className="py-3 text-gray-600 dark:text-gray-400">
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].year`}
-                      value={project.year}
+                      
                       className="text-gray-600 dark:text-gray-400"
                     />
                   </td>
                   <td className="py-3">
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].status`}
-                      value={project.status}
+                      
                       constraints={{ options: ['Completed', 'In Progress', 'Planning', 'Operating'] }}
                       className={`px-2 py-1 rounded text-sm ${
                         project.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
@@ -87,7 +87,7 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
                   <td className="py-3 font-semibold text-orange-600 dark:text-orange-400">
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.projects[${idx}].returnsOrFocus`}
-                      value={project.returnsOrFocus}
+                      
                       className="font-semibold text-orange-600 dark:text-orange-400"
                     />
                   </td>
@@ -105,12 +105,12 @@ const DevelopmentPortfolioSection: React.FC<{ data: any; sectionIndex: number }>
           <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-xl">
             <Editable 
               dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.investmentPhilosophy.title`}
-              value={data.investmentPhilosophy.title}
+              
               className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
             />
             <Editable 
               dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.investmentPhilosophy.description`}
-              value={data.investmentPhilosophy.description}
+              
               inputType="multiline"
               className="text-gray-600 dark:text-gray-400"
             />

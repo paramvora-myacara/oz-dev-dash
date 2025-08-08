@@ -46,7 +46,7 @@ interface ColorConfig {
                   <h1 className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}>{title}</h1>
                   <Editable 
                     dataPath={`details.sponsorProfile.sponsorName`}
-                    value={subtitle}
+                    
                     className={`text-xl ${colorConfig.subtitle} mt-2`}
                   />
                 </>
@@ -55,7 +55,7 @@ interface ColorConfig {
                   <h1 className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}>{title}</h1>
                   <Editable 
                     dataPath={`details.${camelCasePage}.pageSubtitle`}
-                    value={subtitle}
+                    
                     className={`text-xl ${colorConfig.subtitle} mt-2`}
                   />
                 </>

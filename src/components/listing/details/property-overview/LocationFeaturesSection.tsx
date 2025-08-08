@@ -12,7 +12,7 @@ const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = (
             {Icon && <Icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />}
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.featureSections[${idx}].category`}
-              value={highlight.category}
+              
               className="text-lg font-semibold text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -22,7 +22,7 @@ const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = (
                 <div className="w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full mt-2 flex-shrink-0"></div>
                 <Editable 
                   dataPath={`details.propertyOverview.sections[${sectionIndex}].data.featureSections[${idx}].features[${featureIdx}]`}
-                  value={feature}
+                  
                   className="text-gray-600 dark:text-gray-400 text-sm"
                 />
               </li>

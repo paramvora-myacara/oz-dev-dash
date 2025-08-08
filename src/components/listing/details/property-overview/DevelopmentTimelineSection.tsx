@@ -11,12 +11,12 @@ const DevelopmentTimelineSection: React.FC<{ data: any; sectionIndex: number }> 
           <div>
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.timeline[${idx}].title`}
-              value={item.title}
+              
               className="font-semibold text-gray-900 dark:text-gray-100"
             />
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.timeline[${idx}].description`}
-              value={item.description}
+              
               inputType="multiline"
               className="text-gray-600 dark:text-gray-400"
             />

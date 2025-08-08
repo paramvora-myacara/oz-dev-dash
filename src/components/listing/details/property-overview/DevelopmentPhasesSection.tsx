@@ -11,19 +11,19 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
             <div>
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].phase`}
-                value={phase.phase}
+                
                 className="font-semibold text-gray-900 dark:text-gray-100 mb-2"
               />
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].timeline`}
-                value={phase.timeline}
+                
                 className="text-sm text-gray-600 dark:text-gray-400"
               />
             </div>
             <div className="text-center">
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].units`}
-                value={phase.units}
+                
                 inputType="number"
                 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
               />
@@ -32,7 +32,7 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
             <div className="text-center">
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].sqft`}
-                value={phase.sqft}
+                
                 className="text-lg font-semibold text-gray-900 dark:text-gray-100"
               />
               <p className="text-sm text-gray-600 dark:text-gray-400">Rentable SF</p>
@@ -40,7 +40,7 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
             <div>
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].features`}
-                value={phase.features}
+                
                 inputType="multiline"
                 className="text-sm text-gray-600 dark:text-gray-400"
               />

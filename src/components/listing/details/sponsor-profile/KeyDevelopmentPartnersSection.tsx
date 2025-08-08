@@ -9,19 +9,19 @@ const KeyDevelopmentPartnersSection: React.FC<{ data: any; sectionIndex: number 
              <div key={i} className="p-6 bg-orange-50 dark:bg-orange-900/10 rounded-xl">
                 <Editable 
                   dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.partners[${i}].name`}
-                  value={partner.name}
+                  
                   className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3"
                 />
                 <div className="text-gray-600 dark:text-gray-400 mb-3">
                   <strong>Role:</strong> <Editable 
                     dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.partners[${i}].role`}
-                    value={partner.role}
+                    
                     className="text-gray-600 dark:text-gray-400"
                   />
                 </div>
                 <Editable 
                   dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.partners[${i}].description`}
-                  value={partner.description}
+                  
                   inputType="multiline"
                   className="text-gray-600 dark:text-gray-400"
                 />

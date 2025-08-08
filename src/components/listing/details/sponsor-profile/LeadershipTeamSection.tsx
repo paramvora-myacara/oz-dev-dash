@@ -9,23 +9,23 @@ const LeadershipTeamSection: React.FC<{ data: any; sectionIndex: number }> = ({ 
         <div key={idx} className="p-6 bg-orange-50 dark:bg-orange-900/10 rounded-xl">
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].name`}
-            value={member.name}
+            
             className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2"
           />
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].title`}
-            value={member.title}
+            
             className="text-orange-600 dark:text-orange-400 font-medium mb-2"
           />
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].experience`}
-            value={member.experience}
+            
             className="text-sm text-gray-600 dark:text-gray-400 mb-3"
           />
           <span className="text-sm text-gray-600 dark:text-gray-400 mb-3"> experience</span>
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].background`}
-            value={member.background}
+            
             inputType="multiline"
             className="text-sm text-gray-600 dark:text-gray-400"
           />
