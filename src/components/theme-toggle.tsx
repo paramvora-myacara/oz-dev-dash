@@ -9,7 +9,7 @@ const THEME_MODES = {
 };
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState(THEME_MODES.DARK);
+  const [theme, setTheme] = useState(THEME_MODES.LIGHT);
   const [mounted, setMounted] = useState(false);
 
   // Apply theme to document
@@ -22,8 +22,8 @@ export default function ThemeToggle() {
   useEffect(() => {
     setMounted(true);
     
-    // Get saved theme or default to dark
-    const savedTheme = localStorage.getItem('theme') || THEME_MODES.DARK;
+    // Get saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || THEME_MODES.LIGHT;
     setTheme(savedTheme);
     applyTheme(savedTheme);
   }, []);
