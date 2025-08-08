@@ -8,7 +8,7 @@ import Lightbox from '@/components/Lightbox';
 import { getRandomImages } from '@/utils/supabaseImages';
 import { HeroSectionData } from '@/types/listing';
 
-const HeroSection: React.FC<{ data: HeroSectionData; projectId: string }> = ({ data, projectId }) => {
+const HeroSection: React.FC<{ data: HeroSectionData; projectId: string; sectionIndex: number }> = ({ data, projectId, sectionIndex }) => {
     const [heroImages, setHeroImages] = useState<string[]>([]);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxStartIndex, setLightboxStartIndex] = useState(0);

@@ -1,6 +1,7 @@
 import React from 'react';
+import { Editable } from '@/components/Editable';
 
-const CompetitiveAnalysisSection: React.FC<{ data: any }> = ({ data }) => (
+const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => (
   <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Competitive Student Housing Market</h3>
     <div className="overflow-x-auto">
@@ -18,12 +19,60 @@ const CompetitiveAnalysisSection: React.FC<{ data: any }> = ({ data }) => (
         <tbody>
           {data.competitors.map((property: any, idx: number) => (
             <tr key={idx} className="border-b border-gray-100 dark:border-gray-800">
-              <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">{property.name}</td>
-              <td className="py-3 text-gray-600 dark:text-gray-400">{property.built}</td>
-              <td className="py-3 text-gray-600 dark:text-gray-400">{property.beds}</td>
-              <td className="py-3 text-gray-600 dark:text-gray-400">{property.rent}</td>
-              <td className="py-3 text-green-600 dark:text-green-400 font-semibold">{property.occupancy}</td>
-              <td className="py-3 text-purple-600 dark:text-purple-400 font-semibold">+{property.rentGrowth}</td>
+              <td className="py-3 font-semibold text-gray-900 dark:text-gray-100">
+                <Editable 
+                  dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].name`}
+                  value={property.name}
+                  className="font-semibold text-gray-900 dark:text-gray-100"
+                  as="span"
+                  spacing="none"
+                />
+              </td>
+              <td className="py-3 text-gray-600 dark:text-gray-400">
+                <Editable 
+                  dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].built`}
+                  value={property.built}
+                  className="text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
+                />
+              </td>
+              <td className="py-3 text-gray-600 dark:text-gray-400">
+                <Editable 
+                  dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].beds`}
+                  value={property.beds}
+                  className="text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
+                />
+              </td>
+              <td className="py-3 text-gray-600 dark:text-gray-400">
+                <Editable 
+                  dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rent`}
+                  value={property.rent}
+                  className="text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
+                />
+              </td>
+              <td className="py-3 text-green-600 dark:text-green-400 font-semibold">
+                <Editable 
+                  dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].occupancy`}
+                  value={property.occupancy}
+                  className="text-green-600 dark:text-green-400 font-semibold"
+                  as="span"
+                  spacing="none"
+                />
+              </td>
+              <td className="py-3 text-purple-600 dark:text-purple-400 font-semibold">
+                <Editable 
+                  dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rentGrowth`}
+                  value={property.rentGrowth}
+                  className="text-purple-600 dark:text-purple-400 font-semibold"
+                  as="span"
+                  spacing="none"
+                />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -31,9 +80,14 @@ const CompetitiveAnalysisSection: React.FC<{ data: any }> = ({ data }) => (
     </div>
     {data.summary &&
       <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl">
-        <p className="text-gray-600 dark:text-gray-400">
-          <strong>Market Summary:</strong> {data.summary}
-        </p>
+        <Editable 
+          dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.summary`}
+          value={data.summary}
+          inputType="multiline"
+          className="text-gray-600 dark:text-gray-400"
+          as="p"
+          spacing="none"
+        />
       </div>
     }
   </div>

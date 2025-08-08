@@ -2,8 +2,9 @@
 
 import { CompellingReasonsSectionData } from '@/types/listing';
 import { iconMap } from '@/components/listing/details/shared/iconMap';
+import { Editable } from '@/components/Editable';
 
-const CompellingReasonsSection: React.FC<{ data: CompellingReasonsSectionData }> = ({ data }) => (
+const CompellingReasonsSection: React.FC<{ data: CompellingReasonsSectionData; sectionIndex: number }> = ({ data, sectionIndex }) => (
     <section className="py-12 md:py-20 px-4 md:px-8 bg-white dark:bg-black">
       <div className="max-w-7xl mx-auto">
         <div className="mb-12 md:mb-16 text-center">
@@ -53,8 +54,8 @@ const CompellingReasonsSection: React.FC<{ data: CompellingReasonsSectionData }>
                     ${style.iconColor} bg-white/30 dark:bg-white/10 shadow-lg text-4xl`}>
                         {IconComponent && <IconComponent className="w-12 h-12" />}
                     </div>
-                    <h3 className={`text-2xl md:text-3xl font-extrabold mb-3 tracking-tight ${style.textColor}`}>{reason.title}</h3>
-                    <p className={`text-base md:text-lg font-light ${style.accentColor} opacity-90`}>{reason.description}</p>
+                    <Editable dataPath={`sections[${sectionIndex}].data.reasons[${idx}].title`} value={reason.title} className={`text-2xl md:text-3xl font-extrabold mb-3 tracking-tight ${style.textColor}`} />
+                    <Editable dataPath={`sections[${sectionIndex}].data.reasons[${idx}].description`} value={reason.description} inputType="multiline" className={`text-base md:text-lg font-light ${style.accentColor} opacity-90`} />
                 </div>
               );
           })}

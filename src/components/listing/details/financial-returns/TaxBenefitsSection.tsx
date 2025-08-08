@@ -1,7 +1,7 @@
 import React from 'react';
 import { iconMap } from '../shared/iconMap';
 
-const TaxBenefitsSection: React.FC<{ data: any }> = ({ data }) => {
+const TaxBenefitsSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
       <h3 className="text-xl font-semibold text-gray-900 dark:text-emerald-300 mb-6">Opportunity Zone Benefits</h3>

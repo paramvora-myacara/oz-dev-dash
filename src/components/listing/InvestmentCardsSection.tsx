@@ -3,8 +3,39 @@
 import Link from "next/link";
 import { TrendingUp, Building, Target, Users, Expand } from "lucide-react";
 import { InvestmentCardsSectionData } from '@/types/listing';
+import { Editable } from '@/components/Editable';
+import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 
-const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listingSlug: string }> = ({ data, listingSlug }) => (
+const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listingSlug: string, sectionIndex: number }> = ({ data, listingSlug, sectionIndex }) => {
+  const { isEditing } = useListingDraftStore();
+  
+  const isInteractiveTarget = (target: HTMLElement, container: HTMLElement) => {
+    let el: HTMLElement | null = target;
+    while (el && el !== container) {
+      const tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return true;
+      if (el.isContentEditable) return true;
+      el = el.parentElement;
+    }
+    return false;
+  };
+  
+  const handleCardClickCapture = (e: React.MouseEvent<HTMLElement>) => {
+    const targetEl = e.target as HTMLElement;
+    const containerEl = e.currentTarget as HTMLElement;
+    const interactive = isInteractiveTarget(targetEl, containerEl);
+
+    if (isEditing && interactive) {
+      e.preventDefault();
+      e.stopPropagation();
+      // @ts-ignore
+      if (typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
+        (e.nativeEvent as any).stopImmediatePropagation();
+      }
+    }
+  };
+  
+  return (
     <section id="investment-cards" className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
@@ -49,9 +80,10 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                     return (
                         <Link
                             key={idx}
-                            href={`/${listingSlug}/details/${card.id}`}
+                            href={isEditing ? `/${listingSlug}/details/${card.id}/edit` : `/${listingSlug}/details/${card.id}`}
                             className={`glass-card rounded-3xl p-8 bg-gradient-to-br ${style.gradient} border border-gray-200 dark:border-white/20 shadow-md dark:shadow-xl shadow-gray-200/50 dark:shadow-white/5 hover:shadow-lg dark:hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 animate-fadeIn group relative overflow-hidden`}
                             style={{ animationDelay: `${idx * 150}ms` }}
+                            onClickCapture={handleCardClickCapture}
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/20 dark:from-white/[0.04] dark:to-white/[0.02] pointer-events-none" />
                             <div className="relative flex items-center justify-between mb-6">
@@ -64,18 +96,32 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                             <div className="space-y-8 mb-6 flex-1">
                                 {card.keyMetrics.map((metric, metricIdx) => (
                                     <div key={metricIdx} className="flex items-center justify-between">
-                                        <span className={`text-lg font-medium ${style.accentColor}`}>{metric.label}</span>
-                                        <span className="text-xl font-semibold text-black dark:text-white">{metric.value}</span>
+                                        <Editable 
+                                            dataPath={`sections[${sectionIndex}].data.cards[${idx}].keyMetrics[${metricIdx}].label`}
+                                            value={metric.label}
+                                            className={`text-lg font-medium ${style.accentColor}`}
+                                        />
+                                        <Editable 
+                                            dataPath={`sections[${sectionIndex}].data.cards[${idx}].keyMetrics[${metricIdx}].value`}
+                                            value={metric.value}
+                                            className="text-xl font-semibold text-black dark:text-white"
+                                        />
                                     </div>
                                 ))}
                             </div>
-                            <p className={`text-base leading-relaxed font-light ${style.accentColor}`}>{card.summary}</p>
+                            <Editable 
+                                dataPath={`sections[${sectionIndex}].data.cards[${idx}].summary`}
+                                value={card.summary}
+                                inputType="multiline"
+                                className={`text-base leading-relaxed font-light ${style.accentColor}`}
+                            />
                         </Link>
                     )
                 })}
             </div>
         </div>
     </section>
-);
+  );
+};
 
 export default InvestmentCardsSection; 

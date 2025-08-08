@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Users } from 'lucide-react';
 import React from 'react';
+import { useListingDraftStore } from '@/hooks/useListingDraftStore';
+import { Editable } from '@/components/Editable';
 
 interface ColorConfig {
     title: string;
@@ -11,6 +13,8 @@ interface ColorConfig {
   }
   
   const HeaderContent = ({ data, slug, camelCasePage, colorConfig }: { data: any, slug: string, camelCasePage: string, colorConfig: ColorConfig }) => {
+    const { isEditing } = useListingDraftStore();
+    
     let title = '';
     let subtitle = '';
 
@@ -26,7 +30,7 @@ interface ColorConfig {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-8">
           <Link
-            href={`/${slug}#investment-cards`} // Corrected href
+            href={isEditing ? `/${slug}/edit#investment-cards` : `/${slug}#investment-cards`}
             className={`inline-flex items-center ${colorConfig.backLink} hover:${colorConfig.backLinkHover} mb-8 transition-colors`}
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,8 +41,25 @@ interface ColorConfig {
           <div className="flex items-center space-x-4 mb-6">
             <div className="text-5xl"><Users className={`w-12 h-12 ${colorConfig.icon}`} /></div>
             <div>
-              <h1 className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}>{title}</h1>
-              <p className={`text-xl ${colorConfig.subtitle} mt-2`}>{subtitle}</p>
+              {camelCasePage === 'sponsorProfile' ? (
+                <>
+                  <h1 className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}>{title}</h1>
+                  <Editable 
+                    dataPath={`details.sponsorProfile.sponsorName`}
+                    
+                    className={`text-xl ${colorConfig.subtitle} mt-2`}
+                  />
+                </>
+              ) : (
+                <>
+                  <h1 className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}>{title}</h1>
+                  <Editable 
+                    dataPath={`details.${camelCasePage}.pageSubtitle`}
+                    
+                    className={`text-xl ${colorConfig.subtitle} mt-2`}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

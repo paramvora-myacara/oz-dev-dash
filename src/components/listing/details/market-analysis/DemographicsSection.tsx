@@ -1,20 +1,70 @@
-import React from 'react';
+'use client';
 
-const DemographicsSection: React.FC<{ data: any }> = ({ data }) => (
-  <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Demographics</h3>
-    <div className="space-y-6">
-      {data.demographics.map((demo: any, idx: number) => (
-        <div key={idx} className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-          <div>
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100">{demo.category}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{demo.description}</p>
+import React from 'react';
+import { Editable } from '@/components/Editable';
+import { useListingDraftStore } from '@/hooks/useListingDraftStore';
+import { getByPath } from '@/utils/objectPath';
+
+const DemographicsSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => {
+  const { isEditing, draftData, updateField } = useListingDraftStore();
+  const basePath = `details.marketAnalysis.sections[${sectionIndex}].data.demographics`;
+  const items = (draftData ? getByPath(draftData, basePath) : null) ?? data.demographics ?? [];
+
+  const handleAdd = () => {
+    const newItem = { category: 'Category', description: 'Description', value: '0%' };
+    updateField(basePath, [...items, newItem]);
+  };
+
+  const handleRemove = (idx: number) => {
+    const updated = items.filter((_: any, i: number) => i !== idx);
+    updateField(basePath, updated);
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Demographics</h3>
+        {isEditing && (
+          <button onClick={handleAdd} className="px-2 py-1 text-sm rounded bg-purple-600 text-white hover:bg-purple-700">+ Add</button>
+        )}
+      </div>
+      <div className="space-y-6">
+        {items.map((demo: any, idx: number) => (
+          <div key={idx} className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+            <div>
+              <Editable 
+                dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].category`}
+                value={demo.category}
+                className="font-semibold text-gray-900 dark:text-gray-100"
+                as="p"
+                spacing="small"
+              />
+              <Editable 
+                dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].description`}
+                value={demo.description}
+                inputType="multiline"
+                className="text-sm text-gray-600 dark:text-gray-400"
+                as="p"
+                spacing="none"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Editable 
+                dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.demographics[${idx}].value`}
+                value={demo.value}
+                className="text-2xl font-bold text-purple-600 dark:text-purple-400"
+                as="span"
+                spacing="none"
+              />
+              {isEditing && (
+                <button onClick={() => handleRemove(idx)} className="px-2 py-1 text-sm rounded border border-purple-600 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20">-</button>
+              )}
+            </div>
           </div>
-          <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{demo.value}</span>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default DemographicsSection; 

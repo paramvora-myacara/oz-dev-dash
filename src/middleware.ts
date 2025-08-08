@@ -58,6 +58,32 @@ export async function middleware(request: NextRequest) {
   // Refresh session if expired - required for Server Components
   await supabase.auth.getUser()
 
+  // Admin protection for /admin and /{slug}/edit routes
+  const { pathname } = request.nextUrl
+  
+  // Check if this is an admin route that needs protection
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isEditRoute = pathname.includes('/edit')
+  
+  if (isAdminRoute || isEditRoute) {
+    // Skip protection for login page to avoid redirect loops
+    if (pathname === '/admin/login') {
+      return response
+    }
+    
+    // Check for admin cookie
+    const adminCookie = request.cookies.get('oz_admin_basic')
+    if (!adminCookie?.value) {
+      // Redirect to login with return URL
+      const loginUrl = new URL('/admin/login', request.url)
+      loginUrl.searchParams.set('returnUrl', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+    
+    // For edit routes, we'll do additional authorization in the page component
+    // since we need the slug to check permissions
+  }
+
   return response
 }
 

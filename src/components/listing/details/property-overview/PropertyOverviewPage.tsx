@@ -9,22 +9,22 @@ import DevelopmentTimelineSection from './DevelopmentTimelineSection';
 import DevelopmentPhasesSection from './DevelopmentPhasesSection';
 import FloorplanSitemapSection from '@/components/FloorplanSitemapSection';
 
-const SectionRenderer = ({ section }: { section: any }) => {
+const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex: number }) => {
   switch (section.type) {
     case 'keyFacts':
-      return <KeyFactsSection data={section.data} />;
+      return <KeyFactsSection data={section.data} sectionIndex={sectionIndex} />;
     case 'amenities':
-      return <AmenitiesSection data={section.data} />;
+      return <AmenitiesSection data={section.data} sectionIndex={sectionIndex} />;
     case 'unitMix':
-      return <UnitMixSection data={section.data} />;
+      return <UnitMixSection data={section.data} sectionIndex={sectionIndex} />;
     case 'locationHighlights':
-      return <LocationHighlightsSection data={section.data} />;
+      return <LocationHighlightsSection data={section.data} sectionIndex={sectionIndex} />;
     case 'locationFeatures':
-      return <LocationFeaturesSection data={section.data} />;
+      return <LocationFeaturesSection data={section.data} sectionIndex={sectionIndex} />;
     case 'developmentTimeline':
-      return <DevelopmentTimelineSection data={section.data} />;
+      return <DevelopmentTimelineSection data={section.data} sectionIndex={sectionIndex} />;
     case 'developmentPhases':
-      return <DevelopmentPhasesSection data={section.data} />;
+      return <DevelopmentPhasesSection data={section.data} sectionIndex={sectionIndex} />;
     default:
       return null;
   }
@@ -39,7 +39,7 @@ const PropertyOverviewPage: React.FC<{ data: PropertyOverview, projectId: string
     <div className="max-w-7xl mx-auto">
       <FloorplanSitemapSection projectId={projectId} />
       {data.sections.map((section, idx) => (
-        <SectionRenderer key={idx} section={section} />
+        <SectionRenderer key={idx} section={section} sectionIndex={idx} />
       ))}
     </div>
   );
