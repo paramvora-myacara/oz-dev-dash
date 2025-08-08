@@ -30,7 +30,9 @@ export default async function EditPage({ params }: EditPageProps) {
     <EditModeProvider listing={listing}>
       <div className="min-h-screen bg-gray-50">
         <EditorToolbar />
-        <ListingPageClient listing={listing} />
+        <div className="pt-16">
+          <ListingPageClient listing={listing} />
+        </div>
       </div>
     </EditModeProvider>
   );

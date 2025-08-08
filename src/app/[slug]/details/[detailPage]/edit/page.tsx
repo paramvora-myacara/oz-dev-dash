@@ -43,12 +43,14 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
     <EditModeProvider listing={listing}>
       <div className="min-h-screen bg-gray-50">
         <EditorToolbar />
-        <DetailPageClient 
-          listing={listing} 
-          pageData={pageData}
-          slug={slug}
-          camelCasePage={camelCasePage}
-        />
+        <div className="pt-16">
+          <DetailPageClient 
+            listing={listing} 
+            pageData={pageData}
+            slug={slug}
+            camelCasePage={camelCasePage}
+          />
+        </div>
       </div>
     </EditModeProvider>
   );

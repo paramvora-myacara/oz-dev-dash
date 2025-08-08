@@ -149,12 +149,9 @@ export function EditorToolbar() {
     }
   };
 
-  const handleCancel = () => {
+  const handleReset = () => {
     resetDraft();
-    // Navigate back to the non-edit version
-    if (listingSlug) {
-      router.push(`/${listingSlug}`);
-    }
+    // Stay in edit mode, just clear the unsaved changes
   };
 
   const handleBackToDashboard = () => {
@@ -368,10 +365,10 @@ export function EditorToolbar() {
             </div>
 
             <button
-              onClick={handleCancel}
+              onClick={handleReset}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Cancel
+              Reset
             </button>
             <button
               onClick={handleSave}
