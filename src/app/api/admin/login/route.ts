@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   const basic = Buffer.from(`${email}:${password}`).toString('base64')
-  const cookieStore: any = cookies()
+  const cookieStore = await cookies()
   cookieStore.set('oz_admin_basic', basic, {
     httpOnly: true,
     sameSite: 'lax',
