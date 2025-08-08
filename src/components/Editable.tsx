@@ -29,8 +29,9 @@ export function Editable({
   const { isEditing, draftData, updateField } = useListingDraftStore();
   const [inputValue, setInputValue] = useState<string>('');
 
-  // Resolve current field value
-  const currentValue = value ?? getByPath(draftData, dataPath);
+  // Resolve current field value - prioritize draft data over the value prop
+  const draftValue = draftData ? getByPath(draftData, dataPath) : undefined;
+  const currentValue = draftValue !== undefined ? draftValue : value;
   
   // Initialize input value when component mounts or value changes
   useEffect(() => {

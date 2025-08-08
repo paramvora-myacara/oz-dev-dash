@@ -11,17 +11,14 @@ interface EditModeProviderProps {
 
 export function EditModeProvider({ listing, children }: EditModeProviderProps) {
   const { 
-    initializeDraft, 
-    loadDraftFromLocalStorage, 
+    initializeDraftWithPersistence, 
     setIsEditing 
   } = useListingDraftStore();
 
   useEffect(() => {
-    // Initialize the draft with the listing data
-    initializeDraft(listing);
-    
-    // Load any existing draft from localStorage
-    loadDraftFromLocalStorage();
+    // Initialize the draft with persistence - this handles loading from localStorage
+    // and only resets if we're switching to a different listing
+    initializeDraftWithPersistence(listing);
     
     // Set editing mode to true
     setIsEditing(true);
@@ -30,7 +27,7 @@ export function EditModeProvider({ listing, children }: EditModeProviderProps) {
     return () => {
       setIsEditing(false);
     };
-  }, [listing, initializeDraft, loadDraftFromLocalStorage, setIsEditing]);
+  }, [listing, initializeDraftWithPersistence, setIsEditing]);
 
   return <>{children}</>;
 } 

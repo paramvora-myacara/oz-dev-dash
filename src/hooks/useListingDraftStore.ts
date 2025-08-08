@@ -13,11 +13,13 @@ interface DraftStore {
 
   // Actions
   initializeDraft: (listing: Listing) => void;
+  initializeDraftWithPersistence: (listing: Listing) => void;
   updateField: (path: string, value: unknown) => void;
   resetDraft: () => void;
   setIsEditing: (isEditing: boolean) => void;
   loadDraftFromLocalStorage: () => void;
   persistDraftToLocalStorage: () => void;
+  checkForUnsavedChanges: () => boolean;
 }
 
 const STORAGE_KEY_PREFIX = 'ozdash:draft:';
@@ -34,10 +36,19 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
   initializeDraft: (listing: Listing) => {
     set(
       produce((state) => {
-        state.originalData = listing;
-        state.draftData = listing;
-        state.listingSlug = listing.listingSlug;
-        state.isDirty = false;
+        // If we're switching to a different listing, reset everything
+        if (state.listingSlug !== listing.listingSlug) {
+          state.originalData = listing;
+          state.draftData = listing;
+          state.listingSlug = listing.listingSlug;
+          state.isDirty = false;
+        } else {
+          // Same listing - only set original data if not already set
+          if (!state.originalData) {
+            state.originalData = listing;
+          }
+          // Don't reset draft data for the same listing - preserve existing changes
+        }
       })
     );
   },
@@ -46,12 +57,9 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     set(
       produce((state) => {
         if (state.draftData) {
-          const oldValue = getByPath(state.draftData, path);
           setByPath(state.draftData, path, value);
-          state.isDirty = true;
-          
-          // Log the field update
-          console.log('[Editor] update', { path, oldValue, newValue: value });
+          // Update isDirty based on actual comparison with original data
+          state.isDirty = JSON.stringify(state.originalData) !== JSON.stringify(state.draftData);
         }
       })
     );
@@ -87,15 +95,14 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
       try {
         const { updatedAt, draftData: storedDraft } = JSON.parse(stored);
         
-        // Only load if stored draft is newer than current or if current is empty
-        const shouldLoad = !draftData || 
-          (updatedAt && new Date(updatedAt) > new Date());
-        
-        if (shouldLoad && storedDraft) {
+        // Always load if we have stored draft data, regardless of current state
+        // This ensures changes persist across page navigation
+        if (storedDraft) {
           set(
             produce((state) => {
               state.draftData = storedDraft;
-              state.isDirty = true;
+              // Update isDirty based on actual comparison with original data
+              state.isDirty = JSON.stringify(state.originalData) !== JSON.stringify(storedDraft);
             })
           );
         }
@@ -121,5 +128,58 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     } catch (error) {
       console.warn('Failed to persist draft to localStorage:', error);
     }
+  },
+
+  initializeDraftWithPersistence: (listing: Listing) => {
+    const { listingSlug } = get();
+    
+    // If we're switching to a different listing, reset everything
+    if (listingSlug !== listing.listingSlug) {
+      set(
+        produce((state) => {
+          state.originalData = listing;
+          state.draftData = listing;
+          state.listingSlug = listing.listingSlug;
+          state.isDirty = false;
+        })
+      );
+    } else {
+      // Same listing - set original data if not set, then try to load from localStorage
+      set(
+        produce((state) => {
+          if (!state.originalData) {
+            state.originalData = listing;
+          }
+        })
+      );
+      
+      // Load any existing draft from localStorage for the same listing
+      const storageKey = `${STORAGE_KEY_PREFIX}${listing.listingSlug}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      if (stored) {
+        try {
+          const { draftData: storedDraft } = JSON.parse(stored);
+          if (storedDraft) {
+            set(
+              produce((state) => {
+                state.draftData = storedDraft;
+                state.isDirty = JSON.stringify(state.originalData) !== JSON.stringify(storedDraft);
+              })
+            );
+          }
+        } catch (error) {
+          console.warn('Failed to load draft from localStorage:', error);
+        }
+      }
+    }
+  },
+
+  checkForUnsavedChanges: () => {
+    const { originalData, draftData } = get();
+    if (!originalData || !draftData) return false;
+    
+    // Simple deep comparison - in a real app you might want a more sophisticated comparison
+    return JSON.stringify(originalData) !== JSON.stringify(draftData);
   },
 })); 
