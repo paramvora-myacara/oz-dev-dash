@@ -52,11 +52,7 @@ interface ColorConfig {
                 </>
               ) : (
                 <>
-                  <Editable 
-                    dataPath={`details.${camelCasePage}.pageTitle`}
-                    value={title}
-                    className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}
-                  />
+                  <h1 className={`text-5xl font-semibold ${colorConfig.title} tracking-tight`}>{title}</h1>
                   <Editable 
                     dataPath={`details.${camelCasePage}.pageSubtitle`}
                     value={subtitle}
