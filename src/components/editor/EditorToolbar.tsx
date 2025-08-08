@@ -3,7 +3,7 @@
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
-import { ChevronDown, RotateCcw, Loader2 } from 'lucide-react';
+import { ChevronDown, RotateCcw, Loader2, ArrowLeft } from 'lucide-react';
 
 interface VersionMeta {
   id: string;
@@ -32,6 +32,7 @@ export function EditorToolbar() {
   const [showVersionDropdown, setShowVersionDropdown] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'rollback' | 'dashboard' | null>(null);
   const [rollbackError, setRollbackError] = useState<string | null>(null);
   const [rollbackSuccess, setRollbackSuccess] = useState<string | null>(null);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -156,28 +157,48 @@ export function EditorToolbar() {
     }
   };
 
-  const handleRollbackClick = () => {
+  const handleBackToDashboard = () => {
     if (isDirty) {
+      setPendingAction('dashboard');
       setShowRollbackConfirm(true);
     } else {
-      setShowVersionDropdown(true);
+      resetDraft();
+      router.push('/admin');
     }
   };
 
-  const handleRollbackConfirm = () => {
-    setShowRollbackConfirm(false);
+  const handleRollbackClick = () => {
     setShowVersionDropdown(true);
   };
 
   const handleRollbackCancel = () => {
     setShowRollbackConfirm(false);
     setSelectedVersionId(null);
+    setPendingAction(null);
   };
 
   const handleVersionSelect = (versionId: string) => {
     setSelectedVersionId(versionId);
     setShowVersionDropdown(false);
-    performRollback(versionId);
+    
+    // Check if there are unsaved changes before proceeding with rollback
+    if (isDirty) {
+      setPendingAction('rollback');
+      setShowRollbackConfirm(true);
+    } else {
+      performRollback(versionId);
+    }
+  };
+
+  const handleRollbackConfirm = () => {
+    setShowRollbackConfirm(false);
+    if (pendingAction === 'rollback' && selectedVersionId) {
+      performRollback(selectedVersionId);
+    } else if (pendingAction === 'dashboard') {
+      resetDraft();
+      router.push('/admin');
+    }
+    setPendingAction(null);
   };
 
   const performRollback = async (versionId: string) => {
@@ -239,6 +260,13 @@ export function EditorToolbar() {
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            <button
+              onClick={handleBackToDashboard}
+              className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Dashboard</span>
+            </button>
             <span className="text-sm font-medium text-gray-600">
               Editing Mode
             </span>
@@ -356,15 +384,15 @@ export function EditorToolbar() {
         </div>
       </div>
 
-      {/* Rollback Confirmation Modal */}
+      {/* Unsaved Changes Confirmation Modal */}
       {showRollbackConfirm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-60">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Unsaved Changes
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              You have unsaved changes. Rolling back will discard these changes. Are you sure you want to continue?
+              You have unsaved changes. {pendingAction === 'rollback' ? 'Rolling back will' : 'Leaving this page will'} discard these changes. Are you sure you want to continue?
             </p>
             <div className="flex space-x-3">
               <button
@@ -377,7 +405,7 @@ export function EditorToolbar() {
                 onClick={handleRollbackConfirm}
                 className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
               >
-                Discard & Rollback
+                {pendingAction === 'rollback' ? 'Discard & Rollback' : 'Discard & Leave'}
               </button>
             </div>
           </div>
@@ -387,7 +415,7 @@ export function EditorToolbar() {
       {/* Save Success Modal */}
       {showSaveSuccess && (
         <div 
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-60"
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999]"
           onClick={() => setShowSaveSuccess(false)}
         >
           <div 
@@ -428,7 +456,7 @@ export function EditorToolbar() {
       {/* Save Error Modal */}
       {saveError && (
         <div 
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-60"
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999]"
           onClick={() => setSaveError(null)}
         >
           <div 
