@@ -256,6 +256,7 @@ function SoGoodDallasPage() {
                 fill
                 className="object-cover rounded-3xl"
                 priority
+                unoptimized
               />
             )}
           </div>

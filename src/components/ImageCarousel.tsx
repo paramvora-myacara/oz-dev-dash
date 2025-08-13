@@ -72,6 +72,7 @@ export default function ImageCarousel({
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
             priority={index === 0}
+            unoptimized
           />
         </div>
       ))}
