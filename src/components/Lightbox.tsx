@@ -61,6 +61,7 @@ export default function Lightbox({
             className="object-contain w-auto h-auto max-w-full max-h-full"
             quality={100}
             priority
+            unoptimized
           />
       </div>
 

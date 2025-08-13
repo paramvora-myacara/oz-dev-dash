@@ -185,6 +185,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                     }`}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     onLoad={() => setImageLoading(prev => ({ ...prev, floorplan: false }))}
+                    unoptimized
                   />
                   
                   {/* Image Actions */}
@@ -298,6 +299,7 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                     }`}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     onLoad={() => setImageLoading(prev => ({ ...prev, sitemap: false }))}
+                    unoptimized
                   />
                   
                   {/* Image Actions */}
