@@ -16,6 +16,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+        {/* SignWell Script for Confidentiality Agreement Signing */}
+        <script src="https://static.signwell.com/assets/embedded.js"></script>
       </head>
       <body className="bg-white dark:bg-black antialiased">
         <div className="min-h-screen">

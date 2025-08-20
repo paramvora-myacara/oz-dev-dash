@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDDVFileUrl } from '@/lib/supabase/ddv'
+import { createClient } from '@/utils/supabase/server'
 
 export async function GET(
   request: NextRequest,
@@ -7,6 +8,15 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
+    
+    // Verify Supabase session
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
     const { searchParams } = new URL(request.url)
     const fileName = searchParams.get('file')
     

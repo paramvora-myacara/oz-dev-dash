@@ -1,7 +1,8 @@
 import { getPublishedListingBySlug } from '@/lib/supabase/listings'
 import { getDDVFiles } from '@/lib/supabase/ddv'
 import DDVVaultClient from './ddv-vault-client'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
 
 interface DDVVaultPageProps {
   params: Promise<{ slug: string }>
@@ -9,6 +10,14 @@ interface DDVVaultPageProps {
 
 export default async function DDVVaultPage({ params }: DDVVaultPageProps) {
   const { slug } = await params
+  
+  // Check for valid Supabase session
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    redirect('/') // Redirect to home if no session
+  }
   
   // Get the listing to verify it exists and get its name
   const listing = await getPublishedListingBySlug(slug)

@@ -12,8 +12,6 @@ import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection'
 import ContactDeveloperModal from '@/components/ContactDeveloperModal';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
-import { useRouter } from 'next/navigation';
-
 
 interface ListingPageClientProps {
   listing: Listing;
@@ -21,10 +19,20 @@ interface ListingPageClientProps {
 }
 
 export default function ListingPageClient({ listing, isEditMode = false }: ListingPageClientProps) {
-  const { isAuthModalOpen, isConfirmationModalOpen, authError, isLoading, handleRequestVaultAccess, handleSignInOrUp, closeModal } = useAuth();
+  const { 
+    isAuthModalOpen, 
+    isConfirmationModalOpen, 
+    authError, 
+    isLoading, 
+    modalStep,
+    userFullName,
+    userEmail,
+    handleRequestVaultAccess, 
+    handleCASubmission, 
+    closeModal 
+  } = useAuth();
   const { isAdmin, canEditSlug } = useAdminAuth();
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     if (listing) {
@@ -35,8 +43,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
   const showAdminToolbar = !isLoading && isAdmin && canEditSlug(listing.listingSlug) && !isEditMode;
 
   const handleVaultAccess = () => {
-    // Navigate directly to vault page without auth
-    router.push(`/${listing.listingSlug}/access-dd-vault`);
+    handleRequestVaultAccess(listing.listingSlug);
   };
 
   const SectionRenderer = ({ section, sectionIndex }: { section: ListingOverviewSection; sectionIndex: number }) => {
@@ -98,9 +105,12 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={closeModal}
-        onSubmit={handleSignInOrUp}
+        onSubmit={handleCASubmission}
         isLoading={isLoading}
         authError={authError}
+        step={modalStep}
+        userFullName={userFullName}
+        userEmail={userEmail}
       />
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}

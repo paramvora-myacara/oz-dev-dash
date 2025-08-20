@@ -1,14 +1,18 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { X } from 'lucide-react'
+import type { AuthModalStep } from '@/hooks/useAuth'
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (email: string, fullName: string) => void
+  onSubmit: (fullName: string, email: string, company?: string, title?: string) => void
   isLoading: boolean
   authError: string | null
+  step: 'identify' | 'sign'
+  userFullName?: string | null
+  userEmail?: string | null
 }
 
 interface ConfirmationModalProps {
@@ -22,14 +26,27 @@ export function AuthModal({
   onSubmit,
   isLoading,
   authError,
+  step,
+  userFullName,
+  userEmail,
 }: AuthModalProps) {
-  const [email, setEmail] = useState('')
-  const [fullName, setFullName] = useState('')
+  const [fullName, setFullName] = useState(userFullName || '')
+  const [email, setEmail] = useState(userEmail || '')
+
+  // Auto-fill when props change
+  useEffect(() => {
+    if (userFullName) setFullName(userFullName)
+    if (userEmail) setEmail(userEmail)
+  }, [userFullName, userEmail])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (email && fullName) {
-      onSubmit(email, fullName)
+    console.log('Form submitted with:', { fullName, email })
+    if (fullName && email) {
+      console.log('Calling onSubmit function...')
+      onSubmit(fullName, email)
+    } else {
+      console.log('Form validation failed - missing required fields')
     }
   }
 
@@ -46,37 +63,55 @@ export function AuthModal({
         </button>
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
-            Request Vault Access
+            {step === 'identify' ? 'Request Vault Access' : 'Sign Confidentiality Agreement'}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Enter your email to express interest and receive updates.
+            {step === 'identify' 
+              ? 'Please provide your information to access confidential investment materials.'
+              : 'Please review and sign the confidentiality agreement to proceed.'
+            }
           </p>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Full Name"
-              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white mb-4"
-              required
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-              required
-            />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
+                Name *
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                required
+                disabled={!!userFullName} // Disable if auto-filled
+                placeholder="Full Name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
+                Email *
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                required
+                disabled={!!userEmail} // Disable if auto-filled
+                placeholder="you@example.com"
+              />
+            </div>
+            
             {authError && (
               <p className="text-red-500 text-sm mt-3">{authError}</p>
             )}
+            
             <button
               type="submit"
               disabled={isLoading}
               className="w-full mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
             >
-              {isLoading ? 'Processing...' : 'Submit'}
+              {isLoading ? 'Processing...' : 'Proceed to Signing a CA'}
             </button>
           </form>
         </div>
