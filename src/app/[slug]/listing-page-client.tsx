@@ -12,6 +12,7 @@ import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection'
 import ContactDeveloperModal from '@/components/ContactDeveloperModal';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
+import { useRouter } from 'next/navigation';
 
 
 interface ListingPageClientProps {
@@ -23,6 +24,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
   const { isAuthModalOpen, isConfirmationModalOpen, authError, isLoading, handleRequestVaultAccess, handleSignInOrUp, closeModal } = useAuth();
   const { isAdmin, canEditSlug } = useAdminAuth();
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (listing) {
@@ -31,6 +33,11 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
   }, [listing]);
 
   const showAdminToolbar = !isLoading && isAdmin && canEditSlug(listing.listingSlug) && !isEditMode;
+
+  const handleVaultAccess = () => {
+    // Navigate directly to vault page without auth
+    router.push(`/${listing.listingSlug}/access-dd-vault`);
+  };
 
   const SectionRenderer = ({ section, sectionIndex }: { section: ListingOverviewSection; sectionIndex: number }) => {
     switch (section.type) {
@@ -63,7 +70,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-center">
             <button
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
-              onClick={handleRequestVaultAccess}
+              onClick={handleVaultAccess}
             >
               Request Vault Access
             </button>

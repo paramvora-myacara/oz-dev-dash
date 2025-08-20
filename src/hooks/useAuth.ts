@@ -18,6 +18,7 @@ export function useAuth() {
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [onAuthSuccess, setOnAuthSuccess] = useState<(() => void) | null>(null)
 
   useEffect(() => {
     const ozlUid = searchParams.get('uid')
@@ -52,12 +53,19 @@ export function useAuth() {
     }
   }, [supabase, trackEvent])
 
-  const handleRequestVaultAccess = useCallback(() => {
+  const handleRequestVaultAccess = useCallback((onSuccess?: () => void) => {
     const storedUid = sessionStorage.getItem(USER_UID_KEY)
     if (storedUid) {
       trackEvent(storedUid, 'request_vault_access')
-      setIsConfirmationModalOpen(true)
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        setIsConfirmationModalOpen(true)
+      }
     } else {
+      if (onSuccess) {
+        setOnAuthSuccess(() => onSuccess)
+      }
       setIsAuthModalOpen(true)
     }
   }, [trackEvent])
@@ -128,7 +136,14 @@ export function useAuth() {
           // Track the event after successful authentication
           trackEvent(newUserId, 'request_vault_access')
           setIsAuthModalOpen(false)
-          setIsConfirmationModalOpen(true)
+          
+          // Call the success callback if we have one
+          if (onAuthSuccess) {
+            onAuthSuccess()
+            setOnAuthSuccess(null)
+          } else {
+            setIsConfirmationModalOpen(true)
+          }
         }
       } catch (error: any) {
         console.error('Authentication error:', error)
