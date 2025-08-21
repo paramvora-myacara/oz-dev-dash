@@ -65,9 +65,8 @@ export default function AdminDashboard() {
   }
 
   const getEditUrl = (listing: Listing) => {
-    if (listing.hostname) {
-      return `https://${listing.hostname}/${listing.listing_slug}/edit`
-    }
+    const base = process.env.NEXT_PUBLIC_PLATFORM_BASE_URL?.replace(/\/$/, '')
+    if (base) return `${base}/${listing.listing_slug}/edit`
     return `/${listing.listing_slug}/edit`
   }
 
