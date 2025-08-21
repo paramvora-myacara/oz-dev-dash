@@ -26,6 +26,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     isLoading, 
     userFullName,
     userEmail,
+    checkHasSignedCAForListing,
     handleRequestVaultAccess, 
     handleSignInOrUp,
     handleCASubmission, 
@@ -42,8 +43,17 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
 
   const showAdminToolbar = !isLoading && isAdmin && canEditSlug(listing.listingSlug) && !isEditMode;
 
+  // Check if user has signed CA for this listing
+  const hasSignedCAForCurrentListing = checkHasSignedCAForListing(listing.listingSlug);
+
   const handleVaultAccess = () => {
-    handleRequestVaultAccess(listing.listingSlug);
+    if (hasSignedCAForCurrentListing) {
+      // User has already signed CA, go directly to vault
+      window.location.href = `/${listing.listingSlug}/access-dd-vault`;
+    } else {
+      // User hasn't signed CA, start the request process
+      handleRequestVaultAccess(listing.listingSlug);
+    }
   };
 
   const SectionRenderer = ({ section, sectionIndex }: { section: ListingOverviewSection; sectionIndex: number }) => {
@@ -79,7 +89,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
               onClick={handleVaultAccess}
             >
-              Request Vault Access
+              {hasSignedCAForCurrentListing ? 'View Vault' : 'Request Vault Access'}
             </button>
             {(listing.listingSlug === 'the-edge-on-main' || listing.listingSlug === 'up-campus-reno') && listing.developerInfo ? (
               <button

@@ -14,6 +14,7 @@ function PortfolioPageContent() {
     isConfirmationModalOpen,
     authError,
     isLoading,
+    checkHasSignedCAForListing,
     handleRequestVaultAccess,
     handleSignInOrUp,
     closeModal,
@@ -132,9 +133,16 @@ function PortfolioPageContent() {
               </Link>
             <button
                 className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
-                onClick={() => handleRequestVaultAccess('portfolio')}
+                onClick={() => {
+                  const hasSignedCAForPortfolio = checkHasSignedCAForListing('portfolio');
+                  if (hasSignedCAForPortfolio) {
+                    window.location.href = '/portfolio/access-dd-vault';
+                  } else {
+                    handleRequestVaultAccess('portfolio');
+                  }
+                }}
             >
-              Request Vault Access
+              {checkHasSignedCAForListing('portfolio') ? 'View Vault' : 'Request Vault Access'}
             </button>
             </div>
           </div>
