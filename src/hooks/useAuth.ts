@@ -9,6 +9,42 @@ import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 const SUPABASE_SESSION_KEY = 'supabase.auth.token'
 const USER_UID_KEY = 'ozl_user_uid'
 
+// Helper function to get CA signing key for a specific listing and user
+const getCASigningKey = (userId: string, slug: string) => `ozl_ca_signed_${userId}_${slug}`
+
+// Helper function to check if user has signed CA for a specific listing
+const hasSignedCAForListing = (userId: string, slug: string): boolean => {
+  if (!userId || !slug) return false
+  return localStorage.getItem(getCASigningKey(userId, slug)) === 'true'
+}
+
+// Helper function to set CA signing status for a specific listing and user
+const setCASigningStatus = (userId: string, slug: string, signed: boolean) => {
+  if (!userId || !slug) return
+  localStorage.setItem(getCASigningKey(userId, slug), signed.toString())
+}
+
+// Helper function to check if a listing has vault access
+const checkListingVaultAccess = async (supabase: ReturnType<typeof createClient>, slug: string): Promise<{ hasVault: boolean; error?: any }> => {
+  try {
+    const { data: listingData, error } = await supabase
+      .from('listings')
+      .select('has_vault')
+      .eq('slug', slug)
+      .single()
+    
+    if (error) {
+      return { hasVault: false, error }
+    }
+    
+    return { hasVault: !!listingData?.has_vault }
+  } catch (error) {
+    return { hasVault: false, error }
+  }
+}
+
+
+
 export function useAuth() {
   const supabase = createClient()
   const searchParams = useSearchParams()
@@ -57,11 +93,15 @@ export function useAuth() {
     }
   }, [supabase, trackEvent])
 
-  // Check CA signing status on mount
+  // Check CA signing status for current listing and user
   useEffect(() => {
-    const caSigned = localStorage.getItem('ozl_ca_signed') === 'true'
-    setHasSignedCA(caSigned)
-  }, [])
+    if (userId && targetSlug) {
+      const caSigned = hasSignedCAForListing(userId, targetSlug)
+      setHasSignedCA(caSigned)
+    } else {
+      setHasSignedCA(false)
+    }
+  }, [userId, targetSlug])
 
   // Enhanced user data fetching
   useEffect(() => {
@@ -96,38 +136,90 @@ export function useAuth() {
     fetchUserAndAuth()
   }, [userId, supabase])
 
-  const handleRequestVaultAccess = useCallback((slug: string) => {
+  // Helper function to check if a listing has vault access and return the result
+  const checkVaultAccessAndReturnResult = useCallback(async (
+    slug: string
+  ): Promise<{ hasVault: boolean; error?: any }> => {
+    try {
+      const { hasVault, error } = await checkListingVaultAccess(supabase, slug)
+      
+      if (error) {
+        console.error('Error fetching listing data:', error)
+        return { hasVault: false, error }
+      }
+      
+      return { hasVault }
+    } catch (error) {
+      console.error('Error checking listing vault access:', error)
+      return { hasVault: false, error }
+    }
+  }, [supabase])
+
+  const handleRequestVaultAccess = useCallback(async (slug: string) => {
     setTargetSlug(slug)
     
-    // Check if user has already signed a CA
-    const hasSignedCA = localStorage.getItem('ozl_ca_signed') === 'true'
-    setHasSignedCA(hasSignedCA)
+    // Check if user has already signed a CA for this specific listing
+    const hasSignedCAForThisListing = userId ? hasSignedCAForListing(userId, slug) : false
+    setHasSignedCA(hasSignedCAForThisListing)
     
-    // If user has signed CA and is authenticated, go directly to vault
-    if (hasSignedCA && userId) {
+    // If user has signed CA for this listing and is authenticated, go directly to vault
+    if (hasSignedCAForThisListing && userId) {
       trackEvent(userId, 'request_vault_access', { propertyId: slug })
       window.location.href = `/${slug}/access-dd-vault`
       return
     }
     
-    // If user has signed CA but is not authenticated, show auth modal for login/signup
-    if (hasSignedCA && !userId) {
+    // If user has signed CA for this listing but is not authenticated, show auth modal for login/signup
+    if (hasSignedCAForThisListing && !userId) {
       setIsAuthModalOpen(true)
       return
     }
     
-    // If user is authenticated but hasn't signed CA, show confirmation modal for CA signing
+    // If user is authenticated but hasn't signed CA for this listing, check if listing has vault access
     if (userId && userFullName && userEmail) {
-      // Known user - go directly to CA signing confirmation
       trackEvent(userId, 'request_vault_access', { propertyId: slug })
-      setIsConfirmationModalOpen(true)
+      
+      try {
+        // Check if listing has vault access
+        const { hasVault, error } = await checkVaultAccessAndReturnResult(slug)
+        
+        if (error) {
+          console.error('Error fetching listing data:', error)
+          // Fallback to confirmation modal
+          setIsConfirmationModalOpen(true)
+          return
+        }
+        
+        if (hasVault) {
+          // Listing has vault access, show SignWell directly
+          console.log('Listing has vault access, showing SignWell directly')
+          
+          // Ensure we have valid user data before proceeding
+          if (!userFullName || !userEmail) {
+            console.error('Missing user data for SignWell:', { userFullName, userEmail })
+            // Fallback to confirmation modal if user data is missing
+            setIsConfirmationModalOpen(true)
+            return
+          }
+          
+          await createSignWellDocument(userFullName, userEmail, slug)
+        } else {
+          // Listing doesn't have vault access, show confirmation modal
+          console.log('Listing does not have vault access, showing confirmation modal')
+          setIsConfirmationModalOpen(true)
+        }
+      } catch (error) {
+        console.error('Error in vault access check:', error)
+        // Fallback to confirmation modal
+        setIsConfirmationModalOpen(true)
+      }
       return
     }
     
     // If user is not authenticated, show auth modal for login/signup
     setIsAuthModalOpen(true)
     
-  }, [userId, userFullName, userEmail, trackEvent])
+  }, [userId, userFullName, userEmail, trackEvent, checkVaultAccessAndReturnResult])
 
   const handleSignInOrUp = useCallback(
     async (fullName: string, email: string) => {
@@ -204,20 +296,50 @@ export function useAuth() {
           const { data: { session } } = await supabase.auth.getSession()
           console.log('Session after auth:', session ? 'Valid' : 'None')
           
-          // Check if user has already signed CA
-          const hasSignedCA = localStorage.getItem('ozl_ca_signed') === 'true'
-          setHasSignedCA(hasSignedCA)
+          // Check if user has already signed CA for this specific listing
+          const hasSignedCAForThisListing = targetSlug ? hasSignedCAForListing(newUserId, targetSlug) : false
+          setHasSignedCA(hasSignedCAForThisListing)
           
-          if (hasSignedCA) {
-            // User has already signed CA, redirect directly to vault
-            console.log('User has signed CA, redirecting to vault...')
+          if (hasSignedCAForThisListing) {
+            // User has already signed CA for this listing, redirect directly to vault
+            console.log('User has signed CA for this listing, redirecting to vault...')
             setIsAuthModalOpen(false)
             window.location.href = `/${targetSlug}/access-dd-vault`
           } else {
-            // User needs to sign CA, show confirmation modal
-            console.log('User needs to sign CA, showing confirmation modal...')
+            // User needs to sign CA for this listing, check if listing has vault access
+            console.log('User needs to sign CA for this listing, checking vault access...')
             setIsAuthModalOpen(false)
-            setIsConfirmationModalOpen(true)
+            
+            if (targetSlug) {
+              try {
+                // Check if listing has vault access
+                const { hasVault, error } = await checkVaultAccessAndReturnResult(targetSlug)
+                
+                if (error) {
+                  console.error('Error fetching listing data:', error)
+                  // Fallback to confirmation modal
+                  setIsConfirmationModalOpen(true)
+                  return
+                }
+                
+                if (hasVault) {
+                  // Listing has vault access, proceed to SignWell
+                  console.log('Listing has vault access, proceeding to SignWell...')
+                  await createSignWellDocument(fullName, email, targetSlug)
+                } else {
+                  // Listing doesn't have vault access, show confirmation modal
+                  console.log('Listing does not have vault access, showing confirmation modal')
+                  setIsConfirmationModalOpen(true)
+                }
+              } catch (error) {
+                console.error('Error in vault access check:', error)
+                // Fallback to confirmation modal
+                setIsConfirmationModalOpen(true)
+              }
+            } else {
+              console.error('No targetSlug available for SignWell document creation')
+              setAuthError('Missing property information. Please try again.')
+            }
           }
           
           // Call the success callback if we have one
@@ -233,7 +355,7 @@ export function useAuth() {
         setIsLoading(false)
       }
     },
-    [supabase, trackEvent]
+    [supabase, trackEvent, targetSlug]
   )
 
   // New CA submission handler - ONLY handles document creation, no auth logic
@@ -249,7 +371,12 @@ export function useAuth() {
       // At this point, user should already be authenticated via handleSignInOrUp
       // Just create the SignWell document
       console.log('About to create SignWell document...')
-      await createSignWellDocument(fullName, email)
+      if (!targetSlug) {
+        console.error('No targetSlug available for SignWell document creation')
+        setAuthError('Missing property information. Please try again.')
+        return
+      }
+      await createSignWellDocument(fullName, email, targetSlug)
       
     } catch (error: any) {
       console.error('Error in handleCASubmission:', error)
@@ -257,29 +384,33 @@ export function useAuth() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [targetSlug])
 
   // SignWell document creation function
   const createSignWellDocument = useCallback(async (
     fullName: string, 
-    email: string
+    email: string,
+    slug?: string
   ) => {
     try {
-      console.log('Creating SignWell document...');
+      console.log('Creating SignWell document with:', { fullName, email, targetSlug });
       const response = await fetch('/api/signwell/create-document', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName,
           email,
-          targetSlug: window.location.pathname.split('/')[1] // Extract slug from current URL
+          targetSlug: slug || targetSlug // Use passed slug or fallback to state
         })
       })
       
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Failed to create SignWell document:", errorData);
-        setAuthError("Failed to create document. Please try again.");
+        console.error("Response status:", response.status);
+        console.error("Response headers:", Object.fromEntries(response.headers.entries()));
+        console.error("Request payload sent:", { fullName, email, targetSlug });
+        setAuthError(`Failed to create document. Status: ${response.status}. Please try again.`);
         return;
       }
 
@@ -343,9 +474,11 @@ export function useAuth() {
               completed: async (e: any) => {
                 console.log('SignWell signing completed');
                 
-                // Set the CA signed flag in local storage (persistent)
-                localStorage.setItem('ozl_ca_signed', 'true')
-                setHasSignedCA(true)
+                // Set the CA signed flag for this specific listing and user
+                if (userId && targetSlug) {
+                  setCASigningStatus(userId, targetSlug, true)
+                  setHasSignedCA(true)
+                }
                 
                 // Redirect to vault after successful signing using the stored targetSlug
                 if (targetSlug) {
@@ -363,10 +496,20 @@ export function useAuth() {
                 }
               },
               closed: (e: any) => {
-                // Handle modal close - reopen confirmation modal if user didn't complete signing
+                // Handle modal close - don't reopen confirmation modal if user intentionally closed
                 console.log('SignWell modal closed')
-                // Reopen the confirmation modal so user can try signing again
-                setIsConfirmationModalOpen(true)
+                
+                // Check if user has signed CA for this specific listing
+                const hasSignedCAForThisListing = userId && targetSlug ? hasSignedCAForListing(userId, targetSlug) : false
+                
+                if (hasSignedCAForThisListing) {
+                  // User has signed CA for this listing, don't reopen any modal - they can close and return to listing
+                  console.log('User has signed CA for this listing, no need to reopen modal')
+                } else {
+                  // User hasn't signed CA for this listing, but don't reopen confirmation modal
+                  // They can close and return to the listing page
+                  console.log('User has not signed CA for this listing, modal closed without reopening confirmation')
+                }
               }
             }
           })
@@ -387,7 +530,7 @@ export function useAuth() {
       console.error('Error in createSignWellDocument:', error);
       setAuthError("An error occurred while creating the document.");
     }
-  }, [])
+  }, [userId, targetSlug])
 
   const closeModal = () => {
     setIsAuthModalOpen(false)
