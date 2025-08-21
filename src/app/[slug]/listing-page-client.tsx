@@ -24,10 +24,10 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     isConfirmationModalOpen, 
     authError, 
     isLoading, 
-    modalStep,
     userFullName,
     userEmail,
     handleRequestVaultAccess, 
+    handleSignInOrUp,
     handleCASubmission, 
     closeModal 
   } = useAuth();
@@ -105,10 +105,9 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={closeModal}
-        onSubmit={handleCASubmission}
+        onSubmit={handleSignInOrUp}
         isLoading={isLoading}
         authError={authError}
-        step={modalStep}
         userFullName={userFullName}
         userEmail={userEmail}
       />

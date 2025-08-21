@@ -2,7 +2,6 @@
 
 import { useState, FormEvent, useEffect } from 'react'
 import { X } from 'lucide-react'
-import type { AuthModalStep } from '@/hooks/useAuth'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -10,7 +9,6 @@ interface AuthModalProps {
   onSubmit: (fullName: string, email: string, company?: string, title?: string) => void
   isLoading: boolean
   authError: string | null
-  step: 'identify' | 'sign'
   userFullName?: string | null
   userEmail?: string | null
 }
@@ -26,7 +24,6 @@ export function AuthModal({
   onSubmit,
   isLoading,
   authError,
-  step,
   userFullName,
   userEmail,
 }: AuthModalProps) {
@@ -42,12 +39,27 @@ export function AuthModal({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     console.log('Form submitted with:', { fullName, email })
-    if (fullName && email) {
-      console.log('Calling onSubmit function...')
-      onSubmit(fullName, email)
-    } else {
-      console.log('Form validation failed - missing required fields')
+    
+    // Client-side validation
+    if (!fullName || !fullName.trim()) {
+      console.log('Form validation failed - missing full name')
+      return
     }
+    
+    if (!email || !email.trim()) {
+      console.log('Form validation failed - missing email')
+      return
+    }
+    
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      console.log('Form validation failed - invalid email format')
+      return
+    }
+    
+    console.log('Calling onSubmit function...')
+    onSubmit(fullName.trim(), email.trim())
   }
 
   if (!isOpen) return null
@@ -63,13 +75,10 @@ export function AuthModal({
         </button>
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
-            {step === 'identify' ? 'Request Vault Access' : 'Sign Confidentiality Agreement'}
+            Request Vault Access
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {step === 'identify' 
-              ? 'Please provide your information to access confidential investment materials.'
-              : 'Please review and sign the confidentiality agreement to proceed.'
-            }
+            Please provide your information to access confidential investment materials.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

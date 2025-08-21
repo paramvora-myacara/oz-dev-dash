@@ -17,6 +17,8 @@ function PortfolioPageContent() {
     handleRequestVaultAccess,
     handleSignInOrUp,
     closeModal,
+    userFullName,
+    userEmail,
   } = useAuth();
 
   return (
@@ -130,7 +132,7 @@ function PortfolioPageContent() {
               </Link>
             <button
                 className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
-                onClick={handleRequestVaultAccess}
+                onClick={() => handleRequestVaultAccess('portfolio')}
             >
               Request Vault Access
             </button>
@@ -144,6 +146,8 @@ function PortfolioPageContent() {
         onSubmit={handleSignInOrUp}
         isLoading={isLoading}
         authError={authError}
+        userFullName={userFullName}
+        userEmail={userEmail}
       />
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}

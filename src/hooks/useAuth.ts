@@ -9,8 +9,6 @@ import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 const SUPABASE_SESSION_KEY = 'supabase.auth.token'
 const USER_UID_KEY = 'ozl_user_uid'
 
-export type AuthModalStep = 'identify' | 'sign'
-
 export function useAuth() {
   const supabase = createClient()
   const searchParams = useSearchParams()
@@ -21,10 +19,10 @@ export function useAuth() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [onAuthSuccess, setOnAuthSuccess] = useState<(() => void) | null>(null)
-  const [modalStep, setModalStep] = useState<AuthModalStep>('identify')
   const [userFullName, setUserFullName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [targetSlug, setTargetSlug] = useState<string | null>(null)
+  const [hasSignedCA, setHasSignedCA] = useState<boolean>(false)
 
   useEffect(() => {
     const ozlUid = searchParams.get('uid')
@@ -58,6 +56,12 @@ export function useAuth() {
       authListener.subscription.unsubscribe()
     }
   }, [supabase, trackEvent])
+
+  // Check CA signing status on mount
+  useEffect(() => {
+    const caSigned = localStorage.getItem('ozl_ca_signed') === 'true'
+    setHasSignedCA(caSigned)
+  }, [])
 
   // Enhanced user data fetching
   useEffect(() => {
@@ -95,20 +99,38 @@ export function useAuth() {
   const handleRequestVaultAccess = useCallback((slug: string) => {
     setTargetSlug(slug)
     
-    if (userId && userFullName && userEmail) {
-      // Known user - go directly to CA signing
-      setModalStep('sign')
+    // Check if user has already signed a CA
+    const hasSignedCA = localStorage.getItem('ozl_ca_signed') === 'true'
+    setHasSignedCA(hasSignedCA)
+    
+    // If user has signed CA and is authenticated, go directly to vault
+    if (hasSignedCA && userId) {
       trackEvent(userId, 'request_vault_access', { propertyId: slug })
-    } else {
-      // New user - start with identification
-      setModalStep('identify')
+      window.location.href = `/${slug}/access-dd-vault`
+      return
     }
     
+    // If user has signed CA but is not authenticated, show auth modal for login/signup
+    if (hasSignedCA && !userId) {
+      setIsAuthModalOpen(true)
+      return
+    }
+    
+    // If user is authenticated but hasn't signed CA, show confirmation modal for CA signing
+    if (userId && userFullName && userEmail) {
+      // Known user - go directly to CA signing confirmation
+      trackEvent(userId, 'request_vault_access', { propertyId: slug })
+      setIsConfirmationModalOpen(true)
+      return
+    }
+    
+    // If user is not authenticated, show auth modal for login/signup
     setIsAuthModalOpen(true)
+    
   }, [userId, userFullName, userEmail, trackEvent])
 
   const handleSignInOrUp = useCallback(
-    async (email: string, fullName: string) => {
+    async (fullName: string, email: string) => {
       setIsLoading(true)
       setAuthError(null)
       const password = `${email}_password`
@@ -172,14 +194,36 @@ export function useAuth() {
           
           // Track the event after successful authentication
           trackEvent(newUserId, 'request_vault_access')
-          setIsAuthModalOpen(false)
+          
+          // Ensure session is properly established before proceeding
+          console.log('Authentication successful, checking session...')
+          
+          // Small delay to ensure session cookies are properly set
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          const { data: { session } } = await supabase.auth.getSession()
+          console.log('Session after auth:', session ? 'Valid' : 'None')
+          
+          // Check if user has already signed CA
+          const hasSignedCA = localStorage.getItem('ozl_ca_signed') === 'true'
+          setHasSignedCA(hasSignedCA)
+          
+          if (hasSignedCA) {
+            // User has already signed CA, redirect directly to vault
+            console.log('User has signed CA, redirecting to vault...')
+            setIsAuthModalOpen(false)
+            window.location.href = `/${targetSlug}/access-dd-vault`
+          } else {
+            // User needs to sign CA, show confirmation modal
+            console.log('User needs to sign CA, showing confirmation modal...')
+            setIsAuthModalOpen(false)
+            setIsConfirmationModalOpen(true)
+          }
           
           // Call the success callback if we have one
           if (onAuthSuccess) {
             onAuthSuccess()
             setOnAuthSuccess(null)
-          } else {
-            setIsConfirmationModalOpen(true)
           }
         }
       } catch (error: any) {
@@ -192,7 +236,7 @@ export function useAuth() {
     [supabase, trackEvent]
   )
 
-  // New CA submission handler
+  // New CA submission handler - ONLY handles document creation, no auth logic
   const handleCASubmission = useCallback(async (
     fullName: string, 
     email: string
@@ -202,40 +246,9 @@ export function useAuth() {
     setAuthError(null)
     
     try {
-      // If user exists but no session, authenticate them
-      if (userId && !(await supabase.auth.getSession()).data.session) {
-        console.log('Authenticating existing user...')
-        const password = `${email}_password`
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        })
-        if (error) throw error
-      }
-      
-      // If no user exists, create new one
-      if (!userId) {
-        console.log('Creating new user...')
-        const password = `${email}_password`
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password
-        })
-        if (error) throw error
-        
-        // Update user profile
-        if (data.user) {
-          await supabase.from('users').upsert({
-            id: data.user.id,
-            full_name: fullName,
-            email: email,
-            updated_at: new Date().toISOString()
-          })
-        }
-      }
-      
+      // At this point, user should already be authenticated via handleSignInOrUp
+      // Just create the SignWell document
       console.log('About to create SignWell document...')
-      // Create SignWell document
       await createSignWellDocument(fullName, email)
       
     } catch (error: any) {
@@ -244,7 +257,7 @@ export function useAuth() {
     } finally {
       setIsLoading(false)
     }
-  }, [userId, supabase])
+  }, [])
 
   // SignWell document creation function
   const createSignWellDocument = useCallback(async (
@@ -327,14 +340,33 @@ export function useAuth() {
           const signWellEmbed = new SignWellConstructor({
             url: url,
             events: {
-              completed: (e: any) => {
+              completed: async (e: any) => {
                 console.log('SignWell signing completed');
-                // Redirect to vault after successful signing
-                window.location.href = `/${window.location.pathname.split('/')[1]}/access-dd-vault`
+                
+                // Set the CA signed flag in local storage (persistent)
+                localStorage.setItem('ozl_ca_signed', 'true')
+                setHasSignedCA(true)
+                
+                // Redirect to vault after successful signing using the stored targetSlug
+                if (targetSlug) {
+                  window.location.href = `/${targetSlug}/access-dd-vault`
+                } else {
+                  console.error('No targetSlug found for redirect')
+                  // Fallback to current path if targetSlug is missing
+                  const currentSlug = window.location.pathname.split('/')[1]
+                  if (currentSlug && currentSlug !== '') {
+                    window.location.href = `/${currentSlug}/access-dd-vault`
+                  } else {
+                    // If we can't determine the slug, redirect to home
+                    window.location.href = '/'
+                  }
+                }
               },
               closed: (e: any) => {
-                // Handle modal close
+                // Handle modal close - reopen confirmation modal if user didn't complete signing
                 console.log('SignWell modal closed')
+                // Reopen the confirmation modal so user can try signing again
+                setIsConfirmationModalOpen(true)
               }
             }
           })
@@ -361,7 +393,6 @@ export function useAuth() {
     setIsAuthModalOpen(false)
     setIsConfirmationModalOpen(false)
     setAuthError(null)
-    setModalStep('identify')
   }
 
   return {
@@ -370,10 +401,10 @@ export function useAuth() {
     isConfirmationModalOpen,
     authError,
     isLoading,
-    modalStep,
     userFullName,
     userEmail,
     targetSlug,
+    hasSignedCA,
     handleRequestVaultAccess,
     handleSignInOrUp,
     handleCASubmission,
