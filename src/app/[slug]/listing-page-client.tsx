@@ -12,6 +12,7 @@ import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection'
 import ContactDeveloperModal from '@/components/ContactDeveloperModal';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
+import { Tooltip } from '@/components/Tooltip';
 
 interface ListingPageClientProps {
   listing: Listing;
@@ -85,12 +86,17 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
         {/* Call to Action Buttons */}
         <section className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-center">
-            <button
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
-              onClick={handleVaultAccess}
+            <Tooltip 
+              content="For access to confidential deal information (i.e. - Private Placement Memorandum, Fund Operating Agreement, Subscription Agreement, and other documents)."
+              position="top"
             >
-              {hasSignedCAForCurrentListing ? 'View Vault' : 'Request Vault Access'}
-            </button>
+              <button
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
+                onClick={handleVaultAccess}
+              >
+                {hasSignedCAForCurrentListing ? 'View Vault' : 'Request Vault Access'}
+              </button>
+            </Tooltip>
             {(listing.listingSlug === 'the-edge-on-main' || listing.listingSlug === 'up-campus-reno') && listing.developerInfo ? (
               <button
                 onClick={() => setIsContactModalOpen(true)}

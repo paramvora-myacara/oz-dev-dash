@@ -40,10 +40,10 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
         <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-black dark:text-white mb-4">
-                    Due Diligence Vault
+                    Deal Highlights
                 </h2>
                 <p className="text-lg md:text-xl text-black/70 dark:text-white/70 font-light max-w-3xl mx-auto">
-                    Click any card to learn more and access documentation
+                    Click any card to learn more
                 </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
