@@ -27,11 +27,14 @@ function generateSQL(listingData: ListingData): string {
   // Create the listing record
   const listingSQL = `
 -- Insert listing: ${listingName}
-INSERT INTO public.listings (slug, project_id, title) 
-VALUES ('${listingSlug}', '${projectId}', '${listingName}')
+INSERT INTO public.listings (slug, project_id, title, developer_entity_name, developer_ca_name, developer_ca_email) 
+VALUES ('${listingSlug}', '${projectId}', '${listingName}', '${getDeveloperEntityName(listingSlug)}', '${getDeveloperCAName(listingSlug)}', '${getDeveloperCAEmail(listingSlug)}')
 ON CONFLICT (slug) DO UPDATE SET 
   project_id = EXCLUDED.project_id,
   title = EXCLUDED.title,
+  developer_entity_name = EXCLUDED.developer_entity_name,
+  developer_ca_name = EXCLUDED.developer_ca_name,
+  developer_ca_email = EXCLUDED.developer_ca_email,
   updated_at = now();`;
 
   // Create the version record
@@ -66,6 +69,54 @@ SET current_version_id = (
 WHERE slug = '${listingSlug}';`;
 
   return listingSQL + '\n' + versionSQL + '\n' + updateSQL;
+}
+
+// Helper function to get developer entity name based on listing slug
+function getDeveloperEntityName(slug: string): string {
+  switch (slug) {
+    case 'the-edge-on-main':
+      return 'ACARA OZ Fund I LLC';
+    case 'sogood-dallas':
+      return 'Hoque Global';
+    case 'marshall-st-louis':
+      return 'Aptitude Development';
+    case 'up-campus-reno':
+      return 'UP Campus Properties LLC';
+    default:
+      return 'Development Entity LLC';
+  }
+}
+
+// Helper function to get developer CA name based on listing slug
+function getDeveloperCAName(slug: string): string {
+  switch (slug) {
+    case 'the-edge-on-main':
+      return 'ACARA OZ Fund I LLC';
+    case 'sogood-dallas':
+      return 'Hoque Global';
+    case 'marshall-st-louis':
+      return 'Aptitude Development';
+    case 'up-campus-reno':
+      return 'UP Campus Properties LLC';
+    default:
+      return 'Development Entity LLC';
+  }
+}
+
+// Helper function to get developer CA email based on listing slug
+function getDeveloperCAEmail(slug: string): string {
+  switch (slug) {
+    case 'the-edge-on-main':
+      return 'legal@acara.com';
+    case 'sogood-dallas':
+      return 'legal@hoqueglobal.com';
+    case 'marshall-st-louis':
+      return 'legal@aptitudedevelopment.com';
+    case 'up-campus-reno':
+      return 'legal@upcampusproperties.com';
+    default:
+      return 'legal@development-entity.com';
+  }
 }
 
 // Main migration function
