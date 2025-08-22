@@ -4,11 +4,14 @@
 
 
 -- Insert listing: The Edge on Main
-INSERT INTO public.listings (slug, project_id, title) 
-VALUES ('the-edge-on-main', 'edge-on-main-mesa-001', 'The Edge on Main')
+INSERT INTO public.listings (slug, project_id, title, developer_entity_name, developer_ca_name, developer_ca_email) 
+VALUES ('the-edge-on-main', 'edge-on-main-mesa-001', 'The Edge on Main', 'ACARA OZ Fund I LLC', 'ACARA OZ Fund I LLC', 'legal@acara.com')
 ON CONFLICT (slug) DO UPDATE SET 
   project_id = EXCLUDED.project_id,
   title = EXCLUDED.title,
+  developer_entity_name = EXCLUDED.developer_entity_name,
+  developer_ca_name = EXCLUDED.developer_ca_name,
+  developer_ca_email = EXCLUDED.developer_ca_email,
   updated_at = now();
 
 -- Insert version for: The Edge on Main
@@ -32,11 +35,14 @@ WHERE slug = 'the-edge-on-main';
 
 
 -- Insert listing: SoGood Dallas
-INSERT INTO public.listings (slug, project_id, title) 
-VALUES ('sogood-dallas', 'sogood-dallas-001', 'SoGood Dallas')
+INSERT INTO public.listings (slug, project_id, title, developer_entity_name, developer_ca_name, developer_ca_email) 
+VALUES ('sogood-dallas', 'sogood-dallas-001', 'SoGood Dallas', 'Hoque Global', 'Hoque Global', 'legal@hoque.com')
 ON CONFLICT (slug) DO UPDATE SET 
   project_id = EXCLUDED.project_id,
   title = EXCLUDED.title,
+  developer_entity_name = EXCLUDED.developer_entity_name,
+  developer_ca_name = EXCLUDED.developer_ca_name,
+  developer_ca_email = EXCLUDED.developer_ca_email,
   updated_at = now();
 
 -- Insert version for: SoGood Dallas
@@ -60,11 +66,14 @@ WHERE slug = 'sogood-dallas';
 
 
 -- Insert listing: The Marshall St. Louis
-INSERT INTO public.listings (slug, project_id, title) 
-VALUES ('marshall-st-louis', 'marshall-st-louis-001', 'The Marshall St. Louis')
+INSERT INTO public.listings (slug, project_id, title, developer_entity_name, developer_ca_name, developer_ca_email) 
+VALUES ('marshall-st-louis', 'marshall-st-louis-001', 'The Marshall St. Louis', 'Aptitude Development', 'Aptitude Development', 'legal@aptitude.com')
 ON CONFLICT (slug) DO UPDATE SET 
   project_id = EXCLUDED.project_id,
   title = EXCLUDED.title,
+  developer_entity_name = EXCLUDED.developer_entity_name,
+  developer_ca_name = EXCLUDED.developer_ca_name,
+  developer_ca_email = EXCLUDED.developer_ca_email,
   updated_at = now();
 
 -- Insert version for: The Marshall St. Louis
@@ -88,11 +97,14 @@ WHERE slug = 'marshall-st-louis';
 
 
 -- Insert listing: University of Nevada, Reno Student Housing
-INSERT INTO public.listings (slug, project_id, title) 
-VALUES ('up-campus-reno', 'up-campus-reno-001', 'University of Nevada, Reno Student Housing')
+INSERT INTO public.listings (slug, project_id, title, developer_entity_name, developer_ca_name, developer_ca_email) 
+VALUES ('up-campus-reno', 'up-campus-reno-001', 'University of Nevada, Reno Student Housing', 'UP Campus', 'UP Campus', 'legal@upcampus.com')
 ON CONFLICT (slug) DO UPDATE SET 
   project_id = EXCLUDED.project_id,
   title = EXCLUDED.title,
+  developer_entity_name = EXCLUDED.developer_entity_name,
+  developer_ca_name = EXCLUDED.developer_ca_name,
+  developer_ca_email = EXCLUDED.developer_ca_email,
   updated_at = now();
 
 -- Insert version for: University of Nevada, Reno Student Housing

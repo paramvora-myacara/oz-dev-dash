@@ -5,15 +5,6 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const BUCKET_NAME = 'oz-projects-images';
 
-// Debug logging
-const DEBUG = process.env.NODE_ENV === 'development';
-
-function debugLog(message: string, data?: any) {
-  if (DEBUG) {
-    console.log(`[SupabaseImages] ${message}`, data || '');
-  }
-}
-
 // Create Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -27,15 +18,6 @@ export function validateSupabaseConfig(): { isValid: boolean; errors: string[] }
   
   if (!SUPABASE_ANON_KEY) {
     errors.push('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
-  }
-  
-  if (DEBUG) {
-    debugLog('Supabase Config Validation:', {
-      hasUrl: !!SUPABASE_URL,
-      hasKey: !!SUPABASE_ANON_KEY,
-      urlLength: SUPABASE_URL?.length || 0,
-      keyLength: SUPABASE_ANON_KEY?.length || 0
-    });
   }
   
   return {
@@ -100,13 +82,10 @@ function shuffleArray<T>(array: T[], seed?: number): T[] {
  */
 export async function testSupabaseConnection(): Promise<{ success: boolean; message: string; details?: any }> {
   try {
-    debugLog('Testing Supabase connection...');
-    
     // Test basic connection
     const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
     
     if (bucketError) {
-      debugLog('Bucket listing error:', bucketError);
       return {
         success: false,
         message: `Failed to list buckets: ${bucketError.message}`,
@@ -114,23 +93,18 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
       };
     }
     
-    debugLog('Available buckets:', buckets);
-    
     // Test specific bucket access
     const { data: bucketFiles, error: bucketAccessError } = await supabase.storage
       .from(BUCKET_NAME)
       .list('', { limit: 1 });
     
     if (bucketAccessError) {
-      debugLog('Bucket access error:', bucketAccessError);
       return {
         success: false,
         message: `Failed to access bucket '${BUCKET_NAME}': ${bucketAccessError.message}`,
         details: bucketAccessError
       };
     }
-    
-    debugLog('Bucket access successful, sample files:', bucketFiles);
     
     return {
       success: true,
@@ -139,7 +113,6 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
     };
     
   } catch (error) {
-    debugLog('Connection test error:', error);
     return {
       success: false,
       message: `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -152,8 +125,6 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
  * Get all available images for a project category using Supabase Storage API
  */
 export async function getAvailableImages(projectId: ProjectId, category: ImageCategory): Promise<string[]> {
-  debugLog(`Fetching images for ${projectId}/${category}`);
-  
   try {
     const { data, error } = await supabase
       .storage
@@ -164,26 +135,20 @@ export async function getAvailableImages(projectId: ProjectId, category: ImageCa
       });
 
     if (error) {
-      debugLog('Error listing images:', error);
       return [];
     }
 
     if (!data) {
-      debugLog('No data returned from Supabase');
       return [];
     }
-
-    debugLog(`Found ${data.length} files in ${projectId}/${category}`);
 
     // Filter for image files only and convert to full URLs
     const imageUrls = data
       .filter(file => file.name && isImageFile(file.name))
       .map(file => getSupabaseImageUrl(projectId, category, file.name));
 
-    debugLog(`Filtered to ${imageUrls.length} image files`);
     return imageUrls;
   } catch (error) {
-    debugLog('Error fetching images from Supabase:', error);
     return [];
   }
 }
@@ -193,8 +158,6 @@ export async function getAvailableImages(projectId: ProjectId, category: ImageCa
  * The list of images is stable for a given day to allow for effective caching.
  */
 export async function getRandomImages(projectId: ProjectId, category: ImageCategory, maxCount: number = 7): Promise<string[]> {
-  debugLog(`Getting ${maxCount} daily random images for ${projectId}/${category}`);
-  
   const allImages = await getAvailableImages(projectId, category);
   
   // Use the current UTC date as a seed for shuffling. This ensures all users see the
@@ -205,12 +168,10 @@ export async function getRandomImages(projectId: ProjectId, category: ImageCateg
   const shuffledImages = shuffleArray(allImages, seed);
   
   if (shuffledImages.length <= maxCount) {
-    debugLog(`Returning all ${shuffledImages.length} images (less than max ${maxCount}), shuffled daily.`);
     return shuffledImages;
   }
   
   const selectedImages = shuffledImages.slice(0, maxCount);
-  debugLog(`Returning ${selectedImages.length} daily random images`);
   return selectedImages;
 }
 
@@ -228,8 +189,6 @@ export function getProjectIdFromPath(pathname: string): ProjectId | null {
  * Get all available images for all projects in a category (for main page carousel)
  */
 export async function getAllProjectImages(category: ImageCategory, projects: ProjectId[]): Promise<Array<{ projectId: ProjectId; images: string[] }>> {
-  debugLog(`Getting all project images for category: ${category}`);
-  
   const results = await Promise.all(
     projects.map(async (projectId) => ({
       projectId,
@@ -238,7 +197,6 @@ export async function getAllProjectImages(category: ImageCategory, projects: Pro
   );
 
   const filteredResults = results.filter(result => result.images.length > 0);
-  debugLog(`Found images for ${filteredResults.length} projects`);
   
   return filteredResults;
 }
