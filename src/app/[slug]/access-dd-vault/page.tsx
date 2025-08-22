@@ -12,7 +12,7 @@ export default async function DDVVaultPage({ params }: DDVVaultPageProps) {
   const { slug } = await params
   
   // Check for valid Supabase session
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
   
   if (!session) {

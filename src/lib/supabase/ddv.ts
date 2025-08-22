@@ -12,7 +12,7 @@ export interface DDVFile {
 }
 
 export async function getDDVFiles(listingSlug: string): Promise<DDVFile[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const bucketName = `ddv-${listingSlug}`
   
   console.log(`Attempting to fetch files from bucket: ${bucketName}`)
@@ -58,7 +58,7 @@ export async function getDDVFiles(listingSlug: string): Promise<DDVFile[]> {
 }
 
 export async function getDDVFileUrl(listingSlug: string, fileName: string): Promise<string | null> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const bucketName = `ddv-${listingSlug}`
   
   try {

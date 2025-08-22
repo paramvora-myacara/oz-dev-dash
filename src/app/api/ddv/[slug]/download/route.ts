@@ -10,7 +10,7 @@ export async function GET(
     const { slug } = await params
     
     // Verify Supabase session
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session) {
