@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal, ConfirmationModal } from "@/components/AuthModal";
 import { Suspense } from 'react'
+import { Tooltip } from '@/components/Tooltip';
 
 
 function PortfolioPageContent() {
@@ -131,19 +132,24 @@ function PortfolioPageContent() {
               >
                 Contact Investment Team
               </Link>
-            <button
-                className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
-                onClick={() => {
-                  const hasSignedCAForPortfolio = checkHasSignedCAForListing('portfolio');
-                  if (hasSignedCAForPortfolio) {
-                    window.location.href = '/portfolio/access-dd-vault';
-                  } else {
-                    handleRequestVaultAccess('portfolio');
-                  }
-                }}
+            <Tooltip 
+              content="For access to confidential deal information (i.e. - Private Placement Memorandum, Fund Operating Agreement, Subscription Agreement, and other documents)."
+              position="top"
             >
-              {checkHasSignedCAForListing('portfolio') ? 'View Vault' : 'Request Vault Access'}
-            </button>
+              <button
+                  className="px-8 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 text-lg"
+                  onClick={() => {
+                    const hasSignedCAForPortfolio = checkHasSignedCAForListing('portfolio');
+                    if (hasSignedCAForPortfolio) {
+                      window.location.href = '/portfolio/access-dd-vault';
+                    } else {
+                      handleRequestVaultAccess('portfolio');
+                    }
+                  }}
+              >
+                {checkHasSignedCAForListing('portfolio') ? 'View Vault' : 'Request Vault Access'}
+              </button>
+            </Tooltip>
             </div>
           </div>
         </section>
