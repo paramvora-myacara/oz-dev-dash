@@ -94,8 +94,8 @@ export function useAuthentication() {
           setUserId(newUserId)
           sessionStorage.setItem(USER_UID_KEY, newUserId)
           
-          // Track the event after successful authentication
-          trackEvent(newUserId, 'request_vault_access')
+          // Don't automatically track request_vault_access here since this hook is used for general auth
+          // The specific event should be tracked by the calling code based on context
           
           return { success: true, userId: newUserId }
         }

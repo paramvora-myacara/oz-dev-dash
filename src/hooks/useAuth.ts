@@ -7,6 +7,7 @@ import { useUserProfile } from './useUserProfile'
 import { useCASigning } from './useCASigning'
 import { useVaultAccess } from './useVaultAccess'
 import { useSignWell } from './useSignWell'
+import { createClient } from '@/utils/supabase/client'
 
 export function useAuth() {
   const { trackEvent } = useEventTracker()
@@ -17,6 +18,7 @@ export function useAuth() {
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false)
   const [targetSlug, setTargetSlug] = useState<string | null>(null)
   const [onAuthSuccess, setOnAuthSuccess] = useState<(() => void) | null>(null)
+  const [authContext, setAuthContext] = useState<'vault-access' | 'contact-developer' | null>(null)
   
   const { hasSignedCA, checkHasSignedCAForListing, markAsSigned } = useCASigning(userId, targetSlug)
   const { checkVaultAccessAndReturnResult } = useVaultAccess()
@@ -86,9 +88,98 @@ export function useAuth() {
     }
     
     // If user is not authenticated, show auth modal for login/signup
+    setAuthContext('vault-access')
     setIsAuthModalOpen(true)
     
   }, [userId, userFullName, userEmail, trackEvent, checkVaultAccessAndReturnResult, createSignWellDocument, markAsSigned, checkHasSignedCAForListing])
+
+  const handleContactDeveloper = useCallback(async (slug: string) => {
+    setTargetSlug(slug)
+    
+    // If user is authenticated, track the event and show confirmation modal
+    if (userId && userFullName && userEmail) {
+      // Fetch developer contact email from database
+      try {
+        const supabase = createClient()
+        const { data: listing, error } = await supabase
+          .from('listings')
+          .select('developer_contact_email')
+          .eq('slug', slug)
+          .single()
+        
+        if (error) {
+          console.error('Error fetching developer contact email:', error)
+        }
+        
+        // Track the event with developer contact email
+        trackEvent(userId, 'contact_developer', { 
+          propertyId: slug,
+          developerContactEmail: listing?.developer_contact_email || null
+        })
+        setIsConfirmationModalOpen(true)
+        return
+      } catch (error) {
+        console.error('Error in handleContactDeveloper:', error)
+        // Still track the event even if we can't get the email
+        trackEvent(userId, 'contact_developer', { propertyId: slug })
+        setIsConfirmationModalOpen(true)
+        return
+      }
+    }
+    
+    // If user is not authenticated, show auth modal for login/signup
+    // Set up callback to show confirmation modal after successful auth
+    setAuthContext('contact-developer')
+    console.log('Setting up onAuthSuccess callback for contact developer')
+    setOnAuthSuccess(() => {
+      console.log('onAuthSuccess callback created for contact developer')
+      return async () => {
+        // This callback will be executed after successful authentication
+        // We need to wait a bit for the user state to be updated
+        setTimeout(async () => {
+          // Get userId from Supabase session directly since the hook state might not be updated yet
+          const supabase = createClient()
+          const { data: { session } } = await supabase.auth.getSession()
+          const currentUserId = session?.user?.id
+          
+          if (!currentUserId) {
+            console.error('UserId not available after auth success')
+            return
+          }
+          
+          console.log('Got userId from session:', currentUserId)
+          
+          // Fetch developer contact email from database
+          try {
+            const { data: listing, error } = await supabase
+              .from('listings')
+              .select('developer_contact_email')
+              .eq('slug', slug)
+              .single()
+            
+            if (error) {
+              console.error('Error fetching developer contact email:', error)
+            }
+            
+            // Track the event with developer contact email
+            trackEvent(currentUserId, 'contact_developer', { 
+              propertyId: slug,
+              developerContactEmail: listing?.developer_contact_email || null
+            })
+            console.log('Contact developer event tracked successfully')
+            setIsConfirmationModalOpen(true)
+          } catch (error) {
+            console.error('Error in handleContactDeveloper auth success:', error)
+            // Still track the event even if we can't get the email
+            trackEvent(currentUserId, 'contact_developer', { propertyId: slug })
+            console.log('Contact developer event tracked successfully (without email)')
+            setIsConfirmationModalOpen(true)
+          }
+        }, 100) // Small delay to ensure user state is updated
+      }
+    })
+    setIsAuthModalOpen(true)
+  }, [userId, userFullName, userEmail, trackEvent])
 
   const handleSignInOrUp = useCallback(
     async (fullName: string, email: string) => {
@@ -100,6 +191,22 @@ export function useAuth() {
         
         // Check if user has already signed CA for this specific listing
         const hasSignedCAForThisListing = targetSlug ? checkHasSignedCAForListing(targetSlug) : false
+        
+        // If this is for contacting developer, skip CA logic and go directly to success callback
+        if (authContext === 'contact-developer') {
+          console.log('Contact developer auth - skipping CA logic')
+          setIsAuthModalOpen(false)
+          
+          // Call the success callback if we have one
+          if (onAuthSuccess) {
+            console.log('Calling onAuthSuccess callback for contact developer')
+            await onAuthSuccess()
+            setOnAuthSuccess(null)
+          } else {
+            console.log('No onAuthSuccess callback found for contact developer')
+          }
+          return
+        }
         
         if (hasSignedCAForThisListing) {
           // User has already signed CA for this listing, redirect directly to vault
@@ -148,12 +255,12 @@ export function useAuth() {
         
         // Call the success callback if we have one
         if (onAuthSuccess) {
-          onAuthSuccess()
+          await onAuthSuccess()
           setOnAuthSuccess(null)
         }
       }
     },
-    [signInOrUp, updateUserProfile, targetSlug, checkHasSignedCAForListing, checkVaultAccessAndReturnResult, createSignWellDocument, markAsSigned, onAuthSuccess, setOnAuthSuccess, setAuthError]
+    [signInOrUp, updateUserProfile, targetSlug, checkHasSignedCAForListing, checkVaultAccessAndReturnResult, createSignWellDocument, markAsSigned, onAuthSuccess, setOnAuthSuccess, setAuthError, authContext]
   )
 
   // New CA submission handler - ONLY handles document creation, no auth logic
@@ -188,6 +295,7 @@ export function useAuth() {
     setIsConfirmationModalOpen(false)
     setAuthError(null)
     setSignWellError(null)
+    setAuthContext(null)
   }
 
   return {
@@ -204,7 +312,9 @@ export function useAuth() {
     handleRequestVaultAccess,
     handleSignInOrUp,
     handleCASubmission,
+    handleContactDeveloper,
     closeModal,
+    authContext,
   }
 }
 

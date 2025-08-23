@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
+import { Tooltip } from '@/components/Tooltip';
 import { Listing, ListingOverviewSection } from '@/types/listing';
 import HeroSection from '@/components/listing/HeroSection';
 import TickerMetricsSection from '@/components/listing/TickerMetricsSection';
 import CompellingReasonsSection from '@/components/listing/CompellingReasonsSection';
 import ExecutiveSummarySection from '@/components/listing/ExecutiveSummarySection';
 import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection';
-import ContactDeveloperModal from '@/components/ContactDeveloperModal';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
-import { Tooltip } from '@/components/Tooltip';
 
 interface ListingPageClientProps {
   listing: Listing;
@@ -30,11 +29,12 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     checkHasSignedCAForListing,
     handleRequestVaultAccess, 
     handleSignInOrUp,
-    handleCASubmission, 
-    closeModal 
+    handleCASubmission,
+    handleContactDeveloper,
+    closeModal,
+    authContext
   } = useAuth();
   const { isAdmin, canEditSlug } = useAdminAuth();
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   useEffect(() => {
     if (listing) {
@@ -97,23 +97,12 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
                 {hasSignedCAForCurrentListing ? 'View Vault' : 'Request Vault Access'}
               </button>
             </Tooltip>
-            {(listing.listingSlug === 'the-edge-on-main' || listing.listingSlug === 'up-campus-reno') && listing.developerInfo ? (
-              <button
-                onClick={() => setIsContactModalOpen(true)}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
-              >
-                Contact the Developer
-              </button>
-            ) : (
-              <a
-                href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/${listing.listingSlug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
-              >
-                Contact the Developer
-              </a>
-            )}
+            <button
+              onClick={() => handleContactDeveloper(listing.listingSlug)}
+              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
+            >
+              Contact the Developer
+            </button>
           </div>
         </section>
       </div>
@@ -126,19 +115,12 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
         authError={authError}
         userFullName={userFullName}
         userEmail={userEmail}
+        authContext={authContext}
       />
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}
         onClose={closeModal}
       />
-      {listing.developerInfo && (
-          <ContactDeveloperModal
-            isOpen={isContactModalOpen}
-            onClose={() => setIsContactModalOpen(false)}
-            developerInfo={listing.developerInfo}
-            listingName={listing.listingName}
-          />
-      )}
     </div>
   );
 } 
