@@ -6,7 +6,7 @@ import { DDVFile } from '@/lib/supabase/ddv'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { DDVViewModeToolbar } from '@/components/editor/DDVViewModeToolbar'
 import { formatFileSize, formatDate } from '@/utils/helpers'
-import ContactDeveloperModal from '@/components/ContactDeveloperModal'
+import { useAuth } from '@/hooks/useAuth'
 
 interface DDVVaultClientProps {
   listing: Listing
@@ -16,8 +16,8 @@ interface DDVVaultClientProps {
 
 export default function DDVVaultClient({ listing, files, slug }: DDVVaultClientProps) {
   const { isAdmin, canEditSlug, isLoading } = useAdminAuth()
+  const { handleContactDeveloper } = useAuth()
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   
   const showAdminToolbar = !isLoading && isAdmin && canEditSlug(slug)
   
@@ -159,36 +159,15 @@ export default function DDVVaultClient({ listing, files, slug }: DDVVaultClientP
               If you're having trouble accessing files or need additional information, 
               please contact the development team.
             </p>
-            {(listing.listingSlug === 'the-edge-on-main' || listing.listingSlug === 'up-campus-reno') && listing.developerInfo ? (
-              <button
-                onClick={() => setIsContactModalOpen(true)}
-                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
-              >
-                Contact Support
-              </button>
-            ) : (
-              <a
-                href={`${process.env.NEXT_PUBLIC_SCHEDULE_CALL_LINK}?endpoint=/${listing.listingSlug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
-              >
-                Contact Support
-              </a>
-            )}
+            <button
+              onClick={() => handleContactDeveloper(listing.listingSlug)}
+              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              Contact Support
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* Contact Developer Modal */}
-      {listing.developerInfo && (
-        <ContactDeveloperModal
-          isOpen={isContactModalOpen}
-          onClose={() => setIsContactModalOpen(false)}
-          developerInfo={listing.developerInfo}
-          listingName={listing.listingName}
-        />
-      )}
     </div>
   )
 } 

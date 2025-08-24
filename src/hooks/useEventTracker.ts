@@ -4,10 +4,11 @@ import { createClient } from '@/utils/supabase/client'
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export type EventType = 'request_vault_access' | 'page_view'
+export type EventType = 'request_vault_access' | 'page_view' | 'contact_developer'
 
 export interface EventMetadata {
   propertyId?: string
+  developerContactEmail?: string | null
   [key: string]: any
 }
 

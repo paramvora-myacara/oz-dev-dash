@@ -6,11 +6,12 @@ import { X } from 'lucide-react'
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (fullName: string, email: string, company?: string, title?: string) => void
+  onSubmit: (fullName: string, email: string) => void
   isLoading: boolean
   authError: string | null
   userFullName?: string | null
   userEmail?: string | null
+  authContext?: 'vault-access' | 'contact-developer' | null
 }
 
 interface ConfirmationModalProps {
@@ -26,6 +27,7 @@ export function AuthModal({
   authError,
   userFullName,
   userEmail,
+  authContext,
 }: AuthModalProps) {
   const [fullName, setFullName] = useState(userFullName || '')
   const [email, setEmail] = useState(userEmail || '')
@@ -73,57 +75,69 @@ export function AuthModal({
         >
           <X size={24} />
         </button>
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
-            Request Vault Access
+        
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            {authContext === 'contact-developer' 
+              ? 'Contact the Developer' 
+              : 'Request Vault Access'
+            }
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Please provide your information to access confidential investment materials.
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            {authContext === 'contact-developer'
+              ? 'Sign in to contact the development team about this property.'
+              : 'Sign in to request access to confidential deal documents.'
+            }
           </p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
-                Name *
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                required
-                disabled={!!userFullName} // Disable if auto-filled
-                placeholder="Full Name"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
-                Email *
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                required
-                disabled={!!userEmail} // Disable if auto-filled
-                placeholder="you@example.com"
-              />
-            </div>
-            
-            {authError && (
-              <p className="text-red-500 text-sm mt-3">{authError}</p>
-            )}
-            
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
-            >
-              {isLoading ? 'Processing...' : 'Proceed to Signing a CA'}
-            </button>
-          </form>
         </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
+              Name *
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+              required
+              disabled={!!userFullName}
+              placeholder="Full Name"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
+              Email *
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+              required
+              disabled={!!userEmail}
+              placeholder="you@example.com"
+            />
+          </div>
+          
+          {authError && (
+            <p className="text-red-500 text-sm mt-3">{authError}</p>
+          )}
+          
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
+          >
+            {isLoading ? 'Processing...' : (
+              authContext === 'contact-developer' 
+                ? 'Contact Developer' 
+                : 'Proceed to Signing a CA'
+            )}
+          </button>
+        </form>
       </div>
     </div>
   )
@@ -156,7 +170,7 @@ export function ConfirmationModal({
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              d="M5 13l4 4L19 7"
             />
           </svg>
         </div>
@@ -164,7 +178,7 @@ export function ConfirmationModal({
           Thank You for Your Interest!
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Your request has been noted. Our team will be in touch shortly with the next steps.
+          Your request to contact the developer has been noted. Our team will be in touch shortly with the next steps.
         </p>
         <button
           onClick={onClose}
