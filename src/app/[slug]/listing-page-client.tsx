@@ -60,7 +60,13 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
   const SectionRenderer = ({ section, sectionIndex }: { section: ListingOverviewSection; sectionIndex: number }) => {
     switch (section.type) {
         case 'hero':
-            return <HeroSection data={section.data} projectId={listing.projectId} sectionIndex={sectionIndex} />;
+            return <HeroSection 
+              data={section.data} 
+              projectId={listing.projectId} 
+              sectionIndex={sectionIndex} 
+              isEditMode={isEditMode}
+              listingSlug={listing.listingSlug}
+            />;
         case 'tickerMetrics':
             return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;
         case 'compellingReasons':

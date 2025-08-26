@@ -9,6 +9,13 @@ import DevelopmentTimelineSection from './DevelopmentTimelineSection';
 import DevelopmentPhasesSection from './DevelopmentPhasesSection';
 import FloorplanSitemapSection from '@/components/FloorplanSitemapSection';
 
+interface PropertyOverviewPageProps {
+  data: PropertyOverview;
+  projectId: string;
+  isEditMode?: boolean;
+  listingSlug?: string;
+}
+
 const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex: number }) => {
   switch (section.type) {
     case 'keyFacts':
@@ -30,14 +37,23 @@ const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex
   }
 };
 
-const PropertyOverviewPage: React.FC<{ data: PropertyOverview, projectId: string }> = ({ data, projectId }) => {
+const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({ 
+  data, 
+  projectId, 
+  isEditMode = false,
+  listingSlug = ''
+}) => {
   if (!data || !data.sections) {
     return <div>Property overview data is loading or missing...</div>;
   }
 
   return (
     <div className="max-w-7xl mx-auto">
-      <FloorplanSitemapSection projectId={projectId} />
+      <FloorplanSitemapSection 
+        projectId={projectId} 
+        isEditMode={isEditMode}
+        listingSlug={listingSlug}
+      />
       {data.sections.map((section, idx) => (
         <SectionRenderer key={idx} section={section} sectionIndex={idx} />
       ))}

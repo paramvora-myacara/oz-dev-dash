@@ -3,15 +3,22 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Map, Home, ChevronLeft, ChevronRight, ZoomIn, Download } from 'lucide-react';
+import { Map, Home, ChevronLeft, ChevronRight, ZoomIn, Download, Plus } from 'lucide-react';
 import { getAvailableImages, type ProjectId, type ImageCategory } from '../utils/supabaseImages';
 import Lightbox from './Lightbox';
+import ImageManager from './editor/ImageManager';
 
 interface FloorplanSitemapSectionProps {
   projectId: ProjectId;
+  isEditMode?: boolean;
+  listingSlug?: string;
 }
 
-export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapSectionProps) {
+export default function FloorplanSitemapSection({ 
+  projectId, 
+  isEditMode = false,
+  listingSlug = ''
+}: FloorplanSitemapSectionProps) {
   const [floorplanImages, setFloorplanImages] = useState<string[]>([]);
   const [sitemapImages, setSitemapImages] = useState<string[]>([]);
   const [floorplanIndex, setFloorplanIndex] = useState(0);
@@ -26,6 +33,13 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
     isOpen: false,
     images: [],
     startIndex: 0,
+  });
+  const [imageManager, setImageManager] = useState<{
+    isOpen: boolean;
+    category: 'floorplan' | 'sitemap';
+  }>({
+    isOpen: false,
+    category: 'floorplan'
   });
 
   useEffect(() => {
@@ -89,6 +103,25 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
     e.stopPropagation();
     setSitemapIndex((prev) => (prev - 1 + sitemapImages.length) % sitemapImages.length);
     setImageLoading(prev => ({ ...prev, sitemap: true }));
+  };
+
+  const openImageManager = (category: 'floorplan' | 'sitemap') => {
+    setImageManager({ isOpen: true, category });
+  };
+
+  const handleImagesChange = async () => {
+    // Reload images after changes
+    try {
+      const [floorplans, sitemaps] = await Promise.all([
+        getAvailableImages(projectId, 'floorplan'),
+        getAvailableImages(projectId, 'sitemap')
+      ]);
+      
+      setFloorplanImages(floorplans);
+      setSitemapImages(sitemaps);
+    } catch (error) {
+      console.error('Error reloading images:', error);
+    }
   };
 
   // Don't render if no images are available
@@ -205,6 +238,20 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                       <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
                   </div>
+
+                  {/* Edit Mode + Button - positioned over the image */}
+                  {isEditMode && listingSlug && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openImageManager('floorplan');
+                      }}
+                      className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl z-10"
+                      title="Manage Floorplan Images"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  )}
                   
                   {floorplanImages.length > 1 && (
                     <>
@@ -319,6 +366,20 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
                       <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     </button>
                   </div>
+
+                  {/* Edit Mode + Button - positioned over the image */}
+                  {isEditMode && listingSlug && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openImageManager('sitemap');
+                      }}
+                      className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl z-10"
+                      title="Manage Sitemap Images"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  )}
                   
                   {sitemapImages.length > 1 && (
                     <>
@@ -367,11 +428,25 @@ export default function FloorplanSitemapSection({ projectId }: FloorplanSitemapS
           )}
         </div>
       </div>
+      
+      {/* Lightbox */}
       {lightbox.isOpen && (
         <Lightbox
           images={lightbox.images}
           startIndex={lightbox.startIndex}
           onClose={closeLightbox}
+        />
+      )}
+
+      {/* Image Manager Modal */}
+      {isEditMode && listingSlug && (
+        <ImageManager
+          listingSlug={listingSlug}
+          projectId={projectId}
+          isOpen={imageManager.isOpen}
+          onClose={() => setImageManager({ isOpen: false, category: 'floorplan' })}
+          onImagesChange={handleImagesChange}
+          defaultCategory={imageManager.category}
         />
       )}
     </section>

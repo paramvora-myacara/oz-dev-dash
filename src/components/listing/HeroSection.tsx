@@ -2,16 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import Image from "next/image";
-import { MapPin, DollarSign, Briefcase } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Plus } from "lucide-react";
 import ImageCarousel from '@/components/ImageCarousel';
 import Lightbox from '@/components/Lightbox';
 import { getRandomImages } from '@/utils/supabaseImages';
 import { HeroSectionData } from '@/types/listing';
+import ImageManager from '@/components/editor/ImageManager';
 
-const HeroSection: React.FC<{ data: HeroSectionData; projectId: string; sectionIndex: number }> = ({ data, projectId, sectionIndex }) => {
+interface HeroSectionProps {
+  data: HeroSectionData;
+  projectId: string;
+  sectionIndex: number;
+  isEditMode?: boolean;
+  listingSlug?: string;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ 
+  data, 
+  projectId, 
+  sectionIndex, 
+  isEditMode = false,
+  listingSlug = ''
+}) => {
     const [heroImages, setHeroImages] = useState<string[]>([]);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
+    const [isImageManagerOpen, setIsImageManagerOpen] = useState(false);
 
     useEffect(() => {
         async function loadHeroImages() {
@@ -28,6 +44,10 @@ const HeroSection: React.FC<{ data: HeroSectionData; projectId: string; sectionI
     const handleImageClick = (index: number) => {
         setLightboxStartIndex(index);
         setIsLightboxOpen(true);
+    };
+
+    const handleImagesChange = (newImages: string[]) => {
+        setHeroImages(newImages);
     };
 
     return (
@@ -73,6 +93,17 @@ const HeroSection: React.FC<{ data: HeroSectionData; projectId: string; sectionI
                             unoptimized
                         />
                     )}
+                    
+                    {/* Manage Images Button - positioned over the hero image */}
+                    {isEditMode && listingSlug && (
+                        <button
+                            onClick={() => setIsImageManagerOpen(true)}
+                            className="absolute top-4 right-4 z-10 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+                            title="Manage Images"
+                        >
+                            <Plus size={24} />
+                        </button>
+                    )}
                 </div>
                 {isLightboxOpen && (
                     <Lightbox
@@ -82,6 +113,17 @@ const HeroSection: React.FC<{ data: HeroSectionData; projectId: string; sectionI
                     />
                 )}
             </section>
+
+            {/* Image Manager Modal */}
+            {isEditMode && listingSlug && (
+                <ImageManager
+                    listingSlug={listingSlug}
+                    projectId={projectId}
+                    isOpen={isImageManagerOpen}
+                    onClose={() => setIsImageManagerOpen(false)}
+                    onImagesChange={handleImagesChange}
+                />
+            )}
         </>
     );
 };

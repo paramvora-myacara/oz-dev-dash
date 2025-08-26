@@ -93,7 +93,12 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
             case 'financialReturns':
               return <FinancialReturnsPage data={pageData as FinancialReturns} />;
             case 'propertyOverview':
-              return <PropertyOverviewPage data={pageData as PropertyOverview} projectId={listing.projectId} />;
+              return <PropertyOverviewPage 
+                data={pageData as PropertyOverview} 
+                projectId={listing.projectId} 
+                isEditMode={isEditMode}
+                listingSlug={slug}
+              />;
             case 'marketAnalysis':
               return <MarketAnalysisPage data={pageData as MarketAnalysis} />;
             case 'sponsorProfile':

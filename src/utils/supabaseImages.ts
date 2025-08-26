@@ -34,7 +34,7 @@ export const PROJECTS: ProjectId[] = [
   'sogood-dallas-001'
 ];
 
-export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap', 'details'] as const;
+export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap'] as const;
 
 export type ImageCategory = string;
 
@@ -199,4 +199,98 @@ export async function getAllProjectImages(category: ImageCategory, projects: Pro
   const filteredResults = results.filter(result => result.images.length > 0);
   
   return filteredResults;
+}
+
+/**
+ * Upload a new image to a project category
+ */
+export async function uploadImage(
+  projectId: ProjectId, 
+  category: ImageCategory, 
+  file: File
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    // Validate file type
+    if (!isImageFile(file.name)) {
+      return { success: false, error: 'Invalid file type. Only image files are allowed.' };
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      return { success: false, error: 'File size too large. Maximum size is 10MB.' };
+    }
+
+    // Generate unique filename with timestamp
+    const timestamp = Date.now();
+    const extension = file.name.split('.').pop();
+    const filename = `${timestamp}.${extension}`;
+    const filePath = `${projectId}/${category}/${filename}`;
+
+    // Upload file to Supabase storage
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+      return { success: false, error: `Upload failed: ${error.message}` };
+    }
+
+    // Get public URL for the uploaded image
+    const imageUrl = getSupabaseImageUrl(projectId, category, filename);
+    
+    return { success: true, url: imageUrl };
+  } catch (error) {
+    console.error('Upload error:', error);
+    return { 
+      success: false, 
+      error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    };
+  }
+}
+
+/**
+ * Delete an image from a project category
+ */
+export async function deleteImage(
+  projectId: ProjectId, 
+  category: ImageCategory, 
+  filename: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const filePath = `${projectId}/${category}/${filename}`;
+
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Delete error:', error);
+      return { success: false, error: `Delete failed: ${error.message}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Delete error:', error);
+    return { 
+      success: false, 
+      error: `Delete failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    };
+  }
+}
+
+/**
+ * Get filename from full image URL
+ */
+export function getFilenameFromUrl(imageUrl: string): string | null {
+  try {
+    const url = new URL(imageUrl);
+    const pathParts = url.pathname.split('/');
+    return pathParts[pathParts.length - 1] || null;
+  } catch {
+    return null;
+  }
 }
