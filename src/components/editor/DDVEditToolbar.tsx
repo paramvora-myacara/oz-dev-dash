@@ -11,7 +11,7 @@ export function DDVEditToolbar({ slug }: DDVEditToolbarProps) {
   const router = useRouter();
 
   const handleBack = () => {
-    router.push(`/${slug}/access-dd-vault`);
+    router.push('/admin');
   };
 
   return (
