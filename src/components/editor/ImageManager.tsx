@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { getAvailableImages, IMAGE_CATEGORIES } from '@/utils/supabaseImages';
 
@@ -30,33 +30,14 @@ export default function ImageManager({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load images when category changes
+  // Update selectedCategory when defaultCategory changes (e.g., when opening from different sections)
   useEffect(() => {
-    if (isOpen && projectId) {
-      // Ensure selected category is not 'details'
-      if (selectedCategory === 'details') {
-        setSelectedCategory('general');
-      } else {
-        loadImages();
-      }
-    }
-  }, [isOpen, projectId, selectedCategory]);
-
-  // Additional effect to handle category change
-  useEffect(() => {
-    if (isOpen && projectId && selectedCategory !== 'details') {
-      loadImages();
-    }
-  }, [selectedCategory]);
-
-  // Effect to handle defaultCategory prop changes
-  useEffect(() => {
-    if (isOpen && defaultCategory && defaultCategory !== selectedCategory) {
+    if (isOpen && defaultCategory && defaultCategory !== 'details') {
       setSelectedCategory(defaultCategory);
     }
-  }, [isOpen, defaultCategory, selectedCategory]);
+  }, [isOpen, defaultCategory]);
 
-  const loadImages = async () => {
+  const loadImages = useCallback(async () => {
     setIsLoading(true);
     try {
       const imageUrls = await getAvailableImages(projectId, selectedCategory);
@@ -66,7 +47,14 @@ export default function ImageManager({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId, selectedCategory]);
+
+  // Load images when category changes
+  useEffect(() => {
+    if (isOpen && projectId && selectedCategory !== 'details') {
+      loadImages();
+    }
+  }, [isOpen, projectId, selectedCategory, loadImages]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
