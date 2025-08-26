@@ -5,6 +5,8 @@ import { Listing } from '@/types/listing'
 import { DDVFile } from '@/lib/supabase/ddv'
 import { formatFileSize, formatDate } from '@/utils/helpers'
 import { DDVEditToolbar } from '@/components/editor/DDVEditToolbar'
+import { useResumableUpload } from '@/hooks/useResumableUpload'
+import { UploadProgressBar } from '@/components/UploadProgressBar'
 
 interface DDVEditClientProps {
   listing: Listing
@@ -14,52 +16,92 @@ interface DDVEditClientProps {
 
 export default function DDVEditClient({ listing, files, slug }: DDVEditClientProps) {
   const [currentFiles, setCurrentFiles] = useState<DDVFile[]>(files)
-  const [uploadingFile, setUploadingFile] = useState<string | null>(null)
   const [deletingFile, setDeletingFile] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [uploadQueue, setUploadQueue] = useState<Array<{
+    file: File
+    status: 'queued' | 'uploading' | 'completed' | 'failed'
+    progress?: number
+    error?: string
+  }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Use the resumable upload hook
+  const { uploadFile, isUploading, progress, error, success, resetUpload } = useResumableUpload()
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
-    setUploadingFile(file.name)
     setIsUploadModalOpen(false)
-
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('listingSlug', slug)
-
-      const response = await fetch('/api/ddv/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (response.ok) {
-        const newFile: DDVFile = {
-          name: file.name,
-          id: Date.now().toString(), // Temporary ID until we get the real one
-          updated_at: new Date().toISOString(),
-          size: file.size,
-          metadata: {
-            mimetype: file.type
+    
+    // Initialize upload queue
+    const fileArray = Array.from(files)
+    const initialQueue = fileArray.map(file => ({
+      file,
+      status: 'queued' as const,
+      progress: 0
+    }))
+    setUploadQueue(initialQueue)
+    
+    // Process files sequentially
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]
+      
+      try {
+        // Update status to uploading
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'uploading' } : item
+        ))
+        
+        // Use the resumable upload hook
+        const bucketName = `ddv-${slug}`
+        const result = await uploadFile(file, bucketName, file.name)
+        
+        // If upload is successful, add the file to the list with real data
+        if (result.success && result.fileData) {
+          const newFile: DDVFile = {
+            name: result.fileData.name,
+            id: crypto.randomUUID(), // Generate a proper UUID
+            updated_at: result.fileData.updated_at,
+            size: result.fileData.size,
+            metadata: {
+              mimetype: result.fileData.mimetype
+            }
           }
+          setCurrentFiles(prev => [...prev, newFile])
+          
+          // Update queue status to completed
+          setUploadQueue(prev => prev.map((item, idx) => 
+            idx === i ? { ...item, status: 'completed', progress: 100 } : item
+          ))
+        } else {
+          // Update queue status to failed
+          setUploadQueue(prev => prev.map((item, idx) => 
+            idx === i ? { ...item, status: 'failed', error: 'Upload failed' } : item
+          ))
         }
-        setCurrentFiles(prev => [...prev, newFile])
-      } else {
-        console.error('Failed to upload file')
-        alert('Failed to upload file. Please try again.')
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      alert('Error uploading file. Please try again.')
-    } finally {
-      setUploadingFile(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+      } catch (error: any) {
+        console.error('Error uploading file:', error)
+        // Update queue status to failed
+        setUploadQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'failed', error: error.message || 'Unknown error' } : item
+        ))
       }
     }
+    
+    // Reset upload state after all files are processed
+    resetUpload()
+    
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+    
+    // Clear upload queue after a delay to show completion status
+    setTimeout(() => {
+      setUploadQueue([])
+    }, 3000)
   }
 
   const handleFileDelete = async (fileName: string) => {
@@ -147,10 +189,113 @@ export default function DDVEditClient({ listing, files, slug }: DDVEditClientPro
           </button>
         </div>
 
+        {/* Upload Queue */}
+        {uploadQueue.length > 0 && (
+          <div className="mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Upload Queue ({uploadQueue.filter(item => item.status === 'completed').length}/{uploadQueue.length} completed)
+              </h3>
+              <div className="space-y-3">
+                {uploadQueue.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {item.file.name}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ({(item.file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      {item.status === 'queued' && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Queued</span>
+                      )}
+                      {item.status === 'uploading' && (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-24 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${progress?.percentage || 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-blue-600 dark:text-blue-400">
+                            {progress?.percentage || 0}%
+                          </span>
+                        </div>
+                      )}
+                      {item.status === 'completed' && (
+                        <span className="text-xs text-green-600 dark:text-green-400 flex items-center">
+                          ✓ Completed
+                        </span>
+                      )}
+                      {item.status === 'failed' && (
+                        <span className="text-xs text-red-600 dark:text-red-400 flex items-center">
+                          ✗ Failed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {uploadQueue.some(item => item.status === 'failed') && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Some files failed to upload. Please try again.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Upload Error */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <div className="text-red-500">⚠️</div>
+              <div>
+                <p className="text-red-800 dark:text-red-200 font-medium">Upload Error</p>
+                <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
+              </div>
+              <button
+                onClick={() => {
+                  resetUpload()
+                }}
+                className="ml-auto text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Success */}
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <div className="text-green-500">✅</div>
+              <div>
+                <p className="text-green-800 dark:text-green-200 font-medium">Upload Successful!</p>
+                <p className="text-green-600 dark:text-green-300 text-sm">File has been uploaded to the vault.</p>
+              </div>
+              <button
+                onClick={() => {
+                  resetUpload()
+                }}
+                className="ml-auto text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
+          multiple
           onChange={handleFileUpload}
           className="hidden"
           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar"
@@ -252,14 +397,14 @@ export default function DDVEditClient({ listing, files, slug }: DDVEditClientPro
               Upload New File
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Click the button below to select a file to upload to the due diligence vault.
+              Click the button below to select one or more files to upload to the due diligence vault.
             </p>
             <div className="flex space-x-3">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
               >
-                Choose File
+                Choose Files
               </button>
               <button
                 onClick={() => setIsUploadModalOpen(false)}
