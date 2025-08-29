@@ -1,4 +1,13 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OZ Developer Dashboard
+
+A Next.js-based admin dashboard for managing OZ Listings properties with analytics capabilities.
+
+## Features
+
+- **Admin Authentication**: Secure login system for property managers and internal staff
+- **Property Management**: Edit and manage listing content with version control
+- **Analytics Dashboard**: Track user engagement and property performance
+- **Role-Based Access**: Different permissions for internal admins vs. customers
 
 ## Getting Started
 
@@ -16,9 +25,24 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Analytics Dashboard Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The analytics dashboard provides insights into user events and property performance. To set it up:
+
+1. **Database Migration**: Run `scripts/add-role-column.sql` in Supabase
+2. **Create Events Table**: Run `scripts/create-user-events-table.sql` if needed
+3. **Update User Roles**: Set internal team members to `internal_admin` role
+4. **Test**: Navigate to `/admin/analytics` after setup
+
+See [ANALYTICS_SETUP.md](docs/ANALYTICS_SETUP.md) for detailed setup instructions.
+
+## Project Structure
+
+- `src/app/admin/` - Admin dashboard and analytics pages
+- `src/components/admin/` - Reusable admin components
+- `src/lib/admin/` - Authentication and admin utilities
+- `scripts/` - Database migration and setup scripts
+- `docs/` - Documentation and setup guides
 
 ## Learn More
 

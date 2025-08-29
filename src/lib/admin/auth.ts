@@ -5,6 +5,7 @@ import { createAdminClient } from '@/utils/supabase/admin'
 export interface AdminUser {
   id: string
   email: string
+  role: string
 }
 
 export async function readBasicAuthCookie(): Promise<{ email: string; password: string } | null> {
@@ -38,12 +39,12 @@ export async function verifyAdmin(): Promise<AdminUser | null> {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('admin_users')
-    .select('id, email, password')
+    .select('id, email, password, role')
     .eq('email', creds.email)
     .single()
   if (error || !data) return null
   if (data.password !== creds.password) return null
-  return { id: data.id, email: data.email }
+  return { id: data.id, email: data.email, role: data.role }
 }
 
 export async function verifyAdminCanEditSlug(slug: string): Promise<AdminUser | null> {
