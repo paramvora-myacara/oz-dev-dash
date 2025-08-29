@@ -117,7 +117,9 @@ export async function GET(request: NextRequest) {
         siteMetrics = {
           netChangeUsers: thisWeekSignups - lastWeekSignups,
           currentAuthedUsers: totalAuthUsers,
-          userGrowthRate: lastWeekSignups > 0 ? ((thisWeekSignups - lastWeekSignups) / lastWeekSignups * 100).toFixed(1) : thisWeekSignups > 0 ? '100' : '0'
+          userGrowthRate: lastWeekSignups > 0 ? ((thisWeekSignups - lastWeekSignups) / lastWeekSignups * 100).toFixed(1) : thisWeekSignups > 0 ? '100' : '0',
+          currentWeekStart: currentWeek.start,
+          currentWeekEnd: currentWeek.end
         }
         
         console.log('Final siteMetrics:', siteMetrics)
