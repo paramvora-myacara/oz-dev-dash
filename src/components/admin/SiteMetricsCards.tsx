@@ -1,6 +1,8 @@
 'use client'
 
 interface SiteMetrics {
+  thisWeekSignups: number
+  lastWeekSignups: number
   netChangeUsers: number
   currentAuthedUsers: number
   userGrowthRate: string
@@ -23,13 +25,13 @@ export default function SiteMetricsCards({ metrics }: SiteMetricsCardsProps) {
           <p className="text-sm font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
             New User Signups
           </p>
-          <p className={`text-3xl font-bold ${metrics.netChangeUsers >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {metrics.netChangeUsers >= 0 ? '+' : ''}{metrics.netChangeUsers}
+          <p className={`text-3xl font-bold ${metrics.thisWeekSignups > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
+            {metrics.thisWeekSignups.toLocaleString()}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {metrics.currentWeekStart && metrics.currentWeekEnd ? 
               `This week - ${new Date(metrics.currentWeekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} to ${new Date(metrics.currentWeekEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` :
-              'This week vs. last week'
+              'This week'
             }
           </p>
         </div>
