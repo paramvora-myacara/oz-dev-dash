@@ -29,6 +29,8 @@ interface AnalyticsData {
 }
 
 interface SiteMetrics {
+  thisWeekSignups: number
+  lastWeekSignups: number
   netChangeUsers: number
   currentAuthedUsers: number
   userGrowthRate: string
