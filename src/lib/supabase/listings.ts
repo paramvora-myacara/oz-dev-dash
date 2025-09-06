@@ -1,6 +1,6 @@
 import 'server-only'
 import { createAdminClient } from '@/utils/supabase/admin'
-import { Listing } from '@/types/listing'
+import { Listing, NewsCardMetadata } from '@/types/listing'
 
 export async function getPublishedListingBySlug(slug: string): Promise<Listing | null> {
   const supabase = createAdminClient()
@@ -20,7 +20,7 @@ export async function getPublishedListingBySlug(slug: string): Promise<Listing |
   // Then get the current version data
   const { data: version, error: versionError } = await supabase
     .from('listing_versions')
-    .select('data')
+    .select('data, news_links')
     .eq('id', listing.current_version_id)
     .single()
     
@@ -29,7 +29,10 @@ export async function getPublishedListingBySlug(slug: string): Promise<Listing |
     return null
   }
   
-  return (version.data as Listing) ?? null
+  return {
+    ...(version.data as Listing),
+    newsLinks: (version.news_links as NewsCardMetadata[]) || []
+  };
 }
 
 export interface ListingVersionMeta {

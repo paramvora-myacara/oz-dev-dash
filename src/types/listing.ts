@@ -187,13 +187,20 @@ export interface InvestmentCardsSectionData {
   cards: InvestmentCard[];
 }
 
+export interface NewsCardMetadata {
+  url: string;
+  title: string;
+  description: string;
+  image: string;
+  source: string;
+}
+
 export type ListingOverviewSection = 
   | { type: 'hero'; data: HeroSectionData }
   | { type: 'tickerMetrics'; data: TickerMetricsSectionData }
   | { type: 'compellingReasons'; data: CompellingReasonsSectionData }
   | { type: 'executiveSummary'; data: ExecutiveSummarySectionData }
   | { type: 'investmentCards'; data: InvestmentCardsSectionData };
-
 // --- Sponsor Profile Detail Page Sections ---
 
 export interface SponsorIntroSectionData {
@@ -446,6 +453,7 @@ export interface Listing {
   projectId: string; 
   developerInfo?: DeveloperInfo;
   sections: ListingOverviewSection[];
+  newsLinks?: NewsCardMetadata[];
   details: {
     financialReturns: FinancialReturns;
     propertyOverview: PropertyOverview;
