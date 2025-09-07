@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
@@ -12,6 +12,13 @@ import TickerMetricsSection from '@/components/listing/TickerMetricsSection';
 import CompellingReasonsSection from '@/components/listing/CompellingReasonsSection';
 import ExecutiveSummarySection from '@/components/listing/ExecutiveSummarySection';
 import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection';
+import InTheNewsSection from '@/components/listing/InTheNewsSection';
+import React from 'react'; // Added missing import for React
+
+interface RenderableSection {
+  type: string;
+  component: React.ReactNode;
+}
 
 interface ListingPageClientProps {
   listing: Listing;
@@ -29,7 +36,6 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     checkHasSignedCAForListing,
     handleRequestVaultAccess, 
     handleSignInOrUp,
-    handleCASubmission,
     handleContactDeveloper,
     closeModal,
     authContext
@@ -80,14 +86,33 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     }
   };
 
+  let hasRenderedNewsSection = false;
+  const finalSectionsToRender: RenderableSection[] = [];
+
+  listing.sections.forEach((section, idx) => {
+    if (!hasRenderedNewsSection && (section.type === 'executiveSummary') && listing.newsLinks && listing.newsLinks.length > 0) {
+      finalSectionsToRender.push({
+        type: 'newsLinksSection',
+        component: <InTheNewsSection key="in-the-news-section" newsLinks={listing.newsLinks} />
+      });
+      hasRenderedNewsSection = true;
+    }
+    finalSectionsToRender.push({
+      type: section.type,
+      component: <SectionRenderer key={idx} section={section} sectionIndex={idx} />
+    });
+  });
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {showAdminToolbar && (
         <ViewModeToolbar slug={listing.listingSlug} />
       )}
       <div className={`max-w-[1920px] mx-auto ${showAdminToolbar ? 'pt-16' : ''}`}>
-        {listing.sections.map((section, idx) => (
-            <SectionRenderer key={idx} section={section} sectionIndex={idx} />
+        {finalSectionsToRender.map((item, index) => (
+          <React.Fragment key={index}>
+            {item.component}
+          </React.Fragment>
         ))}
         {/* Call to Action Buttons */}
         <section className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">
