@@ -119,9 +119,7 @@ export function useAuth() {
     // If user is not authenticated, show auth modal for login/signup
     // Set up callback to show confirmation modal after successful auth
     setAuthContext('contact-developer')
-    console.log('Setting up onAuthSuccess callback for contact developer')
     setOnAuthSuccess(() => {
-      console.log('onAuthSuccess callback created for contact developer')
       return async () => {
         // This callback will be executed after successful authentication
         // We need to wait a bit for the user state to be updated
@@ -135,8 +133,6 @@ export function useAuth() {
             console.error('UserId not available after auth success')
             return
           }
-          
-          console.log('Got userId from session:', currentUserId)
           
           // Fetch developer contact email from database
           try {
@@ -170,18 +166,11 @@ export function useAuth() {
 
   const handleSignInOrUp = useCallback(
     async (fullName: string, email: string, phoneNumber: string) => {
-      console.log('handleSignInOrUp called with:', { fullName, email, phoneNumber })
-      
       const result = await signInOrUp(fullName, email)
-      console.log('signInOrUp result:', result)
       
       if (result?.success && result.userId) {
-        console.log('Authentication successful, updating user profile...')
-        
         // Update user profile with full name, email, and phone number
-        console.log("About to call updateUserProfile with:", { fullName, email, phoneNumber });
-        const updateResult = await updateUserProfile(fullName, email, phoneNumber, result.userId);
-        console.log("updateUserProfile result:", updateResult);
+        const updateResult = await updateUserProfile(fullName, email, phoneNumber, result.userId)
         
         if (!updateResult.success) {
           console.error('Failed to update user profile:', updateResult.error)
@@ -194,28 +183,22 @@ export function useAuth() {
         
         // If this is for contacting developer, skip CA logic and go directly to success callback
         if (authContext === 'contact-developer') {
-          console.log('Contact developer auth - skipping CA logic')
           setIsAuthModalOpen(false)
           
           // Call the success callback if we have one
           if (onAuthSuccess) {
-            console.log('Calling onAuthSuccess callback for contact developer')
             await onAuthSuccess()
             setOnAuthSuccess(null)
-          } else {
-            console.log('No onAuthSuccess callback found for contact developer')
           }
           return
         }
         
         if (hasSignedCAForThisListing) {
           // User has already signed CA for this listing, redirect directly to vault
-          console.log('User has signed CA for this listing, redirecting to vault...')
           setIsAuthModalOpen(false)
           window.location.href = `/${targetSlug}/access-dd-vault`
         } else {
           // User needs to sign CA for this listing, check if listing has vault access
-          console.log('User needs to sign CA for this listing, checking vault access...')
           setIsAuthModalOpen(false)
           
           if (targetSlug) {
@@ -232,14 +215,12 @@ export function useAuth() {
               
               if (hasVault) {
                 // Listing has vault access, proceed to SignWell
-                console.log('Listing has vault access, proceeding to SignWell...')
                 await createSignWellDocument(fullName, email, targetSlug, (signedSlug) => {
                   markAsSigned(signedSlug)
                   window.location.href = `/${signedSlug}/access-dd-vault`
                 })
               } else {
                 // Listing doesn't have vault access, show confirmation modal
-                console.log('Listing does not have vault access, showing confirmation modal')
                 setIsConfirmationModalOpen(true)
               }
             } catch (error) {
@@ -271,12 +252,9 @@ export function useAuth() {
     fullName: string, 
     email: string
   ) => {
-    console.log('handleCASubmission called with:', { fullName, email })
-    
     try {
       // At this point, user should already be authenticated via handleSignInOrUp
       // Just create the SignWell document
-      console.log('About to create SignWell document...')
       if (!targetSlug) {
         console.error('No targetSlug available for SignWell document creation')
         setAuthError('Missing property information. Please try again.')

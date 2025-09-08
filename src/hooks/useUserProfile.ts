@@ -69,16 +69,13 @@ export function useUserProfile(userId: string | null) {
     fullName: string, 
     email: string,
     phoneNumber?: string,
-    targetUserId?: string // Allow passing userId directly
+    targetUserId?: string
   ) => {
     const currentUserId = targetUserId || userId
     
     if (!currentUserId) {
-      console.error('No user ID available for updateUserProfile')
       return { success: false, error: 'No user ID' }
     }
-    
-    console.log('updateUserProfile called with:', { fullName, email, phoneNumber, currentUserId })
     
     setIsLoading(true)
     setError(null)
@@ -96,19 +93,14 @@ export function useUserProfile(userId: string | null) {
         updateData.phone_number = phoneNumber
       }
       
-      console.log('Upserting data to users table:', updateData)
-      
       const { data, error: profileError } = await supabase
         .from('users')
         .upsert(updateData)
         .select()
       
       if (profileError) {
-        console.error('Profile upsert error:', profileError)
         throw profileError
       }
-      
-      console.log('Profile upsert success:', data)
       
       setUserFullName(fullName)
       setUserEmail(email)
