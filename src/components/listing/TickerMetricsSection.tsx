@@ -12,9 +12,9 @@ const TickerMetricsSection: React.FC<{ data: TickerMetricsSectionData; sectionIn
                     <Editable 
                         dataPath={`sections[${sectionIndex}].data.metrics[${idx}].label`}
                         value={metric.label}
-                        className="font-bold text-red-500"
+                        className="font-bold text-black dark:text-white"
                     />
-                    <span className="font-bold text-red-500">:</span>
+                    <span className="font-bold text-black dark:text-white">:</span>
                     <Editable 
                         dataPath={`sections[${sectionIndex}].data.metrics[${idx}].value`}
                         value={metric.value}
