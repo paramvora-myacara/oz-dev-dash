@@ -7,6 +7,7 @@ export function useUserProfile(userId: string | null) {
   const supabase = createClient()
   const [userFullName, setUserFullName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userPhoneNumber, setUserPhoneNumber] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,7 +25,7 @@ export function useUserProfile(userId: string | null) {
           // Fetch user details from public.users table
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('full_name, email')
+            .select('full_name, email, phone_number')
             .eq('id', userId)
             .single()
           
@@ -35,6 +36,7 @@ export function useUserProfile(userId: string | null) {
           if (userData) {
             setUserFullName(userData.full_name)
             setUserEmail(userData.email)
+            setUserPhoneNumber(userData.phone_number)
             
             // Auto-login if no session but we have user data
             if (!session && userData.email) {
@@ -55,6 +57,7 @@ export function useUserProfile(userId: string | null) {
         // Reset state when userId is null
         setUserFullName(null)
         setUserEmail(null)
+        setUserPhoneNumber(null)
         setError(null)
       }
     }
@@ -64,22 +67,36 @@ export function useUserProfile(userId: string | null) {
 
   const updateUserProfile = useCallback(async (
     fullName: string, 
-    email: string
+    email: string,
+    phoneNumber?: string,
+    targetUserId?: string
   ) => {
-    if (!userId) return { success: false, error: 'No user ID' }
+    const currentUserId = targetUserId || userId
+    
+    if (!currentUserId) {
+      return { success: false, error: 'No user ID' }
+    }
     
     setIsLoading(true)
     setError(null)
     
     try {
-      const { error: profileError } = await supabase
+      const updateData: any = {
+        id: currentUserId,
+        full_name: fullName,
+        email: email,
+        updated_at: new Date().toISOString()
+      }
+      
+      // Only include phone_number if provided
+      if (phoneNumber) {
+        updateData.phone_number = phoneNumber
+      }
+      
+      const { data, error: profileError } = await supabase
         .from('users')
-        .upsert({
-          id: userId,
-          full_name: fullName,
-          email: email,
-          updated_at: new Date().toISOString()
-        })
+        .upsert(updateData)
+        .select()
       
       if (profileError) {
         throw profileError
@@ -87,6 +104,9 @@ export function useUserProfile(userId: string | null) {
       
       setUserFullName(fullName)
       setUserEmail(email)
+      if (phoneNumber) {
+        setUserPhoneNumber(phoneNumber)
+      }
       
       return { success: true }
     } catch (err: any) {
@@ -101,8 +121,9 @@ export function useUserProfile(userId: string | null) {
   return {
     userFullName,
     userEmail,
+    userPhoneNumber,
     isLoading,
     error,
     updateUserProfile,
   }
-} 
+}
