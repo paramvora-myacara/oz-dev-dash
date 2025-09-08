@@ -33,6 +33,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     isLoading, 
     userFullName,
     userEmail,
+    userPhoneNumber,
     checkHasSignedCAForListing,
     handleRequestVaultAccess, 
     handleSignInOrUp,
@@ -146,6 +147,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
         authError={authError}
         userFullName={userFullName}
         userEmail={userEmail}
+        userPhoneNumber={userPhoneNumber}
         authContext={authContext}
       />
       <ConfirmationModal

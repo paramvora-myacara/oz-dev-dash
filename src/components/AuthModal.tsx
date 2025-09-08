@@ -6,11 +6,12 @@ import { X } from 'lucide-react'
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (fullName: string, email: string) => void
+  onSubmit: (fullName: string, email: string, phoneNumber: string) => void
   isLoading: boolean
   authError: string | null
   userFullName?: string | null
   userEmail?: string | null
+  userPhoneNumber?: string | null
   authContext?: 'vault-access' | 'contact-developer' | null
 }
 
@@ -27,20 +28,23 @@ export function AuthModal({
   authError,
   userFullName,
   userEmail,
+  userPhoneNumber,
   authContext,
 }: AuthModalProps) {
   const [fullName, setFullName] = useState(userFullName || '')
   const [email, setEmail] = useState(userEmail || '')
+  const [phoneNumber, setPhoneNumber] = useState(userPhoneNumber || '')
 
   // Auto-fill when props change
   useEffect(() => {
     if (userFullName) setFullName(userFullName)
     if (userEmail) setEmail(userEmail)
-  }, [userFullName, userEmail])
+    if (userPhoneNumber) setPhoneNumber(userPhoneNumber)
+  }, [userFullName, userEmail, userPhoneNumber])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted with:', { fullName, email })
+    console.log('Form submitted with:', { fullName, email, phoneNumber })
     
     // Client-side validation
     if (!fullName || !fullName.trim()) {
@@ -53,6 +57,11 @@ export function AuthModal({
       return
     }
     
+    if (!phoneNumber || !phoneNumber.trim()) {
+      console.log('Form validation failed - missing phone number')
+      return
+    }
+    
     // Basic email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) {
@@ -60,8 +69,16 @@ export function AuthModal({
       return
     }
     
+    // Basic phone number validation (allows various formats)
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+    const cleanPhone = phoneNumber.replace(/[\s\-\(\)\.]/g, '')
+    if (!phoneRegex.test(cleanPhone)) {
+      console.log('Form validation failed - invalid phone number format')
+      return
+    }
+    
     console.log('Calling onSubmit function...')
-    onSubmit(fullName.trim(), email.trim())
+    onSubmit(fullName.trim(), email.trim(), cleanPhone)
   }
 
   if (!isOpen) return null
@@ -119,6 +136,21 @@ export function AuthModal({
               required
               disabled={!!userEmail}
               placeholder="you@example.com"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
+              Phone Number *
+            </label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+              required
+              disabled={!!userPhoneNumber}
+              placeholder="+1 (555) 123-4567"
             />
           </div>
           
@@ -189,4 +221,4 @@ export function ConfirmationModal({
       </div>
     </div>
   )
-} 
+}

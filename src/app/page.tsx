@@ -21,6 +21,7 @@ function PortfolioPageContent() {
     closeModal,
     userFullName,
     userEmail,
+    userPhoneNumber,
     authContext,
   } = useAuth();
 
@@ -163,6 +164,7 @@ function PortfolioPageContent() {
         authError={authError}
         userFullName={userFullName}
         userEmail={userEmail}
+        userPhoneNumber={userPhoneNumber}
         authContext={authContext}
       />
       <ConfirmationModal

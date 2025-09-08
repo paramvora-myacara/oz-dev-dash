@@ -12,7 +12,7 @@ import { createClient } from '@/utils/supabase/client'
 export function useAuth() {
   const { trackEvent } = useEventTracker()
   const { userId, signInOrUp, authError, setAuthError } = useAuthentication()
-  const { userFullName, userEmail, updateUserProfile } = useUserProfile(userId)
+  const { userFullName, userEmail, userPhoneNumber, updateUserProfile } = useUserProfile(userId)
   
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false)
@@ -59,24 +59,13 @@ export function useAuth() {
         }
         
         if (hasVault) {
-          // Listing has vault access, show SignWell directly
-          console.log('Listing has vault access, showing SignWell directly')
-          
-          // Ensure we have valid user data before proceeding
-          if (!userFullName || !userEmail) {
-            console.error('Missing user data for SignWell:', { userFullName, userEmail })
-            // Fallback to confirmation modal if user data is missing
-            setIsConfirmationModalOpen(true)
-            return
-          }
-          
+          // Listing has vault access, proceed to SignWell
           await createSignWellDocument(userFullName, userEmail, slug, (signedSlug) => {
             markAsSigned(signedSlug)
             window.location.href = `/${signedSlug}/access-dd-vault`
           })
         } else {
           // Listing doesn't have vault access, show confirmation modal
-          console.log('Listing does not have vault access, showing confirmation modal')
           setIsConfirmationModalOpen(true)
         }
       } catch (error) {
@@ -166,28 +155,39 @@ export function useAuth() {
               propertyId: slug,
               developerContactEmail: listing?.developer_contact_email || null
             })
-            console.log('Contact developer event tracked successfully')
             setIsConfirmationModalOpen(true)
           } catch (error) {
-            console.error('Error in handleContactDeveloper auth success:', error)
+            console.error('Error in onAuthSuccess callback:', error)
             // Still track the event even if we can't get the email
             trackEvent(currentUserId, 'contact_developer', { propertyId: slug })
-            console.log('Contact developer event tracked successfully (without email)')
             setIsConfirmationModalOpen(true)
           }
-        }, 100) // Small delay to ensure user state is updated
+        }, 1000) // Wait 1 second for state to update
       }
     })
     setIsAuthModalOpen(true)
   }, [userId, userFullName, userEmail, trackEvent])
 
   const handleSignInOrUp = useCallback(
-    async (fullName: string, email: string) => {
+    async (fullName: string, email: string, phoneNumber: string) => {
+      console.log('handleSignInOrUp called with:', { fullName, email, phoneNumber })
+      
       const result = await signInOrUp(fullName, email)
+      console.log('signInOrUp result:', result)
       
       if (result?.success && result.userId) {
-        // Update user profile with full name
-        await updateUserProfile(fullName, email)
+        console.log('Authentication successful, updating user profile...')
+        
+        // Update user profile with full name, email, and phone number
+        console.log("About to call updateUserProfile with:", { fullName, email, phoneNumber });
+        const updateResult = await updateUserProfile(fullName, email, phoneNumber, result.userId);
+        console.log("updateUserProfile result:", updateResult);
+        
+        if (!updateResult.success) {
+          console.error('Failed to update user profile:', updateResult.error)
+          setAuthError('Failed to save user information. Please try again.')
+          return
+        }
         
         // Check if user has already signed CA for this specific listing
         const hasSignedCAForThisListing = targetSlug ? checkHasSignedCAForListing(targetSlug) : false
@@ -258,6 +258,9 @@ export function useAuth() {
           await onAuthSuccess()
           setOnAuthSuccess(null)
         }
+      } else {
+        console.error('Authentication failed:', result?.error)
+        setAuthError(result?.error || 'Authentication failed. Please try again.')
       }
     },
     [signInOrUp, updateUserProfile, targetSlug, checkHasSignedCAForListing, checkVaultAccessAndReturnResult, createSignWellDocument, markAsSigned, onAuthSuccess, setOnAuthSuccess, setAuthError, authContext]
@@ -279,43 +282,39 @@ export function useAuth() {
         setAuthError('Missing property information. Please try again.')
         return
       }
+      
       await createSignWellDocument(fullName, email, targetSlug, (signedSlug) => {
         markAsSigned(signedSlug)
         window.location.href = `/${signedSlug}/access-dd-vault`
       })
-      
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error in handleCASubmission:', error)
-      setAuthError(error.message)
+      setAuthError('Failed to create confidentiality agreement. Please try again.')
     }
   }, [targetSlug, createSignWellDocument, markAsSigned, setAuthError])
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsAuthModalOpen(false)
     setIsConfirmationModalOpen(false)
     setAuthError(null)
-    setSignWellError(null)
+    setOnAuthSuccess(null)
     setAuthContext(null)
-  }
+  }, [])
 
   return {
-    userId,
     isAuthModalOpen,
     isConfirmationModalOpen,
-    authError: authError || signWellError,
-    isLoading: false, // Loading state is now handled by individual hooks
+    authError,
+    isLoading: false, // This will be handled by individual hooks
     userFullName,
     userEmail,
-    targetSlug,
-    hasSignedCA,
+    userPhoneNumber,
     checkHasSignedCAForListing,
     handleRequestVaultAccess,
+    handleContactDeveloper,
     handleSignInOrUp,
     handleCASubmission,
-    handleContactDeveloper,
     closeModal,
     authContext,
   }
 }
-
- 
