@@ -454,6 +454,7 @@ export interface Listing {
   developerInfo?: DeveloperInfo;
   sections: ListingOverviewSection[];
   newsLinks?: NewsCardMetadata[];
+  developer_website?: string | null;
   details: {
     financialReturns: FinancialReturns;
     propertyOverview: PropertyOverview;

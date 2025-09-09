@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
@@ -13,6 +13,8 @@ import CompellingReasonsSection from '@/components/listing/CompellingReasonsSect
 import ExecutiveSummarySection from '@/components/listing/ExecutiveSummarySection';
 import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection';
 import InTheNewsSection from '@/components/listing/InTheNewsSection';
+import InvestmentComparisonChart from '@/components/listing/InvestmentComparisonChart';
+import { getProjectMetricsBySlug } from '@/lib/supabase/ozProjects';
 import React from 'react'; // Added missing import for React
 
 interface RenderableSection {
@@ -26,6 +28,22 @@ interface ListingPageClientProps {
 }
 
 export default function ListingPageClient({ listing, isEditMode = false }: ListingPageClientProps) {
+  const [projectMetrics, setProjectMetrics] = useState({ projected_irr_10yr: null, equity_multiple_10yr: null, minimum_investment: null });
+
+  useEffect(() => {
+    async function fetchMetrics() {
+      if (listing?.listingSlug) {
+        const metrics = await getProjectMetricsBySlug(listing.listingSlug);
+        setProjectMetrics({
+          projected_irr_10yr: metrics.projected_irr_10yr ?? null,
+          equity_multiple_10yr: metrics.equity_multiple_10yr ?? null,
+          minimum_investment: metrics.minimum_investment ?? null,
+        });
+      }
+    }
+    fetchMetrics();
+  }, [listing?.listingSlug]);
+
   const { 
     isAuthModalOpen, 
     isConfirmationModalOpen, 
@@ -91,12 +109,24 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
   const finalSectionsToRender: RenderableSection[] = [];
 
   listing.sections.forEach((section, idx) => {
-    if (!hasRenderedNewsSection && (section.type === 'executiveSummary') && listing.newsLinks && listing.newsLinks.length > 0) {
+    if (!hasRenderedNewsSection && (section.type === 'executiveSummary')) {
+      // Insert the tax calculator graph before the news section
       finalSectionsToRender.push({
-        type: 'newsLinksSection',
-        component: <InTheNewsSection key="in-the-news-section" newsLinks={listing.newsLinks} />
+        type: 'taxCalculatorGraph',
+        component: <InvestmentComparisonChart
+          key="investment-comparison-chart"
+          projectedIrr10yr={projectMetrics.projected_irr_10yr}
+          equityMultiple10yr={projectMetrics.equity_multiple_10yr}
+          defaultCapitalGain={projectMetrics.minimum_investment}
+        />
       });
-      hasRenderedNewsSection = true;
+      if (listing.newsLinks && listing.newsLinks.length > 0) {
+        finalSectionsToRender.push({
+          type: 'newsLinksSection',
+          component: <InTheNewsSection key="in-the-news-section" newsLinks={listing.newsLinks} />
+        });
+        hasRenderedNewsSection = true;
+      }
     }
     finalSectionsToRender.push({
       type: section.type,

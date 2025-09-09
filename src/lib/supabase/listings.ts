@@ -8,7 +8,7 @@ export async function getPublishedListingBySlug(slug: string): Promise<Listing |
   // First get the listing to find its current version
   const { data: listing, error: listingError } = await supabase
     .from('listings')
-    .select('id, current_version_id')
+    .select('id, current_version_id, developer_website')
     .eq('slug', slug)
     .single()
     
@@ -31,7 +31,8 @@ export async function getPublishedListingBySlug(slug: string): Promise<Listing |
   
   return {
     ...(version.data as Listing),
-    newsLinks: (version.news_links as NewsCardMetadata[]) || []
+    newsLinks: (version.news_links as NewsCardMetadata[]) || [],
+    developer_website: listing.developer_website || null,
   };
 }
 

@@ -8,10 +8,16 @@ import DevelopmentPortfolioSection from './DevelopmentPortfolioSection';
 import KeyDevelopmentPartnersSection from './KeyDevelopmentPartnersSection';
 import CompetitiveAdvantagesSection from './CompetitiveAdvantagesSection';
 
-const SectionRenderer = ({ section, sectionIndex }: { section: SponsorProfileSection; sectionIndex: number }) => {
+interface SectionRendererProps {
+  section: SponsorProfileSection;
+  sectionIndex: number;
+  developerWebsite?: string | null;
+}
+
+const SectionRenderer = ({ section, sectionIndex, developerWebsite }: SectionRendererProps) => {
   switch (section.type) {
     case 'sponsorIntro':
-      return <SponsorIntroSection data={section.data} sectionIndex={sectionIndex} />;
+      return <SponsorIntroSection data={section.data} sectionIndex={sectionIndex} developerWebsite={developerWebsite} />;
     case 'partnershipOverview':
         return <PartnershipOverviewSection data={section.data} sectionIndex={sectionIndex} />
     case 'trackRecord':
@@ -29,7 +35,12 @@ const SectionRenderer = ({ section, sectionIndex }: { section: SponsorProfileSec
   }
 };
 
-const SponsorProfilePage: React.FC<{ data: SponsorProfile }> = ({ data }) => {
+interface SponsorProfilePageProps {
+  data: SponsorProfile;
+  developerWebsite?: string | null;
+}
+
+const SponsorProfilePage: React.FC<SponsorProfilePageProps> = ({ data, developerWebsite }) => {
   if (!data || !data.sections) {
     return <div>Sponsor profile data is loading or missing...</div>;
   }
@@ -37,7 +48,7 @@ const SponsorProfilePage: React.FC<{ data: SponsorProfile }> = ({ data }) => {
   return (
     <div className="max-w-7xl mx-auto">
       {data.sections.map((section, idx) => (
-          <SectionRenderer key={idx} section={section} sectionIndex={idx} />
+        <SectionRenderer key={idx} section={section} sectionIndex={idx} developerWebsite={developerWebsite} />
       ))}
     </div>
   );

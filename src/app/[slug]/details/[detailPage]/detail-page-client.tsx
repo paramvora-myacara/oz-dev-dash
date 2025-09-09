@@ -102,7 +102,7 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
             case 'marketAnalysis':
               return <MarketAnalysisPage data={pageData as MarketAnalysis} />;
             case 'sponsorProfile':
-              return <SponsorProfilePage data={pageData as SponsorProfile} />;
+              return <SponsorProfilePage data={pageData as SponsorProfile} developerWebsite={listing.developer_website} />;
             default:
               return <div>Content not found</div>;
           }

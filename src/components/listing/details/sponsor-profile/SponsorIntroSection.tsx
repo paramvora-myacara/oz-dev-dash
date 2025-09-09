@@ -2,7 +2,13 @@ import React from 'react';
 import { iconMap } from '../shared/iconMap';
 import { Editable } from '@/components/Editable';
 
-const SponsorIntroSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => {
+interface SponsorIntroSectionProps {
+  data: any;
+  sectionIndex: number;
+  developerWebsite?: string | null;
+}
+
+const SponsorIntroSection: React.FC<SponsorIntroSectionProps> = ({ data, sectionIndex, developerWebsite }) => {
   const renderHighlightIcon = (iconName: string) => {
     const IconComponent = iconMap[iconName];
     return IconComponent ? <IconComponent className="w-6 h-6 text-orange-500" /> : null;
@@ -61,6 +67,18 @@ const SponsorIntroSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
           </div>
         ))}
       </div>
+      {developerWebsite && (
+        <div className="mt-6">
+          <a
+            href={developerWebsite}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-blue-600 hover:underline font-semibold"
+          >
+            Visit Website
+          </a>
+        </div>
+      )}
     </div>
   </div>
   );
