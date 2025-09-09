@@ -143,6 +143,17 @@ const InvestmentComparisonChart: React.FC<InvestmentComparisonChartProps> = ({ p
   }, [sliderValue]);
 
   useEffect(() => {
+    if (
+      typeof defaultCapitalGain === 'number' &&
+      defaultCapitalGain > 0 &&
+      defaultCapitalGain !== capitalGain
+    ) {
+      setCapitalGain(defaultCapitalGain);
+      setSliderValue(capitalGainToSlider(defaultCapitalGain));
+    }
+  }, [defaultCapitalGain]);
+
+  useEffect(() => {
     const { labels, withOzValues, withoutOzValues } = calculateInvestmentValues(capitalGain);
     setChartData({
       labels,

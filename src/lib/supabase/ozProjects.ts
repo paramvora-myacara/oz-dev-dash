@@ -1,25 +1,14 @@
 import { createClient } from '@/utils/supabase/client';
 
 export async function getProjectMetricsBySlug(listingSlug: string) {
+  console.log('getProjectMetricsBySlug called with listingSlug:', listingSlug);
   const supabase = createClient();
 
-  // Step 1: Get the project_slug from listings
-  const { data: listing, error: listingError } = await supabase
-    .from('listings')
-    .select('project_slug')
-    .eq('slug', listingSlug)
-    .single();
-
-  if (listingError || !listing?.project_slug) {
-    console.error('Error fetching project_slug from listings:', listingError);
-    return { projected_irr_10yr: null, equity_multiple_10yr: null };
-  }
-
-  // Step 2: Get the metrics from oz_projects using project_slug
+  // Step 1: Get the metrics from oz_projects using project_slug = listingSlug
   const { data: project, error: projectError } = await supabase
     .from('oz_projects')
     .select('projected_irr_10yr, equity_multiple_10yr, minimum_investment')
-    .eq('slug', listing.project_slug)
+    .eq('project_slug', listingSlug)
     .single();
 
   if (projectError) {
