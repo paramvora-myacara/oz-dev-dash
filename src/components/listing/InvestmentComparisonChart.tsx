@@ -398,7 +398,7 @@ const InvestmentComparisonChart: React.FC<InvestmentComparisonChartProps> = ({ p
                   <div className="px-4 py-3 space-y-4 text-base">
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600 dark:text-gray-400">Assumed IRR:</span>
+                            <span className="text-gray-600 dark:text-gray-400">Assumed IRR (as Annual Growth Rate):</span>
                             <span className="font-medium text-gray-900 dark:text-white">{irr}%</span>
                         </div>
                         <div className="flex justify-between items-center">
