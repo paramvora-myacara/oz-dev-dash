@@ -412,16 +412,16 @@ const InvestmentComparisonChart: React.FC<InvestmentComparisonChartProps> = ({ p
                             <div>
                                 <p className="font-medium text-gray-800 dark:text-gray-200">Non-QOZ Investment:</p>
                                 <ol className="list-decimal list-inside text-gray-600 dark:text-gray-400 space-y-1 pl-2">
-                                    <li>Initial capital gain is taxed at <strong>{(taxRate * 100).toFixed(1)}%</strong>.</li>
+                                    <li>Initial federal capital gain is taxed at <strong>{(taxRate * 100).toFixed(1)}% (20% federal capital gains tax + 3.8% Net Investment Income Tax)</strong>.</li>
                                     <li>The remaining net amount grows at <strong>{irr}%</strong> annually for 10 years.</li>
-                                    <li>The profit from that growth (appreciation) is taxed again at <strong>{(taxRate * 100).toFixed(1)}%</strong>.</li>
+                                    <li>The profit from that growth (appreciation) is taxed again at <strong>{(taxRate * 100).toFixed(1)}% federal capital gains tax</strong>.</li>
                                 </ol>
                             </div>
                             <div>
                                 <p className="font-medium text-gray-800 dark:text-gray-200">QOZ Investment:</p>
                                 <ol className="list-decimal list-inside text-gray-600 dark:text-gray-400 space-y-1 pl-2">
                                     <li>The full, pre-tax capital gain is invested and grows at <strong>{irr}%</strong> annually for 10 years.</li>
-                                    <li>The original capital gains tax is paid after 10 years (deferred).</li>
+                                    <li>The original federal capital gains tax is deferred to EoY 2026 (12/31/26). After 2027, this will change to 5 years rolling.</li>
                                     <li>The profit from the investment's growth is <strong>100% tax-free</strong>.</li>
                                 </ol>
                             </div>
