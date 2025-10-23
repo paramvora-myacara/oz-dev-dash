@@ -321,7 +321,7 @@ function OzRecapFundPage() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-black dark:text-white mb-4">
-                Due Diligence Vault
+                Deal Highlights
               </h2>
               <p className="text-lg md:text-xl text-black/70 dark:text-white/70 font-light max-w-3xl mx-auto">
                 Click any card to learn more and access documentation
