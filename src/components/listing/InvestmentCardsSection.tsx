@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { TrendingUp, Building, Target, Users, Expand } from "lucide-react";
+import { TrendingUp, Building, Target, Users, Expand, BarChart3, Handshake } from "lucide-react";
 import { InvestmentCardsSectionData } from '@/types/listing';
 import { Editable } from '@/components/Editable';
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
@@ -54,6 +54,24 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                             textColor: "text-emerald-900 dark:text-emerald-300",
                             accentColor: "text-emerald-700 dark:text-emerald-400",
                             icon: TrendingUp
+                        },
+                        'fund-structure': {
+                            gradient: "from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20",
+                            textColor: "text-emerald-900 dark:text-emerald-300",
+                            accentColor: "text-emerald-700 dark:text-emerald-400",
+                            icon: BarChart3
+                        },
+                        'portfolio-projects': {
+                            gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
+                            textColor: "text-indigo-900 dark:text-indigo-300",
+                            accentColor: "text-indigo-700 dark:text-indigo-400",
+                            icon: Building
+                        },
+                        'how-investors-participate': {
+                            gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20",
+                            textColor: "text-purple-900 dark:text-purple-300",
+                            accentColor: "text-purple-700 dark:text-purple-400",
+                            icon: Handshake
                         },
                         'property-overview': {
                             gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",

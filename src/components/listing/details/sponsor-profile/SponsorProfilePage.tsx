@@ -7,14 +7,18 @@ import LeadershipTeamSection from './LeadershipTeamSection';
 import DevelopmentPortfolioSection from './DevelopmentPortfolioSection';
 import KeyDevelopmentPartnersSection from './KeyDevelopmentPartnersSection';
 import CompetitiveAdvantagesSection from './CompetitiveAdvantagesSection';
+import FundSponsorProfileSection from '../fund-sponsor-profile/FundSponsorProfileSection';
 
 interface SectionRendererProps {
-  section: SponsorProfileSection;
+  section: SponsorProfileSection | any; // Allow any for fund-specific sections
   sectionIndex: number;
   developerWebsite?: string | null;
+  projectId?: string;
+  isEditMode?: boolean;
+  listingSlug?: string;
 }
 
-const SectionRenderer = ({ section, sectionIndex, developerWebsite }: SectionRendererProps) => {
+const SectionRenderer = ({ section, sectionIndex, developerWebsite, projectId, isEditMode, listingSlug }: SectionRendererProps) => {
   switch (section.type) {
     case 'sponsorIntro':
       return <SponsorIntroSection data={section.data} sectionIndex={sectionIndex} developerWebsite={developerWebsite} />;
@@ -30,25 +34,52 @@ const SectionRenderer = ({ section, sectionIndex, developerWebsite }: SectionRen
         return <KeyDevelopmentPartnersSection data={section.data} sectionIndex={sectionIndex} />
     case 'competitiveAdvantages':
         return <CompetitiveAdvantagesSection data={section.data} sectionIndex={sectionIndex} />
+    case 'fundSponsorEntities':
+      return (
+        <FundSponsorProfileSection
+          data={section.data}
+          sectionIndex={sectionIndex}
+          projectId={projectId || ''}
+          isEditMode={isEditMode || false}
+          listingSlug={listingSlug || ''}
+        />
+      );
     default:
       return null;
   }
 };
 
 interface SponsorProfilePageProps {
-  data: SponsorProfile;
+  data: SponsorProfile | any; // Allow any for fund-specific structure
   developerWebsite?: string | null;
+  projectId?: string;
+  isEditMode?: boolean;
+  listingSlug?: string;
 }
 
-const SponsorProfilePage: React.FC<SponsorProfilePageProps> = ({ data, developerWebsite }) => {
+const SponsorProfilePage: React.FC<SponsorProfilePageProps> = ({ 
+  data, 
+  developerWebsite, 
+  projectId, 
+  isEditMode, 
+  listingSlug 
+}) => {
   if (!data || !data.sections) {
     return <div>Sponsor profile data is loading or missing...</div>;
   }
 
   return (
     <div className="max-w-7xl mx-auto">
-      {data.sections.map((section, idx) => (
-        <SectionRenderer key={idx} section={section} sectionIndex={idx} developerWebsite={developerWebsite} />
+      {data.sections.map((section: any, idx: number) => (
+        <SectionRenderer 
+          key={idx} 
+          section={section} 
+          sectionIndex={idx} 
+          developerWebsite={developerWebsite}
+          projectId={projectId}
+          isEditMode={isEditMode}
+          listingSlug={listingSlug}
+        />
       ))}
     </div>
   );

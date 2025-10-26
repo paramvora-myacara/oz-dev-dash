@@ -8,12 +8,12 @@ import {
   PropertyOverview,
   MarketAnalysis,
   SponsorProfile,
+  FundStructure,
+  PortfolioProjects,
+  HowInvestorsParticipate,
   Listing,
 } from '@/types/listing';
-import FinancialReturnsPage from '@/components/listing/details/financial-returns/FinancialReturnsPage';
-import PropertyOverviewPage from '@/components/listing/details/property-overview/PropertyOverviewPage';
-import MarketAnalysisPage from '@/components/listing/details/market-analysis/MarketAnalysisPage';
-import SponsorProfilePage from '@/components/listing/details/sponsor-profile/SponsorProfilePage';
+import DetailPageRenderer from '@/components/listing/details/DetailPageRenderer';
 import HeaderContent from '@/components/listing/details/shared/HeaderContent';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
@@ -25,6 +25,27 @@ const colorMap = {
       icon: 'text-emerald-400',
       backLink: 'text-emerald-300',
       backLinkHover: 'text-emerald-100'
+    },
+    fundStructure: {
+      title: 'text-emerald-300',
+      subtitle: 'text-emerald-200',
+      icon: 'text-emerald-400',
+      backLink: 'text-emerald-300',
+      backLinkHover: 'text-emerald-100'
+    },
+    portfolioProjects: {
+      title: 'text-indigo-300',
+      subtitle: 'text-indigo-200',
+      icon: 'text-indigo-400',
+      backLink: 'text-indigo-300',
+      backLinkHover: 'text-indigo-100'
+    },
+    howInvestorsParticipate: {
+      title: 'text-purple-300',
+      subtitle: 'text-purple-200',
+      icon: 'text-purple-400',
+      backLink: 'text-purple-300',
+      backLinkHover: 'text-purple-100'
     },
     marketAnalysis: {
       title: 'text-purple-300',
@@ -49,7 +70,7 @@ const colorMap = {
     }
   };
 
-export type ListingDetail = FinancialReturns | PropertyOverview | MarketAnalysis | SponsorProfile;
+export type ListingDetail = FinancialReturns | PropertyOverview | MarketAnalysis | SponsorProfile | FundStructure | PortfolioProjects | HowInvestorsParticipate;
 
 interface DetailPageClientProps {
     listing: Listing;
@@ -88,25 +109,13 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
         <HeaderContent data={pageData} slug={slug} camelCasePage={camelCasePage} colorConfig={colorConfig} />
       </BackgroundSlideshow>
       <section className="py-16 px-8">
-        {(() => {
-          switch (camelCasePage) {
-            case 'financialReturns':
-              return <FinancialReturnsPage data={pageData as FinancialReturns} />;
-            case 'propertyOverview':
-              return <PropertyOverviewPage 
-                data={pageData as PropertyOverview} 
-                projectId={listing.projectId} 
-                isEditMode={isEditMode}
-                listingSlug={slug}
-              />;
-            case 'marketAnalysis':
-              return <MarketAnalysisPage data={pageData as MarketAnalysis} />;
-            case 'sponsorProfile':
-              return <SponsorProfilePage data={pageData as SponsorProfile} developerWebsite={listing.developer_website} />;
-            default:
-              return <div>Content not found</div>;
-          }
-        })()}
+        <DetailPageRenderer
+          pageData={pageData}
+          pageType={camelCasePage}
+          projectId={listing.projectId}
+          isEditMode={isEditMode}
+          listingSlug={slug}
+        />
       </section>
     </div>
   );
