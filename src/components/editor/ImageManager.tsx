@@ -32,7 +32,7 @@ export default function ImageManager({
 
   // Update selectedCategory when defaultCategory changes (e.g., when opening from different sections)
   useEffect(() => {
-    if (isOpen && defaultCategory && defaultCategory !== 'details') {
+    if (isOpen && defaultCategory) {
       setSelectedCategory(defaultCategory);
     }
   }, [isOpen, defaultCategory]);
@@ -51,7 +51,7 @@ export default function ImageManager({
 
   // Load images when category changes
   useEffect(() => {
-    if (isOpen && projectId && selectedCategory !== 'details') {
+    if (isOpen && projectId && selectedCategory) {
       loadImages();
     }
   }, [isOpen, projectId, selectedCategory, loadImages]);
@@ -165,25 +165,27 @@ export default function ImageManager({
           </button>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          {IMAGE_CATEGORIES.map((category) => (
-            <button
-              key={category}
-              onClick={() => {
-                setSelectedCategory(category);
-                clearMessages();
-              }}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                selectedCategory === category
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </button>
-          ))}
-        </div>
+        {/* Category Tabs - only show for standard categories */}
+        {IMAGE_CATEGORIES.includes(selectedCategory as any) && (
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            {IMAGE_CATEGORIES.map((category) => (
+              <button
+                key={category}
+                onClick={() => {
+                  setSelectedCategory(category);
+                  clearMessages();
+                }}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  selectedCategory === category
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">

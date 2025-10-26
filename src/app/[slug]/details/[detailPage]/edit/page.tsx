@@ -28,7 +28,15 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
   }
 
   // Validate detail page
-  const validDetailPages = ['financial-returns', 'property-overview', 'market-analysis', 'sponsor-profile'];
+  const validDetailPages = [
+    'financial-returns', 
+    'property-overview', 
+    'market-analysis', 
+    'sponsor-profile',
+    'fund-structure',
+    'portfolio-projects',
+    'how-investors-participate'
+  ];
   if (!validDetailPages.includes(detailPage)) {
     notFound();
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Users, TrendingUp, Image as ImageIcon } from "lucide-react";
+import { MapPin, Users, TrendingUp, Image as ImageIcon, Plus } from "lucide-react";
 import ImageCarousel from '@/components/ImageCarousel';
 import Lightbox from '@/components/Lightbox';
 import ImageManager from '@/components/editor/ImageManager';
@@ -94,6 +94,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
+  const [openImageManagerFor, setOpenImageManagerFor] = useState<string | null>(null);
   const { updateField } = useListingDraftStore();
   
   useEffect(() => {
@@ -146,6 +147,14 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
       ...prev,
       [projectName]: newImages
     }));
+  };
+
+  const handleOpenImageManager = (projectName: string) => {
+    setOpenImageManagerFor(projectName);
+  };
+
+  const handleCloseImageManager = () => {
+    setOpenImageManagerFor(null);
   };
 
   const handleAddProject = () => {
@@ -269,16 +278,29 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
             </div>
             
             {/* Image Section */}
-            <div className="lg:w-1/2 h-64 lg:h-auto">
+            <div className="lg:w-1/2 h-64 lg:h-auto relative">
               {loadingStates[project.name] ? (
                 <ProjectImageSkeleton />
               ) : projectImages[project.name]?.length > 0 ? (
-                <ImageCarousel
-                  images={projectImages[project.name]}
-                  className="h-full"
-                  autoplay={true}
-                  onImageClick={(index) => handleImageClick(projectImages[project.name], index)}
-                />
+                <>
+                  <ImageCarousel
+                    images={projectImages[project.name]}
+                    className="h-full"
+                    autoplay={true}
+                    onImageClick={(index) => handleImageClick(projectImages[project.name], index)}
+                  />
+                  
+                  {/* Manage Images Button - positioned over the carousel */}
+                  {isEditMode && listingSlug && (
+                    <button
+                      onClick={() => handleOpenImageManager(project.name)}
+                      className="absolute top-4 right-4 z-10 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+                      title="Manage Images"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  )}
+                </>
               ) : (
                 <ProjectImagePlaceholder 
                   projectName={project.name}
@@ -299,6 +321,18 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
           images={lightboxImages}
           startIndex={lightboxStartIndex}
           onClose={() => setIsLightboxOpen(false)}
+        />
+      )}
+
+      {/* Image Manager Modal for each project */}
+      {isEditMode && listingSlug && openImageManagerFor && (
+        <ImageManager
+          listingSlug={listingSlug}
+          projectId={projectId}
+          isOpen={openImageManagerFor !== null}
+          onClose={handleCloseImageManager}
+          onImagesChange={(images) => handleImagesChange(openImageManagerFor, images)}
+          defaultCategory={`details/portfolio-projects/${slugify(openImageManagerFor)}`}
         />
       )}
     </div>
