@@ -30,7 +30,6 @@ function validateListingStructure(data: any): boolean {
   return data && 
          typeof data.listingName === 'string' &&
          typeof data.listingSlug === 'string' &&
-         typeof data.projectId === 'string' &&
          Array.isArray(data.sections) &&
          data.details &&
          typeof data.details === 'object';
@@ -80,7 +79,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
       console.error('❌ Invalid draftData structure before update:', {
         hasListingName: !!draftData.listingName,
         hasListingSlug: !!draftData.listingSlug,
-        hasProjectId: !!draftData.projectId,
         hasSections: Array.isArray(draftData.sections),
         hasDetails: !!draftData.details,
         path,
@@ -99,7 +97,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
             console.error('❌ Invalid draftData structure after update:', {
               hasListingName: !!state.draftData.listingName,
               hasListingSlug: !!state.draftData.listingSlug,
-              hasProjectId: !!state.draftData.projectId,
               hasSections: Array.isArray(state.draftData.sections),
               hasDetails: !!state.draftData.details,
               path,
@@ -149,7 +146,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
           console.error('❌ Invalid stored draft structure:', {
             hasListingName: !!storedDraft.listingName,
             hasListingSlug: !!storedDraft.listingSlug,
-            hasProjectId: !!storedDraft.projectId,
             hasSections: Array.isArray(storedDraft.sections),
             hasDetails: !!storedDraft.details
           });
@@ -191,7 +187,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
       console.error('❌ Cannot persist invalid draftData structure:', {
         hasListingName: !!draftData.listingName,
         hasListingSlug: !!draftData.listingSlug,
-        hasProjectId: !!draftData.projectId,
         hasSections: Array.isArray(draftData.sections),
         hasDetails: !!draftData.details
       });

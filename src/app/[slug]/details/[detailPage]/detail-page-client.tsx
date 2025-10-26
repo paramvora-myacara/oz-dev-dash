@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import BackgroundSlideshow from '@/components/BackgroundSlideshow';
 import { getRandomImages } from '@/utils/supabaseImages';
+import { getProjectIdFromSlug } from '@/utils/listing';
 import {
   FinancialReturns,
   PropertyOverview,
@@ -88,7 +89,8 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
     async function loadBackgroundImages() {
       if (!listing) return;
       try {
-        const images = await getRandomImages(listing.projectId, 'general', 7);
+        const projectId = getProjectIdFromSlug(listing.listingSlug);
+        const images = await getRandomImages(projectId, 'general', 7);
         setBackgroundImages(images);
       } catch (error) {
         console.error('Error loading background images:', error);
@@ -112,9 +114,8 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
         <DetailPageRenderer
           pageData={pageData}
           pageType={camelCasePage}
-          projectId={listing.projectId}
-          isEditMode={isEditMode}
           listingSlug={slug}
+          isEditMode={isEditMode}
         />
       </section>
     </div>

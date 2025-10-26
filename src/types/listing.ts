@@ -545,7 +545,6 @@ export type HowInvestorsParticipateSection =
 export interface Listing {
   listingName: string;
   listingSlug: string;
-  projectId: string; 
   developerInfo?: DeveloperInfo;
   sections: ListingOverviewSection[];
   newsLinks?: NewsCardMetadata[];
@@ -559,4 +558,4 @@ export interface Listing {
     marketAnalysis: MarketAnalysis;
     sponsorProfile: SponsorProfile;
   };
-} 
+}

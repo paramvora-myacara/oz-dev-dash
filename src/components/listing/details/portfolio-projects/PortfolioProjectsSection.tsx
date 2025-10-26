@@ -10,11 +10,11 @@ import { slugify } from '@/utils/slugify';
 import { ProjectOverviewSectionData, PortfolioProject } from '@/types/listing';
 import { Editable } from '@/components/Editable';
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
+import { getProjectIdFromSlug } from '@/utils/listing';
 
 interface ProjectImagePlaceholderProps {
   projectName: string;
   isEditMode?: boolean;
-  projectId: string;
   listingSlug: string;
   onImagesChange?: (images: string[]) => void;
 }
@@ -22,7 +22,6 @@ interface ProjectImagePlaceholderProps {
 const ProjectImagePlaceholder: React.FC<ProjectImagePlaceholderProps> = ({ 
   projectName, 
   isEditMode = false, 
-  projectId, 
   listingSlug, 
   onImagesChange 
 }) => {
@@ -57,7 +56,6 @@ const ProjectImagePlaceholder: React.FC<ProjectImagePlaceholderProps> = ({
       {isImageManagerOpen && (
         <ImageManager
           listingSlug={listingSlug}
-          projectId={projectId}
           defaultCategory={`details/portfolio-projects/${slugify(projectName)}`}
           isOpen={isImageManagerOpen}
           onClose={() => setIsImageManagerOpen(false)}
@@ -305,7 +303,6 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                 <ProjectImagePlaceholder 
                   projectName={project.name}
                   isEditMode={isEditMode}
-                  projectId={projectId}
                   listingSlug={listingSlug}
                   onImagesChange={(images) => handleImagesChange(project.name, images)}
                 />
@@ -328,7 +325,6 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
       {isEditMode && listingSlug && openImageManagerFor && (
         <ImageManager
           listingSlug={listingSlug}
-          projectId={projectId}
           isOpen={openImageManagerFor !== null}
           onClose={handleCloseImageManager}
           onImagesChange={(images) => handleImagesChange(openImageManagerFor, images)}

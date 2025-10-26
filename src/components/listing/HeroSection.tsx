@@ -8,22 +8,22 @@ import Lightbox from '@/components/Lightbox';
 import { getRandomImages } from '@/utils/supabaseImages';
 import { HeroSectionData } from '@/types/listing';
 import ImageManager from '@/components/editor/ImageManager';
+import { getProjectIdFromSlug } from '@/utils/listing';
 
 interface HeroSectionProps {
   data: HeroSectionData;
-  projectId: string;
+  listingSlug: string;
   sectionIndex: number;
   isEditMode?: boolean;
-  listingSlug?: string;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ 
   data, 
-  projectId, 
+  listingSlug, 
   sectionIndex, 
-  isEditMode = false,
-  listingSlug = ''
+  isEditMode = false
 }) => {
+    const projectId = getProjectIdFromSlug(listingSlug);
     const [heroImages, setHeroImages] = useState<string[]>([]);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
@@ -39,7 +39,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           }
         }
         loadHeroImages();
-    }, [projectId]);
+    }, [listingSlug, projectId]);
 
     const handleImageClick = (index: number) => {
         setLightboxStartIndex(index);
@@ -95,7 +95,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                     )}
                     
                     {/* Manage Images Button - positioned over the hero image */}
-                    {isEditMode && listingSlug && (
+                    {isEditMode && (
                         <button
                             onClick={() => setIsImageManagerOpen(true)}
                             className="absolute top-4 right-4 z-10 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
@@ -115,10 +115,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             </section>
 
             {/* Image Manager Modal */}
-            {isEditMode && listingSlug && (
+            {isEditMode && (
                 <ImageManager
                     listingSlug={listingSlug}
-                    projectId={projectId}
                     isOpen={isImageManagerOpen}
                     onClose={() => setIsImageManagerOpen(false)}
                     onImagesChange={handleImagesChange}

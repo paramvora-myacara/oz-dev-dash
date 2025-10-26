@@ -21,16 +21,15 @@ export async function POST(request: Request, context: any) {
   if (!data) return NextResponse.json({ error: 'Missing data' }, { status: 400 })
 
   // Validate that we have a complete Listing object, not just details
-  if (!data.listingName || !data.listingSlug || !data.projectId || !data.sections) {
+  if (!data.listingName || !data.listingSlug || !data.sections) {
     console.error('Incomplete data received:', {
       hasListingName: !!data.listingName,
       hasListingSlug: !!data.listingSlug,
-      hasProjectId: !!data.projectId,
       hasSections: !!data.sections,
       hasDetails: !!data.details
     });
     return NextResponse.json({ 
-      error: 'Incomplete data: must include listingName, listingSlug, projectId, and sections' 
+      error: 'Incomplete data: must include listingName, listingSlug, and sections' 
     }, { status: 400 })
   }
 

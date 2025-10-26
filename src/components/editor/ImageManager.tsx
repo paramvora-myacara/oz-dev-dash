@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { getAvailableImages, IMAGE_CATEGORIES } from '@/utils/supabaseImages';
+import { getProjectIdFromSlug } from '@/utils/listing';
 
 interface ImageManagerProps {
   listingSlug: string;
-  projectId: string;
   isOpen: boolean;
   onClose: () => void;
   onImagesChange?: (images: string[]) => void;
@@ -15,12 +15,12 @@ interface ImageManagerProps {
 
 export default function ImageManager({ 
   listingSlug, 
-  projectId, 
   isOpen, 
   onClose, 
   onImagesChange,
   defaultCategory = 'general'
 }: ImageManagerProps) {
+  const projectId = getProjectIdFromSlug(listingSlug);
   const [selectedCategory, setSelectedCategory] = useState<string>(defaultCategory);
   const [images, setImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);

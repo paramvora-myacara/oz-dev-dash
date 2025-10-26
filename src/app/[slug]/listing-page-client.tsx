@@ -87,10 +87,9 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
         case 'hero':
             return <HeroSection 
               data={section.data} 
-              projectId={listing.projectId} 
+              listingSlug={listing.listingSlug}
               sectionIndex={sectionIndex} 
               isEditMode={isEditMode}
-              listingSlug={listing.listingSlug}
             />;
         case 'tickerMetrics':
             return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;

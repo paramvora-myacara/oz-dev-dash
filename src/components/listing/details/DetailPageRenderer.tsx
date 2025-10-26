@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Listing } from '@/types/listing';
+import { getProjectIdFromSlug } from '@/utils/listing';
 import FinancialReturnsPage from '@/components/listing/details/financial-returns/FinancialReturnsPage';
 import PropertyOverviewPage from '@/components/listing/details/property-overview/PropertyOverviewPage';
 import MarketAnalysisPage from '@/components/listing/details/market-analysis/MarketAnalysisPage';
@@ -13,18 +14,17 @@ import FundSponsorProfileSection from '@/components/listing/details/fund-sponsor
 interface DetailPageRendererProps {
   pageData: any;
   pageType: keyof Listing['details'];
-  projectId: string;
+  listingSlug: string;
   isEditMode?: boolean;
-  listingSlug?: string;
 }
 
 const DetailPageRenderer: React.FC<DetailPageRendererProps> = ({ 
   pageData, 
   pageType, 
-  projectId, 
-  isEditMode = false,
-  listingSlug = ''
+  listingSlug,
+  isEditMode = false
 }) => {
+  const projectId = getProjectIdFromSlug(listingSlug);
   // Handle legacy page types that use existing page components
   if (pageType === 'financialReturns') {
     return <FinancialReturnsPage data={pageData} />;
