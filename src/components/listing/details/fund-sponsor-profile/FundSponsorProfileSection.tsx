@@ -218,13 +218,60 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                         </button>
                       )}
                       
-                      <div className={`${entityIdx === 0 ? 'w-24 h-24' : 'w-16 h-16'} rounded-full mx-auto mb-3 overflow-hidden bg-gray-200`}>
-                        <Editable 
-                          dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.entities[${entityIdx}].team[${memberIdx}].image`}
-                          value={member.image}
-                          className="w-full h-full object-cover scale-110"
-                          inputType="text"
-                        />
+                      <div className={`${entityIdx === 0 ? 'w-24 h-24' : 'w-16 h-16'} rounded-full mx-auto mb-3 overflow-hidden bg-gray-200 flex items-center justify-center`}>
+                        {isEditing ? (
+                          <div className="relative w-full h-full">
+                            {member.image ? (
+                              <img 
+                                src={member.image} 
+                                alt={member.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="text-xs text-gray-500 text-center p-2">
+                                No Image
+                              </div>
+                            )}
+                            <input
+                              type="text"
+                              value={member.image || ''}
+                              onChange={(e) => {
+                                const updatedEntities = entities.map((entity: SponsorEntity, idx: number) => {
+                                  if (idx === entityIdx) {
+                                    return {
+                                      ...entity,
+                                      team: entity.team.map((m: SponsorTeamMember, i: number) => 
+                                        i === memberIdx ? { ...m, image: e.target.value } : m
+                                      )
+                                    };
+                                  }
+                                  return entity;
+                                });
+                                updateField(basePath, updatedEntities);
+                              }}
+                              placeholder="Image URL"
+                              className="absolute bottom-0 left-0 right-0 w-full text-xs p-1 bg-black bg-opacity-50 text-white placeholder-gray-300"
+                            />
+                          </div>
+                        ) : (
+                          member.image ? (
+                            <img 
+                              src={member.image} 
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="12" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          ) : (
+                            <div className="text-xs text-gray-500 text-center p-2">
+                              No Image
+                            </div>
+                          )
+                        )}
                       </div>
                       <Editable 
                         dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.entities[${entityIdx}].team[${memberIdx}].name`}
