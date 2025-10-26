@@ -5,8 +5,6 @@ import { Listing } from '@/types/listing';
 // =================================================================================================
 export const soGoodDallasData: Listing = {
     listingName: "SoGood Dallas",
-    listingSlug: "sogood-dallas",
-    projectId: "sogood-dallas-001",
     sections: [
         {
             type: 'hero',

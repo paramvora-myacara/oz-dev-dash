@@ -5,8 +5,6 @@ import { Listing } from '@/types/listing';
 // =================================================================================================
 export const marshallStLouisData: Listing = {
     listingName: "The Marshall St. Louis",
-    listingSlug: "marshall-st-louis",
-    projectId: "marshall-st-louis-001",
     sections: [
         {
             type: 'hero',

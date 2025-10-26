@@ -17,7 +17,7 @@ export interface KeyMetric {
 }
 
 export interface InvestmentCard {
-  id: 'financial-returns' | 'property-overview' | 'market-analysis' | 'sponsor-profile';
+  id: 'financial-returns' | 'fund-structure' | 'property-overview' | 'portfolio-projects' | 'how-investors-participate' | 'market-analysis' | 'sponsor-profile';
   title: string;
   keyMetrics: KeyMetric[];
   summary: string;
@@ -271,6 +271,24 @@ export interface CompetitiveAdvantagesSectionData {
 }
 
 
+export interface FundSponsorEntitiesSectionData {
+  entities: SponsorEntity[];
+}
+
+export interface SponsorEntity {
+  name: string;
+  role: string;
+  descriptionPoints: string[];
+  team: SponsorTeamMember[];
+}
+
+export interface SponsorTeamMember {
+  name: string;
+  title: string;
+  roleDetail?: string;
+  image: string;
+}
+
 export type SponsorProfileSection =
   | { type: 'sponsorIntro'; data: SponsorIntroSectionData }
   | { type: 'partnershipOverview'; data: PartnershipOverviewSectionData }
@@ -278,7 +296,8 @@ export type SponsorProfileSection =
   | { type: 'leadershipTeam'; data: LeadershipTeamSectionData }
   | { type: 'developmentPortfolio'; data: DevelopmentPortfolioSectionData }
   | { type: 'keyDevelopmentPartners'; data: KeyDevelopmentPartnersSectionData }
-  | { type: 'competitiveAdvantages'; data: CompetitiveAdvantagesSectionData };
+  | { type: 'competitiveAdvantages'; data: CompetitiveAdvantagesSectionData }
+  | { type: 'fundSponsorEntities'; data: FundSponsorEntitiesSectionData };
 
 
 // --- Financial Returns Detail Page Sections ---
@@ -447,18 +466,95 @@ export interface SponsorProfile {
   sections: SponsorProfileSection[];
 }
 
+// --- Fund Structure Detail Page ---
+export interface FundStructure {
+  pageTitle: string;
+  pageSubtitle: string;
+  backgroundImages: string[];
+  sections: FundStructureSection[];
+}
+
+export type FundStructureSection = 
+  | { type: 'projections'; data: ProjectionsSectionData }
+  | { type: 'distributionTimeline'; data: DistributionTimelineSectionData }
+  | { type: 'taxBenefits'; data: TaxBenefitsSectionData }
+  | { type: 'investmentStructure'; data: InvestmentStructureSectionData };
+
+// --- Portfolio Projects Detail Page ---
+export interface PortfolioProjects {
+  pageTitle: string;
+  pageSubtitle: string;
+  backgroundImages: string[];
+  sections: PortfolioProjectsSection[];
+}
+
+export interface PortfolioProject {
+  name: string;
+  location: string;
+  units: number;
+  status: string;
+  rentableSqFt: string;
+  stabilizedNOI: string;
+  capRate: string;
+}
+
+export interface ProjectOverviewSectionData {
+  projects: PortfolioProject[];
+}
+
+export type PortfolioProjectsSection = 
+  | { type: 'projectOverview'; data: ProjectOverviewSectionData };
+
+// --- How Investors Participate Detail Page ---
+export interface HowInvestorsParticipate {
+  pageTitle: string;
+  pageSubtitle: string;
+  backgroundImages: string[];
+  sections: HowInvestorsParticipateSection[];
+}
+
+export interface ParticipationStep {
+  title: string;
+  icon: string;
+  points: string[];
+}
+
+export interface ParticipationStepsSectionData {
+  steps: ParticipationStep[];
+}
+
+export interface FundDetailsItem {
+  label: string;
+  value: string;
+}
+
+export interface FundDetailsSectionData {
+  details: FundDetailsItem[];
+}
+
+export interface FundAdminDetailsSectionData {
+  details: FundDetailsItem[];
+}
+
+export type HowInvestorsParticipateSection = 
+  | { type: 'participationSteps'; data: ParticipationStepsSectionData }
+  | { type: 'fundDetails'; data: FundDetailsSectionData }
+  | { type: 'fundAdminDetails'; data: FundAdminDetailsSectionData };
+
+
 export interface Listing {
   listingName: string;
-  listingSlug: string;
-  projectId: string; 
   developerInfo?: DeveloperInfo;
   sections: ListingOverviewSection[];
   newsLinks?: NewsCardMetadata[];
   developer_website?: string | null;
   details: {
     financialReturns: FinancialReturns;
+    fundStructure?: FundStructure;
+    portfolioProjects?: PortfolioProjects;
+    howInvestorsParticipate?: HowInvestorsParticipate;
     propertyOverview: PropertyOverview;
     marketAnalysis: MarketAnalysis;
     sponsorProfile: SponsorProfile;
   };
-} 
+}

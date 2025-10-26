@@ -24,16 +24,17 @@ interface RenderableSection {
 
 interface ListingPageClientProps {
   listing: Listing;
+  slug: string;
   isEditMode?: boolean;
 }
 
-export default function ListingPageClient({ listing, isEditMode = false }: ListingPageClientProps) {
+export default function ListingPageClient({ listing, slug, isEditMode = false }: ListingPageClientProps) {
   const [projectMetrics, setProjectMetrics] = useState({ projected_irr_10yr: null, equity_multiple_10yr: null, minimum_investment: null });
 
   useEffect(() => {
     async function fetchMetrics() {
-      if (listing?.listingSlug) {
-        const metrics = await getProjectMetricsBySlug(listing.listingSlug);
+      if (slug) {
+        const metrics = await getProjectMetricsBySlug(slug);
         setProjectMetrics({
           projected_irr_10yr: metrics.projected_irr_10yr ?? null,
           equity_multiple_10yr: metrics.equity_multiple_10yr ?? null,
@@ -42,7 +43,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
       }
     }
     fetchMetrics();
-  }, [listing?.listingSlug]);
+  }, [slug]);
 
   const { 
     isAuthModalOpen, 
@@ -65,20 +66,20 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
     if (listing) {
       document.title = listing.listingName;
     }
-  }, [listing]);
+  }, [slug]);
 
-  const showAdminToolbar = !isLoading && isAdmin && canEditSlug(listing.listingSlug) && !isEditMode;
+  const showAdminToolbar = !isLoading && isAdmin && canEditSlug(slug) && !isEditMode;
 
   // Check if user has signed CA for this listing
-  const hasSignedCAForCurrentListing = checkHasSignedCAForListing(listing.listingSlug);
+  const hasSignedCAForCurrentListing = checkHasSignedCAForListing(slug);
 
   const handleVaultAccess = () => {
     if (hasSignedCAForCurrentListing) {
       // User has already signed CA, go directly to vault
-      window.location.href = `/${listing.listingSlug}/access-dd-vault`;
+      window.location.href = `/${slug}/access-dd-vault`;
     } else {
       // User hasn't signed CA, start the request process
-      handleRequestVaultAccess(listing.listingSlug);
+      handleRequestVaultAccess(slug);
     }
   };
 
@@ -87,10 +88,9 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
         case 'hero':
             return <HeroSection 
               data={section.data} 
-              projectId={listing.projectId} 
+              listingSlug={slug}
               sectionIndex={sectionIndex} 
               isEditMode={isEditMode}
-              listingSlug={listing.listingSlug}
             />;
         case 'tickerMetrics':
             return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;
@@ -99,7 +99,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
         case 'executiveSummary':
             return <ExecutiveSummarySection data={section.data} sectionIndex={sectionIndex} />;
         case 'investmentCards':
-            return <InvestmentCardsSection data={section.data} listingSlug={listing.listingSlug} sectionIndex={sectionIndex} />;
+            return <InvestmentCardsSection data={section.data} listingSlug={slug} sectionIndex={sectionIndex} />;
         default:
             return null;
     }
@@ -137,7 +137,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {showAdminToolbar && (
-        <ViewModeToolbar slug={listing.listingSlug} />
+        <ViewModeToolbar slug={slug} />
       )}
       <div className={`max-w-[1920px] mx-auto ${showAdminToolbar ? 'pt-16' : ''}`}>
         {finalSectionsToRender.map((item, index) => (
@@ -160,7 +160,7 @@ export default function ListingPageClient({ listing, isEditMode = false }: Listi
               </button>
             </Tooltip>
             <button
-              onClick={() => handleContactDeveloper(listing.listingSlug)}
+              onClick={() => handleContactDeveloper(slug)}
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium hover:from-emerald-700 hover:to-green-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-green-500/10 hover:shadow-green-500/20"
             >
               Contact the Developer

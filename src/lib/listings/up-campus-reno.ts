@@ -392,8 +392,6 @@ const listingData = {
   function transformListingData(data: any): Listing {
     return {
       listingName: data.listingName,
-      listingSlug: data.listingSlug,
-      projectId: data.projectId,
       developerInfo: data.developerInfo,
       sections: data.sections,
       details: {

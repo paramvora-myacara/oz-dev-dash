@@ -160,7 +160,7 @@ export default function DDVVaultClient({ listing, files, slug }: DDVVaultClientP
               please contact the development team.
             </p>
             <button
-              onClick={() => handleContactDeveloper(listing.listingSlug)}
+              onClick={() => handleContactDeveloper(slug)}
               className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
             >
               Contact Support

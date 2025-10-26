@@ -4,6 +4,7 @@ import { verifyAdminCanEditSlug } from '@/lib/admin/auth';
 import { EditModeProvider } from '@/components/editor/EditModeProvider';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import DetailPageClient from '../detail-page-client';
+import type { ListingDetail } from '@/app/[slug]/details/[detailPage]/detail-page-client';
 
 interface EditDetailPageProps {
   params: Promise<{
@@ -28,7 +29,15 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
   }
 
   // Validate detail page
-  const validDetailPages = ['financial-returns', 'property-overview', 'market-analysis', 'sponsor-profile'];
+  const validDetailPages = [
+    'financial-returns', 
+    'property-overview', 
+    'market-analysis', 
+    'sponsor-profile',
+    'fund-structure',
+    'portfolio-projects',
+    'how-investors-participate'
+  ];
   if (!validDetailPages.includes(detailPage)) {
     notFound();
   }
@@ -38,15 +47,20 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
   
   // Get the page data
   const pageData = listing.details[camelCasePage];
+  
+  // If page data doesn't exist (for optional pages), show 404
+  if (!pageData) {
+    notFound();
+  }
 
   return (
-    <EditModeProvider listing={listing}>
+    <EditModeProvider listing={listing} slug={slug}>
       <div className="min-h-screen bg-gray-50">
         <EditorToolbar />
         <div className="pt-16">
           <DetailPageClient 
             listing={listing} 
-            pageData={pageData}
+            pageData={pageData as ListingDetail}
             slug={slug}
             camelCasePage={camelCasePage}
             isEditMode={true}
