@@ -11,6 +11,7 @@ import { ProjectOverviewSectionData, PortfolioProject } from '@/types/listing';
 import { Editable } from '@/components/Editable';
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 import { getProjectIdFromSlug } from '@/utils/listing';
+import { getByPath } from '@/utils/objectPath';
 
 interface ProjectImagePlaceholderProps {
   projectName: string;
@@ -93,7 +94,11 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [openImageManagerFor, setOpenImageManagerFor] = useState<string | null>(null);
-  const { updateField } = useListingDraftStore();
+  const { updateField, draftData } = useListingDraftStore();
+  
+  // Get projects from draftData if available, otherwise fallback to data prop
+  const basePath = `details.portfolioProjects.sections[${sectionIndex}].data.projects`;
+  const projects = (draftData ? getByPath(draftData, basePath) : null) ?? data.projects ?? [];
   
   useEffect(() => {
     const loadProjectImages = async () => {
@@ -101,13 +106,13 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
       const loading: { [key: string]: boolean } = {};
       
       // Initialize loading states
-      data.projects.forEach(project => {
+      projects.forEach((project: PortfolioProject) => {
         loading[project.name] = true;
       });
       setLoadingStates(loading);
       
       // Load images for each project
-      for (const project of data.projects) {
+      for (const project of projects) {
         try {
           const folderName = slugify(project.name);
           const projectImages = await getAvailableImages(
@@ -132,7 +137,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
     };
     
     loadProjectImages();
-  }, [data.projects, projectId]);
+  }, [projects, projectId]);
 
   const handleImageClick = (images: string[], index: number) => {
     setLightboxImages(images);
@@ -166,12 +171,12 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
       capRate: "0%"
     };
     
-    updateField(`sections[${sectionIndex}].data.projects`, [...data.projects, newProject]);
+    updateField(basePath, [...projects, newProject]);
   };
 
   const handleRemoveProject = (index: number) => {
-    const updatedProjects = data.projects.filter((_, i) => i !== index);
-    updateField(`sections[${sectionIndex}].data.projects`, updatedProjects);
+    const updatedProjects = projects.filter((_: PortfolioProject, i: number) => i !== index);
+    updateField(basePath, updatedProjects);
   };
 
   return (
@@ -195,7 +200,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 gap-12">
-        {data.projects.map((project, idx) => (
+        {projects.map((project: PortfolioProject, idx: number) => (
           <div key={idx} className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row overflow-hidden">
             {/* Project Details */}
             <div className="lg:w-1/2 p-8 flex flex-col">
@@ -212,7 +217,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
               )}
               
               <Editable 
-                dataPath={`sections[${sectionIndex}].data.projects[${idx}].name`}
+                dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].name`}
                 value={project.name}
                 className="text-3xl font-bold text-indigo-900 dark:text-indigo-300 mb-6"
               />
@@ -223,7 +228,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                     <MapPin className="w-5 h-5 mr-2" />Location
                   </span>
                   <Editable 
-                    dataPath={`sections[${sectionIndex}].data.projects[${idx}].location`}
+                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].location`}
                     value={project.location}
                     className="font-bold text-gray-900 dark:text-gray-100"
                   />
@@ -233,7 +238,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                     <Users className="w-5 h-5 mr-2" />Units
                   </span>
                   <Editable 
-                    dataPath={`sections[${sectionIndex}].data.projects[${idx}].units`}
+                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].units`}
                     value={project.units.toString()}
                     className="font-bold text-gray-900 dark:text-gray-100"
                   />
@@ -243,7 +248,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                     <TrendingUp className="w-5 h-5 mr-2" />Cap Rate
                   </span>
                   <Editable 
-                    dataPath={`sections[${sectionIndex}].data.projects[${idx}].capRate`}
+                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].capRate`}
                     value={project.capRate}
                     className="font-bold text-gray-900 dark:text-gray-100"
                   />
@@ -251,7 +256,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                 <div className="flex items-center justify-between text-lg">
                   <span className="font-semibold text-gray-600 dark:text-gray-400">Rentable SF</span>
                   <Editable 
-                    dataPath={`sections[${sectionIndex}].data.projects[${idx}].rentableSqFt`}
+                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].rentableSqFt`}
                     value={project.rentableSqFt}
                     className="font-bold text-gray-900 dark:text-gray-100"
                   />
@@ -259,7 +264,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                 <div className="flex items-center justify-between text-lg">
                   <span className="font-semibold text-gray-600 dark:text-gray-400">Stabilized NOI</span>
                   <Editable 
-                    dataPath={`sections[${sectionIndex}].data.projects[${idx}].stabilizedNOI`}
+                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].stabilizedNOI`}
                     value={project.stabilizedNOI}
                     className="font-bold text-gray-900 dark:text-gray-100"
                   />
@@ -268,7 +273,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
               
               <div className="mt-auto">
                 <Editable 
-                  dataPath={`sections[${sectionIndex}].data.projects[${idx}].status`}
+                  dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].status`}
                   value={project.status}
                   className="inline-block px-4 py-2 bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-full font-medium"
                 />

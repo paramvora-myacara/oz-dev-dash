@@ -5,6 +5,7 @@ import { UserCheck, FileText, Clock } from "lucide-react";
 import { ParticipationStepsSectionData, FundDetailsSectionData } from '@/types/listing';
 import { Editable } from '@/components/Editable';
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
+import { getByPath } from '@/utils/objectPath';
 
 interface ParticipationStepsSectionProps {
   data: ParticipationStepsSectionData;
@@ -12,7 +13,9 @@ interface ParticipationStepsSectionProps {
 }
 
 const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ data, sectionIndex }) => {
-  const { updateField, isEditing } = useListingDraftStore();
+  const { updateField, isEditing, draftData } = useListingDraftStore();
+  const basePath = `details.howInvestorsParticipate.sections[${sectionIndex}].data.steps`;
+  const steps = (draftData ? getByPath(draftData, basePath) : null) ?? data.steps ?? [];
   
   const handleAddStep = () => {
     const newStep = {
@@ -20,24 +23,24 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
       icon: "UserCheck",
       points: ["Point 1", "Point 2"]
     };
-    updateField(`sections[${sectionIndex}].data.steps`, [...data.steps, newStep]);
+    updateField(basePath, [...steps, newStep]);
   };
 
   const handleRemoveStep = (index: number) => {
-    const updatedSteps = data.steps.filter((_, i) => i !== index);
-    updateField(`sections[${sectionIndex}].data.steps`, updatedSteps);
+    const updatedSteps = steps.filter((_: any, i: number) => i !== index);
+    updateField(basePath, updatedSteps);
   };
 
   const handleAddPoint = (stepIndex: number) => {
-    const updatedSteps = [...data.steps];
+    const updatedSteps = [...steps];
     updatedSteps[stepIndex].points.push("New point");
-    updateField(`sections[${sectionIndex}].data.steps`, updatedSteps);
+    updateField(basePath, updatedSteps);
   };
 
   const handleRemovePoint = (stepIndex: number, pointIndex: number) => {
-    const updatedSteps = [...data.steps];
-    updatedSteps[stepIndex].points = updatedSteps[stepIndex].points.filter((_, i) => i !== pointIndex);
-    updateField(`sections[${sectionIndex}].data.steps`, updatedSteps);
+    const updatedSteps = [...steps];
+    updatedSteps[stepIndex].points = updatedSteps[stepIndex].points.filter((_: any, i: number) => i !== pointIndex);
+    updateField(basePath, updatedSteps);
   };
 
   const getIconComponent = (iconName: string) => {
@@ -69,7 +72,7 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
-        {data.steps.map((step, idx) => (
+        {steps.map((step: any, idx: number) => (
           <div key={idx} className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 flex items-start space-x-6">
             {/* Remove Step Button */}
             {isEditing && (
@@ -89,7 +92,7 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
             
             <div className="flex-1">
               <Editable 
-                dataPath={`sections[${sectionIndex}].data.steps[${idx}].title`}
+                dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.steps[${idx}].title`}
                 value={step.title}
                 className="text-2xl font-bold text-purple-900 dark:text-purple-300 mb-4"
               />
@@ -105,12 +108,12 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
               )}
               
               <ul className="space-y-3">
-                {step.points.map((point, pIdx) => (
+                {step.points.map((point: any, pIdx: number) => (
                   <li key={pIdx} className="flex items-start">
                     <div className="w-2 h-2 bg-purple-500 rounded-full mr-4 mt-[10px] flex-shrink-0" />
                     <div className="flex-1">
                       <Editable 
-                        dataPath={`sections[${sectionIndex}].data.steps[${idx}].points[${pIdx}]`}
+                        dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.steps[${idx}].points[${pIdx}]`}
                         value={point}
                         inputType="multiline"
                         className="text-lg text-gray-600 dark:text-gray-400"
@@ -141,16 +144,18 @@ interface FundDetailsSectionProps {
 }
 
 const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIndex }) => {
-  const { updateField, isEditing } = useListingDraftStore();
+  const { updateField, isEditing, draftData } = useListingDraftStore();
+  const basePath = `details.howInvestorsParticipate.sections[${sectionIndex}].data.details`;
+  const details = (draftData ? getByPath(draftData, basePath) : null) ?? data.details ?? [];
   
   const handleAddDetail = () => {
     const newDetail = { label: "Label", value: "Value" };
-    updateField(`sections[${sectionIndex}].data.details`, [...data.details, newDetail]);
+    updateField(basePath, [...details, newDetail]);
   };
 
   const handleRemoveDetail = (index: number) => {
-    const updatedDetails = data.details.filter((_, i) => i !== index);
-    updateField(`sections[${sectionIndex}].data.details`, updatedDetails);
+    const updatedDetails = details.filter((_: any, i: number) => i !== index);
+    updateField(basePath, updatedDetails);
   };
 
   return (
@@ -177,7 +182,7 @@ const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIn
 
       <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100 dark:border-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-          {data.details.map((item, idx) => (
+          {details.map((item: any, idx: number) => (
             <div key={idx} className="space-y-1">
               {isEditing && (
                 <button 
@@ -188,13 +193,13 @@ const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIn
                 </button>
               )}
               <Editable 
-                dataPath={`sections[${sectionIndex}].data.details[${idx}].label`}
+                dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.details[${idx}].label`}
                 value={item.label}
                 className="font-semibold text-lg text-purple-900 dark:text-purple-300"
                 as="div"
               />
               <Editable 
-                dataPath={`sections[${sectionIndex}].data.details[${idx}].value`}
+                dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.details[${idx}].value`}
                 value={item.value}
                 inputType="multiline"
                 className="text-gray-600 dark:text-gray-400"
