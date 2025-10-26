@@ -9,5 +9,5 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
     return <div>Listing not found</div>;
   }
 
-  return <ListingPageClient listing={listing} />;
+  return <ListingPageClient listing={listing} slug={slug} />;
 } 

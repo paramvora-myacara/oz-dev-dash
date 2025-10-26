@@ -12,8 +12,8 @@ interface DraftStore {
   isEditing: boolean;
 
   // Actions
-  initializeDraft: (listing: Listing) => void;
-  initializeDraftWithPersistence: (listing: Listing) => void;
+  initializeDraft: (listing: Listing, slug: string) => void;
+  initializeDraftWithPersistence: (listing: Listing, slug: string) => void;
   updateField: (path: string, value: unknown) => void;
   resetDraft: () => void;
   setIsEditing: (isEditing: boolean) => void;
@@ -29,7 +29,6 @@ const STORAGE_KEY_PREFIX = 'ozdash:draft:';
 function validateListingStructure(data: any): boolean {
   return data && 
          typeof data.listingName === 'string' &&
-         typeof data.listingSlug === 'string' &&
          Array.isArray(data.sections) &&
          data.details &&
          typeof data.details === 'object';
@@ -44,10 +43,10 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
   isEditing: false,
 
   // Actions
-  initializeDraft: (listing: Listing) => {
+  initializeDraft: (listing: Listing, slug: string) => {
     console.log('🔧 initializeDraft called with:', {
       listingName: listing.listingName,
-      listingSlug: listing.listingSlug,
+      slug: slug,
       hasSections: Array.isArray(listing.sections),
       hasDetails: !!listing.details
     });
@@ -55,10 +54,10 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     set(
       produce((state) => {
         // If we're switching to a different listing, reset everything
-        if (state.listingSlug !== listing.listingSlug) {
+        if (state.listingSlug !== slug) {
           state.originalData = listing;
           state.draftData = listing;
-          state.listingSlug = listing.listingSlug;
+          state.listingSlug = slug;
           state.isDirty = false;
         } else {
           // Same listing - only set original data if not already set
@@ -78,7 +77,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     if (draftData && !validateListingStructure(draftData)) {
       console.error('❌ Invalid draftData structure before update:', {
         hasListingName: !!draftData.listingName,
-        hasListingSlug: !!draftData.listingSlug,
         hasSections: Array.isArray(draftData.sections),
         hasDetails: !!draftData.details,
         path,
@@ -96,7 +94,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
           if (!validateListingStructure(state.draftData)) {
             console.error('❌ Invalid draftData structure after update:', {
               hasListingName: !!state.draftData.listingName,
-              hasListingSlug: !!state.draftData.listingSlug,
               hasSections: Array.isArray(state.draftData.sections),
               hasDetails: !!state.draftData.details,
               path,
@@ -145,7 +142,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
         if (storedDraft && !validateListingStructure(storedDraft)) {
           console.error('❌ Invalid stored draft structure:', {
             hasListingName: !!storedDraft.listingName,
-            hasListingSlug: !!storedDraft.listingSlug,
             hasSections: Array.isArray(storedDraft.sections),
             hasDetails: !!storedDraft.details
           });
@@ -158,7 +154,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
         if (storedDraft) {
           console.log('📥 Loading draft from localStorage:', {
             listingName: storedDraft.listingName,
-            listingSlug: storedDraft.listingSlug,
             hasSections: Array.isArray(storedDraft.sections),
             hasDetails: !!storedDraft.details
           });
@@ -186,7 +181,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     if (!validateListingStructure(draftData)) {
       console.error('❌ Cannot persist invalid draftData structure:', {
         hasListingName: !!draftData.listingName,
-        hasListingSlug: !!draftData.listingSlug,
         hasSections: Array.isArray(draftData.sections),
         hasDetails: !!draftData.details
       });
@@ -203,7 +197,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
       localStorage.setItem(storageKey, JSON.stringify(data));
       console.log('💾 Persisted draft to localStorage:', {
         listingName: draftData.listingName,
-        listingSlug: draftData.listingSlug,
         hasSections: Array.isArray(draftData.sections),
         hasDetails: !!draftData.details
       });
@@ -212,24 +205,24 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     }
   },
 
-  initializeDraftWithPersistence: (listing: Listing) => {
+  initializeDraftWithPersistence: (listing: Listing, slug: string) => {
     const { listingSlug } = get();
     
     console.log('🔧 initializeDraftWithPersistence called:', {
       currentSlug: listingSlug,
-      newSlug: listing.listingSlug,
+      newSlug: slug,
       listingName: listing.listingName,
       hasSections: Array.isArray(listing.sections),
       hasDetails: !!listing.details
     });
     
     // If we're switching to a different listing, reset everything
-    if (listingSlug !== listing.listingSlug) {
+    if (listingSlug !== slug) {
       set(
         produce((state) => {
           state.originalData = listing;
           state.draftData = listing;
-          state.listingSlug = listing.listingSlug;
+          state.listingSlug = slug;
           state.isDirty = false;
         })
       );
@@ -244,7 +237,7 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
       );
       
       // Load any existing draft from localStorage for the same listing
-      const storageKey = `${STORAGE_KEY_PREFIX}${listing.listingSlug}`;
+      const storageKey = `${STORAGE_KEY_PREFIX}${slug}`;
       const stored = localStorage.getItem(storageKey);
       
       if (stored) {
@@ -271,14 +264,6 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     }
   },
 
-  checkForUnsavedChanges: () => {
-    const { originalData, draftData } = get();
-    if (!originalData || !draftData) return false;
-    
-    // Simple deep comparison - in a real app you might want a more sophisticated comparison
-    return JSON.stringify(originalData) !== JSON.stringify(draftData);
-  },
-
   markAsSaved: () => {
     const { listingSlug, draftData } = get();
     
@@ -298,7 +283,15 @@ export const useListingDraftStore = create<DraftStore>((set, get) => ({
     
     console.log('✅ Marked draft as saved:', {
       listingName: draftData.listingName,
-      listingSlug: draftData.listingSlug
+      listingSlug: listingSlug
     });
+  },
+
+  checkForUnsavedChanges: () => {
+    const { originalData, draftData } = get();
+    if (!originalData || !draftData) return false;
+    
+    // Simple deep comparison - in a real app you might want a more sophisticated comparison
+    return JSON.stringify(originalData) !== JSON.stringify(draftData);
   },
 })); 

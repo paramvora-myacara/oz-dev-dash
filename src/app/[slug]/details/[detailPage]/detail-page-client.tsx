@@ -89,7 +89,7 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
     async function loadBackgroundImages() {
       if (!listing) return;
       try {
-        const projectId = getProjectIdFromSlug(listing.listingSlug);
+        const projectId = getProjectIdFromSlug(slug);
         const images = await getRandomImages(projectId, 'general', 7);
         setBackgroundImages(images);
       } catch (error) {
@@ -97,7 +97,7 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
       }
     }
     loadBackgroundImages();
-  }, [listing]);
+  }, [listing, slug]);
 
   const colorConfig = colorMap[camelCasePage] || colorMap.sponsorProfile;
   const showAdminToolbar = !isLoading && isAdmin && canEditSlug(slug) && !isEditMode;

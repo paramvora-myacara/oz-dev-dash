@@ -6,10 +6,11 @@ import { Listing } from '@/types/listing';
 
 interface EditModeProviderProps {
   listing: Listing;
+  slug: string;
   children: React.ReactNode;
 }
 
-export function EditModeProvider({ listing, children }: EditModeProviderProps) {
+export function EditModeProvider({ listing, slug, children }: EditModeProviderProps) {
   const { 
     initializeDraftWithPersistence, 
     setIsEditing 
@@ -18,7 +19,7 @@ export function EditModeProvider({ listing, children }: EditModeProviderProps) {
   useEffect(() => {
     // Initialize the draft with persistence - this handles loading from localStorage
     // and only resets if we're switching to a different listing
-    initializeDraftWithPersistence(listing);
+    initializeDraftWithPersistence(listing, slug);
     
     // Set editing mode to true
     setIsEditing(true);
@@ -27,7 +28,7 @@ export function EditModeProvider({ listing, children }: EditModeProviderProps) {
     return () => {
       setIsEditing(false);
     };
-  }, [listing, initializeDraftWithPersistence, setIsEditing]);
+  }, [listing, slug, initializeDraftWithPersistence, setIsEditing]);
 
   return <>{children}</>;
 } 
