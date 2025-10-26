@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Star, Briefcase } from "lucide-react";
-import { FundSponsorEntitiesSectionData, SponsorEntity, TeamMember } from '@/types/listing';
+import { FundSponsorEntitiesSectionData, SponsorEntity, SponsorTeamMember } from '@/types/listing';
 import { Editable } from '@/components/Editable';
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 import { getByPath } from '@/utils/objectPath';
@@ -10,7 +10,6 @@ import { getByPath } from '@/utils/objectPath';
 interface FundSponsorProfileSectionProps {
   data: FundSponsorEntitiesSectionData;
   sectionIndex: number;
-  projectId: string;
   isEditMode?: boolean;
   listingSlug?: string;
 }
@@ -18,7 +17,6 @@ interface FundSponsorProfileSectionProps {
 const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({ 
   data, 
   sectionIndex, 
-  projectId,
   isEditMode = false,
   listingSlug = ''
 }) => {
@@ -68,13 +66,11 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
   };
 
   const handleAddTeamMember = (entityIndex: number) => {
-    const newMember: TeamMember = {
+    const newMember: SponsorTeamMember = {
       name: "New Member",
       title: "Title",
       roleDetail: "Role Detail",
       image: "",
-      experience: "Experience",
-      background: "Background"
     };
     const updatedEntities = entities.map((entity: SponsorEntity, idx: number) => {
       if (idx === entityIndex) {
@@ -210,7 +206,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                 )}
                 
                 <div className={`grid gap-x-6 gap-y-8 text-center ${entityIdx === 0 ? 'grid-cols-3' : 'grid-cols-3'}`}>
-                  {entity.team.map((member: TeamMember, memberIdx: number) => (
+                  {entity.team.map((member: SponsorTeamMember, memberIdx: number) => (
                     <div key={memberIdx}>
                       {/* Remove Team Member Button */}
                       {isEditing && (

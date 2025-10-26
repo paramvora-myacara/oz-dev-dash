@@ -13,12 +13,11 @@ interface SectionRendererProps {
   section: SponsorProfileSection | any; // Allow any for fund-specific sections
   sectionIndex: number;
   developerWebsite?: string | null;
-  projectId?: string;
   isEditMode?: boolean;
   listingSlug?: string;
 }
 
-const SectionRenderer = ({ section, sectionIndex, developerWebsite, projectId, isEditMode, listingSlug }: SectionRendererProps) => {
+const SectionRenderer = ({ section, sectionIndex, developerWebsite, isEditMode, listingSlug }: SectionRendererProps) => {
   switch (section.type) {
     case 'sponsorIntro':
       return <SponsorIntroSection data={section.data} sectionIndex={sectionIndex} developerWebsite={developerWebsite} />;
@@ -39,7 +38,6 @@ const SectionRenderer = ({ section, sectionIndex, developerWebsite, projectId, i
         <FundSponsorProfileSection
           data={section.data}
           sectionIndex={sectionIndex}
-          projectId={projectId || ''}
           isEditMode={isEditMode || false}
           listingSlug={listingSlug || ''}
         />
@@ -52,7 +50,6 @@ const SectionRenderer = ({ section, sectionIndex, developerWebsite, projectId, i
 interface SponsorProfilePageProps {
   data: SponsorProfile | any; // Allow any for fund-specific structure
   developerWebsite?: string | null;
-  projectId?: string;
   isEditMode?: boolean;
   listingSlug?: string;
 }
@@ -60,7 +57,6 @@ interface SponsorProfilePageProps {
 const SponsorProfilePage: React.FC<SponsorProfilePageProps> = ({ 
   data, 
   developerWebsite, 
-  projectId, 
   isEditMode, 
   listingSlug 
 }) => {
@@ -76,7 +72,6 @@ const SponsorProfilePage: React.FC<SponsorProfilePageProps> = ({
           section={section} 
           sectionIndex={idx} 
           developerWebsite={developerWebsite}
-          projectId={projectId}
           isEditMode={isEditMode}
           listingSlug={listingSlug}
         />

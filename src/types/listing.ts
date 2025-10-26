@@ -279,10 +279,10 @@ export interface SponsorEntity {
   name: string;
   role: string;
   descriptionPoints: string[];
-  team: TeamMember[];
+  team: SponsorTeamMember[];
 }
 
-export interface TeamMember {
+export interface SponsorTeamMember {
   name: string;
   title: string;
   roleDetail?: string;
@@ -544,16 +544,15 @@ export type HowInvestorsParticipateSection =
 
 export interface Listing {
   listingName: string;
-  listingSlug: string;
   developerInfo?: DeveloperInfo;
   sections: ListingOverviewSection[];
   newsLinks?: NewsCardMetadata[];
   developer_website?: string | null;
   details: {
     financialReturns: FinancialReturns;
-    fundStructure: FundStructure;
-    portfolioProjects: PortfolioProjects;
-    howInvestorsParticipate: HowInvestorsParticipate;
+    fundStructure?: FundStructure;
+    portfolioProjects?: PortfolioProjects;
+    howInvestorsParticipate?: HowInvestorsParticipate;
     propertyOverview: PropertyOverview;
     marketAnalysis: MarketAnalysis;
     sponsorProfile: SponsorProfile;

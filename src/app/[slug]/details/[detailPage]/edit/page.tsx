@@ -4,6 +4,7 @@ import { verifyAdminCanEditSlug } from '@/lib/admin/auth';
 import { EditModeProvider } from '@/components/editor/EditModeProvider';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import DetailPageClient from '../detail-page-client';
+import type { ListingDetail } from '@/app/[slug]/details/[detailPage]/detail-page-client';
 
 interface EditDetailPageProps {
   params: Promise<{
@@ -46,6 +47,11 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
   
   // Get the page data
   const pageData = listing.details[camelCasePage];
+  
+  // If page data doesn't exist (for optional pages), show 404
+  if (!pageData) {
+    notFound();
+  }
 
   return (
     <EditModeProvider listing={listing} slug={slug}>
@@ -54,7 +60,7 @@ export default async function EditDetailPage({ params }: EditDetailPageProps) {
         <div className="pt-16">
           <DetailPageClient 
             listing={listing} 
-            pageData={pageData}
+            pageData={pageData as ListingDetail}
             slug={slug}
             camelCasePage={camelCasePage}
             isEditMode={true}

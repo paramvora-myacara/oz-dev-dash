@@ -34,7 +34,6 @@ const DetailPageRenderer: React.FC<DetailPageRendererProps> = ({
     return (
       <PropertyOverviewPage 
         data={pageData} 
-        projectId={projectId} 
         isEditMode={isEditMode}
         listingSlug={listingSlug}
       />
@@ -50,7 +49,6 @@ const DetailPageRenderer: React.FC<DetailPageRendererProps> = ({
       <SponsorProfilePage 
         data={pageData} 
         developerWebsite={null}
-        projectId={projectId}
         isEditMode={isEditMode}
         listingSlug={listingSlug}
       />
@@ -87,7 +85,6 @@ const DetailPageRenderer: React.FC<DetailPageRendererProps> = ({
                   key={idx}
                   data={section.data}
                   sectionIndex={idx}
-                  projectId={projectId}
                   isEditMode={isEditMode}
                   listingSlug={listingSlug}
                 />

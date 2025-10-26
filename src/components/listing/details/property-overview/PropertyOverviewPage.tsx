@@ -11,7 +11,6 @@ import FloorplanSitemapSection from '@/components/FloorplanSitemapSection';
 
 interface PropertyOverviewPageProps {
   data: PropertyOverview;
-  projectId: string;
   isEditMode?: boolean;
   listingSlug?: string;
 }
@@ -39,7 +38,6 @@ const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex
 
 const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({ 
   data, 
-  projectId, 
   isEditMode = false,
   listingSlug = ''
 }) => {
@@ -50,7 +48,6 @@ const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({
   return (
     <div className="max-w-7xl mx-auto">
       <FloorplanSitemapSection 
-        projectId={projectId} 
         isEditMode={isEditMode}
         listingSlug={listingSlug}
       />

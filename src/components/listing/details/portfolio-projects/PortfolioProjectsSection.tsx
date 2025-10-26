@@ -76,7 +76,6 @@ const ProjectImageSkeleton: React.FC = () => (
 interface PortfolioProjectsSectionProps {
   data: ProjectOverviewSectionData;
   sectionIndex: number;
-  projectId: string;
   isEditMode?: boolean;
   listingSlug?: string;
 }
@@ -84,10 +83,10 @@ interface PortfolioProjectsSectionProps {
 const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({ 
   data, 
   sectionIndex, 
-  projectId, 
   isEditMode = false,
   listingSlug = ''
 }) => {
+  const projectId = getProjectIdFromSlug(listingSlug);
   const [projectImages, setProjectImages] = useState<{ [key: string]: string[] }>({});
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);

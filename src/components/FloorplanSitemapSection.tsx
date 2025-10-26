@@ -7,18 +7,18 @@ import { Map, Home, ChevronLeft, ChevronRight, ZoomIn, Download, Plus } from 'lu
 import { getAvailableImages, type ProjectId, type ImageCategory } from '../utils/supabaseImages';
 import Lightbox from './Lightbox';
 import ImageManager from './editor/ImageManager';
+import { getProjectIdFromSlug } from '../utils/listing';
 
 interface FloorplanSitemapSectionProps {
-  projectId: ProjectId;
   isEditMode?: boolean;
   listingSlug?: string;
 }
 
 export default function FloorplanSitemapSection({ 
-  projectId, 
   isEditMode = false,
   listingSlug = ''
 }: FloorplanSitemapSectionProps) {
+  const projectId = getProjectIdFromSlug(listingSlug);
   const [floorplanImages, setFloorplanImages] = useState<string[]>([]);
   const [sitemapImages, setSitemapImages] = useState<string[]>([]);
   const [floorplanIndex, setFloorplanIndex] = useState(0);
@@ -442,7 +442,6 @@ export default function FloorplanSitemapSection({
       {isEditMode && listingSlug && (
         <ImageManager
           listingSlug={listingSlug}
-          projectId={projectId}
           isOpen={imageManager.isOpen}
           onClose={() => setImageManager({ isOpen: false, category: 'floorplan' })}
           onImagesChange={handleImagesChange}

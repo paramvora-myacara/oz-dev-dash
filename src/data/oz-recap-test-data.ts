@@ -4,7 +4,6 @@
 export const ozRecapTestData = {
   listingName: "OZ Recap Fund, LLC",
   listingSlug: "oz-recap-test",
-  projectId: "oz-recap-test-001",
   developer_website: null,
   sections: [
     {
