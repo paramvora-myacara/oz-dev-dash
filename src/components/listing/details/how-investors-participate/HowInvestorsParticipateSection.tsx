@@ -172,31 +172,34 @@ const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIn
         </div>
       )}
 
+      {/* Fund Details Heading */}
+      <h2 className="text-4xl font-semibold text-gray-900 dark:text-gray-100 mb-8 text-center mt-16">Fund Details</h2>
+
       <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
           {data.details.map((item, idx) => (
-            <div key={idx} className="flex items-start space-x-4">
+            <div key={idx} className="space-y-1">
               {isEditing && (
                 <button 
                   onClick={() => handleRemoveDetail(idx)}
-                  className="mt-1 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                  className="mb-2 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
                 >
                   ×
                 </button>
               )}
-              <div className="flex-1">
-                <Editable 
-                  dataPath={`sections[${sectionIndex}].data.details[${idx}].label`}
-                  value={item.label}
-                  className="font-semibold text-lg text-purple-900 dark:text-purple-300"
-                />
-                <Editable 
-                  dataPath={`sections[${sectionIndex}].data.details[${idx}].value`}
-                  value={item.value}
-                  inputType="multiline"
-                  className="text-gray-600 dark:text-gray-400 mt-1"
-                />
-              </div>
+              <Editable 
+                dataPath={`sections[${sectionIndex}].data.details[${idx}].label`}
+                value={item.label}
+                className="font-semibold text-lg text-purple-900 dark:text-purple-300"
+                as="div"
+              />
+              <Editable 
+                dataPath={`sections[${sectionIndex}].data.details[${idx}].value`}
+                value={item.value}
+                inputType="multiline"
+                className="text-gray-600 dark:text-gray-400"
+                as="div"
+              />
             </div>
           ))}
         </div>

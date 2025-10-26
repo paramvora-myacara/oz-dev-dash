@@ -118,11 +118,13 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                       dataPath={`sections[${sectionIndex}].data.entities[${entityIdx}].name`}
                       value={entity.name}
                       className="text-2xl font-bold text-orange-900 dark:text-orange-300"
+                      as="div"
                     />
                     <Editable 
                       dataPath={`sections[${sectionIndex}].data.entities[${entityIdx}].role`}
                       value={entity.role}
                       className="text-lg font-semibold text-orange-700 dark:text-orange-400"
+                      as="div"
                     />
                   </div>
                 </div>
@@ -201,17 +203,20 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                         dataPath={`sections[${sectionIndex}].data.entities[${entityIdx}].team[${memberIdx}].name`}
                         value={member.name}
                         className={`font-bold text-gray-800 dark:text-gray-200 ${entityIdx === 0 ? 'text-sm' : 'text-xs'}`}
+                        as="div"
                       />
                       <Editable 
                         dataPath={`sections[${sectionIndex}].data.entities[${entityIdx}].team[${memberIdx}].title`}
                         value={member.title}
                         className={`text-gray-500 dark:text-gray-400 ${entityIdx === 0 ? 'text-sm' : 'text-xs'}`}
+                        as="div"
                       />
                       {member.roleDetail && (
                         <Editable 
                           dataPath={`sections[${sectionIndex}].data.entities[${entityIdx}].team[${memberIdx}].roleDetail`}
                           value={member.roleDetail}
                           className={`text-gray-500 dark:text-gray-400 mt-1 ${entityIdx === 0 ? 'text-xs' : 'text-xs'}`}
+                          as="div"
                         />
                       )}
                     </div>
