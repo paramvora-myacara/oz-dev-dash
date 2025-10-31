@@ -6,12 +6,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const forwardedHost = request.headers.get('x-forwarded-host');
 
-  // If the request is for a Next.js asset and it's being forwarded from the main domain,
-  // we need to rewrite the URL to load it from this app's actual domain.
-  if (pathname.startsWith('/_next') && forwardedHost && forwardedHost.includes('ozlistings.com')) {
-    const assetUrl = new URL(pathname, 'https://oz-dev-dash-ten.vercel.app');
-    return NextResponse.rewrite(assetUrl);
-  }
+  // Removed ozlistings-only asset rewrite; asset proxying is handled in oz-homepage
 
   let response = NextResponse.next({
     request: {
