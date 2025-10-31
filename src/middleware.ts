@@ -3,6 +3,16 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // The middleware function, as required by Next.js
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const forwardedHost = request.headers.get('x-forwarded-host');
+
+  // If the request is for a Next.js asset and it's being forwarded from the main domain,
+  // we need to rewrite the URL to load it from this app's actual domain.
+  if (pathname.startsWith('/_next') && forwardedHost && forwardedHost.includes('ozlistings.com')) {
+    const assetUrl = new URL(pathname, 'https://oz-dev-dash-ten.vercel.app');
+    return NextResponse.rewrite(assetUrl);
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -59,43 +69,6 @@ export async function middleware(request: NextRequest) {
   await supabase.auth.getUser()
 
   // Host-based routing for whitelabeled domains
-  const { pathname, search } = request.nextUrl
-  const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
-  const hostname = rawHost.split(':')[0]?.toLowerCase() || ''
-
-  const isInternal =
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname === '/favicon.ico'
-
-  if (hostname && !isInternal) {
-    const { data: domain } = await supabase
-      .from('domains')
-      .select('listing_slug')
-      .eq('hostname', hostname)
-      .maybeSingle()
-
-    if (domain?.listing_slug) {
-      const slug = domain.listing_slug
-      const isEditPath = pathname.includes('/edit')
-      const isAdminPath = pathname.startsWith('/admin')
-      const alreadySlugged = pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)
-
-      // Block admin and edit routes on whitelabeled domains
-      if (isAdminPath || isEditPath) {
-        return NextResponse.redirect(new URL('/', request.url))
-      }
-
-      // For non-edit paths, rewrite to slugged version
-      if (!alreadySlugged) {
-        const url = request.nextUrl.clone()
-        url.pathname = pathname === '/' ? `/${slug}` : `/${slug}${pathname}`
-        return NextResponse.rewrite(url)
-      }
-    }
-  }
-
-  // Admin protection for /admin and /{slug}/edit routes
   const { pathname: pathnameForAdmin } = request.nextUrl
   
   // Check if this is an admin route that needs protection
