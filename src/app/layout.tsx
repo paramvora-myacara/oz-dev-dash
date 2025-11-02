@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
-import ThemeToggle from "../components/theme-toggle";
+import Header from "@/components/OZHeader/Header";
+import FooterWrapper from "@/components/OZFooter/FooterWrapper";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,17 +17,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
         {/* SignWell Script for Confidentiality Agreement Signing */}
         <script src="https://static.signwell.com/assets/embedded.js"></script>
       </head>
       <body className="bg-white dark:bg-black antialiased">
-        <div className="min-h-screen">
-          {/* Theme Toggle - Positioned in top right */}
-          <div className="fixed right-8 top-8 z-50">
-            <ThemeToggle />
-          </div>
-          
-          <main>{children}</main>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1 pt-20">{children}</main>
+          <FooterWrapper />
           {/* Persistent OZListings Pill */}
           <div className="fixed bottom-6 right-6 z-50">
             <a

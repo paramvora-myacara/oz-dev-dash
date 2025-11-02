@@ -103,11 +103,11 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
   const showAdminToolbar = !isLoading && isAdmin && canEditSlug(slug) && !isEditMode;
 
   return (
-    <div className="min-h-screen bg-bg-main dark:bg-black">
+    <div className="bg-bg-main dark:bg-black">
       {showAdminToolbar && (
         <ViewModeToolbar slug={slug} detailPage={camelCasePage} />
       )}
-      <BackgroundSlideshow images={backgroundImages} className={`${showAdminToolbar ? 'pt-32' : 'pt-16'} pb-16`} intervalMs={6000}>
+      <BackgroundSlideshow images={backgroundImages} className={`${showAdminToolbar ? 'pt-32' : 'pt-0'} pb-16`} intervalMs={6000}>
         <HeaderContent data={pageData} slug={slug} camelCasePage={camelCasePage} colorConfig={colorConfig} />
       </BackgroundSlideshow>
       <section className="py-16 px-8">
