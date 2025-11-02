@@ -2,32 +2,26 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { useSearchParams } from 'next/navigation'
 import { useEventTracker } from './useEventTracker'
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 
-const USER_UID_KEY = 'ozl_user_uid'
-
 export function useAuthentication() {
   const supabase = createClient()
-  const searchParams = useSearchParams()
   const { trackEvent } = useEventTracker()
   const [userId, setUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
+  // Initialize from existing Supabase session on mount
   useEffect(() => {
-    const ozlUid = searchParams.get('uid')
-    if (ozlUid) {
-      sessionStorage.setItem(USER_UID_KEY, ozlUid)
-      setUserId(ozlUid)
-    } else {
-      const storedUid = sessionStorage.getItem(USER_UID_KEY)
-      if (storedUid) {
-        setUserId(storedUid)
+    const initializeSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        setUserId(session.user.id)
       }
     }
-  }, [searchParams])
+    initializeSession()
+  }, [supabase])
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -35,11 +29,9 @@ export function useAuthentication() {
         if (event === 'SIGNED_IN' && session?.user?.id) {
           const newUserId = session.user.id
           setUserId(newUserId)
-          sessionStorage.setItem(USER_UID_KEY, newUserId)
           trackEvent(newUserId, 'page_view')
         } else if (event === 'SIGNED_OUT') {
           setUserId(null)
-          sessionStorage.removeItem(USER_UID_KEY)
         }
       }
     )
@@ -92,7 +84,6 @@ export function useAuthentication() {
         if (authData.user) {
           const newUserId = authData.user.id
           setUserId(newUserId)
-          sessionStorage.setItem(USER_UID_KEY, newUserId)
           
           // Don't automatically track request_vault_access here since this hook is used for general auth
           // The specific event should be tracked by the calling code based on context
