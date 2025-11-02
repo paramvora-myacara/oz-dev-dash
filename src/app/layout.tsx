@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
+import { Suspense } from "react";
 import Header from "@/components/OZHeader/Header";
 import FooterWrapper from "@/components/OZFooter/FooterWrapper";
 
@@ -23,7 +24,9 @@ export default function RootLayout({
       </head>
       <body className="bg-white dark:bg-black antialiased">
         <div className="min-h-screen flex flex-col">
-          <Header />
+          <Suspense fallback={<div className="fixed top-0 left-0 right-0 z-50 h-20 bg-white dark:bg-black" />}>
+            <Header />
+          </Suspense>
           <main className="flex-1 pt-20">{children}</main>
           <FooterWrapper />
           {/* Persistent OZListings Pill */}
