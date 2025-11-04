@@ -1,8 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import { Users } from 'lucide-react';
 import React from 'react';
 import { useListingDraftStore } from '@/hooks/useListingDraftStore';
 import { Editable } from '@/components/Editable';
+import { getListingPath } from '@/utils/helpers';
 
 interface ColorConfig {
     title: string;
@@ -26,11 +29,13 @@ interface ColorConfig {
       subtitle = data.pageSubtitle;
     }
     
+    const backPath = isEditing ? `/${slug}/edit#investment-cards` : `/${slug}#investment-cards`;
+    
     return (
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-8">
           <Link
-            href={isEditing ? `/${slug}/edit#investment-cards` : `/${slug}#investment-cards`}
+            href={getListingPath(backPath)}
             className={`inline-flex items-center ${colorConfig.backLink} hover:${colorConfig.backLinkHover} mb-8 transition-colors`}
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
