@@ -26,4 +26,31 @@ export const formatDate = (dateString: string): string => {
     } catch (error) {
         return 'Invalid date';
     }
+}
+
+/**
+ * Prefixes listing paths with /listings/ when accessed via oz-homepage rewrite
+ * This ensures links work correctly when oz-dev-dash is accessed through ozlistings.com
+ * Note: Edit routes are excluded as they should not be accessible via ozlistings.com
+ * @param path - The listing path (e.g., "/my-slug/details/financial-returns")
+ * @returns The path with /listings/ prefix if on ozlistings.com, otherwise unchanged
+ */
+export const getListingPath = (path: string): string => {
+    // Don't prefix edit routes - they should only be accessible directly on oz-dev-dash
+    if (path.includes('/edit')) {
+        return path;
+    }
+    
+    // Check if we're in a browser environment
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname.toLowerCase();
+        // If we're on ozlistings.com, prefix with /listings/ for the rewrite to work
+        if (hostname === 'ozlistings.com' || hostname === 'www.ozlistings.com') {
+            // Ensure path starts with / and doesn't already have /listings/
+            if (path.startsWith('/') && !path.startsWith('/listings/')) {
+                return `/listings${path}`;
+            }
+        }
+    }
+    return path;
 } 
