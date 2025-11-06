@@ -72,7 +72,8 @@ export async function middleware(request: NextRequest) {
     const isInternal =
       currentPathname.startsWith('/_next') ||
       currentPathname.startsWith('/api') ||
-      currentPathname === '/favicon.ico'
+      currentPathname === '/favicon.ico' ||
+      /\.(svg|png|jpg|jpeg|gif|webp)$/i.test(currentPathname)
 
     if (hostname && !isInternal) {
       const { data: domain } = await supabase
