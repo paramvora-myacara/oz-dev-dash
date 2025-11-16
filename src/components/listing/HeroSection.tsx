@@ -15,13 +15,15 @@ interface HeroSectionProps {
   listingSlug: string;
   sectionIndex: number;
   isEditMode?: boolean;
+  executiveSummary?: string | null;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ 
   data, 
   listingSlug, 
   sectionIndex, 
-  isEditMode = false
+  isEditMode = false,
+  executiveSummary = null
 }) => {
     const projectId = getProjectIdFromSlug(listingSlug);
     const [heroImages, setHeroImages] = useState<string[]>([]);
@@ -57,6 +59,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-black dark:text-white tracking-tight mb-6">
                         {data.listingName}
                     </h1>
+                    {executiveSummary && (
+                        <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                            {executiveSummary}
+                        </p>
+                    )}
                     <div className="flex flex-wrap gap-3">
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm">
                             <MapPin className="w-4 h-4" />

@@ -29,7 +29,7 @@ interface ListingPageClientProps {
 }
 
 export default function ListingPageClient({ listing, slug, isEditMode = false }: ListingPageClientProps) {
-  const [projectMetrics, setProjectMetrics] = useState({ projected_irr_10yr: null, equity_multiple_10yr: null, minimum_investment: null });
+  const [projectMetrics, setProjectMetrics] = useState({ projected_irr_10yr: null, equity_multiple_10yr: null, minimum_investment: null, executive_summary: null });
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -39,6 +39,7 @@ export default function ListingPageClient({ listing, slug, isEditMode = false }:
           projected_irr_10yr: metrics.projected_irr_10yr ?? null,
           equity_multiple_10yr: metrics.equity_multiple_10yr ?? null,
           minimum_investment: metrics.minimum_investment ?? null,
+          executive_summary: metrics.executive_summary ?? null,
         });
       }
     }
@@ -91,6 +92,7 @@ export default function ListingPageClient({ listing, slug, isEditMode = false }:
               listingSlug={slug}
               sectionIndex={sectionIndex} 
               isEditMode={isEditMode}
+              executiveSummary={projectMetrics.executive_summary}
             />;
         case 'tickerMetrics':
             return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;
