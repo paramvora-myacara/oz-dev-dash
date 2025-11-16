@@ -16,6 +16,7 @@ import {
 } from '@/types/listing';
 import DetailPageRenderer from '@/components/listing/details/DetailPageRenderer';
 import HeaderContent from '@/components/listing/details/shared/HeaderContent';
+import ListingActionButtons from '@/components/listing/ListingActionButtons';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
 
@@ -118,6 +119,8 @@ export default function DetailPageClient({ listing, pageData, slug, camelCasePag
           isEditMode={isEditMode}
         />
       </section>
+      {/* Call to Action Buttons */}
+      <ListingActionButtons slug={slug} />
     </div>
   );
 } 
