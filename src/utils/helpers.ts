@@ -5,17 +5,17 @@ export const toCamelCase = (slug: string): string => {
 
 export const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 export const formatDate = (dateString: string): string => {
     if (!dateString) return 'Unknown date';
-    
+
     try {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -40,12 +40,19 @@ export const getListingPath = (path: string): string => {
     if (path.includes('/edit')) {
         return path;
     }
-    
+
     // Check if we're in a browser environment
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname.toLowerCase();
-        // If we're on ozlistings.com, prefix with /listings/ for the rewrite to work
-        if (hostname === 'ozlistings.com' || hostname === 'www.ozlistings.com') {
+        const pathname = window.location.pathname;
+
+        // Check if we are on ozlistings.com OR if the current path starts with /listings (local dev proxy)
+        const isOzListings =
+            hostname === 'ozlistings.com' ||
+            hostname === 'www.ozlistings.com' ||
+            pathname.startsWith('/listings');
+
+        if (isOzListings) {
             // Ensure path starts with / and doesn't already have /listings/
             if (path.startsWith('/') && !path.startsWith('/listings/')) {
                 return `/listings${path}`;

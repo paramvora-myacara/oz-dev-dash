@@ -3,22 +3,23 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Tooltip } from '@/components/Tooltip';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
+import { getListingPath } from '@/utils/helpers';
 
 interface ListingActionButtonsProps {
   slug: string;
 }
 
 export default function ListingActionButtons({ slug }: ListingActionButtonsProps) {
-  const { 
-    isAuthModalOpen, 
-    isConfirmationModalOpen, 
-    authError, 
-    isLoading, 
+  const {
+    isAuthModalOpen,
+    isConfirmationModalOpen,
+    authError,
+    isLoading,
     userFullName,
     userEmail,
     userPhoneNumber,
     checkHasSignedCAForListing,
-    handleRequestVaultAccess, 
+    handleRequestVaultAccess,
     handleSignInOrUp,
     handleContactDeveloper,
     closeModal,
@@ -31,7 +32,7 @@ export default function ListingActionButtons({ slug }: ListingActionButtonsProps
   const handleVaultAccess = () => {
     if (hasSignedCAForCurrentListing) {
       // User has already signed CA, go directly to vault
-      window.location.href = `/${slug}/access-dd-vault`;
+      window.location.href = getListingPath(`/${slug}/access-dd-vault`);
     } else {
       // User hasn't signed CA, start the request process
       handleRequestVaultAccess(slug);
@@ -42,7 +43,7 @@ export default function ListingActionButtons({ slug }: ListingActionButtonsProps
     <>
       <section className="py-8 md:py-16 px-4 md:px-8 bg-white dark:bg-black">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 justify-center">
-          <Tooltip 
+          <Tooltip
             content="For access to confidential deal information (i.e. - Private Placement Memorandum, Fund Operating Agreement, Subscription Agreement, and other documents)."
             position="top"
           >

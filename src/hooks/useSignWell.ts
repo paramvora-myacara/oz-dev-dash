@@ -2,6 +2,26 @@
 
 import { useState, useCallback } from 'react'
 
+const SIGNWELL_MODAL_CONTAINER_ID = 'signwell-modal-root'
+
+function ensureSignWellContainer() {
+  if (typeof document === 'undefined') return null
+
+  let container = document.getElementById(SIGNWELL_MODAL_CONTAINER_ID)
+  if (!container) {
+    container = document.createElement('div')
+    container.id = SIGNWELL_MODAL_CONTAINER_ID
+    container.className = 'signwell-modal-root'
+    document.body.appendChild(container)
+  }
+  return container
+}
+
+function setBodySignWellState(isOpen: boolean) {
+  if (typeof document === 'undefined') return
+  document.body.classList.toggle('signwell-open', isOpen)
+}
+
 export function useSignWell() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -86,29 +106,39 @@ export function useSignWell() {
       
       const openSignWellModal = (url: string, SignWellConstructor: any, slug: string, onSuccess?: (slug: string) => void) => {
         try {
-          // Open SignWell embedded signing
-          const signWellEmbed = new SignWellConstructor({
+          const container = ensureSignWellContainer()
+          const config: Record<string, any> = {
             url: url,
             events: {
               completed: async (e: any) => {
-                console.log('SignWell signing completed');
-                
-                // Call success callback if provided
+                console.log('SignWell signing completed')
+
                 if (onSuccess) {
                   onSuccess(slug)
                 }
+                setBodySignWellState(false)
               },
               closed: (e: any) => {
-                // Handle modal close
                 console.log('SignWell modal closed')
+                setBodySignWellState(false)
               }
             }
-          })
-          
+          }
+
+          if (container) {
+            config.containerId = SIGNWELL_MODAL_CONTAINER_ID
+          } else {
+            console.warn('SignWell modal container not found, falling back to default placement')
+          }
+          // Open SignWell embedded signing
+          const signWellEmbed = new SignWellConstructor(config)
+
+          setBodySignWellState(true)
           signWellEmbed.open()
         } catch (error) {
           console.error('Error opening SignWell modal:', error);
           setError("Failed to open signing modal. Please try again.");
+          setBodySignWellState(false)
         }
       };
       

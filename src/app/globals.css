@@ -228,4 +228,32 @@ html.light {
 .text-purple-200 { color: #e9d5ff !important; }
 .text-orange-200 { color: #fed7aa !important; }
 
+.signwell-modal-root,
+#signwell-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.signwell-modal-root > * {
+  pointer-events: auto;
+}
+
+.signwell-modal-root .signwell-embed-modal,
+.signwell-modal-root .signwell-embed-modal iframe,
+.signwell-modal-root .sw-embed,
+.signwell-modal-root .sw-embed iframe {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100vh !important;
+  z-index: 10000 !important;
+}
+
+body.signwell-open {
+  overflow: hidden;
+}
+
 
