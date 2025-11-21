@@ -41,6 +41,8 @@ export default function RootLayout({
             </a>
           </div>
         </div>
+        {/* High z-index container for SignWell embedded modal */}
+        <div id="signwell-modal-root" className="signwell-modal-root" />
       </body>
     </html>
   );
