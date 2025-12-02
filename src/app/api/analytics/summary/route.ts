@@ -129,10 +129,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Build the query
+  // Build the query for events with emails
   let query = supabase
-    .from('user_events')
-    .select('event_type, created_at')
+    .from('user_events_with_email')
+    .select('event_type, created_at, email')
 
   // Add listing filter if slug is provided
   if (slug) {
@@ -148,33 +148,64 @@ export async function GET(request: NextRequest) {
   }
 
   // Process the data
-  const eventCounts: { [key: string]: { thisWeek: number; lastWeek: number } } = {}
+  const eventCounts: {
+    [key: string]: {
+      thisWeek: number
+      lastWeek: number
+      emailCounts: Map<string, { thisWeek: number; lastWeek: number }>
+    }
+  } = {}
 
-  events?.forEach((event) => {
+  events?.forEach((event: any) => {
     const eventType = event.event_type
     const eventDate = new Date(event.created_at)
+    const email = event.email || null
     
     if (!eventCounts[eventType]) {
-      eventCounts[eventType] = { thisWeek: 0, lastWeek: 0 }
+      eventCounts[eventType] = {
+        thisWeek: 0,
+        lastWeek: 0,
+        emailCounts: new Map<string, { thisWeek: number; lastWeek: number }>(),
+      }
     }
 
-    if (eventDate >= thisWeekStart) {
-      eventCounts[eventType].thisWeek++
-    } else if (eventDate >= lastWeekStart && eventDate < lastWeekEnd) {
-      eventCounts[eventType].lastWeek++
+    const eventBucket = eventCounts[eventType]
+
+    const inThisWeek = eventDate >= thisWeekStart
+    const inLastWeek = !inThisWeek && eventDate >= lastWeekStart && eventDate < lastWeekEnd
+
+    if (inThisWeek) {
+      eventBucket.thisWeek++
+    } else if (inLastWeek) {
+      eventBucket.lastWeek++
+    }
+
+    // Track how many times each email fired this event type, split by week
+    if (email && (inThisWeek || inLastWeek)) {
+      const prev = eventBucket.emailCounts.get(email) ?? { thisWeek: 0, lastWeek: 0 }
+      eventBucket.emailCounts.set(email, {
+        thisWeek: prev.thisWeek + (inThisWeek ? 1 : 0),
+        lastWeek: prev.lastWeek + (inLastWeek ? 1 : 0),
+      })
     }
   })
 
-  // Calculate analytics with percentage changes
+  // Calculate analytics with percentage changes and include per-email week counts
   const analytics = Object.entries(eventCounts).map(([eventType, counts]) => {
-    const { thisWeek, lastWeek } = counts
+    const { thisWeek, lastWeek, emailCounts } = counts
     const change = lastWeek === 0 ? (thisWeek > 0 ? 1 : 0) : (thisWeek - lastWeek) / lastWeek
+
+    // Convert emailCounts map to a sorted array of { email, thisWeek, lastWeek }
+    const emails = Array.from(emailCounts.entries())
+      .map(([email, ec]) => ({ email, thisWeek: ec.thisWeek, lastWeek: ec.lastWeek }))
+      .sort((a, b) => a.email.localeCompare(b.email))
 
     return {
       eventType,
       lastWeek,
       thisWeek,
-      change: Math.round(change * 1000) / 1000 // Round to 3 decimal places
+      change: Math.round(change * 1000) / 1000, // Round to 3 decimal places
+      emails,
     }
   })
 
