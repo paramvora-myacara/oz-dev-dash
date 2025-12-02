@@ -26,6 +26,13 @@ interface AnalyticsDisplayProps {
   isLoading: boolean
 }
 
+const EVENT_DISPLAY_NAME_OVERRIDES: Record<string, string> = {
+  viewed_listings: 'Viewed Listings Page',
+}
+
+const columnLayout =
+  'grid grid-cols-[minmax(0,1fr)_6rem_6rem_8rem_8rem_2rem] gap-6 items-center'
+
 function EventAccordion({ item }: { item: AnalyticsData }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -34,41 +41,42 @@ function EventAccordion({ item }: { item: AnalyticsData }) {
     return change >= 0 ? `+${percentage}%` : `${percentage}%`
   }
 
-  const formattedEventType = item.eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  const normalizedKey = item.eventType.replace(/\s+/g, '_').toLowerCase()
+  const formattedEventType =
+    EVENT_DISPLAY_NAME_OVERRIDES[normalizedKey] ||
+    item.eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 
   return (
     <div className="bg-white">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors"
+        className={`w-full px-6 py-4 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors`}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6 flex-1">
-            <div className="flex-1">
-              <div className="text-sm font-medium text-gray-900">{formattedEventType}</div>
-            </div>
-            <div className="text-sm text-gray-900 w-24">
-              {item.lastWeek.toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-900 w-24">
-              {item.thisWeek.toLocaleString()}
-            </div>
-            <div className="w-32">
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  item.change >= 0
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {item.change >= 0 ? '▲' : '▼'} {formatPercentage(item.change)}
-              </span>
-            </div>
-            <div className="text-sm text-gray-500 w-32">
-              {item.emails.length} {item.emails.length === 1 ? 'email' : 'emails'}
-            </div>
+        <div className={columnLayout}>
+          <div className="flex flex-col">
+            <div className="text-sm font-medium text-gray-900">{formattedEventType}</div>
           </div>
-          <div className="ml-4">
+          <div className="text-sm text-gray-900">
+            {item.lastWeek.toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-900">
+            {item.thisWeek.toLocaleString()}
+          </div>
+          <div className="flex items-center">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                item.change >= 0
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {item.change >= 0 ? '▲' : '▼'} {formatPercentage(item.change)}
+            </span>
+          </div>
+          <div className="text-sm text-gray-500">
+            {item.emails.length} {item.emails.length === 1 ? 'email' : 'emails'}
+          </div>
+          <div className="flex items-center justify-end">
             {isOpen ? (
               <ChevronUp className="h-5 w-5 text-gray-500" />
             ) : (
@@ -78,7 +86,7 @@ function EventAccordion({ item }: { item: AnalyticsData }) {
         </div>
       </button>
       {isOpen && (
-        <div className="border-t border-gray-200 bg-gray-50">
+        <div className="bg-gray-50">
           <div className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
             Emails ({item.emails.length})
           </div>
@@ -86,22 +94,24 @@ function EventAccordion({ item }: { item: AnalyticsData }) {
             <div className="divide-y divide-gray-200">
               {item.emails.map((emailStat, idx) => (
                 <div key={idx} className="px-6 py-3 bg-white">
-                  <div className="flex items-center space-x-6 text-sm text-gray-600">
-                    <div className="flex-1 truncate pl-6 text-gray-900">
-                      {emailStat.email}
+                  <div className={`${columnLayout} text-sm text-gray-600`}>
+                    <div className="flex items-center space-x-3 truncate text-gray-900">
+                      <div className="h-2 w-2 rounded-full bg-gray-300" aria-hidden="true" />
+                      <span className="truncate">{emailStat.email}</span>
                     </div>
-                    <div className="w-24 text-sm text-gray-900">
+                    <div className="text-sm text-gray-900">
                       {emailStat.lastWeek.toLocaleString()}
                     </div>
-                    <div className="w-24 text-sm text-gray-900">
+                    <div className="text-sm text-gray-900">
                       {emailStat.thisWeek.toLocaleString()}
                     </div>
-                    <div className="w-32 text-sm text-gray-500 text-center">
+                    <div className="text-sm text-gray-500 text-center">
                       —
                     </div>
-                    <div className="w-32 text-sm text-gray-500 text-right">
+                    <div className="text-sm text-gray-500 text-right">
                       
                     </div>
+                    <div></div>
                   </div>
                 </div>
               ))}
@@ -239,23 +249,23 @@ export default function AnalyticsDisplay({ data, isLoading }: AnalyticsDisplayPr
         <div className="border-t border-gray-200">
           {/* Table Header */}
           <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-            <div className="flex items-center space-x-6">
-              <div className="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className={`${columnLayout} text-xs font-medium text-gray-500 uppercase tracking-wider`}>
+              <div className="text-left">
                 Event Type
               </div>
-              <div className="w-24 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="text-left">
                 Last Week
               </div>
-              <div className="w-24 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="text-left">
                 This Week
               </div>
-              <div className="w-32 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="text-left">
                 Change
               </div>
-              <div className="w-32 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="text-left">
                 Emails
               </div>
-              <div className="w-8"></div>
+              <div></div>
             </div>
           </div>
           {/* Accordion Items */}
