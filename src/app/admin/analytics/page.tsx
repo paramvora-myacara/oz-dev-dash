@@ -21,11 +21,18 @@ interface AdminData {
   listings: Listing[]
 }
 
+interface EmailStat {
+  email: string
+  lastWeek: number
+  thisWeek: number
+}
+
 interface AnalyticsData {
   eventType: string
   lastWeek: number
   thisWeek: number
   change: number
+  emails: EmailStat[]
 }
 
 interface SiteMetrics {
