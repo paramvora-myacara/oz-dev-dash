@@ -188,13 +188,13 @@ export default function Section({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white border border-gray-200 rounded-xl transition-shadow ${
+      className={`bg-white border border-gray-200 rounded-lg sm:rounded-xl transition-shadow ${
         isDragging ? 'shadow-lg ring-2 ring-blue-500' : 'hover:shadow-sm'
       } ${isExpanded ? 'shadow-sm' : ''}`}
     >
       {/* Section Header - Always Visible */}
       <div 
-        className={`flex items-center gap-3 px-4 py-4 cursor-pointer select-none ${
+        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-3 sm:py-4 cursor-pointer select-none ${
           isExpanded ? 'border-b border-gray-100' : ''
         }`}
         onClick={() => onToggleExpand?.()}
@@ -203,19 +203,19 @@ export default function Section({
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 touch-none"
+          className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 touch-none flex-shrink-0"
           aria-label="Drag to reorder"
           onClick={(e) => e.stopPropagation()}
         >
-          <GripVertical className="w-5 h-5" />
+          <GripVertical className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* Expand/Collapse Arrow */}
-        <div className="text-gray-400">
+        <div className="text-gray-400 flex-shrink-0">
           {isExpanded ? (
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           ) : (
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           )}
         </div>
 
@@ -232,38 +232,38 @@ export default function Section({
                 if (e.key === 'Enter' || e.key === 'Escape') setIsEditingName(false)
               }}
               onClick={(e) => e.stopPropagation()}
-              className="text-base font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-xs"
+              className="text-sm sm:text-base font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-[200px] sm:max-w-xs"
             />
           ) : (
             <div>
-              <div className="text-base font-medium text-gray-900">{section.name}</div>
+              <div className="text-sm sm:text-base font-medium text-gray-900 truncate">{section.name}</div>
               {!isExpanded && (
-                <div className="text-sm text-gray-400 truncate mt-0.5">{getPreviewText()}</div>
+                <div className="text-xs sm:text-sm text-gray-400 truncate mt-0.5">{getPreviewText()}</div>
               )}
             </div>
           )}
         </div>
 
         {/* Mode Indicator (subtle) */}
-        <div className={`flex items-center gap-1.5 text-sm ${modeInfo.color}`}>
-          <ModeIcon className="w-4 h-4" />
+        <div className={`flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm flex-shrink-0 ${modeInfo.color}`}>
+          <ModeIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           {!isExpanded && <span className="hidden sm:inline">{modeInfo.label}</span>}
         </div>
 
         {/* Overflow Menu */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative flex-shrink-0" ref={menuRef}>
           <button
             onClick={(e) => {
               e.stopPropagation()
               setShowOverflowMenu(!showOverflowMenu)
             }}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md sm:rounded-lg transition-colors"
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {showOverflowMenu && (
-            <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+            <div className="absolute right-0 mt-1 w-40 sm:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
               {/* Rename */}
               <button
                 onClick={(e) => {
@@ -271,9 +271,9 @@ export default function Section({
                   setIsEditingName(true)
                   setShowOverflowMenu(false)
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-50"
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Rename
               </button>
 
@@ -286,11 +286,11 @@ export default function Section({
                       e.stopPropagation()
                       handleModeChange('static')
                     }}
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 ${
+                    className={`w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-50 ${
                       section.mode === 'static' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
                     }`}
                   >
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Same for All
                   </button>
                   <button
@@ -298,11 +298,11 @@ export default function Section({
                       e.stopPropagation()
                       handleModeChange('personalized')
                     }}
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 ${
+                    className={`w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-50 ${
                       section.mode === 'personalized' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
                     }`}
                   >
-                    <Target className="w-4 h-4" />
+                    <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Personalize
                   </button>
                 </>
@@ -316,9 +316,9 @@ export default function Section({
                   setShowDeleteConfirm(true)
                   setShowOverflowMenu(false)
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Delete
               </button>
             </div>
@@ -328,12 +328,12 @@ export default function Section({
 
       {/* Section Content - Only when expanded */}
       {isExpanded && (
-        <div className="p-5">
+        <div className="p-3 sm:p-4 md:p-5">
           {section.type === 'button' ? (
             /* Button Type - CTA Button Editor */
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
                   Button Text
                 </label>
                 <input
@@ -341,12 +341,12 @@ export default function Section({
                   value={section.content}
                   onChange={(e) => onChange({ ...section, content: e.target.value })}
                   placeholder="e.g., Book Your Call"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
                   Button URL
                 </label>
                 <input
@@ -354,20 +354,20 @@ export default function Section({
                   value={section.buttonUrl || ''}
                   onChange={(e) => onChange({ ...section, buttonUrl: e.target.value })}
                   placeholder="https://example.com/book"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
                   Preview
                 </label>
-                <div className="p-6 bg-gray-50 rounded-xl">
+                <div className="p-4 sm:p-6 bg-gray-50 rounded-lg sm:rounded-xl">
                   <a
                     href={section.buttonUrl || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full px-8 py-4 bg-[#1e88e5] text-white font-semibold text-center text-lg rounded-lg hover:bg-[#1565c0] transition-colors"
+                    className="block w-full px-4 sm:px-8 py-3 sm:py-4 bg-[#1e88e5] text-white font-semibold text-center text-sm sm:text-lg rounded-lg hover:bg-[#1565c0] transition-colors"
                     onClick={(e) => !section.buttonUrl && e.preventDefault()}
                   >
                     {section.content || 'Button Text'}
@@ -377,37 +377,37 @@ export default function Section({
             </div>
           ) : section.mode === 'static' ? (
             /* Static Mode - Rich Text Editor */
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
+            <div className="rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
               {/* Toolbar - Only visible when focused */}
-              <div className={`flex items-center gap-1 px-3 py-2 bg-gray-50 border-b transition-all ${
+              <div className={`flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border-b transition-all ${
                 isEditorFocused ? 'opacity-100' : 'opacity-0 h-0 py-0 border-b-0 overflow-hidden'
               }`}>
                 <button
                   onClick={() => editor?.chain().focus().toggleBold().run()}
-                  className={`p-2 rounded-lg hover:bg-gray-200 ${
+                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${
                     editor?.isActive('bold') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
                   }`}
                   title="Bold"
                 >
-                  <Bold className="w-4 h-4" />
+                  <Bold className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={() => editor?.chain().focus().toggleItalic().run()}
-                  className={`p-2 rounded-lg hover:bg-gray-200 ${
+                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${
                     editor?.isActive('italic') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
                   }`}
                   title="Italic"
                 >
-                  <Italic className="w-4 h-4" />
+                  <Italic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={setLink}
-                  className={`p-2 rounded-lg hover:bg-gray-200 ${
+                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${
                     editor?.isActive('link') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
                   }`}
                   title="Add Link"
                 >
-                  <LinkIcon className="w-4 h-4" />
+                  <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
               
@@ -415,25 +415,25 @@ export default function Section({
             </div>
           ) : (
             /* Personalized Mode - Instructions + Field Selection */
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
                   What should this say?
                 </label>
                 <textarea
                   value={section.content}
                   onChange={(e) => onChange({ ...section, content: e.target.value })}
                   placeholder="Describe what you want the AI to write..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   rows={3}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
                   Use these details:
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {availableFields.length > 0 ? (
                     availableFields.map((field) => {
                       const isSelected = section.selectedFields?.includes(field)
@@ -441,7 +441,7 @@ export default function Section({
                         <button
                           key={field}
                           onClick={() => handleFieldToggle(field)}
-                          className={`px-4 py-2 text-sm rounded-full border transition-colors ${
+                          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full border transition-colors ${
                             isSelected
                               ? 'bg-blue-600 text-white border-blue-600'
                               : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
@@ -452,7 +452,7 @@ export default function Section({
                       )
                     })
                   ) : (
-                    <p className="text-sm text-gray-400 italic">
+                    <p className="text-xs sm:text-sm text-gray-400 italic">
                       Upload a CSV to see available fields
                     </p>
                   )}
@@ -465,16 +465,16 @@ export default function Section({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Section?</h3>
-            <p className="text-gray-600 mb-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Delete Section?</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Are you sure you want to delete "{section.name}"?
             </p>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>
@@ -483,7 +483,7 @@ export default function Section({
                   onDelete()
                   setShowDeleteConfirm(false)
                 }}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
               >
                 Delete
               </button>

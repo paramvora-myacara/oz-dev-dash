@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import { Plus, ChevronDown, Upload, Users } from 'lucide-react'
+import { Plus, ChevronDown, Upload, Users, Pencil, Eye } from 'lucide-react'
 import SectionList from './SectionList'
 import PreviewPanel from './PreviewPanel'
 import AddSectionModal from './AddSectionModal'
@@ -45,6 +45,9 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
   // Preview state
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+
+  // Mobile tab state
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
 
   // Get available fields from sample data
   const availableFields = sampleData?.columns || []
@@ -118,11 +121,126 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
     setIsGeneratingPreview(false)
   }
 
+  // Edit panel content (reusable for both layouts)
+  const EditPanelContent = (
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-5 bg-gray-50">
+        <SectionList
+          sections={sections}
+          onSectionsChange={setSections}
+          availableFields={availableFields}
+        />
+        
+        {/* Add Section Card */}
+        <div className="mt-3">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="w-full flex items-center justify-center gap-2 py-4 sm:py-6 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Section
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="h-full flex flex-col bg-gray-100">
-      {/* Unified Top Bar */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center gap-4">
+      {/* Top Bar - Responsive */}
+      <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        {/* Mobile: Stacked layout */}
+        <div className="flex flex-col gap-3 lg:hidden">
+          {/* Row 1: Template & Actions */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Template Selector */}
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[100px] sm:max-w-none">{selectedTemplate.name}</span>
+                <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+              </button>
+
+              {showTemplateDropdown && (
+                <div className="absolute left-0 mt-2 w-56 sm:w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-2">
+                  {DEFAULT_TEMPLATES.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleTemplateChange(template)}
+                      className={`w-full px-4 py-2.5 sm:py-3 text-left hover:bg-gray-50 ${
+                        template.id === selectedTemplate.id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className={`text-sm font-medium ${
+                        template.id === selectedTemplate.id ? 'text-blue-600' : 'text-gray-900'
+                      }`}>
+                        {template.name}
+                      </div>
+                      {template.description && (
+                        <div className="text-xs text-gray-500 mt-0.5">{template.description}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right side actions */}
+            <div className="flex items-center gap-2">
+              {/* CSV Upload */}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <button className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl border transition-colors ${
+                  sampleData 
+                    ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}>
+                  {sampleData ? (
+                    <>
+                      <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">{sampleData.rows.length}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">CSV</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={() => onSave?.(sections, subjectLine)}
+                className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg sm:rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Subject Line */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs sm:text-sm font-medium text-gray-500 flex-shrink-0">Subject:</span>
+            <input
+              type="text"
+              value={subjectLine.content}
+              onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
+              placeholder="Enter subject line..."
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Desktop: Single row layout */}
+        <div className="hidden lg:flex items-center gap-4">
           {/* Template Selector */}
           <div className="relative">
             <button
@@ -206,39 +324,41 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
         </div>
       </div>
 
-      {/* Main Content - Resizable Panels */}
+      {/* Mobile Tab Bar */}
+      <div className="lg:hidden bg-white border-b">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab('edit')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'edit'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </button>
+          <button
+            onClick={() => setActiveTab('preview')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'preview'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Eye className="w-4 h-4" />
+            Preview
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content - Responsive */}
       <div className="flex-1 overflow-hidden">
-        <PanelGroup direction="horizontal" className="h-full">
-          {/* Edit Panel */}
-          <Panel defaultSize={50} minSize={30}>
-            <div className="h-full flex flex-col">
-              {/* Section List */}
-              <div className="flex-1 overflow-auto p-5 bg-gray-50">
-                <SectionList
-                  sections={sections}
-                  onSectionsChange={setSections}
-                  availableFields={availableFields}
-                />
-                
-                {/* Add Section Card */}
-                <div className="mt-3">
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    className="w-full flex items-center justify-center gap-2 py-6 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-colors"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Add Section
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Panel>
-
-          {/* Resize Handle */}
-          <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-col-resize" />
-
-          {/* Preview Panel */}
-          <Panel defaultSize={50} minSize={30}>
+        {/* Mobile: Tab-based view */}
+        <div className="lg:hidden h-full">
+          {activeTab === 'edit' ? (
+            EditPanelContent
+          ) : (
             <PreviewPanel
               sections={sections}
               subjectLine={subjectLine}
@@ -249,8 +369,35 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
               isGenerating={isGeneratingPreview}
               previewHtml={previewHtml}
             />
-          </Panel>
-        </PanelGroup>
+          )}
+        </div>
+
+        {/* Desktop: Resizable Panels */}
+        <div className="hidden lg:block h-full">
+          <PanelGroup direction="horizontal" className="h-full">
+            {/* Edit Panel */}
+            <Panel defaultSize={50} minSize={30}>
+              {EditPanelContent}
+            </Panel>
+
+            {/* Resize Handle */}
+            <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-col-resize" />
+
+            {/* Preview Panel */}
+            <Panel defaultSize={50} minSize={30}>
+              <PreviewPanel
+                sections={sections}
+                subjectLine={subjectLine}
+                sampleData={sampleData}
+                selectedSampleIndex={selectedSampleIndex}
+                onSampleIndexChange={setSelectedSampleIndex}
+                onGeneratePreview={handleGeneratePreview}
+                isGenerating={isGeneratingPreview}
+                previewHtml={previewHtml}
+              />
+            </Panel>
+          </PanelGroup>
+        </div>
       </div>
 
       {/* Add Section Modal */}

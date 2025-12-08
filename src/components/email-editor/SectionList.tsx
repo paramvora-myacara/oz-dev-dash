@@ -85,10 +85,10 @@ export default function SectionList({ sections, onSectionsChange, availableField
 
   if (sections.length === 0) {
     return (
-      <div className="text-center py-16 px-4">
-        <div className="text-5xl mb-4">✉️</div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No sections yet</h3>
-        <p className="text-gray-500">
+      <div className="text-center py-10 sm:py-16 px-3 sm:px-4">
+        <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">✉️</div>
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1.5 sm:mb-2">No sections yet</h3>
+        <p className="text-sm sm:text-base text-gray-500">
           Click "Add Section" to start building your email.
         </p>
       </div>
@@ -103,7 +103,7 @@ export default function SectionList({ sections, onSectionsChange, availableField
       modifiers={[restrictToVerticalAxis, restrictToParentElement]}
     >
       <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {sections.map((section) => (
             <Section
               key={section.id}
