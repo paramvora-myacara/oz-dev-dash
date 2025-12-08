@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import FileUpload from '@/components/admin/FileUpload'
 import CampaignStatus from '@/components/admin/CampaignStatus'
 
@@ -180,6 +181,12 @@ export default function EmailCampaignsPage() {
               </p>
             </div>
             <div className="flex space-x-3">
+              <Link
+                href="/admin/email-editor"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+              >
+                ✏️ Email Editor
+              </Link>
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
