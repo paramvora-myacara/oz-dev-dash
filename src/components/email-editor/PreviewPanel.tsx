@@ -135,15 +135,13 @@ export default function PreviewPanel({
         <div className={`mx-auto h-full transition-all duration-300 ${
           device === 'desktop' ? 'max-w-2xl' : 'max-w-sm'
         }`}>
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-full">
-            <iframe
-              srcDoc={emailHtml}
-              title="Email Preview"
-              className="w-full h-full border-0"
-              sandbox="allow-same-origin"
-              style={{ minHeight: '500px' }}
-            />
-          </div>
+          <iframe
+            srcDoc={emailHtml}
+            title="Email Preview"
+            className="w-full h-full border-0"
+            sandbox="allow-same-origin"
+            style={{ minHeight: '500px' }}
+          />
         </div>
       </div>
 
