@@ -101,8 +101,8 @@ export async function GET() {
     const nextScheduled =
       nextScheduledRaw?.map((item) => {
         const utcDate = new Date(item.scheduled_for as string)
-        const zonedTime = toZonedTime(utcDate, TIMEZONE)
-        const timeString = zonedTime.toLocaleTimeString('en-US', {
+        // Use toLocaleTimeString with timeZone option directly - no need for toZonedTime
+        const timeString = utcDate.toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
           second: '2-digit',
