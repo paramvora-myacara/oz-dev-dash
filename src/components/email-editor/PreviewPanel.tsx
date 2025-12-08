@@ -1,9 +1,34 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Monitor, Smartphone, RefreshCw, ChevronDown, Users } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { Monitor, Smartphone, ChevronDown, Users } from 'lucide-react'
 import { generateEmailHtml } from './EmailPreviewRenderer'
 import type { Section, SectionMode, SampleData } from '@/types/email-editor'
+
+// Custom hook for debouncing a value
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+  const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    // Skip debounce on first render to show initial content immediately
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      setDebouncedValue(value)
+      return
+    }
+
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 interface PreviewPanelProps {
   sections: Section[]
@@ -11,9 +36,6 @@ interface PreviewPanelProps {
   sampleData: SampleData | null
   selectedSampleIndex: number
   onSampleIndexChange: (index: number) => void
-  onGeneratePreview: () => void
-  isGenerating: boolean
-  previewHtml: string | null
 }
 
 type DeviceType = 'desktop' | 'mobile'
@@ -24,33 +46,24 @@ export default function PreviewPanel({
   sampleData,
   selectedSampleIndex,
   onSampleIndexChange,
-  onGeneratePreview,
-  isGenerating,
 }: PreviewPanelProps) {
   const [device, setDevice] = useState<DeviceType>('desktop')
   const [showSampleDropdown, setShowSampleDropdown] = useState(false)
 
   const currentSample = sampleData?.rows[selectedSampleIndex] || null
 
+  // Debounce sections to prevent rapid re-renders during typing
+  const debouncedSections = useDebounce(sections, 300)
+
   const emailHtml = useMemo(() => {
-    return generateEmailHtml(sections, subjectLine.content, currentSample)
-  }, [sections, subjectLine.content, currentSample])
+    return generateEmailHtml(debouncedSections, subjectLine.content, currentSample)
+  }, [debouncedSections, subjectLine.content, currentSample])
 
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Preview Header - Responsive */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-b">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <h3 className="text-xs sm:text-sm font-semibold text-gray-700">Preview</h3>
-          <button
-            onClick={onGeneratePreview}
-            disabled={isGenerating || sections.length === 0}
-            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-600 bg-gray-100 rounded-md sm:rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-            <span className="hidden xs:inline">{isGenerating ? 'Refreshing...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <h3 className="text-xs sm:text-sm font-semibold text-gray-700">Preview</h3>
         
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Device Switcher */}

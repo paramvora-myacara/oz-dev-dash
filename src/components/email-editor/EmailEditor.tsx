@@ -42,10 +42,6 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
   const [selectedSampleIndex, setSelectedSampleIndex] = useState(0)
 
-  // Preview state
-  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
-
   // Mobile tab state
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
 
@@ -60,7 +56,6 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
       order: index,
     })))
     setShowTemplateDropdown(false)
-    setPreviewHtml(null)
   }
 
   // Handle adding a new section
@@ -112,14 +107,6 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
     }
     reader.readAsText(file)
   }, [])
-
-  // Handle generate preview
-  const handleGeneratePreview = async () => {
-    setIsGeneratingPreview(true)
-    await new Promise(resolve => setTimeout(resolve, 500))
-    setPreviewHtml(null)
-    setIsGeneratingPreview(false)
-  }
 
   // Edit panel content (reusable for both layouts)
   const EditPanelContent = (
@@ -365,9 +352,6 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
               sampleData={sampleData}
               selectedSampleIndex={selectedSampleIndex}
               onSampleIndexChange={setSelectedSampleIndex}
-              onGeneratePreview={handleGeneratePreview}
-              isGenerating={isGeneratingPreview}
-              previewHtml={previewHtml}
             />
           )}
         </div>
@@ -391,9 +375,6 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
                 sampleData={sampleData}
                 selectedSampleIndex={selectedSampleIndex}
                 onSampleIndexChange={setSelectedSampleIndex}
-                onGeneratePreview={handleGeneratePreview}
-                isGenerating={isGeneratingPreview}
-                previewHtml={previewHtml}
               />
             </Panel>
           </PanelGroup>
