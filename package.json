@@ -19,6 +19,7 @@
     "chart.js": "^4.5.0",
     "chartjs": "^0.3.24",
     "chartjs-plugin-annotation": "^3.1.0",
+    "date-fns-tz": "^3.2.0",
     "framer-motion": "^12.23.24",
     "immer": "^10.1.1",
     "jsonwebtoken": "^9.0.2",

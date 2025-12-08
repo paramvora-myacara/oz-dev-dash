@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS email_queue (
   delay_seconds INTEGER NOT NULL,
   status TEXT DEFAULT 'queued',
   metadata JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  scheduled_for TIMESTAMP DEFAULT NOW(),
-  sent_at TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  scheduled_for TIMESTAMPTZ DEFAULT NOW(),
+  sent_at TIMESTAMPTZ,
   error_message TEXT
 );
 

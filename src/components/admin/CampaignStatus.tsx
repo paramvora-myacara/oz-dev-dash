@@ -1,12 +1,69 @@
 'use client'
 
+interface RecentActivity {
+  id: number
+  to_email: string
+  sent_at?: string
+  status?: string
+  error_message?: string
+}
+
+interface RecentFailure {
+  id: number
+  to_email: string
+  error_message?: string
+  created_at?: string
+}
+
+interface NextScheduled {
+  id: number
+  to_email: string
+  scheduled_for: string
+  scheduled_for_display?: string
+  timezone?: string
+  domain_index: number
+}
+
+interface DayCapacity {
+  queued: number
+  sent?: number
+  capacity: number
+  remaining: number
+  remainingMinutes?: number
+  remainingHours?: number
+}
+
+interface WeekDay {
+  date: string
+  dayLabel: string
+  dayOfWeek: string
+  queued: number
+  sent: number
+  capacity: number
+  remaining: number
+  remainingHours?: number
+  isToday: boolean
+}
+
 interface CampaignStatusData {
   status: 'sending' | 'completed' | 'paused'
   total: number
   queued: number
   sent: number
   failed: number
+  processing?: number
   lastUpdated?: string
+  recentActivity?: RecentActivity[]
+  recentFailures?: RecentFailure[]
+  nextScheduled?: NextScheduled[]
+  sendingRate?: {
+    lastHour: number
+    perMinute: number
+  }
+  domainDistribution?: Record<number, number>
+  today?: DayCapacity
+  tomorrow?: DayCapacity
+  weekSchedule?: WeekDay[]
 }
 
 interface CampaignStatusProps {
@@ -15,7 +72,12 @@ interface CampaignStatusProps {
   isLoading?: boolean
 }
 
-export default function CampaignStatus({ data, onRefresh, isLoading = false }: CampaignStatusProps) {
+export default function CampaignStatus({ 
+  data, 
+  onRefresh, 
+  isLoading = false
+}: CampaignStatusProps) {
+
   if (!data) {
     return (
       <div className="bg-white shadow overflow-hidden sm:rounded-md p-6">
@@ -24,8 +86,35 @@ export default function CampaignStatus({ data, onRefresh, isLoading = false }: C
     )
   }
 
-  const { status, total, queued, sent, failed, lastUpdated } = data
+  const { 
+    status, 
+    total, 
+    queued, 
+    sent, 
+    failed, 
+    processing = 0,
+    lastUpdated,
+    recentActivity = [],
+    recentFailures = [],
+    nextScheduled = [],
+    sendingRate,
+    domainDistribution = {},
+    today,
+    tomorrow,
+    weekSchedule = []
+  } = data
   const sentPercentage = total > 0 ? Math.round((sent / total) * 100) : 0
+
+  const getCapacityColor = (used: number, capacity: number) => {
+    const percentage = capacity > 0 ? (used / capacity) * 100 : 0
+    if (percentage >= 90) return 'bg-red-100 border-red-300 text-red-800'
+    if (percentage >= 70) return 'bg-yellow-100 border-yellow-300 text-yellow-800'
+    return 'bg-green-100 border-green-300 text-green-800'
+  }
+
+  const getCapacityPercentage = (used: number, capacity: number) => {
+    return capacity > 0 ? Math.round((used / capacity) * 100) : 0
+  }
 
   const getStatusBadge = () => {
     const statusConfig = {
@@ -61,7 +150,7 @@ export default function CampaignStatus({ data, onRefresh, isLoading = false }: C
             </>
           ) : (
             <>
-              🔄 Refresh Stats
+              🔄 Refresh
             </>
           )}
         </button>
@@ -86,8 +175,106 @@ export default function CampaignStatus({ data, onRefresh, isLoading = false }: C
         </div>
       </div>
 
+      {/* Week Schedule */}
+      {weekSchedule.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">7-Day Schedule (9am-5pm)</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            {weekSchedule.map((day) => {
+              const usedCapacity = day.isToday ? day.sent + day.queued : day.queued
+              const percentage = getCapacityPercentage(usedCapacity, day.capacity)
+              
+              return (
+                <div
+                  key={day.date}
+                  className={`rounded-lg p-3 border ${
+                    day.isToday 
+                      ? getCapacityColor(usedCapacity, day.capacity)
+                      : day.queued > 0
+                        ? 'bg-indigo-50 border-indigo-200'
+                        : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="text-xs font-medium uppercase tracking-wider mb-1 opacity-75">
+                    {day.dayLabel}
+                  </div>
+                  <div className="text-lg font-bold">
+                    {day.queued.toLocaleString()}
+                  </div>
+                  <div className="text-xs opacity-75">
+                    queued
+                  </div>
+                  {day.isToday && day.sent > 0 && (
+                    <div className="text-xs text-green-600 mt-1">
+                      {day.sent} sent
+                    </div>
+                  )}
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${
+                        percentage >= 90
+                          ? 'bg-red-500'
+                          : percentage >= 70
+                          ? 'bg-yellow-500'
+                          : day.queued > 0
+                          ? 'bg-indigo-500'
+                          : 'bg-gray-300'
+                      }`}
+                      style={{ width: `${Math.min(100, percentage)}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-xs opacity-60 mt-1">
+                    {usedCapacity}/{day.capacity}
+                  </div>
+                  {day.isToday && day.remainingHours !== undefined && day.remainingHours > 0 && (
+                    <div className="text-xs opacity-60">
+                      {day.remainingHours}h left
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback: Today & Tomorrow Cards (if weekSchedule not available) */}
+      {weekSchedule.length === 0 && (today || tomorrow) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {today && (
+            <div className={`rounded-lg p-4 border ${getCapacityColor((today.sent || 0) + today.queued, today.capacity)}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-wider mb-1">Today</div>
+                  <div className="text-2xl font-bold">{today.queued.toLocaleString()} queued</div>
+                  {today.sent !== undefined && <div className="text-sm mt-1">{today.sent.toLocaleString()} sent</div>}
+                </div>
+                <div className="text-right">
+                  <div className="text-xs opacity-75 mb-1">Capacity</div>
+                  <div className="text-lg font-bold">{((today.sent || 0) + today.queued).toLocaleString()} / {today.capacity.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          )}
+          {tomorrow && (
+            <div className={`rounded-lg p-4 border ${getCapacityColor(tomorrow.queued, tomorrow.capacity)}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="text-sm font-medium uppercase tracking-wider mb-1">Tomorrow</div>
+                  <div className="text-2xl font-bold">{tomorrow.queued.toLocaleString()} queued</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs opacity-75 mb-1">Capacity</div>
+                  <div className="text-lg font-bold">{tomorrow.queued.toLocaleString()} / {tomorrow.capacity.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         {/* Queued */}
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
           <div className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">
@@ -98,6 +285,18 @@ export default function CampaignStatus({ data, onRefresh, isLoading = false }: C
           </div>
         </div>
 
+        {/* Processing */}
+        {processing > 0 && (
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div className="text-sm font-medium text-blue-700 uppercase tracking-wider mb-1">
+              Processing
+            </div>
+            <div className="text-2xl font-bold text-blue-600">
+              {processing.toLocaleString()}
+            </div>
+          </div>
+        )}
+
         {/* Sent */}
         <div className="bg-green-50 rounded-lg p-4 border border-green-200">
           <div className="text-sm font-medium text-green-700 uppercase tracking-wider mb-1">
@@ -106,6 +305,11 @@ export default function CampaignStatus({ data, onRefresh, isLoading = false }: C
           <div className="text-2xl font-bold text-green-600">
             {sent.toLocaleString()}
           </div>
+          {sendingRate && sendingRate.lastHour > 0 && (
+            <div className="text-xs text-green-600 mt-1">
+              {sendingRate.lastHour} in last hour ({sendingRate.perMinute}/min)
+            </div>
+          )}
         </div>
 
         {/* Failed */}
@@ -118,6 +322,78 @@ export default function CampaignStatus({ data, onRefresh, isLoading = false }: C
           </div>
         </div>
       </div>
+
+      {/* Domain Distribution */}
+      {Object.keys(domainDistribution).length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Queued by Domain</h3>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(domainDistribution).map(([domainIndex, count]) => (
+              <span key={domainIndex} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                Domain {domainIndex}: {count}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Next Scheduled Emails */}
+      {nextScheduled.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Next Scheduled (Upcoming)</h3>
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 max-h-32 overflow-y-auto">
+            <div className="space-y-1">
+              {nextScheduled.map((item) => (
+                <div key={item.id} className="text-xs text-gray-600 flex justify-between">
+                  <span className="truncate flex-1">{item.to_email}</span>
+                  <span className="ml-2 text-gray-500">
+                    {item.scheduled_for_display || new Date(item.scheduled_for).toLocaleTimeString()}
+                    {item.timezone ? ` (${item.timezone.split('/').pop()})` : ''} (D{item.domain_index})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Activity */}
+      {recentActivity.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Recent Activity (Last 10 Sent)</h3>
+          <div className="bg-green-50 rounded-lg p-3 border border-green-200 max-h-40 overflow-y-auto">
+            <div className="space-y-1">
+              {recentActivity.map((item) => (
+                <div key={item.id} className="text-xs text-gray-700 flex justify-between items-center">
+                  <span className="truncate flex-1">{item.to_email}</span>
+                  <span className="ml-2 text-green-600">
+                    {item.sent_at ? new Date(item.sent_at).toLocaleTimeString() : 'N/A'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Failures */}
+      {recentFailures.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-red-700 mb-2">Recent Failures</h3>
+          <div className="bg-red-50 rounded-lg p-3 border border-red-200 max-h-40 overflow-y-auto">
+            <div className="space-y-2">
+              {recentFailures.map((item) => (
+                <div key={item.id} className="text-xs">
+                  <div className="text-red-700 font-medium">{item.to_email}</div>
+                  {item.error_message && (
+                    <div className="text-red-600 mt-0.5 truncate">{item.error_message}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Last Updated */}
       {lastUpdated && (

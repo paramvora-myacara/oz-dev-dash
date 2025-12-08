@@ -21,7 +21,15 @@ export default function EmailCampaignsPage() {
     queued: number
     sent: number
     failed: number
+    processing?: number
     lastUpdated?: string
+    recentActivity?: Array<{ id: number; to_email: string; sent_at?: string; status: string }>
+    recentFailures?: Array<{ id: number; to_email: string; error_message?: string; created_at?: string }>
+    nextScheduled?: Array<{ id: number; to_email: string; scheduled_for: string; domain_index: number }>
+    sendingRate?: { lastHour: number; perMinute: number }
+    domainDistribution?: Record<number, number>
+    today?: { queued: number; sent: number; capacity: number; remaining: number; remainingMinutes?: number; remainingHours?: number }
+    tomorrow?: { queued: number; capacity: number; remaining: number }
   } | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isLaunching, setIsLaunching] = useState(false)
