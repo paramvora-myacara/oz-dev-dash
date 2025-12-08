@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -26,10 +27,13 @@ interface SectionListProps {
 }
 
 export default function SectionList({ sections, onSectionsChange, availableFields }: SectionListProps) {
+  // Track which section is expanded (only one at a time)
+  const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null)
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 8px movement required before drag starts
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -68,15 +72,24 @@ export default function SectionList({ sections, onSectionsChange, availableField
         order: index,
       }))
     onSectionsChange(newSections)
+    
+    // Clear expanded state if deleted section was expanded
+    if (expandedSectionId === sectionId) {
+      setExpandedSectionId(null)
+    }
+  }
+
+  const handleToggleExpand = (sectionId: string) => {
+    setExpandedSectionId(expandedSectionId === sectionId ? null : sectionId)
   }
 
   if (sections.length === 0) {
     return (
-      <div className="text-center py-12 px-4">
-        <div className="text-4xl mb-3">📝</div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">No sections yet</h3>
-        <p className="text-sm text-gray-500">
-          Add a section to start building your email.
+      <div className="text-center py-16 px-4">
+        <div className="text-5xl mb-4">✉️</div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No sections yet</h3>
+        <p className="text-gray-500">
+          Click "Add Section" to start building your email.
         </p>
       </div>
     )
@@ -90,7 +103,7 @@ export default function SectionList({ sections, onSectionsChange, availableField
       modifiers={[restrictToVerticalAxis, restrictToParentElement]}
     >
       <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {sections.map((section) => (
             <Section
               key={section.id}
@@ -98,6 +111,8 @@ export default function SectionList({ sections, onSectionsChange, availableField
               onChange={handleSectionChange}
               onDelete={() => handleSectionDelete(section.id)}
               availableFields={availableFields}
+              isExpanded={expandedSectionId === section.id}
+              onToggleExpand={() => handleToggleExpand(section.id)}
             />
           ))}
         </div>

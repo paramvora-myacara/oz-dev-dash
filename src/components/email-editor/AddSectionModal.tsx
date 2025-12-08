@@ -16,14 +16,12 @@ export default function AddSectionModal({ isOpen, onClose, onAdd }: AddSectionMo
   const [mode, setMode] = useState<SectionMode>('static')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Focus input when modal opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [isOpen])
 
-  // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
       setName('')
@@ -32,12 +30,9 @@ export default function AddSectionModal({ isOpen, onClose, onAdd }: AddSectionMo
     }
   }, [isOpen])
 
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+      if (e.key === 'Escape' && isOpen) onClose()
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
@@ -55,30 +50,24 @@ export default function AddSectionModal({ isOpen, onClose, onAdd }: AddSectionMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-5 border-b">
           <h2 className="text-lg font-semibold text-gray-900">Add Section</h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Section Name */}
           <div>
-            <label htmlFor="section-name" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="section-name" className="block text-sm font-medium text-gray-600 mb-2">
               Section name
             </label>
             <input
@@ -87,125 +76,75 @@ export default function AddSectionModal({ isOpen, onClose, onAdd }: AddSectionMo
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={sectionType === 'button' ? 'e.g., CTA Button, Book Call...' : 'e.g., Social Proof, Testimonial, PS Line...'}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
+              placeholder={sectionType === 'button' ? 'e.g., CTA Button' : 'e.g., Introduction'}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Section Type Selection */}
+          {/* Section Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Section Type
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Text Option */}
+            <label className="block text-sm font-medium text-gray-600 mb-3">Type</label>
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setSectionType('text')}
-                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
                   sectionType === 'text'
-                    ? 'border-brand-primary bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               >
-                <div className={`p-2 rounded-full ${
-                  sectionType === 'text' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div className="text-center">
-                  <div className={`text-sm font-medium ${
-                    sectionType === 'text' ? 'text-brand-primary' : 'text-gray-900'
-                  }`}>
-                    Text
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    Paragraph content
-                  </div>
-                </div>
+                <FileText className="w-5 h-5" />
+                <span className="font-medium">Text</span>
               </button>
 
-              {/* Button Option */}
               <button
                 type="button"
                 onClick={() => setSectionType('button')}
-                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
                   sectionType === 'button'
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               >
-                <div className={`p-2 rounded-full ${
-                  sectionType === 'button' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  <MousePointerClick className="w-5 h-5" />
-                </div>
-                <div className="text-center">
-                  <div className={`text-sm font-medium ${
-                    sectionType === 'button' ? 'text-green-600' : 'text-gray-900'
-                  }`}>
-                    CTA Button
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    Call-to-action
-                  </div>
-                </div>
+                <MousePointerClick className="w-5 h-5" />
+                <span className="font-medium">Button</span>
               </button>
             </div>
           </div>
 
-          {/* Mode Selection (only for text sections) */}
+          {/* Content Mode (only for text) */}
           {sectionType === 'text' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Content Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Static Option */}
+              <label className="block text-sm font-medium text-gray-600 mb-3">Content</label>
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setMode('static')}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex-1 p-3 rounded-xl border-2 transition-all text-center ${
                     mode === 'static'
-                      ? 'border-brand-primary bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className={`p-1.5 rounded-full ${
-                    mode === 'static' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-xs font-medium ${
-                      mode === 'static' ? 'text-brand-primary' : 'text-gray-900'
-                    }`}>
-                      Same for All
-                    </div>
+                  <FileText className={`w-5 h-5 mx-auto mb-1 ${mode === 'static' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <div className={`text-sm font-medium ${mode === 'static' ? 'text-blue-700' : 'text-gray-700'}`}>
+                    Same for All
                   </div>
                 </button>
 
-                {/* Personalized Option */}
                 <button
                   type="button"
                   onClick={() => setMode('personalized')}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex-1 p-3 rounded-xl border-2 transition-all text-center ${
                     mode === 'personalized'
-                      ? 'border-brand-primary bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className={`p-1.5 rounded-full ${
-                    mode === 'personalized' ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    <Target className="w-4 h-4" />
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-xs font-medium ${
-                      mode === 'personalized' ? 'text-brand-primary' : 'text-gray-900'
-                    }`}>
-                      Personalize
-                    </div>
+                  <Target className={`w-5 h-5 mx-auto mb-1 ${mode === 'personalized' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <div className={`text-sm font-medium ${mode === 'personalized' ? 'text-blue-700' : 'text-gray-700'}`}>
+                    Personalize
                   </div>
                 </button>
               </div>
@@ -213,18 +152,18 @@ export default function AddSectionModal({ isOpen, onClose, onAdd }: AddSectionMo
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex-1 px-5 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!name.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-brand-primary hover:bg-brand-dark rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-5 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Section
             </button>

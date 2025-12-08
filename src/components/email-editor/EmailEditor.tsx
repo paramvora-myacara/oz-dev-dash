@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import { Plus, FileText, ChevronDown, Upload } from 'lucide-react'
+import { Plus, ChevronDown, Upload, Users } from 'lucide-react'
 import SectionList from './SectionList'
 import PreviewPanel from './PreviewPanel'
 import AddSectionModal from './AddSectionModal'
@@ -90,10 +90,8 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
         return
       }
 
-      // Parse header
       const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''))
       
-      // Parse data rows
       const rows = lines.slice(1).map(line => {
         const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''))
         const row: Record<string, string> = {}
@@ -115,57 +113,60 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
   // Handle generate preview
   const handleGeneratePreview = async () => {
     setIsGeneratingPreview(true)
-    
-    // Simulate preview generation delay
-    // In real implementation, this would call an API to generate AI content
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // For now, just set the plain HTML from static sections
-    // The PreviewPanel will handle displaying this
-    setPreviewHtml(null) // Let PreviewPanel use its built-in rendering
+    await new Promise(resolve => setTimeout(resolve, 500))
+    setPreviewHtml(null)
     setIsGeneratingPreview(false)
   }
 
   return (
     <div className="h-full flex flex-col bg-gray-100">
-      {/* Top Bar */}
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
+      {/* Unified Top Bar */}
+      <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center gap-4">
           {/* Template Selector */}
           <div className="relative">
             <button
               onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors"
             >
-              <FileText className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">{selectedTemplate.name}</span>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
             {showTemplateDropdown && (
-              <div className="absolute left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                <div className="py-1">
-                  {DEFAULT_TEMPLATES.map((template) => (
-                    <button
-                      key={template.id}
-                      onClick={() => handleTemplateChange(template)}
-                      className={`w-full px-4 py-2.5 text-left hover:bg-gray-50 ${
-                        template.id === selectedTemplate.id ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      <div className={`text-sm font-medium ${
-                        template.id === selectedTemplate.id ? 'text-brand-primary' : 'text-gray-900'
-                      }`}>
-                        {template.name}
-                      </div>
-                      {template.description && (
-                        <div className="text-xs text-gray-500 mt-0.5">{template.description}</div>
-                      )}
-                    </button>
-                  ))}
-                </div>
+              <div className="absolute left-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-20 py-2">
+                {DEFAULT_TEMPLATES.map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => handleTemplateChange(template)}
+                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 ${
+                      template.id === selectedTemplate.id ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    <div className={`text-sm font-medium ${
+                      template.id === selectedTemplate.id ? 'text-blue-600' : 'text-gray-900'
+                    }`}>
+                      {template.name}
+                    </div>
+                    {template.description && (
+                      <div className="text-xs text-gray-500 mt-0.5">{template.description}</div>
+                    )}
+                  </button>
+                ))}
               </div>
             )}
+          </div>
+
+          {/* Subject Line - Integrated */}
+          <div className="flex-1 flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-500">Subject:</span>
+            <input
+              type="text"
+              value={subjectLine.content}
+              onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
+              placeholder="Enter subject line..."
+              className="flex-1 px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-colors"
+            />
           </div>
 
           {/* CSV Upload */}
@@ -176,35 +177,32 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
               onChange={handleFileUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-              <Upload className="w-4 h-4" />
-              {sampleData ? `${sampleData.rows.length} recipients` : 'Upload CSV'}
+            <button className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors ${
+              sampleData 
+                ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+            }`}>
+              {sampleData ? (
+                <>
+                  <Users className="w-4 h-4" />
+                  {sampleData.rows.length} recipients
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Upload CSV
+                </>
+              )}
             </button>
           </div>
-        </div>
 
-        {/* Save Button (placeholder) */}
-        <button
-          onClick={() => onSave?.(sections, subjectLine)}
-          className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-lg hover:bg-brand-dark transition-colors"
-        >
-          Save Draft
-        </button>
-      </div>
-
-      {/* Subject Line */}
-      <div className="bg-white border-b px-4 py-3">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            Subject:
-          </label>
-          <input
-            type="text"
-            value={subjectLine.content}
-            onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
-            placeholder="Enter subject line... (use {{Name}} for variables)"
-            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-          />
+          {/* Save Button */}
+          <button
+            onClick={() => onSave?.(sections, subjectLine)}
+            className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            Save Draft
+          </button>
         </div>
       </div>
 
@@ -213,46 +211,31 @@ export default function EmailEditor({ initialTemplate, onSave }: EmailEditorProp
         <PanelGroup direction="horizontal" className="h-full">
           {/* Edit Panel */}
           <Panel defaultSize={50} minSize={30}>
-            <div className="h-full flex flex-col bg-gray-50">
-              {/* Edit Panel Header */}
-              <div className="px-4 py-3 bg-white border-b flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Content Sections</h3>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-primary bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Section
-                </button>
-              </div>
-
+            <div className="h-full flex flex-col">
               {/* Section List */}
-              <div className="flex-1 overflow-auto p-4">
+              <div className="flex-1 overflow-auto p-5 bg-gray-50">
                 <SectionList
                   sections={sections}
                   onSectionsChange={setSections}
                   availableFields={availableFields}
                 />
-              </div>
-
-              {/* Bottom Add Button */}
-              {sections.length > 0 && (
-                <div className="px-4 py-3 border-t bg-white">
+                
+                {/* Add Section Card */}
+                <div className="mt-3">
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-6 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-colors"
                   >
-                    + Add Section
+                    <Plus className="w-5 h-5" />
+                    Add Section
                   </button>
                 </div>
-              )}
+              </div>
             </div>
           </Panel>
 
           {/* Resize Handle */}
-          <PanelResizeHandle className="w-1.5 bg-gray-200 hover:bg-brand-primary transition-colors cursor-col-resize flex items-center justify-center group">
-            <div className="w-1 h-8 bg-gray-400 rounded-full group-hover:bg-white transition-colors" />
-          </PanelResizeHandle>
+          <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-col-resize" />
 
           {/* Preview Panel */}
           <Panel defaultSize={50} minSize={30}>
