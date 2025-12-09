@@ -36,6 +36,8 @@ interface PreviewPanelProps {
   sampleData: SampleData | null
   selectedSampleIndex: number
   onSampleIndexChange: (index: number) => void
+  emailFormat: 'html' | 'text'
+  onFormatChange: (format: 'html' | 'text') => void
 }
 
 type DeviceType = 'desktop' | 'mobile'
@@ -46,6 +48,8 @@ export default function PreviewPanel({
   sampleData,
   selectedSampleIndex,
   onSampleIndexChange,
+  emailFormat,
+  onFormatChange,
 }: PreviewPanelProps) {
   const [device, setDevice] = useState<DeviceType>('desktop')
   const [showSampleDropdown, setShowSampleDropdown] = useState(false)
@@ -55,9 +59,81 @@ export default function PreviewPanel({
   // Debounce sections to prevent rapid re-renders during typing
   const debouncedSections = useDebounce(sections, 300)
 
+  // Helper to replace variables
+  const replaceVariables = (text: string, data: Record<string, string> | null): string => {
+    if (!data) return text
+    return text.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+      const value = data[varName] || data[varName.toLowerCase()] || data[varName.toUpperCase()]
+      return value !== undefined ? value : match
+    })
+  }
+
   const emailHtml = useMemo(() => {
+    if (emailFormat === 'text') {
+      // Generate plain text preview
+      const subject = replaceVariables(subjectLine.content, currentSample)
+      const textContent = debouncedSections
+        .filter((s) => s.type === 'text')
+        .map((s) => {
+          if (s.mode === 'personalized') {
+            return `[${s.name} - AI Generated]`
+          }
+          return replaceVariables(s.content || '', currentSample)
+        })
+        .join('\n\n')
+      
+      // Create a simple HTML wrapper for text preview with standard email fonts
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+      color: #202124;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .subject {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e5e7eb;
+      color: #202124;
+    }
+    .body {
+      white-space: pre-wrap;
+      font-size: 14px;
+      color: #202124;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="subject">Subject: ${subject}</div>
+    <div class="body">${textContent || '(No content)'}</div>
+  </div>
+</body>
+</html>
+      `
+    }
     return generateEmailHtml(debouncedSections, subjectLine.content, currentSample)
-  }, [debouncedSections, subjectLine.content, currentSample])
+  }, [debouncedSections, subjectLine.content, currentSample, emailFormat])
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -66,6 +142,26 @@ export default function PreviewPanel({
         <h3 className="text-xs sm:text-sm font-semibold text-gray-700">Preview</h3>
         
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Email Format Toggle */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-md sm:rounded-lg p-0.5">
+            <button
+              onClick={() => onFormatChange('text')}
+              className={`px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs font-medium rounded transition-colors ${
+                emailFormat === 'text' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Text
+            </button>
+            <button
+              onClick={() => onFormatChange('html')}
+              className={`px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs font-medium rounded transition-colors ${
+                emailFormat === 'html' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              HTML
+            </button>
+          </div>
+
           {/* Device Switcher */}
           <div className="flex items-center bg-gray-100 rounded-md sm:rounded-lg p-0.5 sm:p-1">
             <button

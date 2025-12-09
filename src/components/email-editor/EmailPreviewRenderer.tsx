@@ -54,7 +54,8 @@ function htmlToText(html: string): string {
 export function generateEmailHtml(
   sections: Section[],
   subjectLine: string,
-  sampleData: CSVRow | null
+  sampleData: CSVRow | null,
+  unsubscribeUrl?: string
 ): string {
   const processedSubject = replaceVariables(subjectLine, sampleData)
   
@@ -137,7 +138,7 @@ export function generateEmailHtml(
   <title>${processedSubject}</title>
 </head>
 <body style="
-  font-family: 'Avenir', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   background-color: ${BRAND.bgLight};
   margin: 0;
   padding: 16px 0;
@@ -208,7 +209,7 @@ export function generateEmailHtml(
       ">
         This email was sent to you because you're listed as a developer with
         an Opportunity Zone project. If you'd prefer not to receive these
-        emails, you can unsubscribe.
+        emails, you can <a href="${unsubscribeUrl || (sampleData?.Email ? `/api/unsubscribe?email=${encodeURIComponent(sampleData.Email)}&token=TOKEN` : '#')}" style="color: ${BRAND.primary}; text-decoration: underline;">unsubscribe</a>.
       </p>
       <p style="
         margin: 0;

@@ -22,18 +22,73 @@ export interface EmailTemplate {
   defaultSections: Omit<Section, 'order'>[];
 }
 
+// Campaign-related types
+export type CampaignStatus = 'draft' | 'staged' | 'scheduled' | 'sending' | 'completed' | 'paused' | 'cancelled';
+export type EmailFormat = 'html' | 'text';
+export type QueuedEmailStatus = 'staged' | 'queued' | 'processing' | 'sent' | 'failed' | 'rejected';
+
 export interface Campaign {
   id: string;
   name: string;
-  templateId: string;
+  templateSlug: string | null;
   sections: Section[];
   subjectLine: {
     mode: SectionMode;
     content: string;
     selectedFields?: string[];
   };
-  createdAt?: string;
-  updatedAt?: string;
+  emailFormat: EmailFormat;
+  status: CampaignStatus;
+  totalRecipients: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QueuedEmail {
+  id: string;
+  campaignId: string;
+  toEmail: string;
+  fromEmail: string | null;
+  subject: string;
+  body: string;
+  status: QueuedEmailStatus;
+  scheduledFor: string | null;
+  domainIndex: number | null;
+  isEdited: boolean;
+  metadata: Record<string, any>;
+  createdAt: string;
+}
+
+export interface GenerateResponse {
+  success: boolean;
+  staged: number;
+  errors?: string[];
+}
+
+export interface SampleEmail {
+  toEmail: string;
+  subject: string;
+  body: string;
+  recipientData: Record<string, string>;
+}
+
+export interface GenerateSamplesResponse {
+  success: boolean;
+  samples: SampleEmail[];
+  errors?: string[];
+}
+
+export interface LaunchResponse {
+  success: boolean;
+  queued: number;
+  scheduling: {
+    timezone: string;
+    intervalMinutes: number;
+    startTimeUTC: string;
+    estimatedEndTimeUTC: string;
+    emailsByDay: Record<string, number>;
+    totalDays: number;
+  };
 }
 
 export interface CSVRow {
