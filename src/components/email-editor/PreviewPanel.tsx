@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { Monitor, Smartphone, ChevronDown, Users } from 'lucide-react'
-import { generateEmailHtml } from './EmailPreviewRenderer'
+import { generateEmailHtml } from '@/lib/email/generateEmailHtml'
 import type { Section, SectionMode, SampleData } from '@/types/email-editor'
 
 // Custom hook for debouncing a value

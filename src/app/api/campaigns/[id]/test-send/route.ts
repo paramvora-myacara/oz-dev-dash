@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { generateEmailHtml } from '@/components/email-editor/EmailPreviewRenderer';
+import { generateEmailHtml } from '@/lib/email/generateEmailHtml';
 
 // Convert any rich-text/HTML into plain text for text-mode test sends
 const stripHtmlToText = (input: string): string =>

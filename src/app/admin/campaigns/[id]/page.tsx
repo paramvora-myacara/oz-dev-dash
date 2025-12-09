@@ -8,6 +8,7 @@ import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
+import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
 import { getCampaign, updateCampaign, generateEmails, generateSamples, getStagedEmails, launchCampaign, sendTestEmail } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
@@ -28,6 +29,7 @@ export default function CampaignEditPage() {
   const [showLaunchModal, setShowLaunchModal] = useState(false)
   const [showTestModal, setShowTestModal] = useState(false)
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<string[] | null>(null)
   const [testEmail, setTestEmail] = useState('')
   const [sendingTest, setSendingTest] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -169,13 +171,14 @@ export default function CampaignEditPage() {
       // Generate emails with the CSV
       const result = await generateEmails(campaign.id || campaignId, csvFile)
       
-      if (result.errors && result.errors.length > 0) {
-        console.warn('Generation had some errors:', result.errors)
-      }
-
       // Reload campaign and staged emails
       await loadCampaign()
       await loadStagedEmails()
+      
+      // Show validation errors modal if there are any
+      if (result.errors && result.errors.length > 0) {
+        setValidationErrors(result.errors)
+      }
       
       // Move to review step
       setCurrentStep('review')
@@ -468,9 +471,20 @@ export default function CampaignEditPage() {
                               <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                 Body
                               </label>
-                              <div className="mt-1 p-3 bg-white border rounded-lg text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-auto">
-                                {email.body}
-                              </div>
+                              {campaign.emailFormat === 'text' ? (
+                                <div className="mt-1 p-3 bg-white border rounded-lg text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-auto">
+                                  {email.body}
+                                </div>
+                              ) : (
+                                <div className="mt-1 border rounded-lg overflow-hidden max-h-96">
+                                  <iframe
+                                    srcDoc={email.body}
+                                    title={`Email preview for ${email.toEmail}`}
+                                    className="w-full h-96 border-0"
+                                    sandbox="allow-same-origin"
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -613,6 +627,14 @@ export default function CampaignEditPage() {
         totalEmails={stagedCount}
         editedCount={editedCount}
         isDeleting={isDeleting}
+      />
+
+      {/* Email Validation Errors Modal */}
+      <EmailValidationErrorsModal
+        isOpen={validationErrors !== null}
+        onClose={() => setValidationErrors(null)}
+        stagedCount={stagedCount}
+        errors={validationErrors || []}
       />
     </div>
   )

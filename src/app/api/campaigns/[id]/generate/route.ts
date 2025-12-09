@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import Papa from 'papaparse';
-import { generateEmailHtml } from '@/components/email-editor/EmailPreviewRenderer';
+import { generateEmailHtml } from '@/lib/email/generateEmailHtml';
 import { generateUnsubscribeUrl } from '@/lib/email/unsubscribe';
 
 // Convert any rich-text/HTML into plain text for text-mode campaigns
@@ -99,29 +99,56 @@ export async function POST(
     const errors: string[] = [];
     const validRows: Array<{ row: Record<string, string>; email: string }> = [];
 
+    // Basic email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const email = (row.Email || row.email || '').toLowerCase().trim();
+      const emailField = (row.Email || row.email || '').trim();
       
-      if (!email) {
+      if (!emailField) {
         errors.push(`Row ${i + 2}: Missing email`);
         continue;
       }
 
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        errors.push(`Row ${i + 2}: Invalid email format "${email}"`);
+      // Split by comma and process each email
+      const emailAddresses = emailField.split(',').map(e => e.trim()).filter(e => e.length > 0);
+      
+      if (emailAddresses.length === 0) {
+        errors.push(`Row ${i + 2}: Missing email`);
         continue;
       }
 
-      if (seenEmails.has(email)) {
-        errors.push(`Row ${i + 2}: Duplicate email "${email}"`);
-        continue;
+      // Validate each email address
+      const validEmails: string[] = [];
+      for (const email of emailAddresses) {
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Skip if empty after normalization
+        if (!normalizedEmail) {
+          continue;
+        }
+
+        // Validate email format
+        if (!emailRegex.test(normalizedEmail)) {
+          errors.push(`Row ${i + 2}: Invalid email format "${email}"`);
+          continue;
+        }
+
+        // Check for duplicates (across all rows)
+        if (seenEmails.has(normalizedEmail)) {
+          errors.push(`Row ${i + 2}: Duplicate email "${email}"`);
+          continue;
+        }
+
+        seenEmails.add(normalizedEmail);
+        validEmails.push(normalizedEmail);
       }
 
-      seenEmails.add(email);
-      validRows.push({ row, email });
+      // Create a queue entry for each valid email (using the same row metadata)
+      for (const email of validEmails) {
+        validRows.push({ row, email });
+      }
     }
 
     if (validRows.length === 0) {
