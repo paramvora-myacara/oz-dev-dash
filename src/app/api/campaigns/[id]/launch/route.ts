@@ -76,7 +76,7 @@ function adjustToWorkingHours(candidateTime: Date): Date {
 // POST /api/campaigns/:id/launch
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await verifyAdmin();

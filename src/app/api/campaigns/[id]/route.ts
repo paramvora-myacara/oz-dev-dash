@@ -5,7 +5,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 // GET /api/campaigns/:id
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await verifyAdmin();
@@ -47,7 +47,7 @@ export async function GET(
 // PUT /api/campaigns/:id
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await verifyAdmin();
@@ -113,7 +113,7 @@ export async function PUT(
 // DELETE /api/campaigns/:id
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await verifyAdmin();

@@ -24,7 +24,7 @@ const stripHtmlToText = (input: string): string =>
 // Generates sample emails without persisting to the database
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await verifyAdmin();

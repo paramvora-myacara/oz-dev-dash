@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { generateUnsubscribeToken } from '@/lib/email/unsubscribe';
 
-const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || 'your-secret-key-change-in-production';
 const SPARKPOST_API_KEY = process.env.SPARKPOST_API_KEY;
-
-// Generate HMAC token for email
-export function generateUnsubscribeToken(email: string): string {
-  return crypto
-    .createHmac('sha256', UNSUBSCRIBE_SECRET)
-    .update(email.toLowerCase())
-    .digest('hex')
-    .substring(0, 16);
-}
 
 // Verify HMAC token
 function verifyToken(email: string, token: string): boolean {

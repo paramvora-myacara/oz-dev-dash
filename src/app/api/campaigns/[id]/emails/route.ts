@@ -5,7 +5,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 // GET /api/campaigns/:id/emails
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await verifyAdmin();

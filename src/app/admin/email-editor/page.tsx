@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { EmailEditor } from '@/components/email-editor'
+import type { SampleData } from '@/types/email-editor'
 
 interface AdminUser {
   id: string
@@ -16,6 +17,11 @@ export default function EmailEditorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const router = useRouter()
+  
+  // CSV state for EmailEditor
+  const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvFileName, setCsvFileName] = useState<string | null>(null)
+  const [sampleData, setSampleData] = useState<SampleData | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,10 +47,22 @@ export default function EmailEditorPage() {
     fetchData()
   }, [router])
 
-  const handleSave = (sections: any[], subjectLine: any) => {
-    console.log('Saving draft:', { sections, subjectLine })
+  const handleCsvUpload = (file: File, fileName: string, data: SampleData) => {
+    setCsvFile(file)
+    setCsvFileName(fileName)
+    setSampleData(data)
+  }
+
+  const handleCsvRemove = () => {
+    setCsvFile(null)
+    setCsvFileName(null)
+    setSampleData(null)
+  }
+
+  const handleAutoSave = async (sections: any[], subjectLine: any, emailFormat: 'html' | 'text') => {
+    console.log('Auto-saving draft:', { sections, subjectLine, emailFormat })
     // TODO: Implement save to database
-    alert('Draft saved! (Check console for data)')
+    return true // Return true on success
   }
 
   if (isLoading) {
@@ -85,7 +103,14 @@ export default function EmailEditorPage() {
 
       {/* Editor */}
       <div className="flex-1 overflow-hidden">
-        <EmailEditor onSave={handleSave} />
+        <EmailEditor
+          csvFile={csvFile}
+          csvFileName={csvFileName}
+          sampleData={sampleData}
+          onCsvUpload={handleCsvUpload}
+          onCsvRemove={handleCsvRemove}
+          onAutoSave={handleAutoSave}
+        />
       </div>
     </div>
   )
