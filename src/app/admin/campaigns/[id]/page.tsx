@@ -9,7 +9,7 @@ import CampaignStepper, { type CampaignStep } from '@/components/campaign/Campai
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, generateSamples, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, type GenerateProgress } from '@/lib/api/campaigns'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
 
@@ -155,25 +155,17 @@ export default function CampaignEditPage() {
     }
   }, [campaign, campaignId])
 
-  // Generate sample emails
-  const handleGenerateSamples = useCallback(async (format: EmailFormat) => {
-    if (!campaign || !csvFile) throw new Error('Missing campaign or CSV')
-
-    const result = await generateSamples(campaign.id || campaignId, csvFile, format)
-    return {
-      samples: result.samples,
-      totalRecipients: result.totalRecipients,
-    }
-  }, [campaign, campaignId, csvFile])
-
-  // Generate all emails
-  const handleGenerateAll = useCallback(async () => {
+  // Generate all emails with specified format
+  const handleGenerateAllWithFormat = useCallback(async (format: EmailFormat) => {
     if (!campaign || !csvFile) return
 
     try {
       setGenerating(true)
       setError(null)
       setGenerateProgress(null)
+
+      // Save the format to the campaign first
+      await updateCampaign(campaign.id || campaignId, { emailFormat: format })
 
       // Generate emails with the CSV and track progress
       const result = await generateEmails(
@@ -200,6 +192,8 @@ export default function CampaignEditPage() {
       setGenerateProgress(null)
     }
   }, [campaign, campaignId, csvFile])
+
+
 
   // Back to design from format-sample
   const handleBackToDesignFromFormatSample = useCallback(() => {
@@ -424,8 +418,7 @@ export default function CampaignEditPage() {
             sampleData={sampleData}
             initialFormat={campaign.emailFormat || 'text'}
             onBack={handleBackToDesignFromFormatSample}
-            onGenerateSamples={handleGenerateSamples}
-            onGenerateAll={handleGenerateAll}
+            onGenerateAll={handleGenerateAllWithFormat}
             isGeneratingAll={generating}
             generateProgress={generateProgress}
           />

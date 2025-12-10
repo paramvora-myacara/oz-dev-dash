@@ -2,6 +2,33 @@ import type { Campaign, QueuedEmail, GenerateResponse, LaunchResponse, GenerateS
 
 const API_BASE = '/api/campaigns';
 
+// CSV Validation types
+export interface CsvValidationResult {
+  csvRowCount: number;
+  fields: string[];
+  emails: {
+    total: number;
+    valid: number;
+    duplicates: number;
+    invalid: number;
+    missing: number;
+  };
+  errors: string[];
+}
+
+// Validate CSV without generating emails (dry run)
+export async function validateCsv(campaignId: string, csvFile: File): Promise<CsvValidationResult> {
+  const formData = new FormData();
+  formData.append('file', csvFile);
+
+  const res = await fetch(`${API_BASE}/${campaignId}/validate-csv`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 // Campaign CRUD
 export async function createCampaign(data: Partial<Campaign>): Promise<Campaign> {
   const res = await fetch(API_BASE, {
