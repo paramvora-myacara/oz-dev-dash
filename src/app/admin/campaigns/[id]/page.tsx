@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye } from 'lucide-react'
+import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, generateSamples, getStagedEmails, launchCampaign, sendTestEmail } from '@/lib/api/campaigns'
+import { getCampaign, updateCampaign, generateEmails, generateSamples, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
 
@@ -17,7 +17,7 @@ export default function CampaignEditPage() {
   const params = useParams()
   const router = useRouter()
   const campaignId = params.id as string
-  
+
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
@@ -35,7 +35,13 @@ export default function CampaignEditPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
-  
+
+  // Generation progress state
+  const [generateProgress, setGenerateProgress] = useState<GenerateProgress | null>(null)
+
+  // Regeneration state
+  const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
+
   // CSV state (lifted from EmailEditor)
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvFileName, setCsvFileName] = useState<string | null>(null)
@@ -105,8 +111,8 @@ export default function CampaignEditPage() {
 
   // Autosave handler - returns true on success, false on failure
   const handleAutoSave = useCallback(async (
-    sections: Section[], 
-    subjectLine: { mode: SectionMode; content: string }, 
+    sections: Section[],
+    subjectLine: { mode: SectionMode; content: string },
     emailFormat: 'html' | 'text'
   ): Promise<boolean> => {
     if (!campaign) return false
@@ -152,7 +158,7 @@ export default function CampaignEditPage() {
   // Generate sample emails
   const handleGenerateSamples = useCallback(async (format: EmailFormat) => {
     if (!campaign || !csvFile) throw new Error('Missing campaign or CSV')
-    
+
     const result = await generateSamples(campaign.id || campaignId, csvFile, format)
     return {
       samples: result.samples,
@@ -167,25 +173,31 @@ export default function CampaignEditPage() {
     try {
       setGenerating(true)
       setError(null)
+      setGenerateProgress(null)
 
-      // Generate emails with the CSV
-      const result = await generateEmails(campaign.id || campaignId, csvFile)
-      
+      // Generate emails with the CSV and track progress
+      const result = await generateEmails(
+        campaign.id || campaignId,
+        csvFile,
+        (progress) => setGenerateProgress(progress)
+      )
+
       // Reload campaign and staged emails
       await loadCampaign()
       await loadStagedEmails()
-      
+
       // Show validation errors modal if there are any
       if (result.errors && result.errors.length > 0) {
         setValidationErrors(result.errors)
       }
-      
+
       // Move to review step
       setCurrentStep('review')
     } catch (err: any) {
       setError('Failed to generate emails: ' + err.message)
     } finally {
       setGenerating(false)
+      setGenerateProgress(null)
     }
   }, [campaign, campaignId, csvFile])
 
@@ -210,20 +222,20 @@ export default function CampaignEditPage() {
     try {
       setIsDeleting(true)
       setError(null)
-      
+
       // Update campaign status back to draft (this will trigger deletion of staged emails on next generate)
       await updateCampaign(campaign.id || campaignId, {
         status: 'draft' as any, // Reset to draft
       })
-      
+
       // Clear local state
       setStagedEmails([])
       setStagedCount(0)
       setEditedCount(0)
-      
+
       // Reload campaign
       await loadCampaign()
-      
+
       setShowRegenerateModal(false)
       setCurrentStep('design')
     } catch (err: any) {
@@ -243,7 +255,7 @@ export default function CampaignEditPage() {
       await loadCampaign()
       setShowLaunchModal(false)
       setCurrentStep('complete')
-      
+
       // Show success and redirect
       alert(`Campaign launched! ${result.queued} emails queued.`)
       router.push('/admin/campaigns')
@@ -268,6 +280,28 @@ export default function CampaignEditPage() {
       setError('Failed to send test email: ' + err.message)
     } finally {
       setSendingTest(false)
+    }
+  }
+
+  // Regenerate single email
+  const handleRegenerateEmail = async (emailId: string) => {
+    if (!campaign) return
+
+    try {
+      setRegeneratingEmailId(emailId)
+      setError(null)
+      const result = await regenerateEmail(campaign.id || campaignId, emailId)
+
+      // Update the email in the local state
+      setStagedEmails(prev => prev.map(e =>
+        e.id === emailId
+          ? { ...e, subject: result.email.subject, body: result.email.body, isEdited: result.email.isEdited }
+          : e
+      ))
+    } catch (err: any) {
+      setError('Failed to regenerate email: ' + err.message)
+    } finally {
+      setRegeneratingEmailId(null)
     }
   }
 
@@ -302,10 +336,10 @@ export default function CampaignEditPage() {
       <div className="border-b bg-white px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
-          <Link href="/admin/campaigns" className="text-gray-600 hover:text-gray-800">
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
+            <Link href="/admin/campaigns" className="text-gray-600 hover:text-gray-800">
+              <ArrowLeft size={20} />
+            </Link>
+            <div>
               <h1 className="text-lg sm:text-xl font-bold">{campaign.name || 'New Campaign'}</h1>
               <p className="text-xs sm:text-sm text-gray-500">
                 {getStatusLabel(campaign.status)}
@@ -313,9 +347,9 @@ export default function CampaignEditPage() {
               </p>
             </div>
           </div>
-          
+
           {/* Header actions based on step */}
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {currentStep === 'review' && (
               <>
                 <button
@@ -325,22 +359,22 @@ export default function CampaignEditPage() {
                   <Pencil size={16} />
                   <span className="hidden sm:inline">Edit Template</span>
                 </button>
-              <button
-                onClick={() => setShowTestModal(true)}
+                <button
+                  onClick={() => setShowTestModal(true)}
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
+                >
                   <Mail size={16} />
                   <span className="hidden sm:inline">Test Send</span>
-              </button>
-              <button
-                onClick={() => setShowLaunchModal(true)}
+                </button>
+                <button
+                  onClick={() => setShowLaunchModal(true)}
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
-              >
+                >
                   <Rocket size={16} />
                   <span className="hidden sm:inline">Launch</span>
-              </button>
-            </>
-          )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -393,6 +427,7 @@ export default function CampaignEditPage() {
             onGenerateSamples={handleGenerateSamples}
             onGenerateAll={handleGenerateAll}
             isGeneratingAll={generating}
+            generateProgress={generateProgress}
           />
         )}
 
@@ -415,7 +450,7 @@ export default function CampaignEditPage() {
                     Showing {stagedEmails.length} of {stagedCount} emails
                   </p>
                 </div>
-                
+
                 {stagedEmails.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Mail className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -444,11 +479,10 @@ export default function CampaignEditPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 ml-4">
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              email.isEdited 
-                                ? 'bg-yellow-100 text-yellow-800' 
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${email.isEdited
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-600'
+                              }`}>
                               {email.isEdited ? 'Edited' : 'Generated'}
                             </span>
                             {expandedEmailId === email.id ? (
@@ -458,7 +492,7 @@ export default function CampaignEditPage() {
                             )}
                           </div>
                         </button>
-                        
+
                         {expandedEmailId === email.id && (
                           <div className="px-4 pb-4 border-t bg-gray-50">
                             <div className="mt-3">
@@ -486,6 +520,17 @@ export default function CampaignEditPage() {
                                 </div>
                               )}
                             </div>
+                            {/* Regenerate button */}
+                            <div className="mt-4 flex justify-end">
+                              <button
+                                onClick={() => handleRegenerateEmail(email.id)}
+                                disabled={regeneratingEmailId === email.id}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-50"
+                              >
+                                <RefreshCw className={`w-4 h-4 ${regeneratingEmailId === email.id ? 'animate-spin' : ''}`} />
+                                {regeneratingEmailId === email.id ? 'Regenerating...' : 'Regenerate AI Content'}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -496,7 +541,7 @@ export default function CampaignEditPage() {
 
               {stagedCount > stagedEmails.length && (
                 <p className="text-center text-sm text-gray-500 mt-4">
-                  Showing first {stagedEmails.length} emails. 
+                  Showing first {stagedEmails.length} emails.
                   {stagedCount - stagedEmails.length} more emails not shown.
                 </p>
               )}

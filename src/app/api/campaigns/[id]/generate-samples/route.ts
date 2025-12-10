@@ -4,7 +4,8 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import Papa from 'papaparse';
 import { generateEmailHtml } from '@/lib/email/generateEmailHtml';
 import { generateUnsubscribeUrl } from '@/lib/email/unsubscribe';
-import type { SampleEmail } from '@/types/email-editor';
+import { generatePersonalizedBatch } from '@/lib/ai/generatePersonalizedContent';
+import type { SampleEmail, Section } from '@/types/email-editor';
 
 const DEFAULT_SAMPLE_COUNT = 5;
 
@@ -122,7 +123,7 @@ export async function POST(
 
     for (const row of sampleRows) {
       const email = (row.Email || row.email || '').toLowerCase().trim();
-      
+
       if (!email) {
         errors.push(`Missing email in sample row`);
         continue;
@@ -145,24 +146,59 @@ export async function POST(
 
     // 9. Generate sample emails (without persisting)
     const subjectLineContent = campaign.subject_line?.content || '';
-    const sections = campaign.sections || [];
-    
+    const sections: Section[] = campaign.sections || [];
+    const personalizedSections = sections.filter((s) => s.mode === 'personalized');
+
+    // Generate AI content for personalized sections if needed
+    let aiContentMap = new Map<string, Map<string, string>>();
+
+    if (personalizedSections.length > 0) {
+      try {
+        const batchRecipients = validSampleRows.map(({ row }, index) => ({
+          index,
+          fields: row,
+        }));
+
+        const batchResults = await generatePersonalizedBatch(
+          sections,
+          personalizedSections,
+          batchRecipients
+        );
+
+        // Build map of email -> sectionId -> content
+        for (const result of batchResults) {
+          const { row, email } = validSampleRows[result.recipientIndex];
+          const sectionMap = new Map<string, string>();
+          for (const section of result.sections) {
+            sectionMap.set(section.sectionId, section.content);
+          }
+          aiContentMap.set(email, sectionMap);
+        }
+      } catch (aiError) {
+        console.error('AI generation error for samples:', aiError);
+        // Continue with placeholders if AI fails
+      }
+    }
+
     const samples: SampleEmail[] = validSampleRows.map(({ row, email }) => {
       // Replace variables in subject
       const subject = replaceVariables(subjectLineContent, row);
-      
+
       // Generate body based on format
       let body: string;
       const unsubscribeUrl = generateUnsubscribeUrl(email, process.env.NEXT_PUBLIC_APP_URL);
-      
+      const recipientAiContent = aiContentMap.get(email);
+
       if (emailFormat === 'text') {
         // Plain text: concatenate sections
         body = sections
-          .filter((s: any) => s.type === 'text')
-          .map((s: any) => {
-            // For personalized sections, show placeholder (AI not implemented yet)
+          .filter((s: Section) => s.type === 'text')
+          .sort((a, b) => a.order - b.order)
+          .map((s: Section) => {
             if (s.mode === 'personalized') {
-              return stripHtmlToText(`[${s.name} - AI personalized content will appear here]`);
+              // Use AI-generated content or fallback to placeholder
+              const aiContent = recipientAiContent?.get(s.id);
+              return aiContent || `[${s.name} - AI generation pending]`;
             }
             return stripHtmlToText(replaceVariables(s.content || '', row));
           })
@@ -170,18 +206,18 @@ export async function POST(
         // Add unsubscribe link for text emails
         body += `\n\n---\nIf you'd prefer not to receive these emails, you can unsubscribe here: ${unsubscribeUrl}`;
       } else {
-        // HTML: use the renderer with unsubscribe URL
-        // For personalized sections, pass modified sections with placeholder content
-        const sectionsWithPlaceholders = sections.map((s: any) => {
+        // HTML: use the renderer with AI-populated sections
+        const sectionsWithAiContent = sections.map((s: Section) => {
           if (s.mode === 'personalized') {
+            const aiContent = recipientAiContent?.get(s.id);
             return {
               ...s,
-              content: `[${s.name} - AI personalized content will appear here]`,
+              content: aiContent || `[${s.name} - AI generation pending]`,
             };
           }
           return s;
         });
-        body = generateEmailHtml(sectionsWithPlaceholders, subject, row, unsubscribeUrl);
+        body = generateEmailHtml(sectionsWithAiContent, subject, row, unsubscribeUrl);
       }
 
       return {

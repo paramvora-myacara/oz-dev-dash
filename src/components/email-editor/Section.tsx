@@ -7,18 +7,18 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { 
-  GripVertical, 
-  ChevronRight, 
+import {
+  GripVertical,
+  ChevronRight,
   ChevronDown,
   MoreHorizontal,
-  Trash2, 
-  Sparkles, 
-  Target, 
-  FileText, 
-  Bold, 
-  Italic, 
-  Link as LinkIcon, 
+  Trash2,
+  Sparkles,
+  Target,
+  FileText,
+  Bold,
+  Italic,
+  Link as LinkIcon,
   MousePointerClick,
   Pencil
 } from 'lucide-react'
@@ -33,10 +33,10 @@ interface SectionProps {
   onToggleExpand?: () => void
 }
 
-export default function Section({ 
-  section, 
-  onChange, 
-  onDelete, 
+export default function Section({
+  section,
+  onChange,
+  onDelete,
   availableFields,
   isExpanded = false,
   onToggleExpand
@@ -128,7 +128,20 @@ export default function Section({
   }, [isEditingName])
 
   const handleModeChange = (newMode: SectionMode) => {
-    onChange({ ...section, mode: newMode, content: '' })
+    // Set default prompt for personalized mode
+    const defaultContent = newMode === 'personalized'
+      ? `You are writing a section of a cold outreach email for OZListings.
+
+RULES:
+- Keep it concise (1-3 sentences max for this section)
+- Sound natural and conversational, not salesy
+- Reference the specific details provided below
+- Match the tone of a professional but warm business email
+
+Write the personalized section now.`
+      : '';
+
+    onChange({ ...section, mode: newMode, content: defaultContent })
     setShowOverflowMenu(false)
   }
 
@@ -148,7 +161,7 @@ export default function Section({
     if (!editor) return
     const previousUrl = editor.getAttributes('link').href
     const url = window.prompt('Enter URL:', previousUrl)
-    
+
     if (url === null) return
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run()
@@ -188,15 +201,13 @@ export default function Section({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white border border-gray-200 rounded-lg sm:rounded-xl transition-shadow ${
-        isDragging ? 'shadow-lg ring-2 ring-blue-500' : 'hover:shadow-sm'
-      } ${isExpanded ? 'shadow-sm' : ''}`}
+      className={`bg-white border border-gray-200 rounded-lg sm:rounded-xl transition-shadow ${isDragging ? 'shadow-lg ring-2 ring-blue-500' : 'hover:shadow-sm'
+        } ${isExpanded ? 'shadow-sm' : ''}`}
     >
       {/* Section Header - Always Visible */}
-      <div 
-        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-3 sm:py-4 cursor-pointer select-none ${
-          isExpanded ? 'border-b border-gray-100' : ''
-        }`}
+      <div
+        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-3 sm:py-4 cursor-pointer select-none ${isExpanded ? 'border-b border-gray-100' : ''
+          }`}
         onClick={() => onToggleExpand?.()}
       >
         {/* Drag Handle */}
@@ -286,9 +297,8 @@ export default function Section({
                       e.stopPropagation()
                       handleModeChange('static')
                     }}
-                    className={`w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-50 ${
-                      section.mode === 'static' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
-                    }`}
+                    className={`w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-50 ${section.mode === 'static' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                      }`}
                   >
                     <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Same for All
@@ -298,9 +308,8 @@ export default function Section({
                       e.stopPropagation()
                       handleModeChange('personalized')
                     }}
-                    className={`w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-50 ${
-                      section.mode === 'personalized' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
-                    }`}
+                    className={`w-full flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-50 ${section.mode === 'personalized' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                      }`}
                   >
                     <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Personalize
@@ -379,38 +388,34 @@ export default function Section({
             /* Static Mode - Rich Text Editor */
             <div className="rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
               {/* Toolbar - Only visible when focused */}
-              <div className={`flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border-b transition-all ${
-                isEditorFocused ? 'opacity-100' : 'opacity-0 h-0 py-0 border-b-0 overflow-hidden'
-              }`}>
+              <div className={`flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border-b transition-all ${isEditorFocused ? 'opacity-100' : 'opacity-0 h-0 py-0 border-b-0 overflow-hidden'
+                }`}>
                 <button
                   onClick={() => editor?.chain().focus().toggleBold().run()}
-                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${
-                    editor?.isActive('bold') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${editor?.isActive('bold') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+                    }`}
                   title="Bold"
                 >
                   <Bold className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={() => editor?.chain().focus().toggleItalic().run()}
-                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${
-                    editor?.isActive('italic') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${editor?.isActive('italic') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+                    }`}
                   title="Italic"
                 >
                   <Italic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={setLink}
-                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${
-                    editor?.isActive('link') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
-                  }`}
+                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${editor?.isActive('link') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
+                    }`}
                   title="Add Link"
                 >
                   <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
-              
+
               <EditorContent editor={editor} />
             </div>
           ) : (
@@ -441,11 +446,10 @@ export default function Section({
                         <button
                           key={field}
                           onClick={() => handleFieldToggle(field)}
-                          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full border transition-colors ${
-                            isSelected
+                          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full border transition-colors ${isSelected
                               ? 'bg-blue-600 text-white border-blue-600'
                               : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-                          }`}
+                            }`}
                         >
                           {field}
                         </button>

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, ArrowRight, FileText, Code, RefreshCw, Pencil, ChevronDown, ChevronUp, Mail, Inbox, ShieldAlert, Users, Zap } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Code, RefreshCw, Pencil, ChevronDown, ChevronUp, Mail, Inbox, ShieldAlert, Users, Zap, Loader2 } from 'lucide-react'
 import type { EmailFormat, SampleEmail, SampleData } from '@/types/email-editor'
+import type { GenerateProgress } from '@/lib/api/campaigns'
 
 interface FormatSampleStepProps {
   campaignId: string
@@ -13,6 +14,7 @@ interface FormatSampleStepProps {
   onGenerateSamples: (format: EmailFormat) => Promise<{ samples: SampleEmail[]; totalRecipients: number }>
   onGenerateAll: () => void
   isGeneratingAll: boolean
+  generateProgress?: GenerateProgress | null
 }
 
 export default function FormatSampleStep({
@@ -24,6 +26,7 @@ export default function FormatSampleStep({
   onGenerateSamples,
   onGenerateAll,
   isGeneratingAll,
+  generateProgress,
 }: FormatSampleStepProps) {
   const [selectedFormat, setSelectedFormat] = useState<EmailFormat>(initialFormat)
   const [samples, setSamples] = useState<SampleEmail[] | null>(null)
@@ -82,25 +85,21 @@ export default function FormatSampleStep({
             {/* Plain Text Option */}
             <button
               onClick={() => handleFormatChange('text')}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                selectedFormat === 'text'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
+              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedFormat === 'text'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
             >
               <div className="flex items-start gap-4">
-                <div className={`p-2.5 rounded-lg ${
-                  selectedFormat === 'text' ? 'bg-blue-100' : 'bg-gray-100'
-                }`}>
-                  <FileText className={`w-5 h-5 ${
-                    selectedFormat === 'text' ? 'text-blue-600' : 'text-gray-500'
-                  }`} />
+                <div className={`p-2.5 rounded-lg ${selectedFormat === 'text' ? 'bg-blue-100' : 'bg-gray-100'
+                  }`}>
+                  <FileText className={`w-5 h-5 ${selectedFormat === 'text' ? 'text-blue-600' : 'text-gray-500'
+                    }`} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className={`font-semibold ${
-                      selectedFormat === 'text' ? 'text-blue-900' : 'text-gray-900'
-                    }`}>
+                    <h3 className={`font-semibold ${selectedFormat === 'text' ? 'text-blue-900' : 'text-gray-900'
+                      }`}>
                       Plain Text
                     </h3>
                     <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
@@ -126,11 +125,10 @@ export default function FormatSampleStep({
                     </div>
                   </div>
                 </div>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  selectedFormat === 'text' 
-                    ? 'border-blue-500 bg-blue-500' 
-                    : 'border-gray-300'
-                }`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedFormat === 'text'
+                  ? 'border-blue-500 bg-blue-500'
+                  : 'border-gray-300'
+                  }`}>
                   {selectedFormat === 'text' && (
                     <div className="w-2 h-2 rounded-full bg-white" />
                   )}
@@ -141,25 +139,21 @@ export default function FormatSampleStep({
             {/* HTML Option */}
             <button
               onClick={() => handleFormatChange('html')}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                selectedFormat === 'html'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
+              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedFormat === 'html'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
             >
               <div className="flex items-start gap-4">
-                <div className={`p-2.5 rounded-lg ${
-                  selectedFormat === 'html' ? 'bg-blue-100' : 'bg-gray-100'
-                }`}>
-                  <Code className={`w-5 h-5 ${
-                    selectedFormat === 'html' ? 'text-blue-600' : 'text-gray-500'
-                  }`} />
+                <div className={`p-2.5 rounded-lg ${selectedFormat === 'html' ? 'bg-blue-100' : 'bg-gray-100'
+                  }`}>
+                  <Code className={`w-5 h-5 ${selectedFormat === 'html' ? 'text-blue-600' : 'text-gray-500'
+                    }`} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className={`font-semibold ${
-                      selectedFormat === 'html' ? 'text-blue-900' : 'text-gray-900'
-                    }`}>
+                    <h3 className={`font-semibold ${selectedFormat === 'html' ? 'text-blue-900' : 'text-gray-900'
+                      }`}>
                       HTML
                     </h3>
                     <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
@@ -185,11 +179,10 @@ export default function FormatSampleStep({
                     </div>
                   </div>
                 </div>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  selectedFormat === 'html' 
-                    ? 'border-blue-500 bg-blue-500' 
-                    : 'border-gray-300'
-                }`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedFormat === 'html'
+                  ? 'border-blue-500 bg-blue-500'
+                  : 'border-gray-300'
+                  }`}>
                   {selectedFormat === 'html' && (
                     <div className="w-2 h-2 rounded-full bg-white" />
                   )}
@@ -201,7 +194,7 @@ export default function FormatSampleStep({
           {/* Pro tip */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>💡 Pro tip:</strong> Use Plain Text until recipients have replied or engaged with your emails. 
+              <strong>💡 Pro tip:</strong> Use Plain Text until recipients have replied or engaged with your emails.
               Switch to HTML only for warm, opted-in lists where recipients expect your emails.
             </p>
           </div>
@@ -277,8 +270,8 @@ export default function FormatSampleStep({
           {samples && samples.length > 0 && (
             <div className="space-y-3">
               {samples.map((sample, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="border rounded-xl overflow-hidden"
                 >
                   <button
@@ -302,7 +295,7 @@ export default function FormatSampleStep({
                       <ChevronDown className="w-5 h-5 text-gray-400" />
                     )}
                   </button>
-                  
+
                   {expandedSampleIndex === index && (
                     <div className="px-4 pb-4 border-t bg-gray-50">
                       <div className="mt-3">
@@ -335,37 +328,67 @@ export default function FormatSampleStep({
                 </div>
               ))}
 
-              {/* Action buttons */}
+              {/* Action buttons / Progress */}
               <div className="flex items-center justify-between pt-4 border-t mt-6">
                 <button
                   onClick={onBack}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  disabled={isGeneratingAll}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                 >
                   <Pencil className="w-4 h-4" />
                   Edit Template
                 </button>
-                
+
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-gray-500 hidden sm:block">
-                    Looks good?
-                  </p>
-                  <button
-                    onClick={onGenerateAll}
-                    disabled={isGeneratingAll}
-                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {isGeneratingAll ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        Generate All {totalRecipients} Emails
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
+                  {isGeneratingAll && generateProgress ? (
+                    <div className="flex flex-col items-end gap-2 min-w-[200px]">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                        <span className="text-sm text-gray-600">
+                          {generateProgress.phase === 'ai_generation' && 'Generating AI content...'}
+                          {generateProgress.phase === 'building_emails' && 'Building emails...'}
+                          {generateProgress.phase === 'inserting' && 'Saving emails...'}
+                          {!generateProgress.phase && 'Starting...'}
+                        </span>
+                      </div>
+                      {generateProgress.type === 'ai_progress' && (
+                        <>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${generateProgress.percentage || 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {generateProgress.completed} / {generateProgress.total} recipients
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-500 hidden sm:block">
+                        Looks good?
+                      </p>
+                      <button
+                        onClick={onGenerateAll}
+                        disabled={isGeneratingAll}
+                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {isGeneratingAll ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            Generate All {totalRecipients} Emails
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
