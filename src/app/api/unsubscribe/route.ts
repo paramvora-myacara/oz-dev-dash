@@ -39,14 +39,14 @@ export async function GET(request: NextRequest) {
     if (SPARKPOST_API_KEY) {
       try {
         await fetch('https://api.sparkpost.com/api/v1/suppression-list', {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Authorization': SPARKPOST_API_KEY,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             recipients: [{
-              email: email.toLowerCase(),
+              recipient: email.toLowerCase(),
               type: 'non_transactional',
               description: 'User unsubscribed via link',
             }],
