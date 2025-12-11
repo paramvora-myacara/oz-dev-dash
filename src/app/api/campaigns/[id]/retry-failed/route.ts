@@ -160,22 +160,55 @@ export async function POST(
       }
     })
 
+    console.log(
+      'retry-failed: starting update',
+      JSON.stringify({
+        campaignId,
+        failedCount: failedEmails.length,
+        updates: updates.map((u) => ({
+          id: u.id,
+          domainIndex: u.domainIndex,
+          scheduledFor: u.scheduledFor.toISOString(),
+        })),
+      })
+    )
+
     // 4) Persist updates
     for (const update of updates) {
-      await supabase
+      const { error } = await supabase
         .from('email_queue')
         .update({
           status: 'queued',
           domain_index: update.domainIndex,
           from_email: update.fromEmail,
           scheduled_for: update.scheduledFor.toISOString(),
-          updated_at: new Date().toISOString(),
         })
         .eq('id', update.id)
+
+      if (error) {
+        console.error(
+          'retry-failed: update error',
+          JSON.stringify({
+            campaignId,
+            emailId: update.id,
+            error: error.message,
+          })
+        )
+        return NextResponse.json({ error: `Failed to update email ${update.id}: ${error.message}` }, { status: 500 })
+      }
     }
 
     const lastScheduledTime = Object.values(domainLastScheduled)
       .reduce((latest, time) => (time > latest ? time : latest), startTimeUTC)
+
+    console.log(
+      'retry-failed: completed update',
+      JSON.stringify({
+        campaignId,
+        retried: updates.length,
+        estimatedEndTimeUTC: lastScheduledTime.toISOString(),
+      })
+    )
 
     return NextResponse.json({
       success: true,

@@ -109,7 +109,7 @@ export async function POST(
     }
 
     // 4. Validate emails and detect duplicates
-    const seenEmails = new Set<string>();
+    // const seenEmails = new Set<string>(); // Temporarily disable deduplication
     const errors: string[] = [];
     const validRows: Array<{ row: Record<string, string>; email: string }> = [];
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -141,12 +141,12 @@ export async function POST(
           continue;
         }
 
-        if (seenEmails.has(normalizedEmail)) {
-          errors.push(`Row ${i + 2}: Duplicate email "${email}"`);
-          continue;
-        }
+        // if (seenEmails.has(normalizedEmail)) {
+        //   errors.push(`Row ${i + 2}: Duplicate email "${email}"`);
+        //   continue;
+        // }
 
-        seenEmails.add(normalizedEmail);
+        // seenEmails.add(normalizedEmail);
         validEmails.push(normalizedEmail);
       }
 
