@@ -34,6 +34,7 @@ export default function CampaignsPage() {
   const [error, setError] = useState<string | null>(null)
   const [campaignStatus, setCampaignStatus] = useState<CampaignStatusData | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadCampaigns()
@@ -74,10 +75,13 @@ export default function CampaignsPage() {
     }
 
     try {
+      setDeletingId(id)
       await deleteCampaign(id)
-      setCampaigns(campaigns.filter(c => c.id !== id))
+      setCampaigns((prev) => prev.filter((c) => c.id !== id))
     } catch (err: any) {
       alert('Failed to delete campaign: ' + err.message)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -181,15 +185,15 @@ export default function CampaignsPage() {
                           >
                             <Eye size={16} />
                           </Link>
-                          {campaign.status === 'draft' && (
-                            <button
-                              onClick={() => handleDelete(campaign.id)}
-                              className="text-red-600 hover:text-red-800"
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleDelete(campaign.id)}
+                            className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete"
+                            disabled={deletingId === campaign.id}
+                            aria-label="Delete campaign"
+                          >
+                            <Trash2 size={16} className={deletingId === campaign.id ? 'animate-pulse' : ''} />
+                          </button>
                         </div>
                       </td>
                     </tr>
