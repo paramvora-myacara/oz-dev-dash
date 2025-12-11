@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/utils/supabase/admin'
-import { fromZonedTime, toZonedTime } from 'date-fns-tz'
+import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling'
 
 // Keep in sync with launch route
 const DOMAIN_CONFIG = [
@@ -19,58 +19,11 @@ const WORKING_HOUR_START = 9
 const WORKING_HOUR_END = 17
 const INTERVAL_MINUTES = 3.5
 const JITTER_SECONDS_MAX = 30
-
-function getCurrentTimeInTimezone() {
-  const now = new Date()
-  const zonedTime = toZonedTime(now, TIMEZONE)
-  return {
-    year: zonedTime.getFullYear(),
-    month: zonedTime.getMonth(),
-    day: zonedTime.getDate(),
-    hour: zonedTime.getHours(),
-    minute: zonedTime.getMinutes(),
-    second: zonedTime.getSeconds(),
-  }
-}
-
-function createDateInTimezone(year: number, month: number, day: number, hour: number, minute: number, second: number): Date {
-  const localDate = new Date(year, month, day, hour, minute, second)
-  return fromZonedTime(localDate, TIMEZONE)
-}
-
-function getStartTimeInTimezone() {
-  const now = getCurrentTimeInTimezone()
-  const { year, month, day, hour } = now
-
-  if (hour < WORKING_HOUR_START) {
-    return createDateInTimezone(year, month, day, WORKING_HOUR_START, 0, 0)
-  } else if (hour >= WORKING_HOUR_END) {
-    const tomorrow = new Date(year, month, day)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    return createDateInTimezone(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), WORKING_HOUR_START, 0, 0)
-  } else {
-    return createDateInTimezone(year, month, day, hour, now.minute, now.second)
-  }
-}
-
-function get5pmBoundary(utcDate: Date): Date {
-  const zonedTime = toZonedTime(utcDate, TIMEZONE)
-  return createDateInTimezone(zonedTime.getFullYear(), zonedTime.getMonth(), zonedTime.getDate(), WORKING_HOUR_END, 0, 0)
-}
-
-function getNext9am(utcDate: Date): Date {
-  const zonedTime = toZonedTime(utcDate, TIMEZONE)
-  const nextDay = new Date(zonedTime.getFullYear(), zonedTime.getMonth(), zonedTime.getDate())
-  nextDay.setDate(nextDay.getDate() + 1)
-  return createDateInTimezone(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), WORKING_HOUR_START, 0, 0)
-}
-
-function adjustToWorkingHours(candidateTime: Date): Date {
-  const boundary5pm = get5pmBoundary(candidateTime)
-  if (candidateTime >= boundary5pm) {
-    return getNext9am(candidateTime)
-  }
-  return candidateTime
+const SCHEDULING_CONFIG: ScheduleConfig = {
+  timezone: TIMEZONE,
+  workingHourStart: WORKING_HOUR_START,
+  workingHourEnd: WORKING_HOUR_END,
+  skipWeekends: true,
 }
 
 // POST /api/campaigns/:id/retry-failed
@@ -124,7 +77,7 @@ export async function POST(
     })
 
     // 3) Calculate new schedules using same logic as launch
-    const startTimeUTC = getStartTimeInTimezone()
+    const startTimeUTC = getStartTimeInTimezone(SCHEDULING_CONFIG)
     const intervalMs = INTERVAL_MINUTES * 60 * 1000
     const domainCurrentTime: Record<number, Date> = {}
     let roundRobinIndex = 0
@@ -140,13 +93,16 @@ export async function POST(
       if (domainIndex in domainLastScheduled && !(domainIndex in domainCurrentTime)) {
         // Existing scheduled emails from other campaigns
         const lastScheduled = domainLastScheduled[domainIndex]
-        scheduledFor = adjustToWorkingHours(new Date(lastScheduled.getTime() + intervalMs + jitterMs))
+        scheduledFor = adjustToWorkingHours(new Date(lastScheduled.getTime() + intervalMs + jitterMs), SCHEDULING_CONFIG)
       } else if (domainIndex in domainCurrentTime) {
         // Already scheduled in this retry batch
-        scheduledFor = adjustToWorkingHours(new Date(domainCurrentTime[domainIndex].getTime() + intervalMs + jitterMs))
+        scheduledFor = adjustToWorkingHours(
+          new Date(domainCurrentTime[domainIndex].getTime() + intervalMs + jitterMs),
+          SCHEDULING_CONFIG
+        )
       } else {
         // First email for this domain
-        scheduledFor = adjustToWorkingHours(new Date(startTimeUTC.getTime() + jitterMs))
+        scheduledFor = adjustToWorkingHours(new Date(startTimeUTC.getTime() + jitterMs), SCHEDULING_CONFIG)
       }
 
       domainCurrentTime[domainIndex] = scheduledFor
