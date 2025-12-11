@@ -55,6 +55,8 @@ export async function GET(
       isEdited: row.is_edited,
       metadata: row.metadata,
       createdAt: row.created_at,
+      errorMessage: row.error_message,
+      sentAt: row.sent_at,
     }));
 
     return NextResponse.json({

@@ -2,24 +2,10 @@ import { NextRequest } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import Papa from 'papaparse';
-import { generateEmailHtml } from '@/lib/email/generateEmailHtml';
 import { generateUnsubscribeUrl } from '@/lib/email/unsubscribe';
-import { generateAllPersonalizedContent } from '@/lib/ai/generatePersonalizedContent';
 import type { Section } from '@/types/email-editor';
 
-// Convert any rich-text/HTML into plain text for text-mode campaigns
-const stripHtmlToText = (input: string): string =>
-  input
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .trim();
-
-// Helper to replace template variables
+// Helper to replace template variables (only used for subject line here)
 const replaceVariables = (text: string, row: Record<string, string>): string => {
   return text.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
     const value = row[varName] || row[varName.toLowerCase()] || row[varName.toUpperCase()];
@@ -28,6 +14,7 @@ const replaceVariables = (text: string, row: Record<string, string>): string => 
 };
 
 // POST /api/campaigns/:id/generate
+// NOW RENAMED LOGICALLY TO "IMPORT & STAGE" - AI Generation happens at send-time
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -66,7 +53,7 @@ export async function POST(
     }
 
     if (campaign.status !== 'draft') {
-      return new Response(JSON.stringify({ error: 'Can only generate emails for draft campaigns' }), {
+      return new Response(JSON.stringify({ error: 'Can only import emails for draft campaigns' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -191,75 +178,18 @@ export async function POST(
 
           sendEvent(controller, { type: 'start', total: validRows.length });
 
-          // 6. Get sections and check if AI generation is needed
-          const sections: Section[] = campaign.sections || [];
-          const personalizedSections = sections.filter((s) => s.mode === 'personalized');
           const subjectLineContent = campaign.subject_line?.content || '';
 
-          // 7. Generate AI content if there are personalized sections
-          let aiContentMap = new Map<string, Map<string, string>>();
-
-          if (personalizedSections.length > 0) {
-            sendEvent(controller, { type: 'phase', phase: 'ai_generation' });
-
-            const csvRows = validRows.map(({ row }) => row);
-
-            aiContentMap = await generateAllPersonalizedContent(
-              sections,
-              csvRows,
-              (completed, total) => {
-                sendEvent(controller, {
-                  type: 'ai_progress',
-                  completed,
-                  total,
-                  percentage: Math.round((completed / total) * 100)
-                });
-              }
-            );
-          }
-
-          sendEvent(controller, { type: 'phase', phase: 'building_emails' });
-
-          // 8. Generate emails for each recipient
+          // 8. Prepare rows (NO AI GENERATION HERE)
+          // We set body to empty string. The Worker will detect this and generate content at send-time.
           const queueRows = validRows.map(({ row, email }) => {
             const subject = replaceVariables(subjectLineContent, row);
-            const unsubscribeUrl = generateUnsubscribeUrl(email, process.env.NEXT_PUBLIC_APP_URL);
-            const recipientAiContent = aiContentMap.get(email);
-
-            let body: string;
-
-            if (campaign.email_format === 'text') {
-              body = sections
-                .filter((s: Section) => s.type === 'text')
-                .sort((a, b) => a.order - b.order)
-                .map((s: Section) => {
-                  if (s.mode === 'personalized') {
-                    const aiContent = recipientAiContent?.get(s.id);
-                    return aiContent || `[${s.name} - AI generation failed]`;
-                  }
-                  return stripHtmlToText(replaceVariables(s.content || '', row));
-                })
-                .join('\n\n');
-              body += `\n\n---\nIf you'd prefer not to receive these emails, you can unsubscribe here: ${unsubscribeUrl}`;
-            } else {
-              const sectionsWithAiContent = sections.map((s: Section) => {
-                if (s.mode === 'personalized') {
-                  const aiContent = recipientAiContent?.get(s.id);
-                  return {
-                    ...s,
-                    content: aiContent || `[${s.name} - AI generation failed]`,
-                  };
-                }
-                return s;
-              });
-              body = generateEmailHtml(sectionsWithAiContent, subject, row, unsubscribeUrl);
-            }
 
             return {
               campaign_id: campaignId,
               to_email: email,
               subject,
-              body,
+              body: "", // EMPTY BODY -> TRIGGER SEND-TIME GENERATION
               status: 'staged',
               metadata: row,
               is_edited: false,

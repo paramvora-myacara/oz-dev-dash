@@ -3,9 +3,6 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import type { Section, CSVRow } from '@/types/email-editor';
 
-// Batch size for processing recipients
-const BATCH_SIZE = 10;
-
 // Schema for structured AI response
 const BatchResponseSchema = z.object({
     results: z.array(z.object({
@@ -111,66 +108,6 @@ export async function generatePersonalizedBatch(
 }
 
 /**
- * Generate personalized content for all recipients in batches
- * Returns a Map of email -> Map of sectionId -> content
- */
-export async function generateAllPersonalizedContent(
-    sections: Section[],
-    recipients: CSVRow[],
-    onProgress?: (completed: number, total: number) => void
-): Promise<Map<string, Map<string, string>>> {
-    const personalizedSections = sections.filter((s) => s.mode === 'personalized');
-
-    if (personalizedSections.length === 0) {
-        return new Map();
-    }
-
-    const results = new Map<string, Map<string, string>>();
-    const batches = chunkArray(recipients, BATCH_SIZE);
-    let completed = 0;
-
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-
-        // Build batch with indices
-        const batchRecipients = batch.map((row, localIndex) => ({
-            index: localIndex,
-            fields: row,
-        }));
-
-        try {
-            const batchResults = await generatePersonalizedBatch(
-                sections,
-                personalizedSections,
-                batchRecipients
-            );
-
-            // Store results keyed by recipient email
-            for (const result of batchResults) {
-                const recipient = batch[result.recipientIndex];
-                const email = (recipient.Email || recipient.email || '').toLowerCase().trim();
-
-                if (email) {
-                    const sectionMap = new Map<string, string>();
-                    for (const section of result.sections) {
-                        sectionMap.set(section.sectionId, section.content);
-                    }
-                    results.set(email, sectionMap);
-                }
-            }
-        } catch (error) {
-            console.error(`Error generating batch ${batchIndex}:`, error);
-            // Continue with next batch - failed recipients will get placeholder content
-        }
-
-        completed += batch.length;
-        onProgress?.(completed, recipients.length);
-    }
-
-    return results;
-}
-
-/**
  * Generate personalized content for a single recipient (used for regeneration)
  */
 export async function generateForSingleRecipient(
@@ -197,15 +134,4 @@ export async function generateForSingleRecipient(
     }
 
     return sectionMap;
-}
-
-/**
- * Helper to chunk an array into smaller arrays
- */
-function chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
-        chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
 }

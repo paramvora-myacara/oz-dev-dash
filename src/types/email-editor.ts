@@ -57,6 +57,8 @@ export interface QueuedEmail {
   isEdited: boolean;
   metadata: Record<string, any>;
   createdAt: string;
+  errorMessage?: string | null;
+  sentAt?: string | null;
 }
 
 export interface GenerateResponse {

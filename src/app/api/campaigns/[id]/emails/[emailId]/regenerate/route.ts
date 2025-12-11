@@ -52,9 +52,9 @@ export async function POST(
             return NextResponse.json({ error: 'Email not found' }, { status: 404 });
         }
 
-        if (email.status !== 'staged') {
+        if (email.status !== 'staged' && email.status !== 'queued') {
             return NextResponse.json(
-                { error: 'Can only regenerate staged emails' },
+                { error: 'Can only regenerate staged or queued emails' },
                 { status: 400 }
             );
         }
