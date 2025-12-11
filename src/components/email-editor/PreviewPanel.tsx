@@ -70,14 +70,26 @@ export default function PreviewPanel({
 
   const emailHtml = useMemo(() => {
     if (emailFormat === 'text') {
-      // Generate plain text preview
+      // Generate plain text preview (keep order and render CTAs as "Button Text: URL")
       const subject = replaceVariables(subjectLine.content, currentSample)
-      const textContent = debouncedSections
-        .filter((s) => s.type === 'text')
+
+      const orderedSections = [...debouncedSections].sort((a, b) => a.order - b.order)
+
+      const textContent = orderedSections
         .map((s) => {
+          if (s.type === 'button') {
+            const buttonText =
+              s.mode === 'personalized'
+                ? `[${s.name} - AI Generated]`
+                : replaceVariables(s.content || '', currentSample)
+            const buttonUrl = s.buttonUrl || ''
+            return `${buttonText}: ${buttonUrl || '[missing link]'}`
+          }
+
           if (s.mode === 'personalized') {
             return `[${s.name} - AI Generated]`
           }
+
           return replaceVariables(s.content || '', currentSample)
         })
         .join('\n\n')

@@ -1,4 +1,4 @@
-import type { Campaign, QueuedEmail, GenerateResponse, LaunchResponse, GenerateSamplesResponse, EmailFormat } from '@/types/email-editor';
+import type { Campaign, QueuedEmail, GenerateResponse, LaunchResponse, EmailFormat } from '@/types/email-editor';
 
 const API_BASE = '/api/campaigns';
 
@@ -65,26 +65,6 @@ export async function updateCampaign(id: string, data: Partial<Campaign>): Promi
 export async function deleteCampaign(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(await res.text());
-}
-
-// Email Generation & Staging
-export async function generateSamples(
-  campaignId: string,
-  csvFile: File,
-  emailFormat: EmailFormat,
-  count: number = 5
-): Promise<GenerateSamplesResponse & { totalRecipients: number }> {
-  const formData = new FormData();
-  formData.append('file', csvFile);
-  formData.append('emailFormat', emailFormat);
-  formData.append('count', count.toString());
-
-  const res = await fetch(`${API_BASE}/${campaignId}/generate-samples`, {
-    method: 'POST',
-    body: formData,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
 }
 
 export interface GenerateProgress {
