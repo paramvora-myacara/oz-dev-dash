@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Monitor, Smartphone, ChevronDown, Users } from 'lucide-react'
+import { Monitor, Smartphone, ChevronDown, Users, Sparkles, Loader2 } from 'lucide-react'
 import { generateEmailHtml } from '@/lib/email/generateEmailHtml'
 import type { Section, SectionMode, SampleData } from '@/types/email-editor'
 
@@ -53,11 +53,25 @@ export default function PreviewPanel({
 }: PreviewPanelProps) {
   const [device, setDevice] = useState<DeviceType>('desktop')
   const [showSampleDropdown, setShowSampleDropdown] = useState(false)
+  const [generatedContent, setGeneratedContent] = useState<Record<string, string> | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generationError, setGenerationError] = useState<string | null>(null)
 
   const currentSample = sampleData?.rows[selectedSampleIndex] || null
 
   // Debounce sections to prevent rapid re-renders during typing
   const debouncedSections = useDebounce(sections, 300)
+
+  // Check if there are personalized sections
+  const hasPersonalizedSections = useMemo(() => {
+    return debouncedSections.some((s) => s.mode === 'personalized')
+  }, [debouncedSections])
+
+  // Clear generated content when sample changes or sections change
+  useEffect(() => {
+    setGeneratedContent(null)
+    setGenerationError(null)
+  }, [selectedSampleIndex, debouncedSections])
 
   // Helper to replace variables
   const replaceVariables = (text: string, data: Record<string, string> | null): string => {
@@ -66,6 +80,39 @@ export default function PreviewPanel({
       const value = data[varName] || data[varName.toLowerCase()] || data[varName.toUpperCase()]
       return value !== undefined ? value : match
     })
+  }
+
+  // Handle Generate Preview button click
+  const handleGeneratePreview = async () => {
+    if (!currentSample || !hasPersonalizedSections || isGenerating) return
+
+    setIsGenerating(true)
+    setGenerationError(null)
+
+    try {
+      const response = await fetch('/api/preview/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sections: debouncedSections,
+          recipientData: currentSample,
+          subjectLine: subjectLine.content,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Generation failed' }))
+        throw new Error(errorData.error || 'Generation failed')
+      }
+
+      const data = await response.json()
+      setGeneratedContent(data.generatedContent || {})
+    } catch (error) {
+      console.error('Preview generation error:', error)
+      setGenerationError(error instanceof Error ? error.message : 'Failed to generate preview')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const emailHtml = useMemo(() => {
@@ -78,15 +125,24 @@ export default function PreviewPanel({
       const textContent = orderedSections
         .map((s) => {
           if (s.type === 'button') {
-            const buttonText =
-              s.mode === 'personalized'
-                ? `[${s.name} - AI Generated]`
-                : replaceVariables(s.content || '', currentSample)
+            let buttonText: string;
+            if (s.mode === 'personalized') {
+              if (generatedContent && generatedContent[s.id]) {
+                buttonText = generatedContent[s.id];
+              } else {
+                buttonText = `[${s.name} - AI Generated]`;
+              }
+            } else {
+              buttonText = replaceVariables(s.content || '', currentSample);
+            }
             const buttonUrl = s.buttonUrl || ''
             return `${buttonText}: ${buttonUrl || '[missing link]'}`
           }
 
           if (s.mode === 'personalized') {
+            if (generatedContent && generatedContent[s.id]) {
+              return generatedContent[s.id];
+            }
             return `[${s.name} - AI Generated]`
           }
 
@@ -144,8 +200,8 @@ export default function PreviewPanel({
 </html>
       `
     }
-    return generateEmailHtml(debouncedSections, subjectLine.content, currentSample)
-  }, [debouncedSections, subjectLine.content, currentSample, emailFormat])
+    return generateEmailHtml(debouncedSections, subjectLine.content, currentSample, undefined, generatedContent || undefined)
+  }, [debouncedSections, subjectLine.content, currentSample, emailFormat, generatedContent])
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -248,8 +304,56 @@ export default function PreviewPanel({
               )}
             </div>
           )}
+
+          {/* Generate Preview Button */}
+          {hasPersonalizedSections && currentSample && (
+            <button
+              onClick={handleGeneratePreview}
+              disabled={isGenerating}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md sm:rounded-lg transition-colors ${
+                isGenerating
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : generationError
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                  : generatedContent
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                  <span className="hidden sm:inline">Generating...</span>
+                </>
+              ) : generationError ? (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Retry Generation</span>
+                </>
+              ) : generatedContent ? (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Regenerate Preview</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Generate Preview</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Generation Error Message */}
+      {generationError && (
+        <div className="px-3 sm:px-4 md:px-5 py-2 bg-red-50 border-b border-red-100">
+          <p className="text-xs sm:text-sm text-red-600">
+            {generationError}
+          </p>
+        </div>
+      )}
 
       {/* Preview Content - Responsive */}
       <div className="flex-1 overflow-auto p-2 sm:p-3 md:p-5 bg-gray-100">

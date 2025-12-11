@@ -1,6 +1,6 @@
 'use client'
 
-import { Check } from 'lucide-react'
+import { Check, ArrowLeft, Rocket } from 'lucide-react'
 
 // Internal step includes format-sample, but visually we show 3 steps
 export type CampaignStep = 'design' | 'format-sample' | 'review' | 'complete'
@@ -8,6 +8,8 @@ export type CampaignStep = 'design' | 'format-sample' | 'review' | 'complete'
 interface CampaignStepperProps {
   currentStep: CampaignStep
   recipientCount?: number
+  onBack?: () => void
+  onLaunch?: () => void
 }
 
 // Visual steps shown in the stepper (3 steps)
@@ -32,12 +34,25 @@ function getVisualStepIndex(step: CampaignStep): number {
   }
 }
 
-export default function CampaignStepper({ currentStep, recipientCount }: CampaignStepperProps) {
+export default function CampaignStepper({ currentStep, recipientCount, onBack, onLaunch }: CampaignStepperProps) {
   const currentStepIndex = getVisualStepIndex(currentStep)
 
   return (
-    <div className="flex items-center justify-center py-4 px-6 bg-gray-50 border-b">
-      <div className="flex items-center gap-2 sm:gap-4">
+    <div className="flex items-center justify-between py-4 px-6 bg-gray-50 border-b">
+      {/* Back button - only show on review step */}
+      <div className="flex-1">
+        {currentStep === 'review' && onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
+        )}
+      </div>
+      
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-center">
         {VISUAL_STEPS.map((step, index) => {
           const isCompleted = index < currentStepIndex
           const isCurrent = index === currentStepIndex
@@ -49,7 +64,7 @@ export default function CampaignStepper({ currentStep, recipientCount }: Campaig
               <div className="flex items-center gap-2">
                 <div
                   className={`
-                    w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors
+                    w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors flex-shrink-0 aspect-square
                     ${isCompleted ? 'bg-green-600 text-white' : ''}
                     ${isCurrent ? 'bg-blue-600 text-white' : ''}
                     ${isPending ? 'bg-gray-200 text-gray-500' : ''}
@@ -88,6 +103,19 @@ export default function CampaignStepper({ currentStep, recipientCount }: Campaig
             </div>
           )
         })}
+      </div>
+      
+      {/* Launch button - only show on review step */}
+      <div className="flex-1 flex justify-end">
+        {currentStep === 'review' && onLaunch && (
+          <button
+            onClick={onLaunch}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
+          >
+            <Rocket className="w-4 h-4" />
+            <span className="text-sm font-medium hidden sm:inline">Launch</span>
+          </button>
+        )}
       </div>
     </div>
   )

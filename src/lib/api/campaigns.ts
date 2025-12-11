@@ -195,11 +195,11 @@ export async function launchCampaign(
 }
 
 // Test Send
-export async function sendTestEmail(campaignId: string, testEmail: string): Promise<{ success: boolean }> {
+export async function sendTestEmail(campaignId: string, testEmail: string, recipientEmailId?: string): Promise<{ success: boolean }> {
   const res = await fetch(`${API_BASE}/${campaignId}/test-send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ testEmail }),
+    body: JSON.stringify({ testEmail, recipientEmailId }),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
