@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye } from 'lucide-react'
+import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, generateSamples, getStagedEmails, launchCampaign, sendTestEmail } from '@/lib/api/campaigns'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
 
@@ -17,7 +17,7 @@ export default function CampaignEditPage() {
   const params = useParams()
   const router = useRouter()
   const campaignId = params.id as string
-  
+
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
@@ -35,7 +35,29 @@ export default function CampaignEditPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
-  
+
+  const [failedEmails, setFailedEmails] = useState<QueuedEmail[]>([])
+  const [campaignSummary, setCampaignSummary] = useState<{
+    sent: number
+    failed: number
+    queued: number
+    processing: number
+    staged: number
+    total: number
+    lastSentAt: string | null
+    nextScheduledFor: string | null
+  } | null>(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
+  const [loadingFailed, setLoadingFailed] = useState(false)
+  const [retryingFailed, setRetryingFailed] = useState(false)
+  const [info, setInfo] = useState<string | null>(null)
+
+  // Generation progress state
+  const [generateProgress, setGenerateProgress] = useState<GenerateProgress | null>(null)
+
+  // Regeneration state
+  const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
+
   // CSV state (lifted from EmailEditor)
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvFileName, setCsvFileName] = useState<string | null>(null)
@@ -49,20 +71,6 @@ export default function CampaignEditPage() {
       setLoading(false)
     }
   }, [campaignId])
-
-  // Update step when campaign status changes
-  useEffect(() => {
-    if (campaign) {
-      if (campaign.status === 'staged') {
-        setCurrentStep('review')
-        loadStagedEmails()
-      } else if (campaign.status === 'sending' || campaign.status === 'completed') {
-        setCurrentStep('complete')
-      } else {
-        setCurrentStep('design')
-      }
-    }
-  }, [campaign?.status])
 
   const loadCampaign = async () => {
     try {
@@ -90,6 +98,63 @@ export default function CampaignEditPage() {
     }
   }
 
+  const loadFailedEmails = useCallback(async () => {
+    if (!campaignId) return
+    try {
+      setLoadingFailed(true)
+      const res = await fetch(`/api/campaigns/${campaignId}/emails?status=failed&limit=200`)
+      const json = await res.json()
+      if (json?.emails) {
+        setFailedEmails(json.emails)
+      }
+    } catch (err) {
+      console.error('Failed to load failed emails', err)
+    } finally {
+      setLoadingFailed(false)
+    }
+  }, [campaignId])
+
+  const loadSummary = useCallback(async () => {
+    if (!campaignId) return
+    try {
+      setLoadingSummary(true)
+      const res = await fetch(`/api/campaigns/${campaignId}/summary`)
+      const json = await res.json()
+      if (json?.counts) {
+        setCampaignSummary({
+          ...json.counts,
+          lastSentAt: json.lastSentAt,
+          nextScheduledFor: json.nextScheduledFor,
+        })
+      }
+    } catch (err) {
+      console.error('Failed to load campaign summary', err)
+    } finally {
+      setLoadingSummary(false)
+    }
+  }, [campaignId])
+
+  // Update step when campaign status changes
+  useEffect(() => {
+    if (campaign) {
+      if (campaign.status === 'staged') {
+        setCurrentStep('review')
+        loadStagedEmails()
+      } else if (['scheduled', 'sending', 'completed'].includes(campaign.status as string)) {
+        setCurrentStep('complete')
+      } else {
+        setCurrentStep('design')
+      }
+    }
+  }, [campaign?.status])
+
+  useEffect(() => {
+    if (currentStep === 'complete') {
+      loadSummary()
+      loadFailedEmails()
+    }
+  }, [currentStep, loadSummary, loadFailedEmails])
+
   // CSV handlers (lifted from EmailEditor)
   const handleCsvUpload = useCallback((file: File, fileName: string, data: SampleData) => {
     setCsvFile(file)
@@ -105,8 +170,8 @@ export default function CampaignEditPage() {
 
   // Autosave handler - returns true on success, false on failure
   const handleAutoSave = useCallback(async (
-    sections: Section[], 
-    subjectLine: { mode: SectionMode; content: string }, 
+    sections: Section[],
+    subjectLine: { mode: SectionMode; content: string },
     emailFormat: 'html' | 'text'
   ): Promise<boolean> => {
     if (!campaign) return false
@@ -149,45 +214,45 @@ export default function CampaignEditPage() {
     }
   }, [campaign, campaignId])
 
-  // Generate sample emails
-  const handleGenerateSamples = useCallback(async (format: EmailFormat) => {
-    if (!campaign || !csvFile) throw new Error('Missing campaign or CSV')
-    
-    const result = await generateSamples(campaign.id || campaignId, csvFile, format)
-    return {
-      samples: result.samples,
-      totalRecipients: result.totalRecipients,
-    }
-  }, [campaign, campaignId, csvFile])
-
-  // Generate all emails
-  const handleGenerateAll = useCallback(async () => {
+  // Generate all emails with specified format
+  const handleGenerateAllWithFormat = useCallback(async (format: EmailFormat) => {
     if (!campaign || !csvFile) return
 
     try {
       setGenerating(true)
       setError(null)
+      setGenerateProgress(null)
 
-      // Generate emails with the CSV
-      const result = await generateEmails(campaign.id || campaignId, csvFile)
-      
+      // Save the format to the campaign first
+      await updateCampaign(campaign.id || campaignId, { emailFormat: format })
+
+      // Generate emails with the CSV and track progress
+      const result = await generateEmails(
+        campaign.id || campaignId,
+        csvFile,
+        (progress) => setGenerateProgress(progress)
+      )
+
       // Reload campaign and staged emails
       await loadCampaign()
       await loadStagedEmails()
-      
+
       // Show validation errors modal if there are any
       if (result.errors && result.errors.length > 0) {
         setValidationErrors(result.errors)
       }
-      
+
       // Move to review step
       setCurrentStep('review')
     } catch (err: any) {
       setError('Failed to generate emails: ' + err.message)
     } finally {
       setGenerating(false)
+      setGenerateProgress(null)
     }
   }, [campaign, campaignId, csvFile])
+
+
 
   // Back to design from format-sample
   const handleBackToDesignFromFormatSample = useCallback(() => {
@@ -210,20 +275,20 @@ export default function CampaignEditPage() {
     try {
       setIsDeleting(true)
       setError(null)
-      
+
       // Update campaign status back to draft (this will trigger deletion of staged emails on next generate)
       await updateCampaign(campaign.id || campaignId, {
         status: 'draft' as any, // Reset to draft
       })
-      
+
       // Clear local state
       setStagedEmails([])
       setStagedCount(0)
       setEditedCount(0)
-      
+
       // Reload campaign
       await loadCampaign()
-      
+
       setShowRegenerateModal(false)
       setCurrentStep('design')
     } catch (err: any) {
@@ -243,7 +308,7 @@ export default function CampaignEditPage() {
       await loadCampaign()
       setShowLaunchModal(false)
       setCurrentStep('complete')
-      
+
       // Show success and redirect
       alert(`Campaign launched! ${result.queued} emails queued.`)
       router.push('/admin/campaigns')
@@ -270,6 +335,64 @@ export default function CampaignEditPage() {
       setSendingTest(false)
     }
   }
+
+  const handleRetryFailed = useCallback(async () => {
+    if (!campaign) return
+
+    try {
+      setRetryingFailed(true)
+      setError(null)
+      setInfo(null)
+      const res = await fetch(`/api/campaigns/${campaign.id || campaignId}/retry-failed`, {
+        method: 'POST',
+        cache: 'no-store',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to retry failed emails')
+      }
+      setInfo(`Retried ${data?.retried ?? 0} failed emails.`)
+      await loadSummary()
+      await loadFailedEmails()
+      await loadCampaign()
+    } catch (err: any) {
+      setError(err.message || 'Failed to retry failed emails')
+    } finally {
+      setRetryingFailed(false)
+    }
+  }, [campaign, campaignId, loadSummary, loadFailedEmails])
+
+  // Regenerate single email
+  const handleRegenerateEmail = async (emailId: string) => {
+    if (!campaign) return
+
+    try {
+      setRegeneratingEmailId(emailId)
+      setError(null)
+      const result = await regenerateEmail(campaign.id || campaignId, emailId)
+
+      // Update the email in the local state
+      setStagedEmails(prev => prev.map(e =>
+        e.id === emailId
+          ? { ...e, subject: result.email.subject, body: result.email.body, isEdited: result.email.isEdited }
+          : e
+      ))
+    } catch (err: any) {
+      setError('Failed to regenerate email: ' + err.message)
+    } finally {
+      setRegeneratingEmailId(null)
+    }
+  }
+
+  // Auto-regenerate if body is empty whn expanded
+  useEffect(() => {
+    if (expandedEmailId) {
+      const email = stagedEmails.find(e => e.id === expandedEmailId)
+      if (email && !email.body && !regeneratingEmailId) {
+        handleRegenerateEmail(email.id)
+      }
+    }
+  }, [expandedEmailId, stagedEmails, regeneratingEmailId])
 
   if (loading) {
     return (
@@ -302,10 +425,10 @@ export default function CampaignEditPage() {
       <div className="border-b bg-white px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
-          <Link href="/admin/campaigns" className="text-gray-600 hover:text-gray-800">
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
+            <Link href="/admin/campaigns" className="text-gray-600 hover:text-gray-800">
+              <ArrowLeft size={20} />
+            </Link>
+            <div>
               <h1 className="text-lg sm:text-xl font-bold">{campaign.name || 'New Campaign'}</h1>
               <p className="text-xs sm:text-sm text-gray-500">
                 {getStatusLabel(campaign.status)}
@@ -313,9 +436,9 @@ export default function CampaignEditPage() {
               </p>
             </div>
           </div>
-          
+
           {/* Header actions based on step */}
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {currentStep === 'review' && (
               <>
                 <button
@@ -325,22 +448,22 @@ export default function CampaignEditPage() {
                   <Pencil size={16} />
                   <span className="hidden sm:inline">Edit Template</span>
                 </button>
-              <button
-                onClick={() => setShowTestModal(true)}
+                <button
+                  onClick={() => setShowTestModal(true)}
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
+                >
                   <Mail size={16} />
                   <span className="hidden sm:inline">Test Send</span>
-              </button>
-              <button
-                onClick={() => setShowLaunchModal(true)}
+                </button>
+                <button
+                  onClick={() => setShowLaunchModal(true)}
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
-              >
+                >
                   <Rocket size={16} />
                   <span className="hidden sm:inline">Launch</span>
-              </button>
-            </>
-          )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -348,15 +471,19 @@ export default function CampaignEditPage() {
       {/* Stepper */}
       <CampaignStepper currentStep={currentStep} recipientCount={stagedCount} />
 
-      {/* Error Banner */}
-      {error && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-3">
+      {/* Info / Error Banner */}
+      {(info || error) && (
+        <div className={`${error ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border-b px-4 py-3`}>
           <div className="flex items-center gap-3 max-w-4xl mx-auto">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-            <p className="text-sm text-red-700 flex-1">{error}</p>
+            {error ? (
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            ) : (
+              <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+            )}
+            <p className={`text-sm flex-1 ${error ? 'text-red-700' : 'text-green-700'}`}>{error || info}</p>
             <button
-              onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 text-sm"
+              onClick={() => { setError(null); setInfo(null); }}
+              className={`${error ? 'text-red-400 hover:text-red-600' : 'text-green-500 hover:text-green-700'} text-sm`}
             >
               Dismiss
             </button>
@@ -390,9 +517,9 @@ export default function CampaignEditPage() {
             sampleData={sampleData}
             initialFormat={campaign.emailFormat || 'text'}
             onBack={handleBackToDesignFromFormatSample}
-            onGenerateSamples={handleGenerateSamples}
-            onGenerateAll={handleGenerateAll}
+            onGenerateAll={handleGenerateAllWithFormat}
             isGeneratingAll={generating}
+            generateProgress={generateProgress}
           />
         )}
 
@@ -415,7 +542,7 @@ export default function CampaignEditPage() {
                     Showing {stagedEmails.length} of {stagedCount} emails
                   </p>
                 </div>
-                
+
                 {stagedEmails.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Mail className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -444,11 +571,10 @@ export default function CampaignEditPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 ml-4">
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              email.isEdited 
-                                ? 'bg-yellow-100 text-yellow-800' 
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${email.isEdited
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-600'
+                              }`}>
                               {email.isEdited ? 'Edited' : 'Generated'}
                             </span>
                             {expandedEmailId === email.id ? (
@@ -458,7 +584,7 @@ export default function CampaignEditPage() {
                             )}
                           </div>
                         </button>
-                        
+
                         {expandedEmailId === email.id && (
                           <div className="px-4 pb-4 border-t bg-gray-50">
                             <div className="mt-3">
@@ -486,6 +612,17 @@ export default function CampaignEditPage() {
                                 </div>
                               )}
                             </div>
+                            {/* Regenerate button */}
+                            <div className="mt-4 flex justify-end">
+                              <button
+                                onClick={() => handleRegenerateEmail(email.id)}
+                                disabled={regeneratingEmailId === email.id}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-50"
+                              >
+                                <RefreshCw className={`w-4 h-4 ${regeneratingEmailId === email.id ? 'animate-spin' : ''}`} />
+                                {regeneratingEmailId === email.id ? 'Regenerating...' : 'Regenerate AI Content'}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -496,7 +633,7 @@ export default function CampaignEditPage() {
 
               {stagedCount > stagedEmails.length && (
                 <p className="text-center text-sm text-gray-500 mt-4">
-                  Showing first {stagedEmails.length} emails. 
+                  Showing first {stagedEmails.length} emails.
                   {stagedCount - stagedEmails.length} more emails not shown.
                 </p>
               )}
@@ -505,22 +642,123 @@ export default function CampaignEditPage() {
         )}
 
         {currentStep === 'complete' && (
-          <div className="h-full flex items-center justify-center bg-gray-50">
-            <div className="text-center p-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Rocket className="w-8 h-8 text-green-600" />
+          <div className="h-full overflow-auto bg-gray-50">
+            <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+              <div className="bg-white border rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <Rocket className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase text-gray-500 tracking-wide">Campaign status</p>
+                    <p className="text-base sm:text-lg font-semibold text-gray-900">
+                      {getStatusLabel(campaign.status)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {campaign.totalRecipients} recipients • {campaign.name}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Link
+                    href="/admin/campaigns"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  >
+                    <ArrowLeft size={16} />
+                    Back to Campaigns
+                  </Link>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Campaign Launched!</h2>
-              <p className="text-gray-600 mb-6">
-                Your campaign is now {campaign.status === 'sending' ? 'being sent' : 'completed'}.
-              </p>
-              <Link
-                href="/admin/campaigns"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <ArrowLeft size={16} />
-                Back to Campaigns
-              </Link>
+
+              {/* Summary cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Sent</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {campaignSummary ? campaignSummary.sent.toLocaleString() : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    Last: {campaignSummary?.lastSentAt ? new Date(campaignSummary.lastSentAt).toLocaleString() : '—'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Queued</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {campaignSummary ? (campaignSummary.queued + campaignSummary.processing).toLocaleString() : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    Next: {campaignSummary?.nextScheduledFor ? new Date(campaignSummary.nextScheduledFor).toLocaleString() : '—'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Failed</p>
+                  <p className="text-xl font-semibold text-red-600">
+                    {campaignSummary ? campaignSummary.failed.toLocaleString() : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">Needs retry</p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Total</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {campaignSummary ? campaignSummary.total.toLocaleString() : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">All statuses</p>
+                </div>
+              </div>
+
+              {/* Failed emails + retry */}
+              <div className="bg-white border rounded-lg shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Failed emails</h3>
+                    <p className="text-xs text-gray-500">
+                      Showing up to 200 failed emails. Retry uses the same 3.5 min + jitter scheduling.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={loadFailedEmails}
+                      disabled={loadingFailed}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loadingFailed ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                    <button
+                      onClick={handleRetryFailed}
+                      disabled={retryingFailed || failedEmails.length === 0}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${retryingFailed ? 'animate-spin' : ''}`} />
+                      Retry failed
+                    </button>
+                  </div>
+                </div>
+                {failedEmails.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    {loadingFailed ? 'Loading failures...' : 'No failed emails.'}
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {failedEmails.map((email) => (
+                      <div key={email.id} className="px-4 py-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{email.toEmail}</p>
+                            <p className="text-xs text-gray-500 truncate">{email.subject}</p>
+                            {email.errorMessage && (
+                              <p className="text-xs text-red-600 mt-1 truncate">Error: {email.errorMessage}</p>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Created {new Date(email.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
