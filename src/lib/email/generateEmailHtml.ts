@@ -26,7 +26,8 @@ export function generateEmailHtml(
   sections: Section[],
   subjectLine: string,
   sampleData: CSVRow | null,
-  unsubscribeUrl?: string
+  unsubscribeUrl?: string,
+  generatedContent?: Record<string, string>
 ): string {
   const processedSubject = replaceVariables(subjectLine, sampleData)
   
@@ -34,9 +35,17 @@ export function generateEmailHtml(
   const sectionsHtml = sections.map((section) => {
     if (section.type === 'button') {
       // CTA Button - Full Width
-      const buttonText = section.mode === 'personalized' 
-        ? `[${section.name} - AI Generated]`
-        : replaceVariables(section.content, sampleData)
+      let buttonText: string;
+      if (section.mode === 'personalized') {
+        // Use generated content if available, otherwise show placeholder
+        if (generatedContent && generatedContent[section.id]) {
+          buttonText = generatedContent[section.id];
+        } else {
+          buttonText = `[${section.name} - AI Generated]`;
+        }
+      } else {
+        buttonText = replaceVariables(section.content, sampleData);
+      }
       const buttonUrl = section.buttonUrl || '#'
       
       return `
@@ -59,26 +68,45 @@ export function generateEmailHtml(
     } else {
       // Text section
       if (section.mode === 'personalized') {
-        // Placeholder for AI-generated content
-        return `
-          <div style="
-            margin: 0 0 16px 0;
-            padding: 12px 16px;
-            background-color: #eff6ff;
-            border: 1px dashed ${BRAND.primary};
-            border-radius: 8px;
-          ">
-            <div style="font-size: 12px; font-weight: 600; color: ${BRAND.primary}; margin-bottom: 4px;">
-              ✨ ${section.name} (Personalized)
+        // Check if we have generated content
+        if (generatedContent && generatedContent[section.id]) {
+          // Render actual generated content (styled like static sections)
+          const content = generatedContent[section.id];
+          // Format content same way as static sections
+          const formattedContent = content
+            .split('\n\n')
+            .map(paragraph => {
+              const processedParagraph = paragraph
+                .replace(/\n/g, '<br>')
+                .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                .replace(/<a href="(.*?)">(.*?)<\/a>/g, `<a href="$1" style="color: ${BRAND.primary}; text-decoration: underline;">$2</a>`)
+              return `<p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND.textMuted}; line-height: 1.6;">${processedParagraph}</p>`
+            })
+            .join('')
+          
+          return formattedContent;
+        } else {
+          // Placeholder for AI-generated content
+          return `
+            <div style="
+              margin: 0 0 16px 0;
+              padding: 12px 16px;
+              background-color: #eff6ff;
+              border: 1px dashed ${BRAND.primary};
+              border-radius: 8px;
+            ">
+              <div style="font-size: 12px; font-weight: 600; color: ${BRAND.primary}; margin-bottom: 4px;">
+                ✨ ${section.name} (Personalized)
+              </div>
+              <div style="font-size: 14px; color: ${BRAND.textMuted}; font-style: italic;">
+                AI will generate unique content for each recipient
+                ${section.selectedFields && section.selectedFields.length > 0 
+                  ? `<br><span style="font-size: 12px;">Using: ${section.selectedFields.join(', ')}</span>` 
+                  : ''}
+              </div>
             </div>
-            <div style="font-size: 14px; color: ${BRAND.textMuted}; font-style: italic;">
-              AI will generate unique content for each recipient
-              ${section.selectedFields && section.selectedFields.length > 0 
-                ? `<br><span style="font-size: 12px;">Using: ${section.selectedFields.join(', ')}</span>` 
-                : ''}
-            </div>
-          </div>
-        `
+          `
+        }
       } else {
         // Static text content
         const content = replaceVariables(section.content, sampleData)

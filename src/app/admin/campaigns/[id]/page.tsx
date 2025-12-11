@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check } from 'lucide-react'
+import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2 } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
@@ -27,10 +27,10 @@ export default function CampaignEditPage() {
   const [editedCount, setEditedCount] = useState(0)
   const [currentStep, setCurrentStep] = useState<CampaignStep>('design')
   const [showLaunchModal, setShowLaunchModal] = useState(false)
-  const [showTestModal, setShowTestModal] = useState(false)
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[] | null>(null)
   const [testEmail, setTestEmail] = useState('')
+  const [testRecipientEmailId, setTestRecipientEmailId] = useState<string | null>(null)
   const [sendingTest, setSendingTest] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -325,9 +325,9 @@ export default function CampaignEditPage() {
     try {
       setSendingTest(true)
       setError(null)
-      await sendTestEmail(campaign.id || campaignId, testEmail)
-      setShowTestModal(false)
+      await sendTestEmail(campaign.id || campaignId, testEmail, testRecipientEmailId || undefined)
       setTestEmail('')
+      setTestRecipientEmailId(null)
       alert('Test email sent successfully!')
     } catch (err: any) {
       setError('Failed to send test email: ' + err.message)
@@ -335,6 +335,14 @@ export default function CampaignEditPage() {
       setSendingTest(false)
     }
   }
+
+  // Set default test recipient when staged emails load
+  useEffect(() => {
+    if (stagedEmails.length > 0 && !testRecipientEmailId) {
+      setTestRecipientEmailId(stagedEmails[0].id)
+      setTestEmail(stagedEmails[0].toEmail)
+    }
+  }, [stagedEmails, testRecipientEmailId])
 
   const handleRetryFailed = useCallback(async () => {
     if (!campaign) return
@@ -439,37 +447,17 @@ export default function CampaignEditPage() {
 
           {/* Header actions based on step */}
           <div className="flex items-center gap-2">
-            {currentStep === 'review' && (
-              <>
-                <button
-                  onClick={handleBackToDesign}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  <Pencil size={16} />
-                  <span className="hidden sm:inline">Edit Template</span>
-                </button>
-                <button
-                  onClick={() => setShowTestModal(true)}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  <Mail size={16} />
-                  <span className="hidden sm:inline">Test Send</span>
-                </button>
-                <button
-                  onClick={() => setShowLaunchModal(true)}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
-                >
-                  <Rocket size={16} />
-                  <span className="hidden sm:inline">Launch</span>
-                </button>
-              </>
-            )}
           </div>
         </div>
       </div>
 
       {/* Stepper */}
-      <CampaignStepper currentStep={currentStep} recipientCount={stagedCount} />
+      <CampaignStepper 
+        currentStep={currentStep} 
+        recipientCount={stagedCount} 
+        onBack={currentStep === 'review' ? handleBackToDesign : undefined}
+        onLaunch={currentStep === 'review' ? () => setShowLaunchModal(true) : undefined}
+      />
 
       {/* Info / Error Banner */}
       {(info || error) && (
@@ -534,108 +522,72 @@ export default function CampaignEditPage() {
                 </p>
               </div>
 
-              {/* Email list */}
-              <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b">
-                  <h3 className="font-medium text-gray-900">Generated Emails</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Showing {stagedEmails.length} of {stagedCount} emails
-                  </p>
-                </div>
-
-                {stagedEmails.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <Mail className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No emails generated yet.</p>
-                    <button
-                      onClick={handleBackToDesign}
-                      className="mt-4 text-blue-600 hover:underline"
-                    >
-                      ← Go back to design your email
-                    </button>
+              {/* Test Send Row */}
+              {stagedEmails.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm border mb-4">
+                  <div className="px-4 py-3 border-b bg-gray-50">
+                    <h3 className="text-sm font-medium text-gray-900">Send Test Email</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Test the email personalized for a specific recipient
+                    </p>
                   </div>
-                ) : (
-                  <div className="divide-y">
-                    {stagedEmails.map((email) => (
-                      <div key={email.id} className="hover:bg-gray-50">
-                        <button
-                          onClick={() => setExpandedEmailId(expandedEmailId === email.id ? null : email.id)}
-                          className="w-full px-4 py-3 flex items-center justify-between text-left"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {email.toEmail}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate mt-0.5">
-                              {email.subject}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${email.isEdited
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-600'
-                              }`}>
-                              {email.isEdited ? 'Edited' : 'Generated'}
-                            </span>
-                            {expandedEmailId === email.id ? (
-                              <ChevronUp className="w-4 h-4 text-gray-400" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-gray-400" />
-                            )}
-                          </div>
-                        </button>
-
-                        {expandedEmailId === email.id && (
-                          <div className="px-4 pb-4 border-t bg-gray-50">
-                            <div className="mt-3">
-                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                Subject
-                              </label>
-                              <p className="mt-1 text-sm text-gray-900">{email.subject}</p>
-                            </div>
-                            <div className="mt-3">
-                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                Body
-                              </label>
-                              {campaign.emailFormat === 'text' ? (
-                                <div className="mt-1 p-3 bg-white border rounded-lg text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-auto">
-                                  {email.body}
-                                </div>
-                              ) : (
-                                <div className="mt-1 border rounded-lg overflow-hidden max-h-96">
-                                  <iframe
-                                    srcDoc={email.body}
-                                    title={`Email preview for ${email.toEmail}`}
-                                    className="w-full h-96 border-0"
-                                    sandbox="allow-same-origin"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                            {/* Regenerate button */}
-                            <div className="mt-4 flex justify-end">
-                              <button
-                                onClick={() => handleRegenerateEmail(email.id)}
-                                disabled={regeneratingEmailId === email.id}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-50"
-                              >
-                                <RefreshCw className={`w-4 h-4 ${regeneratingEmailId === email.id ? 'animate-spin' : ''}`} />
-                                {regeneratingEmailId === email.id ? 'Regenerating...' : 'Regenerate AI Content'}
-                              </button>
-                            </div>
-                          </div>
+                  <div className="px-4 py-3 flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Use recipient data from:
+                      </label>
+                      <select
+                        value={testRecipientEmailId || ''}
+                        onChange={(e) => {
+                          const selectedId = e.target.value
+                          setTestRecipientEmailId(selectedId)
+                          const selectedEmail = stagedEmails.find(e => e.id === selectedId)
+                          if (selectedEmail) {
+                            setTestEmail(selectedEmail.toEmail)
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {stagedEmails.map((email) => (
+                          <option key={email.id} value={email.id}>
+                            {email.toEmail} {email.metadata?.Name ? `(${email.metadata.Name})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        Send to email address:
+                      </label>
+                      <input
+                        type="email"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={handleTestSend}
+                        disabled={!testEmail || sendingTest}
+                        className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {sendingTest ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Mail size={16} />
+                            Send Test
+                          </>
                         )}
-                      </div>
-                    ))}
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              {stagedCount > stagedEmails.length && (
-                <p className="text-center text-sm text-gray-500 mt-4">
-                  Showing first {stagedEmails.length} emails.
-                  {stagedCount - stagedEmails.length} more emails not shown.
-                </p>
+                </div>
               )}
             </div>
           </div>
@@ -766,7 +718,7 @@ export default function CampaignEditPage() {
 
       {/* Launch Modal */}
       {showLaunchModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -807,55 +759,6 @@ export default function CampaignEditPage() {
         </div>
       )}
 
-      {/* Test Send Modal */}
-      {showTestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Mail className="w-5 h-5 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-bold">Send Test Email</h2>
-            </div>
-            <p className="text-gray-600 mb-4">
-              Send a test email to verify everything looks correct before launching.
-            </p>
-            <input
-              type="email"
-              value={testEmail}
-              onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowTestModal(false)}
-                disabled={sendingTest}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleTestSend}
-                disabled={!testEmail || sendingTest}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {sendingTest ? (
-                  <>
-                    <span className="animate-spin">◐</span>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Mail size={16} />
-                    Send Test
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Regenerate Warning Modal */}
       <RegenerateWarningModal
