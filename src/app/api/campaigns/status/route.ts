@@ -14,37 +14,25 @@ export async function GET() {
     // Connect to Supabase
     const supabase = createAdminClient()
 
-    // Get total count
-    const { count: totalCount, error: totalError } = await supabase
-      .from('email_queue')
-      .select('*', { count: 'exact', head: true })
-
-    if (totalError) {
-      console.error('Error getting total count:', totalError)
-      return NextResponse.json(
-        { error: 'Failed to fetch campaign status' },
-        { status: 500 }
-      )
+    const countStatus = async (status: string) => {
+      const { count, error } = await supabase
+        .from('email_queue')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', status)
+      if (error) {
+        throw error
+      }
+      return count || 0
     }
 
-    // Get counts by status
-    const { data: statusCounts, error: statusError } = await supabase
-      .from('email_queue')
-      .select('status')
+    const [queued, sent, failed, processing] = await Promise.all([
+      countStatus('queued'),
+      countStatus('sent'),
+      countStatus('failed'),
+      countStatus('processing'),
+    ])
 
-    if (statusError) {
-      console.error('Error getting status counts:', statusError)
-      return NextResponse.json(
-        { error: 'Failed to fetch campaign status' },
-        { status: 500 }
-      )
-    }
-
-    // Count by status
-    const queued = statusCounts?.filter(row => row.status === 'queued').length || 0
-    const sent = statusCounts?.filter(row => row.status === 'sent').length || 0
-    const failed = statusCounts?.filter(row => row.status === 'failed').length || 0
-    const processing = statusCounts?.filter(row => row.status === 'processing').length || 0
+    const totalCount = queued + sent + failed + processing
 
     // Determine overall status
     let campaignStatus: 'sending' | 'completed' | 'paused' = 'sending'

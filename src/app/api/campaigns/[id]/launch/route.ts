@@ -62,25 +62,26 @@ export async function POST(
       );
     }
 
-    // 2. Get staged emails to approve
-    let query = supabase
+    // 2. Get staged emails to approve (paged to avoid 1k caps)
+    const countQuery = supabase
       .from('email_queue')
-      .select('*')
+      .select('*', { count: 'exact', head: true })
       .eq('campaign_id', campaignId)
-      .eq('status', 'staged')
-      .order('created_at', { ascending: true });
+      .eq('status', 'staged');
 
     if (!all && emailIds && emailIds.length > 0) {
-      query = query.in('id', emailIds);
+      countQuery.in('id', emailIds);
     }
 
-    const { data: stagedEmails, error: fetchError } = await query;
+    const { count: stagedCount, error: countError } = await countQuery;
 
-    if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    if (countError) {
+      return NextResponse.json({ error: countError.message }, { status: 500 });
     }
 
-    if (!stagedEmails || stagedEmails.length === 0) {
+    const totalStaged = stagedCount || 0;
+
+    if (totalStaged === 0) {
       return NextResponse.json({ error: 'No staged emails to launch' }, { status: 400 });
     }
 
@@ -108,54 +109,85 @@ export async function POST(
     const intervalMs = INTERVAL_MINUTES * 60 * 1000;
     const domainCurrentTime: Record<number, Date> = {};
     const emailsByDay: Record<string, number> = {};
+    const PAGE_SIZE = 500;
+    let roundRobinIndex = 0;
+    let totalQueued = 0;
 
-    const updates = stagedEmails.map((email, index) => {
-      const domainIndex = index % DOMAIN_CONFIG.length;
-      const domainConfig = DOMAIN_CONFIG[domainIndex];
-      const jitterMs = Math.random() * JITTER_SECONDS_MAX * 1000;
+    for (let offset = 0; offset < totalStaged; offset += PAGE_SIZE) {
+      const end = Math.min(offset + PAGE_SIZE - 1, totalStaged - 1);
+      let pageQuery = supabase
+        .from('email_queue')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .eq('status', 'staged')
+        .order('created_at', { ascending: true })
+        .range(offset, end);
 
-      let scheduledFor: Date;
-
-      if (domainIndex in domainLastScheduled && !(domainIndex in domainCurrentTime)) {
-        // Has existing scheduled emails from other campaigns
-        const lastScheduled = domainLastScheduled[domainIndex];
-        scheduledFor = adjustToWorkingHours(new Date(lastScheduled.getTime() + intervalMs + jitterMs), SCHEDULING_CONFIG);
-      } else if (domainIndex in domainCurrentTime) {
-        // Has emails in current batch
-        scheduledFor = adjustToWorkingHours(new Date(domainCurrentTime[domainIndex].getTime() + intervalMs + jitterMs), SCHEDULING_CONFIG);
-      } else {
-        // First email for this domain
-        scheduledFor = new Date(startTimeUTC.getTime());
+      if (!all && emailIds && emailIds.length > 0) {
+        pageQuery = pageQuery.in('id', emailIds);
       }
 
-      domainCurrentTime[domainIndex] = scheduledFor;
-      domainLastScheduled[domainIndex] = scheduledFor;
+      const { data: stagedEmails, error: fetchError } = await pageQuery;
 
-      // Track emails by day
-      const zonedTime = toZonedTime(scheduledFor, TIMEZONE);
-      const dayKey = `${zonedTime.getFullYear()}-${String(zonedTime.getMonth() + 1).padStart(2, '0')}-${String(zonedTime.getDate()).padStart(2, '0')}`;
-      emailsByDay[dayKey] = (emailsByDay[dayKey] || 0) + 1;
+      if (fetchError) {
+        return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      }
 
-      return {
-        id: email.id,
-        status: 'queued',
-        domain_index: domainIndex,
-        from_email: `${domainConfig.sender_name}@${domainConfig.domain}`,
-        scheduled_for: scheduledFor.toISOString(),
-      };
-    });
+      if (!stagedEmails || stagedEmails.length === 0) {
+        continue;
+      }
 
-    // 5. Bulk update emails
-    for (const update of updates) {
-      await supabase
-        .from('email_queue')
-        .update({
-          status: update.status,
-          domain_index: update.domain_index,
-          from_email: update.from_email,
-          scheduled_for: update.scheduled_for,
-        })
-        .eq('id', update.id);
+      const updates = stagedEmails.map((email) => {
+        const existingDomainIndex = email.domain_index as number | null;
+        const domainIndex = existingDomainIndex ?? (roundRobinIndex++ % DOMAIN_CONFIG.length);
+        const domainConfig = DOMAIN_CONFIG[domainIndex];
+        const jitterMs = Math.random() * JITTER_SECONDS_MAX * 1000;
+
+        let scheduledFor: Date;
+
+        if (domainIndex in domainLastScheduled && !(domainIndex in domainCurrentTime)) {
+          // Has existing scheduled emails from other campaigns
+          const lastScheduled = domainLastScheduled[domainIndex];
+          scheduledFor = adjustToWorkingHours(new Date(lastScheduled.getTime() + intervalMs + jitterMs), SCHEDULING_CONFIG);
+        } else if (domainIndex in domainCurrentTime) {
+          // Has emails in current batch (across pages)
+          scheduledFor = adjustToWorkingHours(new Date(domainCurrentTime[domainIndex].getTime() + intervalMs + jitterMs), SCHEDULING_CONFIG);
+        } else {
+          // First email for this domain
+          scheduledFor = adjustToWorkingHours(new Date(startTimeUTC.getTime() + jitterMs), SCHEDULING_CONFIG);
+        }
+
+        domainCurrentTime[domainIndex] = scheduledFor;
+        domainLastScheduled[domainIndex] = scheduledFor;
+
+        // Track emails by day
+        const zonedTime = toZonedTime(scheduledFor, TIMEZONE);
+        const dayKey = `${zonedTime.getFullYear()}-${String(zonedTime.getMonth() + 1).padStart(2, '0')}-${String(zonedTime.getDate()).padStart(2, '0')}`;
+        emailsByDay[dayKey] = (emailsByDay[dayKey] || 0) + 1;
+
+        return {
+          id: email.id,
+          status: 'queued',
+          domain_index: domainIndex,
+          from_email: `${domainConfig.sender_name}@${domainConfig.domain}`,
+          scheduled_for: scheduledFor.toISOString(),
+        };
+      });
+
+      // Persist this page
+      for (const update of updates) {
+        await supabase
+          .from('email_queue')
+          .update({
+            status: update.status,
+            domain_index: update.domain_index,
+            from_email: update.from_email,
+            scheduled_for: update.scheduled_for,
+          })
+          .eq('id', update.id);
+      }
+
+      totalQueued += updates.length;
     }
 
     // 6. Update campaign status
@@ -173,7 +205,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      queued: updates.length,
+      queued: totalQueued,
       scheduling: {
         timezone: TIMEZONE,
         intervalMinutes: INTERVAL_MINUTES,
