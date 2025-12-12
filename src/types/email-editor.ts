@@ -170,6 +170,14 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         buttonUrl: 'https://ozlistings.com/schedule-a-call',
       },
       {
+        id: 'urgency',
+        name: 'Urgency Reminder',
+        type: 'text',
+        mode: 'personalized',
+        content: 'Add in some urgency reminder for this - make it more urgent',
+        selectedFields: ['Name', 'Company'],
+      },
+      {
         id: 'signoff',
         name: 'Sign-off',
         type: 'text',

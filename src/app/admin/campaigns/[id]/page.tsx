@@ -594,6 +594,39 @@ export default function CampaignEditPage() {
                       </button>
                     </div>
                   </div>
+                  <div className="px-4 pb-4">
+                    <p className="text-xs font-medium text-gray-700 mb-1.5">
+                      Emails in this campaign
+                    </p>
+                    <div className="border border-gray-200 rounded-lg bg-gray-50 max-h-48 overflow-auto">
+                      {stagedEmails.slice(0, 20).map((email) => (
+                        <div
+                          key={email.id}
+                          className="px-3 py-2 text-sm text-gray-700 border-b last:border-b-0 flex items-center justify-between gap-3"
+                        >
+                          <div className="truncate">
+                            <div className="font-medium truncate">{email.toEmail}</div>
+                            {email.metadata?.Name && (
+                              <div className="text-xs text-gray-500 truncate">{email.metadata.Name}</div>
+                            )}
+                          </div>
+                          {email.metadata?.Company && (
+                            <div className="text-xs text-gray-500 truncate">{email.metadata.Company}</div>
+                          )}
+                        </div>
+                      ))}
+                      {stagedEmails.length === 0 && (
+                        <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                          No staged emails yet.
+                        </div>
+                      )}
+                      {stagedEmails.length > 20 && (
+                        <div className="px-3 py-2 text-xs text-gray-500 text-center border-t">
+                          Showing first 20 of {stagedEmails.length} recipients
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

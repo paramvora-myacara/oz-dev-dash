@@ -57,11 +57,15 @@ export default function PreviewPanel({
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationError, setGenerationError] = useState<string | null>(null)
   const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const currentSample = sampleData?.rows[selectedSampleIndex] || null
 
   // Debounce sections to prevent rapid re-renders during typing
   const debouncedSections = useDebounce(sections, 300)
+  
+  // Debounce subject line to prevent rapid re-renders during typing
+  const debouncedSubjectLineContent = useDebounce(subjectLine.content, 300)
 
   // Check if there are personalized sections
   const hasPersonalizedSections = useMemo(() => {
@@ -73,6 +77,23 @@ export default function PreviewPanel({
     setGeneratedContent(null)
     setGenerationError(null)
   }, [selectedSampleIndex, debouncedSections])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSampleDropdown(false)
+      }
+    }
+
+    if (showSampleDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showSampleDropdown])
 
   // Helper to replace variables
   const replaceVariables = (text: string, data: Record<string, string> | null): string => {
@@ -97,7 +118,7 @@ export default function PreviewPanel({
         body: JSON.stringify({
           sections: debouncedSections,
           recipientData: currentSample,
-          subjectLine: subjectLine.content,
+          subjectLine: debouncedSubjectLineContent,
         }),
       })
 
@@ -120,7 +141,7 @@ export default function PreviewPanel({
   const emailHtml = useMemo(() => {
     if (emailFormat === 'text') {
       // Generate plain text preview (keep order and render CTAs as "Button Text: URL")
-      const subject = replaceVariables(subjectLine.content, currentSample)
+      const subject = replaceVariables(debouncedSubjectLineContent, currentSample)
 
       const orderedSections = [...debouncedSections].sort((a, b) => a.order - b.order)
 
@@ -202,8 +223,8 @@ export default function PreviewPanel({
 </html>
       `
     }
-    return generateEmailHtml(debouncedSections, subjectLine.content, currentSample, undefined, generatedContent || undefined)
-  }, [debouncedSections, subjectLine.content, currentSample, emailFormat, generatedContent])
+    return generateEmailHtml(debouncedSections, debouncedSubjectLineContent, currentSample, undefined, generatedContent || undefined)
+  }, [debouncedSections, debouncedSubjectLineContent, currentSample, emailFormat, generatedContent])
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -246,7 +267,7 @@ export default function PreviewPanel({
 
           {/* Sample Selector */}
           {sampleData && sampleData.rows.length > 0 && (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowSampleDropdown(!showSampleDropdown)}
                 className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-md sm:rounded-lg hover:bg-gray-100"

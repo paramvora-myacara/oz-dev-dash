@@ -80,6 +80,8 @@ export default function CampaignsPage() {
       setDeletingId(id)
       await deleteCampaign(id)
       setCampaigns((prev) => prev.filter((c) => c.id !== id))
+      // Refresh 7-day summary after deletion
+      await fetchCampaignStatus()
     } catch (err: any) {
       alert('Failed to delete campaign: ' + err.message)
     } finally {
@@ -253,11 +255,14 @@ export default function CampaignsPage() {
                 {weekSchedule.map((day) => {
                   const usedCapacity = day.isToday ? day.sent + day.queued : day.queued
                   const percentage = getCapacityPercentage(usedCapacity, day.capacity)
+                  const isWeekend = (day.dayOfWeek || '').toLowerCase().startsWith('sat') || (day.dayOfWeek || '').toLowerCase().startsWith('sun')
 
                   return (
                     <div
                       key={day.date}
-                      className={`rounded-lg p-3 border ${day.isToday
+                      className={`rounded-lg p-3 border ${isWeekend
+                          ? 'bg-gray-100 border-gray-300 text-gray-500'
+                          : day.isToday
                           ? 'bg-blue-50 border-blue-300'
                           : day.queued > 0
                             ? 'bg-indigo-50 border-indigo-200'
@@ -280,7 +285,9 @@ export default function CampaignsPage() {
                       )}
                       <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
                         <div
-                          className={`h-1.5 rounded-full transition-all ${percentage >= 90
+                          className={`h-1.5 rounded-full transition-all ${isWeekend
+                              ? 'bg-gray-400'
+                              : percentage >= 90
                               ? 'bg-red-500'
                               : percentage >= 70
                                 ? 'bg-yellow-500'
