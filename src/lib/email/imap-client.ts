@@ -117,9 +117,9 @@ export class ImapClient {
       const emailDetail: EmailDetail = {
         uid: 'uid' in message ? message.uid : uid,
         messageId: parsed.messageId || '',
-        from: typeof parsed.from === 'object' && 'text' in parsed.from ? parsed.from.text : '',
-        fromName: '',
-        to: typeof parsed.to === 'object' && 'text' in parsed.to ? parsed.to.text : '',
+        from: message.envelope?.from?.[0]?.address || '',
+        fromName: message.envelope?.from?.[0]?.name || '',
+        to: message.envelope?.to?.[0]?.address || '',
         subject: parsed.subject || '(No Subject)',
         date: parsed.date || new Date(),
         seen: 'flags' in message && message.flags?.has('\\Seen') || false,
