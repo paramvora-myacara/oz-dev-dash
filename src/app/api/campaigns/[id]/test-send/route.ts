@@ -195,6 +195,9 @@ export async function POST(
       sectionsCount: campaign.sections?.length || 0
     });
 
+    // Test sends should NOT use campaign_id to avoid polluting campaign metrics
+    // We'll omit campaign_id entirely for test sends
+
     // Get sample data from selected recipient email, or first staged email, or use placeholder
     console.log('[test-send] Fetching recipient data...');
     let sampleData: Record<string, string>;
@@ -423,7 +426,9 @@ export async function POST(
     const htmlBody = isHtml ? emailBody : undefined;
     
     // Build payload matching backend email_sender.py exactly
+    // Note: Test sends do NOT include campaign_id to avoid polluting campaign metrics
     const sparkpostPayload: Record<string, any> = {
+      // campaign_id is intentionally omitted for test sends
       recipients: [{ address: { email: testEmail } }],
       content: {
         from: 'jeff@connect-ozlistings.com',

@@ -46,6 +46,12 @@ export default function CampaignEditPage() {
     total: number
     lastSentAt: string | null
     nextScheduledFor: string | null
+    sparkpostMetrics?: {
+      deliveryRate: number | null
+      bounceRate: number | null
+      countDelivered: number | null
+      countBounced: number | null
+    }
   } | null>(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
   const [loadingFailed, setLoadingFailed] = useState(false)
@@ -125,6 +131,7 @@ export default function CampaignEditPage() {
           ...json.counts,
           lastSentAt: json.lastSentAt,
           nextScheduledFor: json.nextScheduledFor,
+          sparkpostMetrics: json.sparkpostMetrics,
         })
       }
     } catch (err) {
@@ -622,8 +629,20 @@ export default function CampaignEditPage() {
                 </div>
               </div>
 
-              {/* Summary cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Summary cards with refresh button */}
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-gray-700">Campaign Statistics</h2>
+                <button
+                  onClick={loadSummary}
+                  disabled={loadingSummary}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Refresh statistics"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingSummary ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Sent</p>
                   <p className="text-xl font-semibold text-gray-900">
@@ -648,6 +667,32 @@ export default function CampaignEditPage() {
                     {campaignSummary ? campaignSummary.failed.toLocaleString() : '—'}
                   </p>
                   <p className="text-[11px] text-gray-500">Needs retry</p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Delivery Rate</p>
+                  <p className="text-xl font-semibold text-green-600">
+                    {campaignSummary?.sparkpostMetrics?.deliveryRate !== null && campaignSummary?.sparkpostMetrics?.deliveryRate !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.deliveryRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.sparkpostMetrics?.countDelivered !== null && campaignSummary?.sparkpostMetrics?.countDelivered !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.countDelivered.toLocaleString()} delivered`
+                      : 'No data'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Bounce Rate</p>
+                  <p className="text-xl font-semibold text-orange-600">
+                    {campaignSummary?.sparkpostMetrics?.bounceRate !== null && campaignSummary?.sparkpostMetrics?.bounceRate !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.bounceRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.sparkpostMetrics?.countBounced !== null && campaignSummary?.sparkpostMetrics?.countBounced !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.countBounced.toLocaleString()} bounced`
+                      : 'No data'}
+                  </p>
                 </div>
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Total</p>

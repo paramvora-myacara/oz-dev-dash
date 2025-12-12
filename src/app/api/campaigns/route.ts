@@ -59,6 +59,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    // Enforce 25 character limit for SparkPost campaign_id compatibility
+    const MAX_CAMPAIGN_NAME_LENGTH = 25;
+    if (name.length > MAX_CAMPAIGN_NAME_LENGTH) {
+      return NextResponse.json(
+        { error: `Campaign name must be ${MAX_CAMPAIGN_NAME_LENGTH} characters or less` },
+        { status: 400 }
+      );
+    }
+
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from('campaigns')

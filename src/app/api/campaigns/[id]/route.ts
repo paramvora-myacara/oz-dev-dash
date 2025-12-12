@@ -60,6 +60,17 @@ export async function PUT(
     
     const supabase = createAdminClient();
 
+    // Enforce 25 character limit for SparkPost campaign_id compatibility
+    const MAX_CAMPAIGN_NAME_LENGTH = 25;
+    if (body.name !== undefined) {
+      if (body.name.length > MAX_CAMPAIGN_NAME_LENGTH) {
+        return NextResponse.json(
+          { error: `Campaign name must be ${MAX_CAMPAIGN_NAME_LENGTH} characters or less` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Build update object (only include provided fields)
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
     if (body.name !== undefined) updates.name = body.name;
