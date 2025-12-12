@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { checkAndUpdateCompletedCampaign } from '@/lib/campaigns/completion';
 
 // GET /api/campaigns/:id
 export async function GET(
@@ -15,6 +16,9 @@ export async function GET(
 
     const { id } = await params;
     const supabase = createAdminClient();
+    
+    // Check and update campaign completion status (on-demand check)
+    await checkAndUpdateCompletedCampaign(supabase, id);
     
     const { data, error } = await supabase
       .from('campaigns')

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/utils/supabase/admin'
+import { checkAndUpdateCompletedCampaign } from '@/lib/campaigns/completion'
 
 // GET /api/campaigns/:id/summary
 export async function GET(
@@ -16,6 +17,9 @@ export async function GET(
     const { id: campaignId } = await params
     const supabase = createAdminClient()
     const SPARKPOST_API_KEY = process.env.SPARKPOST_API_KEY
+
+    // Check and update campaign completion status (on-demand check)
+    await checkAndUpdateCompletedCampaign(supabase, campaignId)
 
     // Get campaign name and creation date for constructing SparkPost campaign_id and date range
     const { data: campaign } = await supabase

@@ -40,6 +40,8 @@ export interface Campaign {
   emailFormat: EmailFormat;
   status: CampaignStatus;
   totalRecipients: number;
+  sentCount?: number; // Number of successfully sent emails
+  failedCount?: number; // Number of failed emails
   createdAt: string;
   updatedAt: string;
 }

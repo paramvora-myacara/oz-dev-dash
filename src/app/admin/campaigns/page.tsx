@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2, Eye, Mail, RefreshCw, Calendar } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Plus, Trash2, Mail, RefreshCw, Calendar } from 'lucide-react'
 import { getCampaigns, deleteCampaign } from '@/lib/api/campaigns'
 import { getStatusLabel, getStatusColor } from '@/lib/utils/status-labels'
 import type { Campaign } from '@/types/email-editor'
@@ -29,6 +30,7 @@ interface CampaignStatusData {
 }
 
 export default function CampaignsPage() {
+  const router = useRouter()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -152,6 +154,12 @@ export default function CampaignsPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Recipients
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sent
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Failed
+                    </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
@@ -159,14 +167,21 @@ export default function CampaignsPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {campaigns.slice(0, 10).map((campaign) => (
-                    <tr key={campaign.id} className="hover:bg-gray-50">
+                    <tr
+                      key={campaign.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={(e) => {
+                        // Don't navigate if clicking on the delete button
+                        if ((e.target as HTMLElement).closest('button')) {
+                          return
+                        }
+                        router.push(`/admin/campaigns/${campaign.id}`)
+                      }}
+                    >
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <Link
-                          href={`/admin/campaigns/${campaign.id}`}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                        >
+                        <span className="text-sm font-medium text-blue-600">
                           {campaign.name}
-                        </Link>
+                        </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(campaign.status)}`}>
@@ -176,25 +191,27 @@ export default function CampaignsPage() {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {campaign.totalRecipients}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">
+                        {campaign.sentCount !== undefined ? campaign.sentCount : '—'}
+                      </td>
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${
+                        (campaign.failedCount || 0) > 0 ? 'text-red-600' : 'text-gray-500'
+                      }`}>
+                        {campaign.failedCount !== undefined ? campaign.failedCount : '—'}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <Link
-                            href={`/admin/campaigns/${campaign.id}`}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="View/Edit"
-                          >
-                            <Eye size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(campaign.id)}
-                            className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Delete"
-                            disabled={deletingId === campaign.id}
-                            aria-label="Delete campaign"
-                          >
-                            <Trash2 size={16} className={deletingId === campaign.id ? 'animate-pulse' : ''} />
-                          </button>
-                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(campaign.id)
+                          }}
+                          className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete"
+                          disabled={deletingId === campaign.id}
+                          aria-label="Delete campaign"
+                        >
+                          <Trash2 size={16} className={deletingId === campaign.id ? 'animate-pulse' : ''} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -232,7 +249,7 @@ export default function CampaignsPage() {
                     <div
                       key={day.date}
                       className={`rounded-lg p-3 border ${day.isToday
-                          ? getCapacityColor(usedCapacity, day.capacity)
+                          ? 'bg-blue-50 border-blue-300'
                           : day.queued > 0
                             ? 'bg-indigo-50 border-indigo-200'
                             : 'bg-gray-50 border-gray-200'

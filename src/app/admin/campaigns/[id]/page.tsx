@@ -642,10 +642,18 @@ export default function CampaignEditPage() {
                   Refresh
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* First row: Total, Sent, Queued, Failed */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Total</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {campaignSummary ? campaignSummary.total.toLocaleString() : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">All statuses</p>
+                </div>
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Sent</p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-xl font-semibold text-green-600">
                     {campaignSummary ? campaignSummary.sent.toLocaleString() : '—'}
                   </p>
                   <p className="text-[11px] text-gray-500">
@@ -668,6 +676,10 @@ export default function CampaignEditPage() {
                   </p>
                   <p className="text-[11px] text-gray-500">Needs retry</p>
                 </div>
+              </div>
+
+              {/* Second row: Delivery Rate, Bounce Rate */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Delivery Rate</p>
                   <p className="text-xl font-semibold text-green-600">
@@ -693,13 +705,6 @@ export default function CampaignEditPage() {
                       ? `${campaignSummary.sparkpostMetrics.countBounced.toLocaleString()} bounced`
                       : 'No data'}
                   </p>
-                </div>
-                <div className="bg-white border rounded-lg p-3 shadow-sm">
-                  <p className="text-xs uppercase text-gray-500 mb-1">Total</p>
-                  <p className="text-xl font-semibold text-gray-900">
-                    {campaignSummary ? campaignSummary.total.toLocaleString() : '—'}
-                  </p>
-                  <p className="text-[11px] text-gray-500">All statuses</p>
                 </div>
               </div>
 
