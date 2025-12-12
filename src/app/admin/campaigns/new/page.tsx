@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCampaign } from '@/lib/api/campaigns'
 
+const MAX_CAMPAIGN_NAME_LENGTH = 25
+
 export default function NewCampaignPage() {
   const router = useRouter()
   const [name, setName] = useState('')
@@ -13,6 +15,10 @@ export default function NewCampaignPage() {
     e.preventDefault()
     if (!name.trim()) {
       alert('Please enter a campaign name')
+      return
+    }
+    if (name.length > MAX_CAMPAIGN_NAME_LENGTH) {
+      alert(`Campaign name must be ${MAX_CAMPAIGN_NAME_LENGTH} characters or less`)
       return
     }
 
@@ -33,15 +39,29 @@ export default function NewCampaignPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Campaign Name
+            <span className="text-gray-500 font-normal ml-1">
+              ({name.length}/{MAX_CAMPAIGN_NAME_LENGTH})
+            </span>
           </label>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value
+              if (newValue.length <= MAX_CAMPAIGN_NAME_LENGTH) {
+                setName(newValue)
+              }
+            }}
+            maxLength={MAX_CAMPAIGN_NAME_LENGTH}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="e.g., Q1 2024 Outreach"
             required
           />
+          {name.length > MAX_CAMPAIGN_NAME_LENGTH - 5 && (
+            <p className="text-xs text-orange-600 mt-1">
+              {MAX_CAMPAIGN_NAME_LENGTH - name.length} characters remaining
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <button

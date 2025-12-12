@@ -46,6 +46,12 @@ export default function CampaignEditPage() {
     total: number
     lastSentAt: string | null
     nextScheduledFor: string | null
+    sparkpostMetrics?: {
+      deliveryRate: number | null
+      bounceRate: number | null
+      countDelivered: number | null
+      countBounced: number | null
+    }
   } | null>(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
   const [loadingFailed, setLoadingFailed] = useState(false)
@@ -125,6 +131,7 @@ export default function CampaignEditPage() {
           ...json.counts,
           lastSentAt: json.lastSentAt,
           nextScheduledFor: json.nextScheduledFor,
+          sparkpostMetrics: json.sparkpostMetrics,
         })
       }
     } catch (err) {
@@ -587,6 +594,39 @@ export default function CampaignEditPage() {
                       </button>
                     </div>
                   </div>
+                  <div className="px-4 pb-4">
+                    <p className="text-xs font-medium text-gray-700 mb-1.5">
+                      Emails in this campaign
+                    </p>
+                    <div className="border border-gray-200 rounded-lg bg-gray-50 max-h-48 overflow-auto">
+                      {stagedEmails.slice(0, 20).map((email) => (
+                        <div
+                          key={email.id}
+                          className="px-3 py-2 text-sm text-gray-700 border-b last:border-b-0 flex items-center justify-between gap-3"
+                        >
+                          <div className="truncate">
+                            <div className="font-medium truncate">{email.toEmail}</div>
+                            {email.metadata?.Name && (
+                              <div className="text-xs text-gray-500 truncate">{email.metadata.Name}</div>
+                            )}
+                          </div>
+                          {email.metadata?.Company && (
+                            <div className="text-xs text-gray-500 truncate">{email.metadata.Company}</div>
+                          )}
+                        </div>
+                      ))}
+                      {stagedEmails.length === 0 && (
+                        <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                          No staged emails yet.
+                        </div>
+                      )}
+                      {stagedEmails.length > 20 && (
+                        <div className="px-3 py-2 text-xs text-gray-500 text-center border-t">
+                          Showing first 20 of {stagedEmails.length} recipients
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -622,11 +662,31 @@ export default function CampaignEditPage() {
                 </div>
               </div>
 
-              {/* Summary cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Summary cards with refresh button */}
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-gray-700">Campaign Statistics</h2>
+                <button
+                  onClick={loadSummary}
+                  disabled={loadingSummary}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Refresh statistics"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingSummary ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+              {/* First row: Total, Sent, Queued, Failed */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Total</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {campaignSummary ? campaignSummary.total.toLocaleString() : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">All statuses</p>
+                </div>
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Sent</p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-xl font-semibold text-green-600">
                     {campaignSummary ? campaignSummary.sent.toLocaleString() : '—'}
                   </p>
                   <p className="text-[11px] text-gray-500">
@@ -649,12 +709,35 @@ export default function CampaignEditPage() {
                   </p>
                   <p className="text-[11px] text-gray-500">Needs retry</p>
                 </div>
+              </div>
+
+              {/* Second row: Delivery Rate, Bounce Rate */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
-                  <p className="text-xs uppercase text-gray-500 mb-1">Total</p>
-                  <p className="text-xl font-semibold text-gray-900">
-                    {campaignSummary ? campaignSummary.total.toLocaleString() : '—'}
+                  <p className="text-xs uppercase text-gray-500 mb-1">Delivery Rate</p>
+                  <p className="text-xl font-semibold text-green-600">
+                    {campaignSummary?.sparkpostMetrics?.deliveryRate !== null && campaignSummary?.sparkpostMetrics?.deliveryRate !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.deliveryRate.toFixed(1)}%`
+                      : '—'}
                   </p>
-                  <p className="text-[11px] text-gray-500">All statuses</p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.sparkpostMetrics?.countDelivered !== null && campaignSummary?.sparkpostMetrics?.countDelivered !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.countDelivered.toLocaleString()} delivered`
+                      : 'No data'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Bounce Rate</p>
+                  <p className="text-xl font-semibold text-orange-600">
+                    {campaignSummary?.sparkpostMetrics?.bounceRate !== null && campaignSummary?.sparkpostMetrics?.bounceRate !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.bounceRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.sparkpostMetrics?.countBounced !== null && campaignSummary?.sparkpostMetrics?.countBounced !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.countBounced.toLocaleString()} bounced`
+                      : 'No data'}
+                  </p>
                 </div>
               </div>
 

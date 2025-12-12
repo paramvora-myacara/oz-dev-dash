@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { checkAndUpdateCompletedCampaigns } from '@/lib/campaigns/completion';
 
 // GET /api/campaigns - List all campaigns
 export async function GET(request: NextRequest) {
@@ -20,8 +21,70 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform snake_case to camelCase
-    const campaigns = (data || []).map(row => ({
+    // Get campaign IDs to fetch email stats
+    let campaignsData = data || [];
+    const campaignIds = campaignsData.map(row => row.id);
+
+    // Check and update completed campaigns (on-demand check)
+    // Only check campaigns that are 'scheduled' or 'sending'
+    const activeCampaignIds = campaignsData
+      .filter(row => ['scheduled', 'sending'].includes(row.status))
+      .map(row => row.id);
+    
+    if (activeCampaignIds.length > 0) {
+      await checkAndUpdateCompletedCampaigns(supabase, activeCampaignIds);
+      
+      // Re-fetch campaigns to get updated statuses
+      const { data: updatedData } = await supabase
+        .from('campaigns')
+        .select('*')
+        .in('id', campaignIds)
+        .order('created_at', { ascending: false });
+      
+      if (updatedData) {
+        // Use updated data if available
+        campaignsData = updatedData;
+      }
+    }
+
+    // Initialize stats map with zeros
+    const emailStats: Record<string, { sent: number; failed: number }> = {};
+    campaignIds.forEach(id => {
+      emailStats[id] = { sent: 0, failed: 0 };
+    });
+
+    // Fetch sent/failed counts for all campaigns efficiently
+    if (campaignIds.length > 0) {
+      // Get sent counts per campaign
+      const { data: sentData } = await supabase
+        .from('email_queue')
+        .select('campaign_id')
+        .in('campaign_id', campaignIds)
+        .eq('status', 'sent');
+
+      // Get failed counts per campaign
+      const { data: failedData } = await supabase
+        .from('email_queue')
+        .select('campaign_id')
+        .in('campaign_id', campaignIds)
+        .eq('status', 'failed');
+
+      // Aggregate counts per campaign using efficient lookups
+      sentData?.forEach(email => {
+        if (emailStats[email.campaign_id]) {
+          emailStats[email.campaign_id].sent++;
+        }
+      });
+
+      failedData?.forEach(email => {
+        if (emailStats[email.campaign_id]) {
+          emailStats[email.campaign_id].failed++;
+        }
+      });
+    }
+
+    // Transform snake_case to camelCase and add stats
+    const campaigns = campaignsData.map(row => ({
       id: row.id,
       name: row.name,
       templateSlug: row.template_slug,
@@ -30,6 +93,8 @@ export async function GET(request: NextRequest) {
       emailFormat: row.email_format,
       status: row.status,
       totalRecipients: row.total_recipients,
+      sentCount: emailStats[row.id]?.sent || 0,
+      failedCount: emailStats[row.id]?.failed || 0,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }));
@@ -57,6 +122,15 @@ export async function POST(request: NextRequest) {
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    // Enforce 25 character limit for SparkPost campaign_id compatibility
+    const MAX_CAMPAIGN_NAME_LENGTH = 25;
+    if (name.length > MAX_CAMPAIGN_NAME_LENGTH) {
+      return NextResponse.json(
+        { error: `Campaign name must be ${MAX_CAMPAIGN_NAME_LENGTH} characters or less` },
+        { status: 400 }
+      );
     }
 
     const supabase = createAdminClient();

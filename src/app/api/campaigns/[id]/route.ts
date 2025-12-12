@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { checkAndUpdateCompletedCampaign } from '@/lib/campaigns/completion';
 
 // GET /api/campaigns/:id
 export async function GET(
@@ -15,6 +16,9 @@ export async function GET(
 
     const { id } = await params;
     const supabase = createAdminClient();
+    
+    // Check and update campaign completion status (on-demand check)
+    await checkAndUpdateCompletedCampaign(supabase, id);
     
     const { data, error } = await supabase
       .from('campaigns')
@@ -59,6 +63,17 @@ export async function PUT(
     const body = await request.json();
     
     const supabase = createAdminClient();
+
+    // Enforce 25 character limit for SparkPost campaign_id compatibility
+    const MAX_CAMPAIGN_NAME_LENGTH = 25;
+    if (body.name !== undefined) {
+      if (body.name.length > MAX_CAMPAIGN_NAME_LENGTH) {
+        return NextResponse.json(
+          { error: `Campaign name must be ${MAX_CAMPAIGN_NAME_LENGTH} characters or less` },
+          { status: 400 }
+        );
+      }
+    }
 
     // Build update object (only include provided fields)
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };

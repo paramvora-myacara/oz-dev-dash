@@ -40,6 +40,8 @@ export interface Campaign {
   emailFormat: EmailFormat;
   status: CampaignStatus;
   totalRecipients: number;
+  sentCount?: number; // Number of successfully sent emails
+  failedCount?: number; // Number of failed emails
   createdAt: string;
   updatedAt: string;
 }
@@ -150,7 +152,7 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         name: 'Your Pitch',
         type: 'text',
         mode: 'static',
-        content: 'I\'m Todd Vitzthum, founder of OZListings—the premier AI-powered marketplace for Opportunity Zone investments.\n\nWe connect developers like you with qualified investors actively seeking OZ deals, streamline your capital raise process, and provide comprehensive deal marketing services.',
+        content: 'I\'m Jeff Richmond, founder of OZListings—the premier AI-powered marketplace for Opportunity Zone investments.\n\nWe connect developers like you with qualified investors actively seeking OZ deals, streamline your capital raise process, and provide comprehensive deal marketing services.',
       },
       {
         id: 'cta-text',
@@ -165,14 +167,22 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         type: 'button',
         mode: 'static',
         content: 'Book Your Complimentary Call',
-        buttonUrl: 'https://ozlistings.com/book',
+        buttonUrl: 'https://ozlistings.com/schedule-a-call',
+      },
+      {
+        id: 'urgency',
+        name: 'Urgency Reminder',
+        type: 'text',
+        mode: 'personalized',
+        content: 'Add in some urgency reminder for this - make it more urgent',
+        selectedFields: ['Name', 'Company'],
       },
       {
         id: 'signoff',
         name: 'Sign-off',
         type: 'text',
         mode: 'static',
-        content: 'Best,\nTodd',
+        content: 'Best,\nJeff',
       },
     ],
   },
@@ -210,7 +220,7 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         type: 'button',
         mode: 'static',
         content: 'Schedule a Call',
-        buttonUrl: 'https://ozlistings.com/book',
+        buttonUrl: 'https://ozlistings.com/schedule-a-call',
       },
     ],
   },
