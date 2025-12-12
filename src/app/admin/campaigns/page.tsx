@@ -113,13 +113,22 @@ export default function CampaignsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Email Campaigns</h1>
-        <Link
-          href="/admin/campaigns/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <Plus size={20} />
-          New Campaign
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/inbox"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+          >
+            <Mail size={20} />
+            Inbox
+          </Link>
+          <Link
+            href="/admin/campaigns/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Plus size={20} />
+            New Campaign
+          </Link>
+        </div>
       </div>
 
       {error && (
