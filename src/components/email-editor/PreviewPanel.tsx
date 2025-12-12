@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Monitor, Smartphone, ChevronDown, Users, Sparkles, Loader2 } from 'lucide-react'
+import { Monitor, Smartphone, ChevronDown, Users, Sparkles, Loader2, Eye } from 'lucide-react'
 import { generateEmailHtml } from '@/lib/email/generateEmailHtml'
 import type { Section, SectionMode, SampleData } from '@/types/email-editor'
 
@@ -56,6 +56,7 @@ export default function PreviewPanel({
   const [generatedContent, setGeneratedContent] = useState<Record<string, string> | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationError, setGenerationError] = useState<string | null>(null)
+  const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false)
 
   const currentSample = sampleData?.rows[selectedSampleIndex] || null
 
@@ -107,6 +108,7 @@ export default function PreviewPanel({
 
       const data = await response.json()
       setGeneratedContent(data.generatedContent || {})
+      setHasGeneratedOnce(true)
     } catch (error) {
       console.error('Preview generation error:', error)
       setGenerationError(error instanceof Error ? error.message : 'Failed to generate preview')
@@ -234,7 +236,9 @@ export default function PreviewPanel({
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Regenerate Preview</span>
+                  <span className="hidden sm:inline">
+                    {hasGeneratedOnce ? 'Regenerate Preview' : 'Generate Preview'}
+                  </span>
                 </>
               )}
             </button>
@@ -349,18 +353,32 @@ export default function PreviewPanel({
       )}
 
       {/* Preview Content - Responsive */}
-      <div className="flex-1 overflow-auto p-2 sm:p-3 md:p-5 bg-gray-100">
-        <div className={`mx-auto h-full transition-all duration-300 ${
-          device === 'desktop' ? 'max-w-2xl' : 'max-w-sm'
-        }`}>
-          <iframe
-            srcDoc={emailHtml}
-            title="Email Preview"
-            className="w-full h-full border-0 rounded-lg sm:rounded-xl"
-            sandbox="allow-same-origin"
-            style={{ minHeight: '400px' }}
-          />
-        </div>
+      <div className="flex-1 overflow-auto p-2 sm:p-3 md:p-5 bg-gray-100 relative">
+        {!hasGeneratedOnce ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center p-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <Eye className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Preview your email</h3>
+              <p className="text-sm text-gray-500 max-w-sm">
+                Click "Generate Preview" to see how your email will look with personalized content.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className={`mx-auto h-full transition-all duration-300 ${
+            device === 'desktop' ? 'max-w-2xl' : 'max-w-sm'
+          }`}>
+            <iframe
+              srcDoc={emailHtml}
+              title="Email Preview"
+              className="w-full h-full border-0 rounded-lg sm:rounded-xl"
+              sandbox="allow-same-origin"
+              style={{ minHeight: '400px' }}
+            />
+          </div>
+        )}
       </div>
 
     </div>
