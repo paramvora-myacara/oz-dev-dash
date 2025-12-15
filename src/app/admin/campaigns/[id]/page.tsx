@@ -10,7 +10,7 @@ import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, type GenerateProgress } from '@/lib/api/campaigns'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
 
@@ -68,9 +68,7 @@ export default function CampaignEditPage() {
   // Contact selection state
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
 
-  // CSV state (lifted from EmailEditor)
-  const [csvFile, setCsvFile] = useState<File | null>(null)
-  const [csvFileName, setCsvFileName] = useState<string | null>(null)
+  // Sample data from database (replaces CSV)
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
 
   // Load campaign and determine initial step based on status
@@ -91,10 +89,25 @@ export default function CampaignEditPage() {
       setError(null)
       const data = await getCampaign(campaignId)
       setCampaign(data)
+
+      // If we have recipients, load sample data for preview
+      const totalRecipients = data.totalRecipients || (data as any).total_recipients || 0
+      if (totalRecipients > 0) {
+        loadSampleData()
+      }
     } catch (err: any) {
       setError('Failed to load campaign: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadSampleData = async () => {
+    try {
+      const data = await getCampaignSampleRecipients(campaignId)
+      setSampleData(data)
+    } catch (err) {
+      console.error('Failed to load sample data:', err)
     }
   }
 
@@ -157,9 +170,16 @@ export default function CampaignEditPage() {
       } else if (['scheduled', 'sending', 'completed'].includes(campaign.status as string)) {
         setCurrentStep('complete')
       } else if (campaign.status === 'draft') {
-        // Check if campaign has been through design phase (has sections)
-        if (campaign.sections && campaign.sections.length > 0) {
-          setCurrentStep('design')
+        // Check if campaign has been through design phase (has sections) OR has recipients selected
+        // Cast to any to handle potential property mismatch during dev
+        const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
+        const hasRecipients = totalRecipients > 0
+        if ((campaign.sections && campaign.sections.length > 0) || hasRecipients) {
+          // Only redirect if we are in an invalid step for this state
+          // Allow 'format-sample' as it's a valid substep of draft
+          if (currentStep !== 'design' && currentStep !== 'format-sample') {
+            setCurrentStep('design')
+          }
         } else {
           // New campaign - start with recipient selection
           setCurrentStep('select-recipients')
@@ -168,7 +188,7 @@ export default function CampaignEditPage() {
         setCurrentStep('design')
       }
     }
-  }, [campaign?.status, campaign?.sections])
+  }, [campaign?.status, campaign?.sections, campaign?.totalRecipients])
 
   useEffect(() => {
     if (currentStep === 'complete') {
@@ -176,19 +196,6 @@ export default function CampaignEditPage() {
       loadFailedEmails()
     }
   }, [currentStep, loadSummary, loadFailedEmails])
-
-  // CSV handlers (lifted from EmailEditor)
-  const handleCsvUpload = useCallback((file: File, fileName: string, data: SampleData) => {
-    setCsvFile(file)
-    setCsvFileName(fileName)
-    setSampleData(data)
-  }, [])
-
-  const handleCsvRemove = useCallback(() => {
-    setCsvFile(null)
-    setCsvFileName(null)
-    setSampleData(null)
-  }, [])
 
   // Autosave handler - returns true on success, false on failure
   const handleAutoSave = useCallback(async (
@@ -215,7 +222,10 @@ export default function CampaignEditPage() {
   // Continue from recipient selection to design step
   const handleContinueFromRecipients = useCallback((contactIds: string[]) => {
     setSelectedContactIds(contactIds)
-    setCurrentStep('design')
+    // We should reload campaign to get the updated total_recipients count
+    loadCampaign().then(() => {
+      setCurrentStep('design')
+    })
   }, [])
 
   // Back from design to recipient selection
@@ -249,7 +259,10 @@ export default function CampaignEditPage() {
 
   // Generate all emails with specified format
   const handleGenerateAllWithFormat = useCallback(async (format: EmailFormat) => {
-    if (!campaign || !csvFile) return
+    if (!campaign) return
+    // Allow generation if we have database recipients
+    const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
+    if (totalRecipients === 0) return
 
     try {
       setGenerating(true)
@@ -259,11 +272,12 @@ export default function CampaignEditPage() {
       // Save the format to the campaign first
       await updateCampaign(campaign.id || campaignId, { emailFormat: format })
 
-      // Generate emails with the CSV and track progress
+      // Generate emails with the DB flag and track progress
       const result = await generateEmails(
         campaign.id || campaignId,
-        csvFile,
-        (progress) => setGenerateProgress(progress)
+        null, // No CSV
+        (progress) => setGenerateProgress(progress),
+        { useDatabaseRecipients: true }
       )
 
       // Reload campaign and staged emails
@@ -283,7 +297,7 @@ export default function CampaignEditPage() {
       setGenerating(false)
       setGenerateProgress(null)
     }
-  }, [campaign, campaignId, csvFile])
+  }, [campaign, campaignId])
 
 
 
@@ -530,21 +544,18 @@ export default function CampaignEditPage() {
             initialSubjectLine={campaign.subjectLine}
             initialEmailFormat={campaign.emailFormat}
             onAutoSave={handleAutoSave}
-            csvFile={csvFile}
-            csvFileName={csvFileName}
             sampleData={sampleData}
-            onCsvUpload={handleCsvUpload}
-            onCsvRemove={handleCsvRemove}
+            recipientCount={campaign.totalRecipients || (campaign as any).total_recipients || 0}
             onContinue={handleContinueToFormatSample}
             isContinuing={false}
           />
         )}
 
-        {currentStep === 'format-sample' && csvFile && sampleData && (
+        {currentStep === 'format-sample' && (
           <FormatSampleStep
             campaignId={campaign.id || campaignId}
-            csvFile={csvFile}
             sampleData={sampleData}
+            recipientCount={campaign.totalRecipients || (campaign as any).total_recipients || 0}
             initialFormat={campaign.emailFormat || 'text'}
             onBack={handleBackToDesignFromFormatSample}
             onGenerateAll={handleGenerateAllWithFormat}
