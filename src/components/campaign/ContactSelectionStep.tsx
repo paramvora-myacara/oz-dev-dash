@@ -3,23 +3,19 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Search, Filter, Users, Check, X, ChevronDown, Loader2 } from 'lucide-react'
 
-// Mock contact data - in real implementation this would come from API
-interface Contact {
-  id: string
-  name: string
-  email: string
-  company: string
-  location: string
-  phone?: string
-  role?: string
-  source: string
-  tags: string[]
-  outreachHistory?: {
-    campaignName: string
-    sentAt: string
-    status: 'sent' | 'opened' | 'clicked' | 'bounced'
-  }[]
+import { searchContacts, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
+import { isValidEmail } from '@/lib/utils/validation'
+
+// Helper to detect multiple emails
+const getEmails = (emailStr: string) => {
+  return emailStr.split(',').map(e => e.trim()).filter(Boolean);
 }
+
+const isMultipleEmails = (emailStr: string) => {
+  return getEmails(emailStr).length > 1;
+}
+
+const API_BASE = '/api/campaigns'
 
 // State mapping for smart location filtering
 const STATE_MAPPING: Record<string, string> = {
@@ -45,344 +41,12 @@ const STATE_NAME_TO_CODE = Object.entries(STATE_MAPPING).reduce((acc, [code, nam
 }, {} as Record<string, string>)
 
 const getLocationSearchTerms = (input: string): string[] => {
-  const terms = [input.toLowerCase()]
-  const upperInput = input.toUpperCase()
-
-  // If input is a state code, add the state name
-  if (STATE_MAPPING[upperInput]) {
-    terms.push(STATE_MAPPING[upperInput].toLowerCase())
-  }
-
-  // If input is a state name, add the state code
-  const stateCode = STATE_NAME_TO_CODE[input.toLowerCase()]
-  if (stateCode) {
-    terms.push(stateCode.toLowerCase())
-  }
-
-  return terms
+  // Simple pass-through since backend handles fuzzy matching now
+  return [input]
 }
 
-const MOCK_CONTACTS: Contact[] = [
-  {
-    id: '1',
-    name: 'A. Jay Young',
-    email: 'info@dcius.pro',
-    company: 'Dci',
-    location: 'Fayetteville, AR',
-    phone: '4794447880',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Q1 Developer Pipeline', sentAt: '2024-01-15', status: 'opened' },
-      { campaignName: 'Holiday Season Outreach', sentAt: '2023-12-10', status: 'sent' }
-    ]
-  },
-  {
-    id: '2',
-    name: 'A. Robert Paratte',
-    email: 'rparatte@kilroyrealty.com',
-    company: 'Kilroy Realty, L.p.',
-    location: 'Los Angeles, California',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '3',
-    name: 'A. Tom Harb',
-    email: 'tharb@ph-dev.com',
-    company: 'Phoenicia Development LLC',
-    location: 'Orlando, Florida',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Florida Market Expansion', sentAt: '2024-02-20', status: 'opened' }
-    ]
-  },
-  {
-    id: '4',
-    name: 'Aaron Boyd',
-    email: 'aboyd@dpccompanies.com',
-    company: 'Dpc Companies',
-    location: 'Greenwood Village, Co',
-    phone: '303.796.8288',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Colorado Real Estate Summit', sentAt: '2024-01-08', status: 'clicked' }
-    ]
-  },
-  {
-    id: '5',
-    name: 'Aaron Budilov',
-    email: 'abudilov@bainbridgere.com',
-    company: 'The Bainbridge Companies',
-    location: 'Wellington, Florida',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Southeast Developer Network', sentAt: '2024-02-01', status: 'clicked' },
-      { campaignName: 'Multi-Family Investment Series', sentAt: '2023-11-15', status: 'opened' }
-    ]
-  },
-  {
-    id: '6',
-    name: 'A.J. Klenk',
-    email: 'InvestorRelations@catalystcp.com',
-    company: 'Catalyst Capital Partners',
-    location: 'Charlotte, NC',
-    phone: '7047051665',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '7',
-    name: 'Alan Cohen',
-    email: 'acohen@trammellcrow.com',
-    company: 'Trammell Crow Residential',
-    location: 'Dallas, TX',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Texas Market Outreach', sentAt: '2024-01-20', status: 'sent' }
-    ]
-  },
-  {
-    id: '8',
-    name: 'Alex Rose',
-    email: 'arose@brookfield.com',
-    company: 'Brookfield Properties',
-    location: 'New York, NY',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '9',
-    name: 'Alexander C. (Sandy) McLean',
-    email: 'smclean@jbg.com',
-    company: 'JBG SMITH',
-    location: 'Washington, DC',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'East Coast Outreach', sentAt: '2024-02-10', status: 'bounced' }
-    ]
-  },
-  {
-    id: '10',
-    name: 'Alfred T. (Al) de Castro',
-    email: 'adecastro@catellus.com',
-    company: 'Catellus Development Corporation',
-    location: 'San Francisco, CA',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '11',
-    name: 'Alice Polk Hill',
-    email: 'ahill@hillwood.com',
-    company: 'Hillwood Development',
-    location: 'Dallas, TX',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '12',
-    name: 'Allan Swaringen',
-    email: 'aswaringen@swaringen.com',
-    company: 'Swaringen Development',
-    location: 'Houston, TX',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Texas Gulf Coast Pipeline', sentAt: '2024-01-20', status: 'opened' },
-      { campaignName: 'Energy Sector Developers', sentAt: '2023-10-05', status: 'sent' }
-    ]
-  },
-  {
-    id: '13',
-    name: 'Andrew F. Cogan',
-    email: 'acogan@cogan.com',
-    company: 'Cogan Properties',
-    location: 'Boston, MA',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '14',
-    name: 'Andrew Frey',
-    email: 'afrey@freydev.com',
-    company: 'Frey Development',
-    location: 'Austin, TX',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '15',
-    name: 'Andrew M. Bursky',
-    email: 'abursky@turnberry.com',
-    company: 'Turnberry Associates',
-    location: 'Aventura, FL',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Florida Market Outreach', sentAt: '2024-02-05', status: 'clicked' }
-    ]
-  },
-  {
-    id: '16',
-    name: 'Angela R. Chao',
-    email: 'achao@chaoconstruction.com',
-    company: 'Chao Construction',
-    location: 'Metairie, LA',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '17',
-    name: 'Anita L. Foard',
-    email: 'afoard@foardinc.com',
-    company: 'Foard Inc.',
-    location: 'Houston, TX',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '18',
-    name: 'Anthony P. (Tony) Politano',
-    email: 'apolitano@politano.com',
-    company: 'Politano Development',
-    location: 'Cleveland, OH',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '19',
-    name: 'Antonio J. (Tony) Consolo',
-    email: 'aconsolo@consolo.com',
-    company: 'Consolo Development',
-    location: 'Tampa, FL',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Florida Market Outreach', sentAt: '2024-02-05', status: 'sent' }
-    ]
-  },
-  {
-    id: '20',
-    name: 'Archie Bennett',
-    email: 'abennett@bennettgroup.com',
-    company: 'Bennett Group',
-    location: 'Atlanta, GA',
-    role: 'CEO',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '21',
-    name: 'Arnold F. (Arnie) Lerner',
-    email: 'alerner@lernercorp.com',
-    company: 'Lerner Corporation',
-    location: 'Cleveland, OH',
-    role: 'Chairman',
-    source: 'docs/DEVELOPERS.xlsx',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '22',
-    name: 'Arthur M. (Art) Gensler Jr.',
-    email: 'agensler@gensler.com',
-    company: 'Gensler',
-    location: 'San Francisco, CA',
-    role: 'Principal',
-    source: 'docs/DEVELOPERS.xlsx',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '23',
-    name: 'B. Joseph White',
-    email: 'bwhite@whiteenterprises.com',
-    company: 'White Enterprises',
-    location: 'Cleveland, OH',
-    role: 'President',
-    source: 'developers.csv',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '24',
-    name: 'Barbara J. (BJ) McGraw',
-    email: 'bmcgraw@mcgrawdev.com',
-    company: 'McGraw Development',
-    location: 'Denver, CO',
-    role: 'Managing Director',
-    source: 'oz_development_list.xlsx',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '25',
-    name: 'Barry Sternlicht',
-    email: 'bsternlicht@starwood.com',
-    company: 'Starwood Capital Group',
-    location: 'Greenwich, CT',
-    role: 'Founder & Chairman',
-    source: 'docs/DEVELOPERS.xlsx',
-    tags: ['developer'],
-    outreachHistory: [
-      { campaignName: 'Luxury Hospitality Portfolio', sentAt: '2024-01-25', status: 'opened' },
-      { campaignName: 'Private Equity Roundtable', sentAt: '2023-09-12', status: 'clicked' },
-      { campaignName: 'Real Estate Investment Summit', sentAt: '2023-06-18', status: 'sent' }
-    ]
-  },
-  {
-    id: '26',
-    name: 'Aaron Carter',
-    email: 'acarter@simon.com',
-    company: 'Simon Property Group',
-    location: 'Indianapolis, Indiana',
-    role: 'Director Of Property Tax',
-    source: 'docs/DEVELOPERS.xlsx',
-    tags: ['developer'],
-    outreachHistory: []
-  },
-  {
-    id: '27',
-    name: 'Michael Johnson',
-    email: 'mjohnson@equityone.com',
-    company: 'Equity One',
-    location: 'North Miami, FL',
-    role: 'VP of Acquisitions',
-    source: 'real_estate_firms.xlsx',
-    tags: ['investor'],
-    outreachHistory: [
-      { campaignName: 'Florida Market Expansion', sentAt: '2024-02-20', status: 'sent' }
-    ]
-  },
-  {
-    id: '28',
-    name: 'Sarah Williams',
-    email: 'swilliams@blackstone.com',
-    company: 'Blackstone Group',
-    location: 'New York, NY',
-    role: 'Senior Managing Director',
-    source: 'investors.csv',
-    tags: ['investor'],
-    outreachHistory: []
-  }
-]
+// Removed Mock Contacts
+
 
 interface ContactSelectionStepProps {
   campaignId: string
@@ -391,86 +55,167 @@ interface ContactSelectionStepProps {
 }
 
 export default function ContactSelectionStep({ campaignId, onContinue, onBack }: ContactSelectionStepProps) {
-  const [contacts] = useState<Contact[]>(MOCK_CONTACTS)
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Track specifically chosen email for contacts with multiple options
+  const [selectedEmails, setSelectedEmails] = useState<Record<string, string>>({})
+
+  // Modal state
+  const [emailSelectionContact, setEmailSelectionContact] = useState<Contact | null>(null)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
   const [showFilters, setShowFilters] = useState(false)
   const [showSourcesDropdown, setShowSourcesDropdown] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
   const [advancedFilters, setAdvancedFilters] = useState({
     role: '',
     locationFilter: '',
-    source: ''
+    source: '',
+    history: 'all' // 'all', 'none', 'any'
   })
   const [isLoading, setIsLoading] = useState(false)
 
-  // Get unique sources for filter options
-  const availableSources = useMemo(() => {
-    const sources = new Set<string>()
-    contacts.forEach(contact => sources.add(contact.source))
-    return Array.from(sources).sort()
-  }, [contacts])
+  // Pagination
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
 
-  // Filter contacts based on search and filters
-  const filteredContacts = useMemo(() => {
-    return contacts.filter(contact => {
-      // Main search query filter (searches across primary fields)
-      const matchesSearch = !searchQuery ||
-        contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (() => {
-          const searchTerms = getLocationSearchTerms(searchQuery)
-          const locationLower = contact.location.toLowerCase()
-          return searchTerms.some(term => locationLower.includes(term))
-        })()
+  // Fetch contacts from backend
+  useEffect(() => {
+    const fetchContacts = async () => {
+      setIsLoading(true)
+      try {
+        const filters: ContactFilters = {
+          search: searchQuery,
+          role: advancedFilters.role,
+          location: advancedFilters.locationFilter,
+          source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined, // Simple single source support for now
+          campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+        }
 
-      // Source filter (from both main filters and advanced filters)
-      const matchesSources = selectedSources.size === 0 ||
-        selectedSources.has(contact.source)
+        const { data, count } = await searchContacts(filters, page, pageSize)
+        setContacts(data || [])
+        setTotalCount(count || 0)
+      } catch (error) {
+        console.error('Failed to fetch contacts:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-      // Advanced filters
-      const matchesRole = !advancedFilters.role ||
-        contact.role?.toLowerCase().includes(advancedFilters.role.toLowerCase())
+    // Debounce search
+    const timer = setTimeout(fetchContacts, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, selectedSources, advancedFilters, page, pageSize])
 
-      const matchesLocationFilter = !advancedFilters.locationFilter ||
-        (() => {
-          const searchTerms = getLocationSearchTerms(advancedFilters.locationFilter)
-          const locationLower = contact.location.toLowerCase()
-          return searchTerms.some(term => locationLower.includes(term))
-        })()
+  // Reset page when filters or page size change
+  useEffect(() => {
+    setPage(0)
+    // Clear selection when filters change (optional, but safer to avoid stale selections)
+    // For now keeping selection as user might want to select-search-select
+  }, [searchQuery, selectedSources, advancedFilters, pageSize])
 
-      const matchesAdvancedSource = !advancedFilters.source ||
-        contact.source === advancedFilters.source
+  // Get unique sources for filter options - mocked for now or fetch aggregated
+  // Ideally this should come from a separate 'getSources' API or aggregation
+  const availableSources = ['developers.csv']
 
-      return matchesSearch && matchesSources && matchesRole && matchesLocationFilter && matchesAdvancedSource
-    })
-  }, [contacts, searchQuery, selectedSources, advancedFilters])
 
   const handleSelectAll = () => {
-    if (selectedIds.size === filteredContacts.length) {
+    if (selectedIds.size === contacts.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filteredContacts.map(c => c.id)))
+      setSelectedIds(new Set(contacts.map(c => c.id)))
     }
   }
 
-  const handleSelectContact = (contactId: string) => {
+  const handleSelectContact = (contact: Contact) => {
+    const contactId = contact.id
     const newSelected = new Set(selectedIds)
+
+    // If unselecting, just remove
     if (newSelected.has(contactId)) {
       newSelected.delete(contactId)
-    } else {
-      newSelected.add(contactId)
+      // Cleanup specific email choice if any
+      const newSelectedEmails = { ...selectedEmails }
+      delete newSelectedEmails[contactId]
+      setSelectedEmails(newSelectedEmails)
+      setSelectedIds(newSelected)
+      return
     }
+
+    // If selecting
+    if (isMultipleEmails(contact.email)) {
+      // Show modal to choose
+      setEmailSelectionContact(contact)
+    } else {
+      // Single email, just select
+      newSelected.add(contactId)
+      setSelectedIds(newSelected)
+    }
+  }
+
+  // Global Select All Handler
+  const handleSelectAllGlobal = async () => {
+    setIsLoading(true)
+    try {
+      const filters: ContactFilters = {
+        search: searchQuery,
+        role: advancedFilters.role,
+        location: advancedFilters.locationFilter,
+        source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined,
+        campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+      }
+
+      const allIds = await getAllContactIds(filters)
+      setSelectedIds(new Set(allIds))
+    } catch (error) {
+      console.error('Failed to select all global:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEmailSelectionConfirm = (email: string) => {
+    if (!emailSelectionContact) return
+
+    const newSelected = new Set(selectedIds)
+    newSelected.add(emailSelectionContact.id)
     setSelectedIds(newSelected)
+
+    setSelectedEmails(prev => ({
+      ...prev,
+      [emailSelectionContact.id]: email
+    }))
+
+    setEmailSelectionContact(null)
   }
 
   const handleContinue = async () => {
     setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    onContinue(Array.from(selectedIds))
-    setIsLoading(false)
+    try {
+      // Build payload
+      const selections = Array.from(selectedIds).map(id => ({
+        contact_id: id,
+        selected_email: selectedEmails[id] // might be undefined if single
+      }))
+
+      // Save to backend
+      const res = await fetch(`${API_BASE}/${campaignId}/recipients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selections })
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      // Navigate
+      onContinue(Array.from(selectedIds))
+    } catch (err) {
+      console.error('Failed to save recipients:', err)
+      alert('Failed to save recipients. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const clearFilters = () => {
@@ -479,12 +224,13 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setAdvancedFilters({
       role: '',
       locationFilter: '',
-      source: ''
+      source: '',
+      history: 'all'
     })
   }
 
   const selectedContacts = contacts.filter(c => selectedIds.has(c.id))
-  const previouslyContactedCount = selectedContacts.filter(c => c.outreachHistory && c.outreachHistory.length > 0).length
+  const previouslyContactedCount = selectedContacts.filter(c => c.history && c.history.length > 0).length
 
   // Multi-select dropdown helpers
   const toggleSource = (source: string) => {
@@ -580,24 +326,23 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              (selectedSources.size > 0 ||
-               advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source)
-                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${(selectedSources.size > 0 ||
+              advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source)
+              ? 'bg-blue-100 text-blue-700 border border-blue-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             <Filter className="w-4 h-4" />
             Filters
             {(selectedSources.size > 0 ||
               advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source) && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full">
-                {selectedSources.size +
-                 (advancedFilters.role ? 1 : 0) +
-                 (advancedFilters.locationFilter ? 1 : 0) +
-                 (advancedFilters.source ? 1 : 0)}
-              </span>
-            )}
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full">
+                  {selectedSources.size +
+                    (advancedFilters.role ? 1 : 0) +
+                    (advancedFilters.locationFilter ? 1 : 0) +
+                    (advancedFilters.source ? 1 : 0)}
+                </span>
+              )}
             <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
           </button>
         </div>
@@ -645,6 +390,22 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                 onSelect={toggleSource}
               />
 
+              {/* History Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact History
+                </label>
+                <select
+                  value={advancedFilters.history}
+                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, history: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Show All</option>
+                  <option value="none">Never Contacted</option>
+                  <option value="any">Previously Contacted</option>
+                </select>
+              </div>
+
               {/* Clear Filters */}
               <div className="flex items-end">
                 <button
@@ -659,9 +420,70 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
         )}
       </div>
 
-      {/* Main Content */}
+      {/* Pagination Controls */}
+      <div className="bg-white border-t px-4 py-3 flex items-center justify-between sm:px-6">
+        <div className="flex-1 flex justify-between sm:hidden">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={(page + 1) * pageSize >= totalCount}
+            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{Math.min(page * pageSize + 1, totalCount)}</span> to <span className="font-medium">{Math.min((page + 1) * pageSize, totalCount)}</span> of <span className="font-medium">{totalCount}</span> results
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="block w-20 pl-3 pr-8 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value={10}>10</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={1000}>1000</option>
+              </select>
+            </div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Previous</span>
+                <ChevronDown className="h-5 w-5 rotate-90" aria-hidden="true" />
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={(page + 1) * pageSize >= totalCount}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Next</span>
+                <ChevronDown className="h-5 w-5 -rotate-90" aria-hidden="true" />
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable List Container (adjusted to not conflict with flex layout) */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full flex">
+        <div className="h-full flex flex-col"> {/* Changed to flex-col to stack list and pagination if needed inside, but pagination is outside now */}
+          {/* Main List Area */}
           {/* Contact List */}
           <div className="flex-1 overflow-auto bg-white">
             {/* Selection Header */}
@@ -673,11 +495,11 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                 >
                   <input
                     type="checkbox"
-                    checked={selectedIds.size === filteredContacts.length && filteredContacts.length > 0}
+                    checked={selectedIds.size === contacts.length && contacts.length > 0}
                     readOnly
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  Select All ({filteredContacts.length})
+                  Select All ({contacts.length})
                 </button>
               </div>
               <div className="text-sm text-gray-500">
@@ -686,18 +508,32 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
             </div>
 
             {/* Contact Items */}
+
+            {/* "Select All" Banner */}
+            {selectedIds.size === contacts.length && totalCount > contacts.length && (
+              <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
+                <span className="font-medium">All {contacts.length} contacts on this page are selected.</span>
+                {' '}
+                <button
+                  onClick={handleSelectAllGlobal}
+                  className="font-bold underline hover:text-blue-900"
+                >
+                  Select all {totalCount} contacts matching this search
+                </button>
+              </div>
+            )}
+
             <div className="divide-y divide-gray-200">
-              {filteredContacts.map((contact) => {
+              {contacts.map((contact) => {
                 const isSelected = selectedIds.has(contact.id)
-                const hasHistory = contact.outreachHistory && contact.outreachHistory.length > 0
+                const hasHistory = contact.history && contact.history.length > 0
 
                 return (
                   <div
                     key={contact.id}
-                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50' : ''
-                    }`}
-                    onClick={() => handleSelectContact(contact.id)}
+                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : ''
+                      }`}
+                    onClick={() => handleSelectContact(contact)}
                   >
                     <div className="flex items-start gap-3">
                       <input
@@ -712,10 +548,27 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <h3 className="text-sm font-medium text-gray-900 truncate">
-                                {contact.name}
+                                {contact.name || 'Unknown Name'}
                               </h3>
                             </div>
-                            <p className="text-sm text-gray-500 truncate">{contact.email}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-gray-500 truncate">
+                                {/* Show chosen email if multiple and selected, otherwise show raw */}
+                                {isSelected && selectedEmails[contact.id]
+                                  ? selectedEmails[contact.id]
+                                  : contact.email}
+                              </p>
+                              {isMultipleEmails(contact.email) && (
+                                <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 rounded-full" title="Multiple Emails">
+                                  Multi
+                                </span>
+                              )}
+                              {!isMultipleEmails(contact.email) && !isValidEmail(contact.email) && (
+                                <span className="text-red-500 text-xs flex items-center gap-0.5" title="Invalid Email">
+                                  ⚠️
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500 truncate">{contact.company}</p>
                           </div>
 
@@ -729,17 +582,17 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                           <div className="mt-2">
                             <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
                             <div className="flex flex-wrap gap-1">
-                              {contact.outreachHistory!.slice(0, 2).map((history, idx) => (
+                              {contact.history!.slice(0, 2).map((h: any, idx: number) => (
                                 <span
                                   key={idx}
                                   className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                                 >
-                                  {history.campaignName}
+                                  {h.campaigns?.name || 'Unknown Campaign'}
                                 </span>
                               ))}
-                              {contact.outreachHistory!.length > 2 && (
+                              {contact.history!.length > 2 && (
                                 <span className="text-xs text-gray-400">
-                                  +{contact.outreachHistory!.length - 2} more
+                                  +{contact.history!.length - 2} more
                                 </span>
                               )}
                             </div>
@@ -752,7 +605,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
               })}
             </div>
 
-            {filteredContacts.length === 0 && (
+            {contacts.length === 0 && (
               <div className="text-center py-12">
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
@@ -804,6 +657,39 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                     <Check className="w-4 h-4" />
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Multiple Email Selection Modal */}
+      {emailSelectionContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Select Email Address</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {emailSelectionContact.name} has multiple email addresses. Which one should we use?
+            </p>
+
+            <div className="space-y-2">
+              {getEmails(emailSelectionContact.email).map((email) => (
+                <button
+                  key={email}
+                  onClick={() => handleEmailSelectionConfirm(email)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                >
+                  <span className="text-sm text-gray-700 font-medium">{email}</span>
+                  {!isValidEmail(email) && <span className="text-red-500 text-xs">Invalid</span>}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setEmailSelectionContact(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
               </button>
             </div>
           </div>
