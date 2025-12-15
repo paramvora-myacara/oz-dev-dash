@@ -24,9 +24,10 @@ interface SectionListProps {
   sections: SectionType[]
   onSectionsChange: (sections: SectionType[]) => void
   availableFields: string[]
+  fieldValues?: Record<string, string>
 }
 
-export default function SectionList({ sections, onSectionsChange, availableFields }: SectionListProps) {
+export default function SectionList({ sections, onSectionsChange, availableFields, fieldValues = {} }: SectionListProps) {
   // Track which section is expanded (only one at a time)
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null)
 
@@ -72,7 +73,7 @@ export default function SectionList({ sections, onSectionsChange, availableField
         order: index,
       }))
     onSectionsChange(newSections)
-    
+
     // Clear expanded state if deleted section was expanded
     if (expandedSectionId === sectionId) {
       setExpandedSectionId(null)
@@ -111,6 +112,7 @@ export default function SectionList({ sections, onSectionsChange, availableField
               onChange={handleSectionChange}
               onDelete={() => handleSectionDelete(section.id)}
               availableFields={availableFields}
+              fieldValues={fieldValues}
               isExpanded={expandedSectionId === section.id}
               onToggleExpand={() => handleToggleExpand(section.id)}
             />

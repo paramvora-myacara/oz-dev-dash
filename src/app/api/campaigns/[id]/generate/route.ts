@@ -207,18 +207,22 @@ export async function POST(
         // Flatten contact data for metadata use ({{Name}}, {{Company}})
         // We prioritize explicit fields over JSON details
         const row: Record<string, string> = {
+          ...((contactData.details as Record<string, string>) || {}), // Spread details first so standard fields overwrite
           Name: contactData.name || '',
-          name: contactData.name || '',
           Email: targetEmail,
-          email: targetEmail,
           Company: contactData.company || '',
-          company: contactData.company || '',
           Role: contactData.role || '',
-          role: contactData.role || '',
           Location: contactData.location || '',
-          location: contactData.location || '',
-          ...((contactData.details as Record<string, string>) || {})
         };
+
+        // Remove duplicates where details might have lowercase versions of standard fields
+        // e.g. if details has 'name', remove it since we have 'Name'
+        delete row['name'];
+        delete row['email'];
+        delete row['company'];
+        delete row['role'];
+        delete row['location'];
+
 
         validRows.push({ row, email: targetEmail });
       }

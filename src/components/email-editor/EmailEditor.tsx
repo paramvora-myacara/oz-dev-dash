@@ -270,6 +270,11 @@ export default function EmailEditor({
     return null
   }
 
+  const fieldValues = useMemo(() => {
+    if (!sampleData || !sampleData.rows.length) return {}
+    return sampleData.rows[selectedSampleIndex] || {}
+  }, [sampleData, selectedSampleIndex])
+
   const EditPanelContent = (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-5 bg-gray-50">
@@ -277,6 +282,7 @@ export default function EmailEditor({
           sections={sections}
           onSectionsChange={setSections}
           availableFields={availableFields}
+          fieldValues={fieldValues}
         />
         <div className="mt-3">
           <button

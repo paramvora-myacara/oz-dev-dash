@@ -13,6 +13,7 @@ import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErr
 import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
+import { createClient } from '@/utils/supabase/client'
 
 export default function CampaignEditPage() {
   const params = useParams()
@@ -31,6 +32,7 @@ export default function CampaignEditPage() {
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[] | null>(null)
   const [testEmail, setTestEmail] = useState('')
+  const [adminEmail, setAdminEmail] = useState<string | null>(null)
   const [testRecipientEmailId, setTestRecipientEmailId] = useState<string | null>(null)
   const [sendingTest, setSendingTest] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -70,6 +72,26 @@ export default function CampaignEditPage() {
 
   // Sample data from database (replaces CSV)
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
+
+  // Fetch current admin user email
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.email) {
+          console.log('Fetched admin email:', user.email)
+          setAdminEmail(user.email)
+
+          // Only set test email if it's currently empty
+          setTestEmail(prev => prev || user.email!)
+        }
+      } catch (err) {
+        console.error('Error fetching user:', err)
+      }
+    }
+    fetchUser()
+  }, [])
 
   // Load campaign and determine initial step based on status
   useEffect(() => {
@@ -373,8 +395,16 @@ export default function CampaignEditPage() {
       setSendingTest(true)
       setError(null)
       await sendTestEmail(campaign.id || campaignId, testEmail, testRecipientEmailId || undefined)
-      setTestEmail('')
-      setTestRecipientEmailId(null)
+
+      // Reset to admin email instead of clearing entirely
+      if (adminEmail) {
+        setTestEmail(adminEmail)
+      } else {
+        setTestEmail('')
+      }
+
+      // Keep the selected recipient context
+      // setTestRecipientEmailId(null) 
       alert('Test email sent successfully!')
     } catch (err: any) {
       setError('Failed to send test email: ' + err.message)
@@ -384,10 +414,12 @@ export default function CampaignEditPage() {
   }
 
   // Set default test recipient when staged emails load
+  // Set default test recipient when staged emails load
   useEffect(() => {
     if (stagedEmails.length > 0 && !testRecipientEmailId) {
       setTestRecipientEmailId(stagedEmails[0].id)
-      setTestEmail(stagedEmails[0].toEmail)
+      // Warning: Do NOT overwrite the testEmail here as it should be the logged-in admin's email
+      // setTestEmail(stagedEmails[0].toEmail) 
     }
   }, [stagedEmails, testRecipientEmailId])
 
@@ -594,10 +626,11 @@ export default function CampaignEditPage() {
                         onChange={(e) => {
                           const selectedId = e.target.value
                           setTestRecipientEmailId(selectedId)
-                          const selectedEmail = stagedEmails.find(e => e.id === selectedId)
-                          if (selectedEmail) {
-                            setTestEmail(selectedEmail.toEmail)
-                          }
+                          // Only update context, don't change the "Send to" email
+                          // const selectedEmail = stagedEmails.find(e => e.id === selectedId)
+                          // if (selectedEmail) {
+                          //   setTestEmail(selectedEmail.toEmail)
+                          // }
                         }}
                         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >

@@ -1,6 +1,4 @@
 import { createClient } from '@/utils/supabase/client';
-// import { Database } from '@/types/supabase'; // Types missing, using implicit types
-
 
 // Define the filter interface
 export interface ContactFilters {
@@ -29,6 +27,43 @@ export interface Contact {
     }[];
 }
 
+// State Mapping for Smart Search
+const STATE_NAME_TO_CODE: Record<string, string> = {
+    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+    'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+    'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+    'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+    'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+    'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+    'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+    'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+    'district of columbia': 'DC'
+};
+
+const CODE_TO_STATE_NAME = Object.entries(STATE_NAME_TO_CODE).reduce((acc, [name, code]) => {
+    acc[code] = name;
+    return acc;
+}, {} as Record<string, string>);
+
+const getExpandedSearchTerms = (input: string): string[] => {
+    const terms = [input];
+    const lower = input.toLowerCase().trim();
+
+    // If input is full state name, add code
+    if (STATE_NAME_TO_CODE[lower]) {
+        terms.push(STATE_NAME_TO_CODE[lower]);
+    }
+
+    // If input is code, add full state name
+    if (CODE_TO_STATE_NAME[input.toUpperCase()]) {
+        terms.push(CODE_TO_STATE_NAME[input.toUpperCase()]);
+    }
+
+    return terms;
+};
+
 export async function searchContacts(filters: ContactFilters, page = 0, pageSize = 50) {
     const supabase = createClient();
 
@@ -44,13 +79,34 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
       )
     `, { count: 'exact' });
 
-    // 1. Text Search (Matches Name, Email, Company, Location)
+    // 1. Text Search (Hybrid: FTS OR ILIKE)
     if (filters.search) {
-        // 'english' config handles stemming
-        query = query.textSearch('search_vector', filters.search, {
-            type: 'plain',
-            config: 'english'
+        const searchTerms = getExpandedSearchTerms(filters.search);
+
+        // Build OR condition: 
+        // 1. Match Search Vector (FTS) with original term
+        // 2. ILIKE match location with original term OR expanded term (State code/name)
+        // 3. ILIKE match Name/Company/Email with original term (for substring support)
+
+        const conditions = [];
+
+        // FTS (good for general keyword matching)
+        conditions.push(`search_vector.fts.${filters.search}`);
+
+        // Substring matches standard fields
+        conditions.push(`name.ilike.%${filters.search}%`);
+        conditions.push(`company.ilike.%${filters.search}%`);
+        conditions.push(`email.ilike.%${filters.search}%`);
+
+        // Metadata JSONB search (basic text cast)
+        // conditions.push(`details::text.ilike.%${filters.search}%`); // Optional, might be slow without index
+
+        // Expanded Location Matching (The fix for CA vs California)
+        searchTerms.forEach(term => {
+            conditions.push(`location.ilike.%${term}%`);
         });
+
+        query = query.or(conditions.join(','));
     }
 
     // 2. Precise Column Filters
@@ -58,7 +114,10 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
         query = query.ilike('role', `%${filters.role}%`);
     }
     if (filters.location) {
-        query = query.ilike('location', `%${filters.location}%`);
+        // Apply expansion to location filter too
+        const locTerms = getExpandedSearchTerms(filters.location);
+        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
+        query = query.or(locConditions.join(','));
     }
     if (filters.source) {
         query = query.eq('source', filters.source);
@@ -101,20 +160,27 @@ export async function getAllContactIds(filters: ContactFilters) {
         .from('contacts')
         .select('id, campaign_recipients!left(campaign_id)');
 
-    // Reuse filter logic (duplicated for now to avoid refactoring huge chunks, 
-    // ideally should extract "buildQuery" helper)
-
     // 1. Text Search
     if (filters.search) {
-        query = query.textSearch('search_vector', filters.search, {
-            type: 'plain',
-            config: 'english'
+        const searchTerms = getExpandedSearchTerms(filters.search);
+        const conditions = [];
+        conditions.push(`search_vector.fts.${filters.search}`);
+        conditions.push(`name.ilike.%${filters.search}%`);
+        conditions.push(`company.ilike.%${filters.search}%`);
+        conditions.push(`email.ilike.%${filters.search}%`);
+        searchTerms.forEach(term => {
+            conditions.push(`location.ilike.%${term}%`);
         });
+        query = query.or(conditions.join(','));
     }
 
     // 2. Precise Column Filters
     if (filters.role) query = query.ilike('role', `%${filters.role}%`);
-    if (filters.location) query = query.ilike('location', `%${filters.location}%`);
+    if (filters.location) {
+        const locTerms = getExpandedSearchTerms(filters.location);
+        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
+        query = query.or(locConditions.join(','));
+    }
     if (filters.source) query = query.eq('source', filters.source);
 
     // 3. History Filter

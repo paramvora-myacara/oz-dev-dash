@@ -181,17 +181,27 @@ export async function GET(
         const rows = recipients.map((r: any) => {
             const contact = r.contacts;
             // Flatten contact details if present
-            const details = contact.details || {};
+            const details = (contact.details as Record<string, string>) || {};
 
-            return {
+            const row: Record<string, any> = {
+                ...details,
                 Name: contact.name,
                 Email: r.selected_email || contact.email, // Use selected email if available
                 Company: contact.company,
                 Role: contact.role,
                 Location: contact.location,
                 Phone: contact.phone_number,
-                ...details // Flatten extra details
             };
+
+            // Remove duplicates
+            delete row['name'];
+            delete row['email'];
+            delete row['company'];
+            delete row['role'];
+            delete row['location'];
+            delete row['phone']; // Just in case
+
+            return row;
         });
 
         // Derive columns from keys of the first row (or merge all keys)
