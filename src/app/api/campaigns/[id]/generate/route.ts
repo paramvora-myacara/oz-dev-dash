@@ -148,31 +148,60 @@ export async function POST(
     // --- PATH B: Database Recipients ---
     else if (useDatabaseRecipients) {
       // Fetch from campaign_recipients joined with contacts
-      const { data: recipients, error: fetchError } = await supabase
+      // Fetch from campaign_recipients joined with contacts in BATCHES
+      const BATCH_SIZE = 1000;
+      let allRecipients: any[] = [];
+
+      // 1. Get total count first
+      const { count: totalRecipientsCount, error: countError } = await supabase
         .from('campaign_recipients')
-        .select(`
-          status,
-          contact_id,
-          selected_email,
-          contacts (
-            name,
-            email,
-            company,
-            role,
-            location,
-            phone_number,
-            details
-          )
-        `)
+        .select('*', { count: 'exact', head: true })
         .eq('campaign_id', campaignId)
         .eq('status', 'selected');
 
-      if (fetchError) {
-        return new Response(JSON.stringify({ error: 'Failed to fetch recipients: ' + fetchError.message }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+      if (countError) {
+        throw new Error('Failed to count recipients: ' + countError.message);
       }
+
+      const totalBatches = Math.ceil((totalRecipientsCount || 0) / BATCH_SIZE);
+
+      // 2. Fetch in batches
+      for (let i = 0; i < totalBatches; i++) {
+        const from = i * BATCH_SIZE;
+        const to = from + BATCH_SIZE - 1;
+
+        const { data: batch, error: batchError } = await supabase
+          .from('campaign_recipients')
+          .select(`
+              status,
+              contact_id,
+              selected_email,
+              contacts (
+                name,
+                email,
+                company,
+                role,
+                location,
+                phone_number,
+                details
+              )
+            `)
+          .eq('campaign_id', campaignId)
+          .eq('status', 'selected')
+          .range(from, to);
+
+        if (batchError) {
+          throw new Error(`Failed to fetch batch ${i + 1}: ` + batchError.message);
+        }
+
+        if (batch) {
+          allRecipients = allRecipients.concat(batch);
+        }
+      }
+
+      const recipients = allRecipients;
+
+
 
       if (!recipients || recipients.length === 0) {
         return new Response(JSON.stringify({ error: 'No selected recipients found in database' }), {
