@@ -1,0 +1,2 @@
+TRUNCATE TABLE campaign_recipients CASCADE;
+TRUNCATE TABLE contacts CASCADE;

@@ -1,0 +1,765 @@
+'use client'
+
+import { useState, useEffect, useMemo } from 'react'
+import { Search, Filter, Users, Check, X, ChevronDown, Loader2 } from 'lucide-react'
+
+import { searchContacts, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
+import { isValidEmail } from '@/lib/utils/validation'
+
+// Helper to detect multiple emails
+const getEmails = (emailStr: string) => {
+  return emailStr.split(',').map(e => e.trim()).filter(Boolean);
+}
+
+const isMultipleEmails = (emailStr: string) => {
+  return getEmails(emailStr).length > 1;
+}
+
+const API_BASE = '/api/campaigns'
+
+// State mapping for smart location filtering
+const STATE_MAPPING: Record<string, string> = {
+  // State codes to names
+  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+  'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+  'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+  'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+  'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+  'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+  'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+  'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+  'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+  'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
+  'DC': 'District of Columbia'
+}
+
+// Create reverse mapping (state names to codes)
+const STATE_NAME_TO_CODE = Object.entries(STATE_MAPPING).reduce((acc, [code, name]) => {
+  acc[name.toLowerCase()] = code
+  acc[code.toLowerCase()] = code // Also map code to itself for consistency
+  return acc
+}, {} as Record<string, string>)
+
+const getLocationSearchTerms = (input: string): string[] => {
+  // Simple pass-through since backend handles fuzzy matching now
+  return [input]
+}
+
+// Removed Mock Contacts
+
+
+interface ContactSelectionStepProps {
+  campaignId: string
+  onContinue: (selectedContactIds: string[]) => void
+  onBack: () => void
+}
+
+export default function ContactSelectionStep({ campaignId, onContinue, onBack }: ContactSelectionStepProps) {
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const [isSelectAllGlobal, setIsSelectAllGlobal] = useState(false)
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
+  // Track specifically chosen email for contacts with multiple options
+  const [selectedEmails, setSelectedEmails] = useState<Record<string, string>>({})
+
+  // Modal state
+  const [emailSelectionContact, setEmailSelectionContact] = useState<Contact | null>(null)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
+  const [showFilters, setShowFilters] = useState(false)
+  const [showSourcesDropdown, setShowSourcesDropdown] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+  const [advancedFilters, setAdvancedFilters] = useState({
+    role: '',
+    locationFilter: '',
+    source: '',
+    history: 'all' // 'all', 'none', 'any'
+  })
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Pagination
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
+
+  // Fetch contacts from backend
+  useEffect(() => {
+    const fetchContacts = async () => {
+      setIsLoading(true)
+      try {
+        const filters: ContactFilters = {
+          search: searchQuery,
+          role: advancedFilters.role,
+          location: advancedFilters.locationFilter,
+          source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined, // Simple single source support for now
+          campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+        }
+
+        const { data, count } = await searchContacts(filters, page, pageSize)
+        setContacts(data || [])
+        setTotalCount(count || 0)
+      } catch (error) {
+        console.error('Failed to fetch contacts:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    // Debounce search
+    const timer = setTimeout(fetchContacts, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, selectedSources, advancedFilters, page, pageSize])
+
+  // Reset page when filters or page size change
+  useEffect(() => {
+    setPage(0)
+    // Clear selection when filters change (optional, but safer to avoid stale selections)
+    // For now keeping selection as user might want to select-search-select
+    setIsSelectAllGlobal(false)
+    setExcludedIds(new Set())
+    setSelectedIds(new Set())
+  }, [searchQuery, selectedSources, advancedFilters, pageSize])
+
+  // Get unique sources for filter options - mocked for now or fetch aggregated
+  // Ideally this should come from a separate 'getSources' API or aggregation
+  const availableSources = ['developers.csv']
+
+
+  const handleSelectAll = () => {
+    if (isSelectAllGlobal) {
+      setIsSelectAllGlobal(false)
+      setExcludedIds(new Set())
+      setSelectedIds(new Set())
+    } else if (selectedIds.size === contacts.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(contacts.map(c => c.id)))
+    }
+  }
+
+  const handleSelectContact = (contact: Contact) => {
+    const contactId = contact.id
+
+    // Global Mode Logic
+    if (isSelectAllGlobal) {
+      const newExcluded = new Set(excludedIds)
+      if (newExcluded.has(contactId)) {
+        newExcluded.delete(contactId)
+      } else {
+        newExcluded.add(contactId)
+      }
+      setExcludedIds(newExcluded)
+      return
+    }
+
+    const newSelected = new Set(selectedIds)
+
+    // If unselecting, just remove
+    if (newSelected.has(contactId)) {
+      newSelected.delete(contactId)
+      // Cleanup specific email choice if any
+      const newSelectedEmails = { ...selectedEmails }
+      delete newSelectedEmails[contactId]
+      setSelectedEmails(newSelectedEmails)
+      setSelectedIds(newSelected)
+      return
+    }
+
+    // If selecting
+    if (isMultipleEmails(contact.email)) {
+      // Show modal to choose
+      setEmailSelectionContact(contact)
+    } else {
+      // Single email, just select
+      newSelected.add(contactId)
+      setSelectedIds(newSelected)
+    }
+  }
+
+  // Global Select All Handler
+  const handleSelectAllGlobal = async () => {
+    setIsSelectAllGlobal(true)
+    setExcludedIds(new Set())
+    // Visually select all info on current page for consistency
+    setSelectedIds(new Set(contacts.map(c => c.id)))
+  }
+
+  const handleEmailSelectionConfirm = (email: string) => {
+    if (!emailSelectionContact) return
+
+    const newSelected = new Set(selectedIds)
+    newSelected.add(emailSelectionContact.id)
+    setSelectedIds(newSelected)
+
+    setSelectedEmails(prev => ({
+      ...prev,
+      [emailSelectionContact.id]: email
+    }))
+
+    setEmailSelectionContact(null)
+  }
+
+  const handleContinue = async () => {
+    setIsLoading(true)
+    try {
+      // Build payload
+      let payload: any;
+
+      if (isSelectAllGlobal) {
+        const filters: ContactFilters = {
+          search: searchQuery,
+          role: advancedFilters.role,
+          location: advancedFilters.locationFilter,
+          source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined,
+          campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+        }
+
+        payload = {
+          selectAllMatching: true,
+          filters,
+          exclusions: Array.from(excludedIds),
+          explicitSelections: selectedEmails // Still need these for email overrides if any
+        }
+      } else {
+        const selections = Array.from(selectedIds).map(id => ({
+          contact_id: id,
+          selected_email: selectedEmails[id] // might be undefined if single
+        }))
+        payload = { selections }
+      }
+
+      // Save to backend
+      const res = await fetch(`${API_BASE}/${campaignId}/recipients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      // Navigate
+      onContinue(Array.from(selectedIds))
+    } catch (err) {
+      console.error('Failed to save recipients:', err)
+      alert('Failed to save recipients. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setSelectedSources(new Set())
+    setAdvancedFilters({
+      role: '',
+      locationFilter: '',
+      source: '',
+      history: 'all'
+    })
+    setIsSelectAllGlobal(false)
+  }
+
+  const selectedContacts = contacts.filter(c =>
+    (isSelectAllGlobal && !excludedIds.has(c.id)) ||
+    (!isSelectAllGlobal && selectedIds.has(c.id))
+  )
+  const previouslyContactedCount = selectedContacts.filter(c => c.history && c.history.length > 0).length
+
+  // Multi-select dropdown helpers
+  const toggleSource = (source: string) => {
+    const newSources = new Set(selectedSources)
+    if (newSources.has(source)) {
+      newSources.delete(source)
+    } else {
+      newSources.add(source)
+    }
+    setSelectedSources(newSources)
+  }
+
+  const MultiSelectDropdown = ({
+    label,
+    options,
+    selected,
+    isOpen,
+    onToggle,
+    onClose,
+    onSelect,
+  }: {
+    label: string
+    options: string[]
+    selected: Set<string>
+    isOpen: boolean
+    onToggle: () => void
+    onClose: () => void
+    onSelect: (option: string) => void
+  }) => (
+    <div className="relative">
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <button
+        onClick={onToggle}
+        className="w-full px-3 py-2 text-sm text-left bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
+      >
+        <span className={selected.size === 0 ? 'text-gray-500' : 'text-gray-900'}>
+          {selected.size === 0
+            ? `Select ${label.toLowerCase()}...`
+            : `${selected.size} selected`
+          }
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+            {options.map(option => (
+              <label key={option} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selected.has(option)}
+                  onChange={() => onSelect(option)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                />
+                <span className="text-sm capitalize">{option}</span>
+              </label>
+            ))}
+          </div>
+          <div className="fixed inset-0 z-0" onClick={onClose}></div>
+        </>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b px-4 sm:px-6 py-4">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Select Recipients</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Choose contacts from your database to include in this campaign
+          </p>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white border-b px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search by name, email, company, location (CA/Texas)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${(selectedSources.size > 0 ||
+              advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source)
+              ? 'bg-blue-100 text-blue-700 border border-blue-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {(selectedSources.size > 0 ||
+              advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source) && (
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full">
+                  {selectedSources.size +
+                    (advancedFilters.role ? 1 : 0) +
+                    (advancedFilters.locationFilter ? 1 : 0) +
+                    (advancedFilters.source ? 1 : 0)}
+                </span>
+              )}
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        {/* Expanded Filters */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Location Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location Contains
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. California, CA, New York..."
+                  value={advancedFilters.locationFilter}
+                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, locationFilter: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Role Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Role/Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. CEO, Director..."
+                  value={advancedFilters.role}
+                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, role: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Sources Filter */}
+              <MultiSelectDropdown
+                label="Sources"
+                options={availableSources}
+                selected={selectedSources}
+                isOpen={showSourcesDropdown}
+                onToggle={() => setShowSourcesDropdown(!showSourcesDropdown)}
+                onClose={() => setShowSourcesDropdown(false)}
+                onSelect={toggleSource}
+              />
+
+              {/* History Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact History
+                </label>
+                <select
+                  value={advancedFilters.history}
+                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, history: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Show All</option>
+                  <option value="none">Never Contacted</option>
+                  <option value="any">Previously Contacted</option>
+                </select>
+              </div>
+
+              {/* Clear Filters */}
+              <div className="flex items-end">
+                <button
+                  onClick={clearFilters}
+                  className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="bg-white border-t px-4 py-3 flex items-center justify-between sm:px-6">
+        <div className="flex-1 flex justify-between sm:hidden">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={(page + 1) * pageSize >= totalCount}
+            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{Math.min(page * pageSize + 1, totalCount)}</span> to <span className="font-medium">{Math.min((page + 1) * pageSize, totalCount)}</span> of <span className="font-medium">{totalCount}</span> results
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="block w-20 pl-3 pr-8 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value={10}>10</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={1000}>1000</option>
+              </select>
+            </div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Previous</span>
+                <ChevronDown className="h-5 w-5 rotate-90" aria-hidden="true" />
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={(page + 1) * pageSize >= totalCount}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Next</span>
+                <ChevronDown className="h-5 w-5 -rotate-90" aria-hidden="true" />
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable List Container (adjusted to not conflict with flex layout) */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full flex flex-col"> {/* Changed to flex-col to stack list and pagination if needed inside, but pagination is outside now */}
+          {/* Main List Area */}
+          {/* Contact List */}
+          <div className="flex-1 overflow-auto bg-white">
+            {/* Selection Header */}
+            <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      isSelectAllGlobal
+                        ? (contacts.every(c => !excludedIds.has(c.id)))
+                        : (selectedIds.size === contacts.length && contacts.length > 0)
+                    }
+                    readOnly
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Select All ({contacts.length})
+                </button>
+              </div>
+              <div className="text-sm text-gray-500">
+                {isSelectAllGlobal
+                  ? `${totalCount - excludedIds.size} selected`
+                  : `${selectedIds.size} selected`
+                }
+              </div>
+            </div>
+
+            {/* Contact Items */}
+
+            {/* "Select All" Banner */}
+            {!isSelectAllGlobal && selectedIds.size === contacts.length && totalCount > contacts.length && (
+              <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
+                <span className="font-medium">All {contacts.length} contacts on this page are selected.</span>
+                {' '}
+                <button
+                  onClick={handleSelectAllGlobal}
+                  className="font-bold underline hover:text-blue-900"
+                >
+                  Select all {totalCount} contacts matching this search
+                </button>
+              </div>
+            )}
+
+            {isSelectAllGlobal && (
+              <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
+                <span className="font-medium">All {totalCount} contacts matching this search are selected.</span>
+                {' '}
+                <button
+                  onClick={() => setIsSelectAllGlobal(false)}
+                  className="font-bold underline hover:text-blue-900"
+                >
+                  Clear selection
+                </button>
+              </div>
+            )}
+
+            <div className="divide-y divide-gray-200">
+              {contacts.map((contact) => {
+                const isSelected = isSelectAllGlobal
+                  ? !excludedIds.has(contact.id)
+                  : selectedIds.has(contact.id)
+                const hasHistory = contact.history && contact.history.length > 0
+
+                return (
+                  <div
+                    key={contact.id}
+                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : ''
+                      }`}
+                    onClick={() => handleSelectContact(contact)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        readOnly
+                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">
+                                {contact.name || 'Unknown Name'}
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-gray-500 truncate">
+                                {/* Show chosen email if multiple and selected, otherwise show raw */}
+                                {isSelected && selectedEmails[contact.id]
+                                  ? selectedEmails[contact.id]
+                                  : contact.email}
+                              </p>
+                              {isMultipleEmails(contact.email) && (
+                                <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 rounded-full" title="Multiple Emails">
+                                  Multi
+                                </span>
+                              )}
+                              {!isMultipleEmails(contact.email) && !isValidEmail(contact.email) && (
+                                <span className="text-red-500 text-xs flex items-center gap-0.5" title="Invalid Email">
+                                  ⚠️
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 truncate">{contact.company}</p>
+                          </div>
+
+                          <div className="text-right ml-4">
+                            <p className="text-sm text-gray-500">{contact.location}</p>
+                          </div>
+                        </div>
+
+                        {/* Outreach History Preview */}
+                        {hasHistory && (
+                          <div className="mt-2">
+                            <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {contact.history!.slice(0, 2).map((h: any, idx: number) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                >
+                                  {h.campaigns?.name || 'Unknown Campaign'}
+                                </span>
+                              ))}
+                              {contact.history!.length > 2 && (
+                                <span className="text-xs text-gray-400">
+                                  +{contact.history!.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {contacts.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
+                <p className="text-gray-500">
+                  {searchQuery || selectedSources.size > 0
+                    ? 'Try adjusting your search or filters'
+                    : 'No contacts available'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Action Bar */}
+      {(selectedIds.size > 0 || isSelectAllGlobal) && (
+        <div className="bg-white border-t px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div>
+                <p className="font-medium text-gray-900">
+                  {isSelectAllGlobal
+                    ? `${totalCount - excludedIds.size} contacts selected`
+                    : `${selectedIds.size} contacts selected`
+                  }
+                </p>
+                <p className="text-sm text-gray-500">
+                  {previouslyContactedCount} previously contacted
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setSelectedIds(new Set())
+                  setIsSelectAllGlobal(false)
+                  setExcludedIds(new Set())
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Clear Selection
+              </button>
+              <button
+                onClick={handleContinue}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Continuing...
+                  </>
+                ) : (
+                  <>
+                    Continue to Design Email
+                    <Check className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Multiple Email Selection Modal */}
+      {emailSelectionContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Select Email Address</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {emailSelectionContact.name} has multiple email addresses. Which one should we use?
+            </p>
+
+            <div className="space-y-2">
+              {getEmails(emailSelectionContact.email).map((email) => (
+                <button
+                  key={email}
+                  onClick={() => handleEmailSelectionConfirm(email)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                >
+                  <span className="text-sm text-gray-700 font-medium">{email}</span>
+                  {!isValidEmail(email) && <span className="text-red-500 text-xs">Invalid</span>}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setEmailSelectionContact(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

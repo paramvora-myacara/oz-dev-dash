@@ -20,7 +20,8 @@ import {
   Italic,
   Link as LinkIcon,
   MousePointerClick,
-  Pencil
+  Pencil,
+  X
 } from 'lucide-react'
 import type { Section as SectionType, SectionMode } from '@/types/email-editor'
 
@@ -29,6 +30,7 @@ interface SectionProps {
   onChange: (section: SectionType) => void
   onDelete: () => void
   availableFields: string[]
+  fieldValues?: Record<string, string>
   isExpanded?: boolean
   onToggleExpand?: () => void
 }
@@ -38,6 +40,7 @@ export default function Section({
   onChange,
   onDelete,
   availableFields,
+  fieldValues = {},
   isExpanded = false,
   onToggleExpand
 }: SectionProps) {
@@ -45,6 +48,7 @@ export default function Section({
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isEditorFocused, setIsEditorFocused] = useState(false)
+  const [expandedFieldDetail, setExpandedFieldDetail] = useState<string | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -442,17 +446,37 @@ Write the personalized section now.`
                   {availableFields.length > 0 ? (
                     availableFields.map((field) => {
                       const isSelected = section.selectedFields?.includes(field)
+                      const value = fieldValues[field]
+
                       return (
-                        <button
+                        <div
                           key={field}
-                          onClick={() => handleFieldToggle(field)}
-                          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full border transition-colors ${isSelected
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                          className={`inline-flex items-center gap-1 pl-3 pr-1 py-1 rounded-full border transition-colors ${isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
                             }`}
                         >
-                          {field}
-                        </button>
+                          <button
+                            onClick={() => handleFieldToggle(field)}
+                            className="flex items-center gap-2 text-xs sm:text-sm font-medium focus:outline-none"
+                            title={`Toggle selection: ${field}`}
+                          >
+                            <span className="max-w-[150px] truncate">{value || field}</span>
+                            {value && <span className={`text-xs opacity-70 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}>({field})</span>}
+                          </button>
+
+                          {/* Expansion Chevron */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedFieldDetail(field)
+                            }}
+                            className={`p-1 rounded-full hover:bg-opacity-20 hover:bg-black transition-colors ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}
+                            title="View full details"
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        </div>
                       )
                     })
                   ) : (
@@ -464,6 +488,53 @@ Write the personalized section now.`
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Field Detail Modal */}
+      {expandedFieldDetail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setExpandedFieldDetail(null)}>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+                Field Details: <span className="text-blue-600">{expandedFieldDetail}</span>
+              </h3>
+              <button
+                onClick={() => setExpandedFieldDetail(null)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-gray-50 rounded-lg border border-gray-200 p-4">
+              <pre className="text-sm font-mono text-gray-800 whitespace-pre-wrap break-all">
+                {(() => {
+                  const val = fieldValues[expandedFieldDetail]
+                  if (!val) return <span className="text-gray-400 italic">Empty value</span>
+                  try {
+                    // Try to pretty print if it looks like JSON/Object
+                    if (typeof val === 'object' || (typeof val === 'string' && (val.startsWith('{') || val.startsWith('[')))) {
+                      const parsed = typeof val === 'string' ? JSON.parse(val) : val
+                      return JSON.stringify(parsed, null, 2)
+                    }
+                  } catch (e) {
+                    // Not JSON, just return value
+                  }
+                  return val
+                })()}
+              </pre>
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setExpandedFieldDetail(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

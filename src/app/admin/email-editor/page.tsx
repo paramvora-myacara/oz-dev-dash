@@ -17,10 +17,7 @@ export default function EmailEditorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const router = useRouter()
-  
-  // CSV state for EmailEditor
-  const [csvFile, setCsvFile] = useState<File | null>(null)
-  const [csvFileName, setCsvFileName] = useState<string | null>(null)
+
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
 
   useEffect(() => {
@@ -46,18 +43,6 @@ export default function EmailEditorPage() {
 
     fetchData()
   }, [router])
-
-  const handleCsvUpload = (file: File, fileName: string, data: SampleData) => {
-    setCsvFile(file)
-    setCsvFileName(fileName)
-    setSampleData(data)
-  }
-
-  const handleCsvRemove = () => {
-    setCsvFile(null)
-    setCsvFileName(null)
-    setSampleData(null)
-  }
 
   const handleAutoSave = async (sections: any[], subjectLine: any, emailFormat: 'html' | 'text') => {
     console.log('Auto-saving draft:', { sections, subjectLine, emailFormat })
@@ -104,12 +89,13 @@ export default function EmailEditorPage() {
       {/* Editor */}
       <div className="flex-1 overflow-hidden">
         <EmailEditor
-          csvFile={csvFile}
-          csvFileName={csvFileName}
-          sampleData={sampleData}
-          onCsvUpload={handleCsvUpload}
-          onCsvRemove={handleCsvRemove}
+          initialSections={[]}
+          initialSubjectLine={{ mode: 'static', content: '' }}
+          initialEmailFormat="text"
           onAutoSave={handleAutoSave}
+          sampleData={sampleData}
+          onContinue={() => console.log('Continue clicked')}
+          isContinuing={false}
         />
       </div>
     </div>

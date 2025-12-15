@@ -1,4 +1,4 @@
-import type { Campaign, QueuedEmail, GenerateResponse, LaunchResponse, EmailFormat } from '@/types/email-editor';
+import type { Campaign, QueuedEmail, GenerateResponse, LaunchResponse, EmailFormat, SampleData } from '@/types/email-editor';
 
 const API_BASE = '/api/campaigns';
 
@@ -81,11 +81,17 @@ export interface GenerateProgress {
 
 export async function generateEmails(
   campaignId: string,
-  csvFile: File,
-  onProgress?: (progress: GenerateProgress) => void
+  csvFile: File | null,
+  onProgress?: (progress: GenerateProgress) => void,
+  options?: { useDatabaseRecipients?: boolean }
 ): Promise<GenerateResponse> {
   const formData = new FormData();
-  formData.append('file', csvFile);
+  if (csvFile) {
+    formData.append('file', csvFile);
+  }
+  if (options?.useDatabaseRecipients) {
+    formData.append('useDatabaseRecipients', 'true');
+  }
 
   const res = await fetch(`${API_BASE}/${campaignId}/generate`, {
     method: 'POST',
@@ -215,4 +221,12 @@ export async function regenerateEmail(
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
+}
+
+// Fetch sample recipients for campaign (for preview)
+export async function getCampaignSampleRecipients(id: string, limit = 5): Promise<SampleData> {
+  const res = await fetch(`${API_BASE}/${id}/recipients?limit=${limit}`)
+  if (!res.ok) throw new Error('Failed to fetch sample recipients')
+  const json = await res.json()
+  return json.sampleData
 }

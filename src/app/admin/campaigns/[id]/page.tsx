@@ -6,12 +6,14 @@ import Link from 'next/link'
 import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2 } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
+import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, type GenerateProgress } from '@/lib/api/campaigns'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
+import { createClient } from '@/utils/supabase/client'
 
 export default function CampaignEditPage() {
   const params = useParams()
@@ -30,6 +32,7 @@ export default function CampaignEditPage() {
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[] | null>(null)
   const [testEmail, setTestEmail] = useState('')
+  const [adminEmail, setAdminEmail] = useState<string | null>(null)
   const [testRecipientEmailId, setTestRecipientEmailId] = useState<string | null>(null)
   const [sendingTest, setSendingTest] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -64,17 +67,41 @@ export default function CampaignEditPage() {
   // Regeneration state
   const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
 
-  // CSV state (lifted from EmailEditor)
-  const [csvFile, setCsvFile] = useState<File | null>(null)
-  const [csvFileName, setCsvFileName] = useState<string | null>(null)
+  // Contact selection state
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+
+  // Sample data from database (replaces CSV)
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
+
+  // Fetch current admin user email
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.email) {
+          console.log('Fetched admin email:', user.email)
+          setAdminEmail(user.email)
+
+          // Only set test email if it's currently empty
+          setTestEmail(prev => prev || user.email!)
+        }
+      } catch (err) {
+        console.error('Error fetching user:', err)
+      }
+    }
+    fetchUser()
+  }, [])
 
   // Load campaign and determine initial step based on status
   useEffect(() => {
-    if (campaignId && campaignId !== 'new') {
-      loadCampaign()
-    } else {
-      setLoading(false)
+    if (campaignId) {
+      if (campaignId !== 'new') {
+        loadCampaign()
+      } else {
+        // This shouldn't happen since we redirect after creation
+        setLoading(false)
+      }
     }
   }, [campaignId])
 
@@ -84,10 +111,25 @@ export default function CampaignEditPage() {
       setError(null)
       const data = await getCampaign(campaignId)
       setCampaign(data)
+
+      // If we have recipients, load sample data for preview
+      const totalRecipients = data.totalRecipients || (data as any).total_recipients || 0
+      if (totalRecipients > 0) {
+        loadSampleData()
+      }
     } catch (err: any) {
       setError('Failed to load campaign: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadSampleData = async () => {
+    try {
+      const data = await getCampaignSampleRecipients(campaignId)
+      setSampleData(data)
+    } catch (err) {
+      console.error('Failed to load sample data:', err)
     }
   }
 
@@ -149,11 +191,26 @@ export default function CampaignEditPage() {
         loadStagedEmails()
       } else if (['scheduled', 'sending', 'completed'].includes(campaign.status as string)) {
         setCurrentStep('complete')
+      } else if (campaign.status === 'draft') {
+        // Check if campaign has been through design phase (has sections) OR has recipients selected
+        // Cast to any to handle potential property mismatch during dev
+        const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
+        const hasRecipients = totalRecipients > 0
+        if ((campaign.sections && campaign.sections.length > 0) || hasRecipients) {
+          // Only redirect if we are in an invalid step for this state
+          // Allow 'format-sample' as it's a valid substep of draft
+          if (currentStep !== 'design' && currentStep !== 'format-sample') {
+            setCurrentStep('design')
+          }
+        } else {
+          // New campaign - start with recipient selection
+          setCurrentStep('select-recipients')
+        }
       } else {
         setCurrentStep('design')
       }
     }
-  }, [campaign?.status])
+  }, [campaign?.status, campaign?.sections, campaign?.totalRecipients])
 
   useEffect(() => {
     if (currentStep === 'complete') {
@@ -161,19 +218,6 @@ export default function CampaignEditPage() {
       loadFailedEmails()
     }
   }, [currentStep, loadSummary, loadFailedEmails])
-
-  // CSV handlers (lifted from EmailEditor)
-  const handleCsvUpload = useCallback((file: File, fileName: string, data: SampleData) => {
-    setCsvFile(file)
-    setCsvFileName(fileName)
-    setSampleData(data)
-  }, [])
-
-  const handleCsvRemove = useCallback(() => {
-    setCsvFile(null)
-    setCsvFileName(null)
-    setSampleData(null)
-  }, [])
 
   // Autosave handler - returns true on success, false on failure
   const handleAutoSave = useCallback(async (
@@ -196,6 +240,20 @@ export default function CampaignEditPage() {
       return false
     }
   }, [campaign, campaignId])
+
+  // Continue from recipient selection to design step
+  const handleContinueFromRecipients = useCallback((contactIds: string[]) => {
+    setSelectedContactIds(contactIds)
+    // We should reload campaign to get the updated total_recipients count
+    loadCampaign().then(() => {
+      setCurrentStep('design')
+    })
+  }, [])
+
+  // Back from design to recipient selection
+  const handleBackToRecipients = useCallback(() => {
+    setCurrentStep('select-recipients')
+  }, [])
 
   // Continue from design to format-sample step
   const handleContinueToFormatSample = useCallback(async (data: {
@@ -223,7 +281,10 @@ export default function CampaignEditPage() {
 
   // Generate all emails with specified format
   const handleGenerateAllWithFormat = useCallback(async (format: EmailFormat) => {
-    if (!campaign || !csvFile) return
+    if (!campaign) return
+    // Allow generation if we have database recipients
+    const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
+    if (totalRecipients === 0) return
 
     try {
       setGenerating(true)
@@ -233,11 +294,12 @@ export default function CampaignEditPage() {
       // Save the format to the campaign first
       await updateCampaign(campaign.id || campaignId, { emailFormat: format })
 
-      // Generate emails with the CSV and track progress
+      // Generate emails with the DB flag and track progress
       const result = await generateEmails(
         campaign.id || campaignId,
-        csvFile,
-        (progress) => setGenerateProgress(progress)
+        null, // No CSV
+        (progress) => setGenerateProgress(progress),
+        { useDatabaseRecipients: true }
       )
 
       // Reload campaign and staged emails
@@ -257,7 +319,7 @@ export default function CampaignEditPage() {
       setGenerating(false)
       setGenerateProgress(null)
     }
-  }, [campaign, campaignId, csvFile])
+  }, [campaign, campaignId])
 
 
 
@@ -333,8 +395,16 @@ export default function CampaignEditPage() {
       setSendingTest(true)
       setError(null)
       await sendTestEmail(campaign.id || campaignId, testEmail, testRecipientEmailId || undefined)
-      setTestEmail('')
-      setTestRecipientEmailId(null)
+
+      // Reset to admin email instead of clearing entirely
+      if (adminEmail) {
+        setTestEmail(adminEmail)
+      } else {
+        setTestEmail('')
+      }
+
+      // Keep the selected recipient context
+      // setTestRecipientEmailId(null) 
       alert('Test email sent successfully!')
     } catch (err: any) {
       setError('Failed to send test email: ' + err.message)
@@ -344,10 +414,12 @@ export default function CampaignEditPage() {
   }
 
   // Set default test recipient when staged emails load
+  // Set default test recipient when staged emails load
   useEffect(() => {
     if (stagedEmails.length > 0 && !testRecipientEmailId) {
       setTestRecipientEmailId(stagedEmails[0].id)
-      setTestEmail(stagedEmails[0].toEmail)
+      // Warning: Do NOT overwrite the testEmail here as it should be the logged-in admin's email
+      // setTestEmail(stagedEmails[0].toEmail) 
     }
   }, [stagedEmails, testRecipientEmailId])
 
@@ -459,10 +531,11 @@ export default function CampaignEditPage() {
       </div>
 
       {/* Stepper */}
-      <CampaignStepper 
-        currentStep={currentStep} 
-        recipientCount={stagedCount} 
+      <CampaignStepper
+        currentStep={currentStep}
+        recipientCount={stagedCount}
         onBack={currentStep === 'review' ? handleBackToDesign : undefined}
+        onBackToRecipients={currentStep === 'design' ? handleBackToRecipients : undefined}
         onLaunch={currentStep === 'review' ? () => setShowLaunchModal(true) : undefined}
       />
 
@@ -488,6 +561,14 @@ export default function CampaignEditPage() {
 
       {/* Main Content based on step */}
       <div className="flex-1 overflow-hidden">
+        {currentStep === 'select-recipients' && (
+          <ContactSelectionStep
+            campaignId={campaignId}
+            onContinue={handleContinueFromRecipients}
+            onBack={() => router.push('/admin/campaigns')}
+          />
+        )}
+
         {currentStep === 'design' && (
           <EmailEditor
             initialTemplate={campaign.templateSlug ? { slug: campaign.templateSlug } as any : undefined}
@@ -495,21 +576,18 @@ export default function CampaignEditPage() {
             initialSubjectLine={campaign.subjectLine}
             initialEmailFormat={campaign.emailFormat}
             onAutoSave={handleAutoSave}
-            csvFile={csvFile}
-            csvFileName={csvFileName}
             sampleData={sampleData}
-            onCsvUpload={handleCsvUpload}
-            onCsvRemove={handleCsvRemove}
+            recipientCount={campaign.totalRecipients || (campaign as any).total_recipients || 0}
             onContinue={handleContinueToFormatSample}
             isContinuing={false}
           />
         )}
 
-        {currentStep === 'format-sample' && csvFile && sampleData && (
+        {currentStep === 'format-sample' && (
           <FormatSampleStep
             campaignId={campaign.id || campaignId}
-            csvFile={csvFile}
             sampleData={sampleData}
+            recipientCount={campaign.totalRecipients || (campaign as any).total_recipients || 0}
             initialFormat={campaign.emailFormat || 'text'}
             onBack={handleBackToDesignFromFormatSample}
             onGenerateAll={handleGenerateAllWithFormat}
@@ -548,10 +626,11 @@ export default function CampaignEditPage() {
                         onChange={(e) => {
                           const selectedId = e.target.value
                           setTestRecipientEmailId(selectedId)
-                          const selectedEmail = stagedEmails.find(e => e.id === selectedId)
-                          if (selectedEmail) {
-                            setTestEmail(selectedEmail.toEmail)
-                          }
+                          // Only update context, don't change the "Send to" email
+                          // const selectedEmail = stagedEmails.find(e => e.id === selectedId)
+                          // if (selectedEmail) {
+                          //   setTestEmail(selectedEmail.toEmail)
+                          // }
                         }}
                         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >

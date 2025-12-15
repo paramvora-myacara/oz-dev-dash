@@ -2,18 +2,20 @@
 
 import { Check, ArrowLeft, Rocket } from 'lucide-react'
 
-// Internal step includes format-sample, but visually we show 3 steps
-export type CampaignStep = 'design' | 'format-sample' | 'review' | 'complete'
+// Internal steps include select-recipients, format-sample, but visually we show 4 steps
+export type CampaignStep = 'select-recipients' | 'design' | 'format-sample' | 'review' | 'complete'
 
 interface CampaignStepperProps {
   currentStep: CampaignStep
   recipientCount?: number
   onBack?: () => void
+  onBackToRecipients?: () => void
   onLaunch?: () => void
 }
 
-// Visual steps shown in the stepper (3 steps)
+// Visual steps shown in the stepper (4 steps)
 const VISUAL_STEPS = [
+  { id: 'select-recipients', label: 'Select Recipients' },
   { id: 'design', label: 'Design Email' },
   { id: 'review', label: 'Review' },
   { id: 'complete', label: 'Launch' },
@@ -22,32 +24,43 @@ const VISUAL_STEPS = [
 // Map internal steps to visual step index
 function getVisualStepIndex(step: CampaignStep): number {
   switch (step) {
-    case 'design':
+    case 'select-recipients':
       return 0
+    case 'design':
+      return 1
     case 'format-sample':
     case 'review':
-      return 1
-    case 'complete':
       return 2
+    case 'complete':
+      return 3
     default:
       return 0
   }
 }
 
-export default function CampaignStepper({ currentStep, recipientCount, onBack, onLaunch }: CampaignStepperProps) {
+export default function CampaignStepper({ currentStep, recipientCount, onBack, onBackToRecipients, onLaunch }: CampaignStepperProps) {
   const currentStepIndex = getVisualStepIndex(currentStep)
 
   return (
     <div className="flex items-center justify-between py-4 px-6 bg-gray-50 border-b">
-      {/* Back button - only show on review step */}
+      {/* Back button - show on design and review steps */}
       <div className="flex-1">
+        {currentStep === 'design' && onBackToRecipients && (
+          <button
+            onClick={onBackToRecipients}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back to Recipients</span>
+          </button>
+        )}
         {currentStep === 'review' && onBack && (
           <button
             onClick={onBack}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Back</span>
+            <span className="text-sm font-medium">Back to Design</span>
           </button>
         )}
       </div>

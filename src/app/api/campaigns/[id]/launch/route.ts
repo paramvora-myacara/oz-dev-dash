@@ -3,6 +3,7 @@ import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { toZonedTime } from 'date-fns-tz';
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling';
+import { isValidEmail } from '@/lib/utils/validation';
 
 // Domain configuration (same as upload route)
 const DOMAIN_CONFIG = [
@@ -83,6 +84,44 @@ export async function POST(
 
     if (totalStaged === 0) {
       return NextResponse.json({ error: 'No staged emails to launch' }, { status: 400 });
+    }
+
+    // 2.5 VALIDATION GATEKEEPER
+    // Fetch all to_emails for the staged emails to validate them
+    // We do this in a batch to ensure no invalid email gets scheduled
+    let validationQuery = supabase
+      .from('email_queue')
+      .select('id, to_email')
+      .eq('campaign_id', campaignId)
+      .eq('status', 'staged');
+
+    if (!all && emailIds && emailIds.length > 0) {
+      validationQuery = validationQuery.in('id', emailIds);
+    }
+
+    // We need to fetch ALL of them to validate. 
+    // If there are thousands, this might be heavy, but necessary for strict safety.
+    // Assuming < 10k for now.
+    const { data: emailsToValidate, error: valError } = await validationQuery;
+
+    if (valError) {
+      return NextResponse.json({ error: `Validation fetch error: ${valError.message}` }, { status: 500 });
+    }
+
+    const invalidEmails: { id: string; email: string }[] = [];
+    if (emailsToValidate) {
+      for (const email of emailsToValidate) {
+        if (!isValidEmail(email.to_email)) {
+          invalidEmails.push({ id: email.id, email: email.to_email });
+        }
+      }
+    }
+
+    if (invalidEmails.length > 0) {
+      return NextResponse.json({
+        error: `Found ${invalidEmails.length} invalid email addresses. Please remove them before launching.`,
+        details: invalidEmails.map(e => e.email)
+      }, { status: 400 });
     }
 
     // 3. Query ALL existing scheduled emails across ALL campaigns for domain coordination

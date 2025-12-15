@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import { ArrowLeft, ArrowRight, FileText, Code, Loader2, AlertTriangle, CheckCircle2, Users, Mail, XCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Code, Loader2, CheckCircle2, Users, Mail } from 'lucide-react'
 import type { EmailFormat, SampleData } from '@/types/email-editor'
-import type { GenerateProgress, CsvValidationResult } from '@/lib/api/campaigns'
-import { validateCsv } from '@/lib/api/campaigns'
+import type { GenerateProgress } from '@/lib/api/campaigns'
 
 interface FormatSampleStepProps {
   campaignId: string
-  csvFile: File
-  sampleData: SampleData
+  sampleData?: SampleData | null
+  recipientCount?: number
   initialFormat: EmailFormat
   onBack: () => void
   onGenerateAll: (format: EmailFormat) => void
@@ -20,8 +19,8 @@ interface FormatSampleStepProps {
 
 export default function FormatSampleStep({
   campaignId,
-  csvFile,
   sampleData,
+  recipientCount = 0,
   initialFormat,
   onBack,
   onGenerateAll,
@@ -29,28 +28,10 @@ export default function FormatSampleStep({
   generateProgress,
 }: FormatSampleStepProps) {
   // Start with no format selected - user must pick one
-  const [selectedFormat, setSelectedFormat] = useState<EmailFormat | null>(null)
-  const [validation, setValidation] = useState<CsvValidationResult | null>(null)
-  const [isValidating, setIsValidating] = useState(false)
-  const [validationError, setValidationError] = useState<string | null>(null)
+  const [selectedFormat, setSelectedFormat] = useState<EmailFormat | null>(initialFormat || null)
 
-  // Validate CSV when format is selected
-  const handleFormatSelect = async (format: EmailFormat) => {
+  const handleFormatSelect = (format: EmailFormat) => {
     setSelectedFormat(format)
-
-    // Only validate once (on first format selection)
-    if (!validation && !isValidating) {
-      try {
-        setIsValidating(true)
-        setValidationError(null)
-        const result = await validateCsv(campaignId, csvFile)
-        setValidation(result)
-      } catch (err: any) {
-        setValidationError(err.message || 'Failed to validate CSV')
-      } finally {
-        setIsValidating(false)
-      }
-    }
   }
 
   const handleGenerateAll = () => {
@@ -146,12 +127,14 @@ export default function FormatSampleStep({
     </div>
   )
 
-  // CSV Validation panel (right panel)
+  // Validation/Stats panel (right panel)
   const ValidationPanel = (
     <div className="h-full overflow-auto p-4 sm:p-6 bg-white">
-      <h2 className="text-lg font-semibold text-gray-900 mb-2">CSV Validation</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-2">
+        Audience Summary
+      </h2>
       <p className="text-sm text-gray-500 mb-6">
-        Preview of what will be generated from your CSV.
+        Overview of selected recipients from database.
       </p>
 
       {!selectedFormat ? (
@@ -161,114 +144,41 @@ export default function FormatSampleStep({
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Format</h3>
           <p className="text-sm text-gray-500 max-w-xs">
-            Choose Plain Text or HTML on the left to see your email validation details.
+            Choose Plain Text or HTML on the left to continue.
           </p>
         </div>
-      ) : isValidating ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
-          <p className="text-sm text-gray-500">Validating CSV...</p>
-        </div>
-      ) : validationError ? (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-800">Validation Failed</p>
-              <p className="text-sm text-red-700 mt-1">{validationError}</p>
-            </div>
-          </div>
-        </div>
-      ) : validation ? (
+      ) : (
+        // Database Recipients View
         <div className="space-y-4">
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-600">CSV Rows</span>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{validation.csvRowCount}</p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-2 mb-1">
-                <Mail className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-600">Emails Found</span>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">{validation.emails.total}</p>
-            </div>
-          </div>
-
-          {/* Valid Emails (main stat) */}
           <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-6 h-6 text-green-600" />
               <div>
                 <p className="text-lg font-bold text-green-900">
-                  {validation.emails.valid} emails will be generated
+                  {recipientCount} recipients selected
                 </p>
                 <p className="text-sm text-green-700">
-                  After deduplication and validation
+                  Ready to generate emails
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Issues breakdown */}
-          {(validation.emails.duplicates > 0 || validation.emails.invalid > 0 || validation.emails.missing > 0) && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-amber-800 mb-2">Issues Found</p>
-                  <div className="space-y-1 text-sm text-amber-700">
-                    {validation.emails.duplicates > 0 && (
-                      <p>• {validation.emails.duplicates} duplicate emails skipped</p>
-                    )}
-                    {validation.emails.invalid > 0 && (
-                      <p>• {validation.emails.invalid} invalid email formats</p>
-                    )}
-                    {validation.emails.missing > 0 && (
-                      <p>• {validation.emails.missing} rows missing email</p>
-                    )}
-                  </div>
-                </div>
+          <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="w-5 h-5 text-blue-600" />
               </div>
-            </div>
-          )}
-
-          {/* Fields list */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Available Fields</p>
-            <div className="flex flex-wrap gap-2">
-              {validation.fields.map((field) => (
-                <span
-                  key={field}
-                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full"
-                >
-                  {field}
-                </span>
-              ))}
+              <div>
+                <h4 className="font-semibold text-blue-900">Source: Database</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Recipients were selected directly from your contacts list.
+                </p>
+              </div>
             </div>
           </div>
-
-          {/* Detailed errors (collapsed) */}
-          {validation.errors.length > 0 && (
-            <details className="group">
-              <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
-                View {validation.errors.length} detailed errors
-              </summary>
-              <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-40 overflow-auto">
-                <ul className="text-xs text-gray-600 space-y-1 font-mono">
-                  {validation.errors.map((error, i) => (
-                    <li key={i}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            </details>
-          )}
         </div>
-      ) : null}
+      )}
     </div>
   )
 
@@ -288,7 +198,7 @@ export default function FormatSampleStep({
         {/* Generate button */}
         <button
           onClick={handleGenerateAll}
-          disabled={!selectedFormat || isGeneratingAll || isValidating || !validation || validation.emails.valid === 0}
+          disabled={!selectedFormat || isGeneratingAll || !recipientCount}
           className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGeneratingAll ? (
@@ -303,7 +213,7 @@ export default function FormatSampleStep({
             <>Select a format to continue</>
           ) : (
             <>
-              Generate {validation?.emails.valid || '...'} Emails
+              Generate {recipientCount || '...'} Emails
               <ArrowRight className="w-4 h-4" />
             </>
           )}
