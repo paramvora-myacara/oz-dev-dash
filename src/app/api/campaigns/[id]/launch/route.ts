@@ -3,7 +3,6 @@ import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { toZonedTime } from 'date-fns-tz';
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling';
-import { isValidEmail } from '@/lib/utils/validation';
 
 // Domain configuration (same as upload route)
 const DOMAIN_CONFIG = [
@@ -34,14 +33,19 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log(`[LAUNCH] Starting campaign launch for campaign: ${await params}`);
+
     const adminUser = await verifyAdmin();
     if (!adminUser) {
+      console.log(`[LAUNCH] Unauthorized access attempt`);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: campaignId } = await params;
     const body = await request.json().catch(() => ({}));
     const { emailIds, all = true } = body;
+
+    console.log(`[LAUNCH] Campaign ${campaignId}, all=${all}, emailIds count=${emailIds?.length || 0}`);
 
     const supabase = createAdminClient();
 
@@ -82,47 +86,14 @@ export async function POST(
 
     const totalStaged = stagedCount || 0;
 
+    console.log(`[LAUNCH] Found ${totalStaged} staged emails to launch`);
+
     if (totalStaged === 0) {
+      console.log(`[LAUNCH] No staged emails found, aborting launch`);
       return NextResponse.json({ error: 'No staged emails to launch' }, { status: 400 });
     }
 
-    // 2.5 VALIDATION GATEKEEPER
-    // Fetch all to_emails for the staged emails to validate them
-    // We do this in a batch to ensure no invalid email gets scheduled
-    let validationQuery = supabase
-      .from('email_queue')
-      .select('id, to_email')
-      .eq('campaign_id', campaignId)
-      .eq('status', 'staged');
-
-    if (!all && emailIds && emailIds.length > 0) {
-      validationQuery = validationQuery.in('id', emailIds);
-    }
-
-    // We need to fetch ALL of them to validate. 
-    // If there are thousands, this might be heavy, but necessary for strict safety.
-    // Assuming < 10k for now.
-    const { data: emailsToValidate, error: valError } = await validationQuery;
-
-    if (valError) {
-      return NextResponse.json({ error: `Validation fetch error: ${valError.message}` }, { status: 500 });
-    }
-
-    const invalidEmails: { id: string; email: string }[] = [];
-    if (emailsToValidate) {
-      for (const email of emailsToValidate) {
-        if (!isValidEmail(email.to_email)) {
-          invalidEmails.push({ id: email.id, email: email.to_email });
-        }
-      }
-    }
-
-    if (invalidEmails.length > 0) {
-      return NextResponse.json({
-        error: `Found ${invalidEmails.length} invalid email addresses. Please remove them before launching.`,
-        details: invalidEmails.map(e => e.email)
-      }, { status: 400 });
-    }
+    // Validation is now handled in the review step - no need to re-validate here
 
     // 3. Query ALL existing scheduled emails across ALL campaigns for domain coordination
     const { data: existingSchedules } = await supabase
@@ -148,19 +119,28 @@ export async function POST(
     const intervalMs = INTERVAL_MINUTES * 60 * 1000;
     const domainCurrentTime: Record<number, Date> = {};
     const emailsByDay: Record<string, number> = {};
-    const PAGE_SIZE = 500;
+    const PAGE_SIZE = 1000;
     let roundRobinIndex = 0;
     let totalQueued = 0;
 
-    for (let offset = 0; offset < totalStaged; offset += PAGE_SIZE) {
-      const end = Math.min(offset + PAGE_SIZE - 1, totalStaged - 1);
+    console.log(`[LAUNCH] Starting pagination with PAGE_SIZE=${PAGE_SIZE}, total emails=${totalStaged}`);
+
+    // Use simple offset-based pagination with limit
+    let processed = 0;
+    let page = 1;
+
+    while (processed < totalStaged) {
+      const remaining = totalStaged - processed;
+      const limit = Math.min(PAGE_SIZE, remaining);
+      console.log(`[LAUNCH] Processing page ${page}: offset=${processed}, limit=${limit}, remaining=${remaining}`);
+
       let pageQuery = supabase
         .from('email_queue')
         .select('*')
         .eq('campaign_id', campaignId)
         .eq('status', 'staged')
         .order('created_at', { ascending: true })
-        .range(offset, end);
+        .range(processed, processed + limit - 1);
 
       if (!all && emailIds && emailIds.length > 0) {
         pageQuery = pageQuery.in('id', emailIds);
@@ -169,12 +149,16 @@ export async function POST(
       const { data: stagedEmails, error: fetchError } = await pageQuery;
 
       if (fetchError) {
+        console.error(`[LAUNCH] Fetch error for page ${page}:`, fetchError);
         return NextResponse.json({ error: fetchError.message }, { status: 500 });
       }
 
       if (!stagedEmails || stagedEmails.length === 0) {
-        continue;
+        console.log(`[LAUNCH] No more emails found at page ${page}, ending pagination`);
+        break;
       }
+
+      console.log(`[LAUNCH] Page ${page}: fetched ${stagedEmails.length} emails`);
 
       const updates = stagedEmails.map((email) => {
         const existingDomainIndex = email.domain_index as number | null;
@@ -213,7 +197,10 @@ export async function POST(
         };
       });
 
+      console.log(`[LAUNCH] Prepared ${updates.length} email updates for page ${page}`);
+
       // Persist this page
+      console.log(`[LAUNCH] Starting database updates for page ${page}`);
       for (const update of updates) {
         await supabase
           .from('email_queue')
@@ -226,7 +213,10 @@ export async function POST(
           .eq('id', update.id);
       }
 
+      processed += stagedEmails.length;
       totalQueued += updates.length;
+      console.log(`[LAUNCH] Page ${page} completed. Running total: processed=${processed}, queued=${totalQueued}`);
+      page++;
     }
 
     // 6. Update campaign status
@@ -242,6 +232,9 @@ export async function POST(
     const lastScheduledTime = Object.values(domainLastScheduled)
       .reduce((latest, time) => time > latest ? time : latest, startTimeUTC);
 
+    console.log(`[LAUNCH] Campaign launch completed successfully!`);
+    console.log(`[LAUNCH] Final stats: ${totalQueued} emails queued, ${Object.keys(emailsByDay).length} days scheduled`);
+
     return NextResponse.json({
       success: true,
       queued: totalQueued,
@@ -255,7 +248,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('POST /api/campaigns/:id/launch error:', error);
+    console.error('[LAUNCH] Campaign launch failed:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

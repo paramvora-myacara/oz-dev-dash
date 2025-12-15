@@ -12,6 +12,7 @@ import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
 import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, type GenerateProgress } from '@/lib/api/campaigns'
 import { getStatusLabel } from '@/lib/utils/status-labels'
+import { isValidEmail } from '@/lib/utils/validation'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
 import { createClient } from '@/utils/supabase/client'
 
@@ -27,6 +28,8 @@ export default function CampaignEditPage() {
   const [stagedEmails, setStagedEmails] = useState<QueuedEmail[]>([])
   const [stagedCount, setStagedCount] = useState(0)
   const [editedCount, setEditedCount] = useState(0)
+  const [invalidEmails, setInvalidEmails] = useState<{id: string, email: string}[]>([])
+  const [validCount, setValidCount] = useState(0)
   const [currentStep, setCurrentStep] = useState<CampaignStep>('design')
   const [showLaunchModal, setShowLaunchModal] = useState(false)
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
@@ -135,14 +138,50 @@ export default function CampaignEditPage() {
 
   const loadStagedEmails = async () => {
     try {
-      const result = await getStagedEmails(campaignId, { limit: 50 })
-      setStagedEmails(result.emails)
-      setStagedCount(result.total)
-      // Count edited emails
-      const edited = result.emails.filter(e => e.isEdited).length
+      // First, get all staged emails to validate them (paginate to handle large datasets)
+      const PAGE_SIZE = 1000
+      let allEmails: any[] = []
+      let offset = 0
+      let hasMore = true
+      let totalCount = 0
+
+      while (hasMore) {
+        const result = await getStagedEmails(campaignId, { limit: PAGE_SIZE, offset })
+        const emails = result.emails
+        allEmails = allEmails.concat(emails)
+        totalCount = result.total
+
+        if (emails.length < PAGE_SIZE) {
+          hasMore = false
+        } else {
+          offset += PAGE_SIZE
+        }
+      }
+
+      // Validate emails
+      const invalid: {id: string, email: string}[] = []
+      const validEmails = allEmails.filter(email => {
+        if (!isValidEmail(email.toEmail)) {
+          invalid.push({ id: email.id, email: email.toEmail })
+          return false
+        }
+        return true
+      })
+
+      setInvalidEmails(invalid)
+      setValidCount(validEmails.length)
+      setStagedCount(totalCount)
+
+      // Get the first 50 for display (prioritize valid emails)
+      const displayEmails = validEmails.slice(0, 50)
+      setStagedEmails(displayEmails)
+
+      // Count edited emails from display set
+      const edited = displayEmails.filter(e => e.isEdited).length
       setEditedCount(edited)
     } catch (err) {
       // Ignore errors - campaign might not have staged emails yet
+      console.error('Error loading staged emails:', err)
     }
   }
 
@@ -471,6 +510,27 @@ export default function CampaignEditPage() {
     }
   }
 
+  // Remove invalid recipient
+  const handleRemoveInvalidRecipient = async (emailId: string) => {
+    if (!campaign) return
+
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id || campaignId}/emails/${emailId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        throw new Error(await res.text())
+      }
+
+      // Update local state - remove from invalid emails and reload staged emails
+      setInvalidEmails(prev => prev.filter(e => e.id !== emailId))
+      await loadStagedEmails()
+    } catch (err: any) {
+      setError('Failed to remove invalid recipient: ' + err.message)
+    }
+  }
+
   // Auto-regenerate if body is empty whn expanded
   useEffect(() => {
     if (expandedEmailId) {
@@ -536,7 +596,13 @@ export default function CampaignEditPage() {
         recipientCount={stagedCount}
         onBack={currentStep === 'review' ? handleBackToDesign : undefined}
         onBackToRecipients={currentStep === 'design' ? handleBackToRecipients : undefined}
-        onLaunch={currentStep === 'review' ? () => setShowLaunchModal(true) : undefined}
+        onLaunch={currentStep === 'review' ? () => {
+          if (invalidEmails.length > 0) {
+            setError(`Cannot launch campaign with ${invalidEmails.length} invalid email address${invalidEmails.length !== 1 ? 'es' : ''}. Please remove them first.`)
+            return
+          }
+          setShowLaunchModal(true)
+        } : undefined}
       />
 
       {/* Info / Error Banner */}
@@ -602,7 +668,7 @@ export default function CampaignEditPage() {
               {/* Info banner when returning to edit */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
-                  <strong>{stagedCount} emails</strong> are ready to send. Review them below, send a test, or launch when ready.
+                  <strong>{validCount} of {stagedCount} emails</strong> are valid and ready to send. Review them below, send a test, or launch when ready.
                   If you edit the template, emails will be regenerated.
                 </p>
               </div>
@@ -674,10 +740,51 @@ export default function CampaignEditPage() {
                     </div>
                   </div>
                   <div className="px-4 pb-4">
-                    <p className="text-xs font-medium text-gray-700 mb-1.5">
-                      Emails in this campaign
-                    </p>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs font-medium text-gray-700">
+                        Emails in this campaign
+                      </p>
+                      {invalidEmails.length > 0 && (
+                        <div className="flex items-center gap-1 text-xs text-red-600">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{invalidEmails.length} invalid</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="border border-gray-200 rounded-lg bg-gray-50 max-h-48 overflow-auto">
+                      {/* Invalid emails section */}
+                      {invalidEmails.length > 0 && (
+                        <div className="border-b border-red-200 bg-red-50">
+                          <div className="px-3 py-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertCircle className="w-4 h-4 text-red-500" />
+                              <span className="text-xs font-medium text-red-800">
+                                Invalid Email Addresses ({invalidEmails.length})
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {invalidEmails.slice(0, 5).map((invalid) => (
+                                <div key={invalid.id} className="flex items-center justify-between bg-white rounded px-2 py-1">
+                                  <span className="text-xs text-red-700 font-mono truncate flex-1">{invalid.email}</span>
+                                  <button
+                                    onClick={() => handleRemoveInvalidRecipient(invalid.id)}
+                                    className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                              {invalidEmails.length > 5 && (
+                                <div className="text-xs text-red-600 text-center py-1">
+                                  ... and {invalidEmails.length - 5} more
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Valid emails section */}
                       {stagedEmails.slice(0, 20).map((email) => (
                         <div
                           key={email.id}
@@ -694,7 +801,7 @@ export default function CampaignEditPage() {
                           )}
                         </div>
                       ))}
-                      {stagedEmails.length === 0 && (
+                      {stagedEmails.length === 0 && invalidEmails.length === 0 && (
                         <div className="px-3 py-4 text-sm text-gray-500 text-center">
                           No staged emails yet.
                         </div>
