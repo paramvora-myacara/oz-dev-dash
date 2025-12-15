@@ -194,7 +194,7 @@ export async function getAllContactIds(filters: ContactFilters) {
         }
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
         console.error('Error fetching all contact IDs:', error);

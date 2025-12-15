@@ -57,6 +57,9 @@ interface ContactSelectionStepProps {
 export default function ContactSelectionStep({ campaignId, onContinue, onBack }: ContactSelectionStepProps) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const [isSelectAllGlobal, setIsSelectAllGlobal] = useState(false)
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
   // Track specifically chosen email for contacts with multiple options
   const [selectedEmails, setSelectedEmails] = useState<Record<string, string>>({})
 
@@ -113,6 +116,9 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setPage(0)
     // Clear selection when filters change (optional, but safer to avoid stale selections)
     // For now keeping selection as user might want to select-search-select
+    setIsSelectAllGlobal(false)
+    setExcludedIds(new Set())
+    setSelectedIds(new Set())
   }, [searchQuery, selectedSources, advancedFilters, pageSize])
 
   // Get unique sources for filter options - mocked for now or fetch aggregated
@@ -121,7 +127,11 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
 
   const handleSelectAll = () => {
-    if (selectedIds.size === contacts.length) {
+    if (isSelectAllGlobal) {
+      setIsSelectAllGlobal(false)
+      setExcludedIds(new Set())
+      setSelectedIds(new Set())
+    } else if (selectedIds.size === contacts.length) {
       setSelectedIds(new Set())
     } else {
       setSelectedIds(new Set(contacts.map(c => c.id)))
@@ -130,6 +140,19 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
   const handleSelectContact = (contact: Contact) => {
     const contactId = contact.id
+
+    // Global Mode Logic
+    if (isSelectAllGlobal) {
+      const newExcluded = new Set(excludedIds)
+      if (newExcluded.has(contactId)) {
+        newExcluded.delete(contactId)
+      } else {
+        newExcluded.add(contactId)
+      }
+      setExcludedIds(newExcluded)
+      return
+    }
+
     const newSelected = new Set(selectedIds)
 
     // If unselecting, just remove
@@ -156,23 +179,10 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
   // Global Select All Handler
   const handleSelectAllGlobal = async () => {
-    setIsLoading(true)
-    try {
-      const filters: ContactFilters = {
-        search: searchQuery,
-        role: advancedFilters.role,
-        location: advancedFilters.locationFilter,
-        source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined,
-        campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
-      }
-
-      const allIds = await getAllContactIds(filters)
-      setSelectedIds(new Set(allIds))
-    } catch (error) {
-      console.error('Failed to select all global:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    setIsSelectAllGlobal(true)
+    setExcludedIds(new Set())
+    // Visually select all info on current page for consistency
+    setSelectedIds(new Set(contacts.map(c => c.id)))
   }
 
   const handleEmailSelectionConfirm = (email: string) => {
@@ -194,16 +204,36 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setIsLoading(true)
     try {
       // Build payload
-      const selections = Array.from(selectedIds).map(id => ({
-        contact_id: id,
-        selected_email: selectedEmails[id] // might be undefined if single
-      }))
+      let payload: any;
+
+      if (isSelectAllGlobal) {
+        const filters: ContactFilters = {
+          search: searchQuery,
+          role: advancedFilters.role,
+          location: advancedFilters.locationFilter,
+          source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined,
+          campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+        }
+
+        payload = {
+          selectAllMatching: true,
+          filters,
+          exclusions: Array.from(excludedIds),
+          explicitSelections: selectedEmails // Still need these for email overrides if any
+        }
+      } else {
+        const selections = Array.from(selectedIds).map(id => ({
+          contact_id: id,
+          selected_email: selectedEmails[id] // might be undefined if single
+        }))
+        payload = { selections }
+      }
 
       // Save to backend
       const res = await fetch(`${API_BASE}/${campaignId}/recipients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selections })
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) throw new Error(await res.text());
@@ -227,9 +257,13 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       source: '',
       history: 'all'
     })
+    setIsSelectAllGlobal(false)
   }
 
-  const selectedContacts = contacts.filter(c => selectedIds.has(c.id))
+  const selectedContacts = contacts.filter(c =>
+    (isSelectAllGlobal && !excludedIds.has(c.id)) ||
+    (!isSelectAllGlobal && selectedIds.has(c.id))
+  )
   const previouslyContactedCount = selectedContacts.filter(c => c.history && c.history.length > 0).length
 
   // Multi-select dropdown helpers
@@ -495,7 +529,11 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                 >
                   <input
                     type="checkbox"
-                    checked={selectedIds.size === contacts.length && contacts.length > 0}
+                    checked={
+                      isSelectAllGlobal
+                        ? (contacts.every(c => !excludedIds.has(c.id)))
+                        : (selectedIds.size === contacts.length && contacts.length > 0)
+                    }
                     readOnly
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
@@ -503,14 +541,17 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                 </button>
               </div>
               <div className="text-sm text-gray-500">
-                {selectedIds.size} selected
+                {isSelectAllGlobal
+                  ? `${totalCount - excludedIds.size} selected`
+                  : `${selectedIds.size} selected`
+                }
               </div>
             </div>
 
             {/* Contact Items */}
 
             {/* "Select All" Banner */}
-            {selectedIds.size === contacts.length && totalCount > contacts.length && (
+            {!isSelectAllGlobal && selectedIds.size === contacts.length && totalCount > contacts.length && (
               <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
                 <span className="font-medium">All {contacts.length} contacts on this page are selected.</span>
                 {' '}
@@ -523,9 +564,24 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
               </div>
             )}
 
+            {isSelectAllGlobal && (
+              <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
+                <span className="font-medium">All {totalCount} contacts matching this search are selected.</span>
+                {' '}
+                <button
+                  onClick={() => setIsSelectAllGlobal(false)}
+                  className="font-bold underline hover:text-blue-900"
+                >
+                  Clear selection
+                </button>
+              </div>
+            )}
+
             <div className="divide-y divide-gray-200">
               {contacts.map((contact) => {
-                const isSelected = selectedIds.has(contact.id)
+                const isSelected = isSelectAllGlobal
+                  ? !excludedIds.has(contact.id)
+                  : selectedIds.has(contact.id)
                 const hasHistory = contact.history && contact.history.length > 0
 
                 return (
@@ -622,12 +678,17 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       </div>
 
       {/* Bottom Action Bar */}
-      {selectedIds.size > 0 && (
+      {(selectedIds.size > 0 || isSelectAllGlobal) && (
         <div className="bg-white border-t px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div>
-                <p className="font-medium text-gray-900">{selectedIds.size} contacts selected</p>
+                <p className="font-medium text-gray-900">
+                  {isSelectAllGlobal
+                    ? `${totalCount - excludedIds.size} contacts selected`
+                    : `${selectedIds.size} contacts selected`
+                  }
+                </p>
                 <p className="text-sm text-gray-500">
                   {previouslyContactedCount} previously contacted
                 </p>
@@ -636,7 +697,11 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setSelectedIds(new Set())}
+                onClick={() => {
+                  setSelectedIds(new Set())
+                  setIsSelectAllGlobal(false)
+                  setExcludedIds(new Set())
+                }}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Clear Selection

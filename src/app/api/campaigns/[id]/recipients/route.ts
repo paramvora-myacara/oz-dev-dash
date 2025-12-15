@@ -3,6 +3,34 @@ import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 
 // POST /api/campaigns/:id/recipients
+// State Mapping for Smart Search (Duplicated from contacts.ts to avoid client-side import issues)
+const STATE_NAME_TO_CODE: Record<string, string> = {
+    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+    'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+    'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+    'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+    'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+    'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+    'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+    'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+    'district of columbia': 'DC'
+};
+
+const CODE_TO_STATE_NAME = Object.entries(STATE_NAME_TO_CODE).reduce((acc, [name, code]) => {
+    acc[code] = name;
+    return acc;
+}, {} as Record<string, string>);
+
+const getExpandedSearchTerms = (input: string): string[] => {
+    const terms = [input];
+    const lower = input.toLowerCase().trim();
+    if (STATE_NAME_TO_CODE[lower]) terms.push(STATE_NAME_TO_CODE[lower]);
+    if (CODE_TO_STATE_NAME[input.toUpperCase()]) terms.push(CODE_TO_STATE_NAME[input.toUpperCase()]);
+    return terms;
+};
+
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -15,11 +43,12 @@ export async function POST(
 
         const { id: campaignId } = await params;
         const body = await request.json().catch(() => ({}));
-        const { selections } = body; // Array of { contact_id: string, selected_email?: string }
 
-        if (!Array.isArray(selections)) {
-            return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
-        }
+        // Handle two payloads:
+        // 1. Classic: { selections: [{contact_id, selected_email}] }
+        // 2. Global: { selectAllMatching: true, filters: {...}, exclusions: [], explicitSelections: {} }
+
+        const { selections, selectAllMatching, filters, exclusions, explicitSelections } = body;
 
         const supabase = createAdminClient();
 
@@ -34,17 +63,8 @@ export async function POST(
             return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
         }
 
-        // 2. Sync recipients
-        // Strategy: Delete all existing 'selected' recipients and insert new ones.
-        // Preserves 'sent'/'queued' recipients?
-        // The plan says `campaign_recipients` tracks history.
-        // If I just delete, I lose history for 'sent' ones?
-        // User flow: "Select Recipients" -> Save.
-        // Usually this happens in "Draft" state.
-        // If campaign is already running, we shouldn't be here?
-        // Assume Draft/Staged.
-
-        // Check if we have any that are NOT 'selected' (e.g. queued, sent)
+        // 2. Clear existing 'selected' recipients
+        // Safe to clear all if nothing sent yet, but verify logic as before
         const { count: activeCount } = await supabase
             .from('campaign_recipients')
             .select('*', { count: 'exact', head: true })
@@ -52,62 +72,131 @@ export async function POST(
             .neq('status', 'selected');
 
         if (activeCount && activeCount > 0) {
-            // If campaign has started, we might want to ONLY add new ones, never delete?
-            // For now, let's assume we can only edit if status is Draft/Staged and no emails sent.
-            // But for MVP, simple SYNC for 'selected' status is safest if we allow editing mid-flight?
-            // Let's go with: Delete all 'selected' status rows, then upsert new ones.
-            // This preserves 'sent' rows.
             await supabase
                 .from('campaign_recipients')
                 .delete()
                 .eq('campaign_id', campaignId)
                 .eq('status', 'selected');
         } else {
-            // Safe to clear all if nothing sent yet
             await supabase
                 .from('campaign_recipients')
                 .delete()
                 .eq('campaign_id', campaignId);
         }
 
-        if (selections.length > 0) {
-            const rows = selections.map((s: any) => ({
+        let recipientsToInsert: any[] = [];
+
+        if (selectAllMatching && filters) {
+            // GLOBAL SELECTION LOGIC
+            const exclusionSet = new Set(exclusions || []);
+            const explicitMap = explicitSelections || {};
+
+            let page = 0;
+            const pageSize = 1000;
+            let hasMore = true;
+
+            while (hasMore) {
+                // Determine 'from' and 'to' based on Supabase range
+                // Note: Range is inclusive
+                // However, since we are fetching-then-building, we can just stream?
+                // Actually searchContacts query construction logic is needed here.
+
+                let query = supabase
+                    .from('contacts')
+                    .select('id, email, campaign_recipients!left(campaign_id)');
+
+                // Apply Filters (Replicated Logic)
+                // 1. Text Search
+                if (filters.search) {
+                    const searchTerms = getExpandedSearchTerms(filters.search);
+                    const conditions = [];
+                    conditions.push(`search_vector.fts.${filters.search}`);
+                    conditions.push(`name.ilike.%${filters.search}%`);
+                    conditions.push(`company.ilike.%${filters.search}%`);
+                    conditions.push(`email.ilike.%${filters.search}%`);
+                    searchTerms.forEach(term => {
+                        conditions.push(`location.ilike.%${term}%`);
+                    });
+                    query = query.or(conditions.join(','));
+                }
+
+                // 2. Precise Column Filters
+                if (filters.role) query = query.ilike('role', `%${filters.role}%`);
+                if (filters.location) {
+                    const locTerms = getExpandedSearchTerms(filters.location);
+                    const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
+                    query = query.or(locConditions.join(','));
+                }
+                if (filters.source) query = query.eq('source', filters.source);
+
+                // 3. History Filter
+                if (filters.campaignHistory) {
+                    if (filters.campaignHistory === 'none') {
+                        query = query.is('campaign_recipients.id', null);
+                    } else if (filters.campaignHistory === 'any') {
+                        query = query.not('campaign_recipients.id', 'is', null);
+                    } else {
+                        query = query.eq('campaign_recipients.campaign_id', filters.campaignHistory);
+                    }
+                }
+
+                // Pagination
+                const { data, error } = await query
+                    .range(page * pageSize, (page + 1) * pageSize - 1)
+                    .order('created_at', { ascending: false }); // Same order as UI
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    hasMore = false;
+                    break;
+                }
+
+                if (data.length < pageSize) hasMore = false;
+
+                // Process batch
+                for (const contact of data) {
+                    if (exclusionSet.has(contact.id)) continue;
+
+                    recipientsToInsert.push({
+                        campaign_id: campaignId,
+                        contact_id: contact.id,
+                        selected_email: explicitMap[contact.id] || null, // Use explicit email or default (null means use primary at send time)
+                        status: 'selected'
+                    });
+                }
+
+                // Bulk Insert Batch if too large (e.g. > 5000) to avoid memory issues, 
+                // but 1000 at a time is fine to accumulate or insert.
+                // Supabase batch insert limit is often generous, but let's insert every 5000?
+                if (recipientsToInsert.length >= 5000) {
+                    const { error: insertError } = await supabase
+                        .from('campaign_recipients')
+                        .upsert(recipientsToInsert, { onConflict: 'campaign_id, contact_id', ignoreDuplicates: true });
+
+                    if (insertError) throw insertError;
+                    recipientsToInsert = [];
+                }
+
+                page++;
+            }
+        } else if (selections && Array.isArray(selections)) {
+            // CLASSIC SELECTION LOGIC
+            recipientsToInsert = selections.map((s: any) => ({
                 campaign_id: campaignId,
                 contact_id: s.contact_id,
-                selected_email: s.selected_email || null, // If explicit choice
+                selected_email: s.selected_email || null,
                 status: 'selected'
             }));
+        } else {
+            // Valid case: Clearing all recipients
+        }
 
-            const { error } = await supabase
-                .from('campaign_recipients')
-                .upsert(rows, { onConflict: 'campaign_id, contact_id' }); // Conflict should update if exists (e.g. if we didn't delete sent ones, but user re-selected them? No, if sent, status!=selected)
-
-            // Wait, if I have a 'sent' row, and I upsert 'selected', I overwrite status!
-            // I should NOT overwrite if exists and status != selected.
-            // But UPSERT with specific columns?
-            // Actually, simplest is:
-            // Filter out selections that already exist as non-selected?
-            // Or just Insert and Ignore Conflicts?
-
-            // Let's try: Insert, ON CONFLICT DO NOTHING.
-            // This ensures we don't reset 'sent' to 'selected'.
-            // But we DO want to update 'selected_email' if it changed?
-            // Complexity.
-            // Let's stick to: Delete 'selected' rows. Insert new rows. 
-            // If a row exists (is 'sent'), the Insert will fail on unique constraint.
-            // So use Upsert but DO NOT update status if it's not 'selected'?
-            // Supabase upsert doesn't support conditional update easily.
-
-            // Revised Strategy:
-            // 1. Delete `status = 'selected'`.
-            // 2. Insert new selections with `onConflict: do nothing`.
-            // This implies if I re-select a 'sent' user, nothing happens (which is correct, they are already in campaign).
-            // If I select a new user, they are added.
-            // If I unselect a 'selected' user, they were deleted in step 1.
-
+        // Final Insert (remaining items)
+        if (recipientsToInsert.length > 0) {
             const { error: insertError } = await supabase
                 .from('campaign_recipients')
-                .upsert(rows, { onConflict: 'campaign_id, contact_id', ignoreDuplicates: true });
+                .upsert(recipientsToInsert, { onConflict: 'campaign_id, contact_id', ignoreDuplicates: true });
 
             if (insertError) {
                 console.error('Insert error:', insertError);
