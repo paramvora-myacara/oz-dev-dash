@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2 } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
+import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
@@ -64,6 +65,9 @@ export default function CampaignEditPage() {
   // Regeneration state
   const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
 
+  // Contact selection state
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+
   // CSV state (lifted from EmailEditor)
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvFileName, setCsvFileName] = useState<string | null>(null)
@@ -71,10 +75,13 @@ export default function CampaignEditPage() {
 
   // Load campaign and determine initial step based on status
   useEffect(() => {
-    if (campaignId && campaignId !== 'new') {
-      loadCampaign()
-    } else {
-      setLoading(false)
+    if (campaignId) {
+      if (campaignId !== 'new') {
+        loadCampaign()
+      } else {
+        // This shouldn't happen since we redirect after creation
+        setLoading(false)
+      }
     }
   }, [campaignId])
 
@@ -149,11 +156,19 @@ export default function CampaignEditPage() {
         loadStagedEmails()
       } else if (['scheduled', 'sending', 'completed'].includes(campaign.status as string)) {
         setCurrentStep('complete')
+      } else if (campaign.status === 'draft') {
+        // Check if campaign has been through design phase (has sections)
+        if (campaign.sections && campaign.sections.length > 0) {
+          setCurrentStep('design')
+        } else {
+          // New campaign - start with recipient selection
+          setCurrentStep('select-recipients')
+        }
       } else {
         setCurrentStep('design')
       }
     }
-  }, [campaign?.status])
+  }, [campaign?.status, campaign?.sections])
 
   useEffect(() => {
     if (currentStep === 'complete') {
@@ -196,6 +211,17 @@ export default function CampaignEditPage() {
       return false
     }
   }, [campaign, campaignId])
+
+  // Continue from recipient selection to design step
+  const handleContinueFromRecipients = useCallback((contactIds: string[]) => {
+    setSelectedContactIds(contactIds)
+    setCurrentStep('design')
+  }, [])
+
+  // Back from design to recipient selection
+  const handleBackToRecipients = useCallback(() => {
+    setCurrentStep('select-recipients')
+  }, [])
 
   // Continue from design to format-sample step
   const handleContinueToFormatSample = useCallback(async (data: {
@@ -459,10 +485,11 @@ export default function CampaignEditPage() {
       </div>
 
       {/* Stepper */}
-      <CampaignStepper 
-        currentStep={currentStep} 
-        recipientCount={stagedCount} 
+      <CampaignStepper
+        currentStep={currentStep}
+        recipientCount={stagedCount}
         onBack={currentStep === 'review' ? handleBackToDesign : undefined}
+        onBackToRecipients={currentStep === 'design' ? handleBackToRecipients : undefined}
         onLaunch={currentStep === 'review' ? () => setShowLaunchModal(true) : undefined}
       />
 
@@ -488,6 +515,14 @@ export default function CampaignEditPage() {
 
       {/* Main Content based on step */}
       <div className="flex-1 overflow-hidden">
+        {currentStep === 'select-recipients' && (
+          <ContactSelectionStep
+            campaignId={campaignId}
+            onContinue={handleContinueFromRecipients}
+            onBack={() => router.push('/admin/campaigns')}
+          />
+        )}
+
         {currentStep === 'design' && (
           <EmailEditor
             initialTemplate={campaign.templateSlug ? { slug: campaign.templateSlug } as any : undefined}
