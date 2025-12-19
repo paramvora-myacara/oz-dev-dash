@@ -448,13 +448,22 @@ export interface SupplyDemandSectionData {
 }
 
 export interface CompetitiveAnalysisSectionData {
-  competitors: Array<{
+  competitors?: Array<{
     name: string;
     built: string;
     beds: string;
     rent: string;
     occupancy: string;
     rentGrowth: string;
+  }>;
+  categories?: Array<{
+    title: string;
+    projects: Array<{
+      id?: string;
+      name: string;
+      units: string;
+    }>;
+    total?: string;
   }>;
   summary?: string;
 }
