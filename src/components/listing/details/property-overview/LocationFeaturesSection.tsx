@@ -3,7 +3,7 @@ import { iconMap } from '../shared/iconMap';
 import { Editable } from '@/components/Editable';
 
 const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, sectionIndex }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
     {data.featureSections.map((highlight: any, idx: number) => {
       const Icon = iconMap[highlight.icon];
       return (
