@@ -35,12 +35,12 @@ function PortfolioPageContent() {
               ACARA Opportunity Zone Portfolio
             </h1>
             <p className="text-lg md:text-xl text-black/70 dark:text-white/70 font-light max-w-3xl mx-auto mb-8">
-              Premium multifamily developments in Arizona's most promising opportunity zones
+              Premium multifamily developments in opportunity zones across Arizona and Massachusetts
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm">
                 <MapPin className="w-4 h-4" />
-                Phoenix-Mesa MSA
+                Phoenix-Mesa MSA & Brockton, MA
               </span>
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm">
                 <DollarSign className="w-4 h-4" />
@@ -66,7 +66,7 @@ function PortfolioPageContent() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
               {/* The Edge on Main */}
               <Link
                 href="/the-edge-on-main"
@@ -114,6 +114,22 @@ function PortfolioPageContent() {
                   <span className="text-purple-600 dark:text-purple-400 font-medium group-hover:underline">Explore Property →</span>
                 </div>
                 </Link>
+
+              {/* The Alden */}
+              <Link
+                href="/the-alden-brockton"
+                className="group bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:scale-[1.02]"
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-6 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                    <Building className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">The Alden</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">Brockton, MA • 100 Units</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Transit-oriented development in downtown Brockton with Boston rail access</p>
+                  <span className="text-orange-600 dark:text-orange-400 font-medium group-hover:underline">Explore Property →</span>
+                </div>
+              </Link>
             </div>
           </div>
         </section>

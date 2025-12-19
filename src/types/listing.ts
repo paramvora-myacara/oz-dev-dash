@@ -318,11 +318,47 @@ export interface InvestmentStructureSectionData {
   structure: InvestmentStructureItem[];
 }
 
+export interface CapitalUseItem {
+  use: string;
+  amount: string;
+  percentage: string;
+  description: string;
+}
+
+export interface CapitalSourceItem {
+  amount: string;
+  source: string;
+  perUnit: string;
+  percentage: string;
+  description: string;
+}
+
+export interface CapitalStackSectionData {
+  uses: CapitalUseItem[];
+  sources: CapitalSourceItem[];
+  totalProject: string;
+}
+
+export interface WaterfallItem {
+  priority: string;
+  allocation: string;
+  description: string;
+  recipient?: string; // Optional, only used in cashFlowDistribution
+}
+
+export interface DistributionWaterfallSectionData {
+  saleWaterfall: WaterfallItem[];
+  cashFlowDistribution: WaterfallItem[];
+  refinancingWaterfall?: WaterfallItem[];
+}
+
 export type FinancialReturnsSection =
   | { type: 'projections'; data: ProjectionsSectionData }
+  | { type: 'capitalStack'; data: CapitalStackSectionData }
   | { type: 'distributionTimeline'; data: DistributionTimelineSectionData }
   | { type: 'taxBenefits'; data: TaxBenefitsSectionData }
-  | { type: 'investmentStructure'; data: InvestmentStructureSectionData };
+  | { type: 'investmentStructure'; data: InvestmentStructureSectionData }
+  | { type: 'distributionWaterfall'; data: DistributionWaterfallSectionData };
 
 
 // --- Property Overview Detail Page Sections ---
@@ -412,13 +448,22 @@ export interface SupplyDemandSectionData {
 }
 
 export interface CompetitiveAnalysisSectionData {
-  competitors: Array<{
+  competitors?: Array<{
     name: string;
     built: string;
     beds: string;
     rent: string;
     occupancy: string;
     rentGrowth: string;
+  }>;
+  categories?: Array<{
+    title: string;
+    projects: Array<{
+      id?: string;
+      name: string;
+      units: string;
+    }>;
+    total?: string;
   }>;
   summary?: string;
 }

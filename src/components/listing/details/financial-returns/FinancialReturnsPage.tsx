@@ -1,20 +1,26 @@
 import React from 'react';
 import { FinancialReturns } from '@/types/listing';
 import ProjectionsSection from './ProjectionsSection';
+import CapitalStackSection from './CapitalStackSection';
 import DistributionTimelineSection from './DistributionTimelineSection';
 import TaxBenefitsSection from './TaxBenefitsSection';
 import InvestmentStructureSection from './InvestmentStructureSection';
+import WaterfallSection from './WaterfallSection';
 
 const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex: number }) => {
   switch (section.type) {
     case 'projections':
       return <ProjectionsSection data={section.data} sectionIndex={sectionIndex} />;
+    case 'capitalStack':
+      return <CapitalStackSection data={section.data} sectionIndex={sectionIndex} />;
     case 'distributionTimeline':
       return <DistributionTimelineSection data={section.data} sectionIndex={sectionIndex} />;
     case 'taxBenefits':
       return <TaxBenefitsSection data={section.data} sectionIndex={sectionIndex} />;
     case 'investmentStructure':
       return <InvestmentStructureSection data={section.data} sectionIndex={sectionIndex} />;
+    case 'distributionWaterfall':
+      return <WaterfallSection data={section.data} sectionIndex={sectionIndex} />;
     default:
       return null;
   }
