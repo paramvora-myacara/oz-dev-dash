@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCampaign } from '@/lib/api/campaigns'
+import type { CampaignSender } from '@/types/email-editor'
 
 const MAX_CAMPAIGN_NAME_LENGTH = 25
 
 export default function NewCampaignPage() {
   const router = useRouter()
   const [name, setName] = useState('')
+  const [sender, setSender] = useState<CampaignSender | null>(null)
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -21,10 +23,14 @@ export default function NewCampaignPage() {
       alert(`Campaign name must be ${MAX_CAMPAIGN_NAME_LENGTH} characters or less`)
       return
     }
+    if (!sender) {
+      alert('Please select a sender')
+      return
+    }
 
     try {
       setCreating(true)
-      const campaign = await createCampaign({ name })
+      const campaign = await createCampaign({ name, sender })
       router.push(`/admin/campaigns/${campaign.id}`)
     } catch (err: any) {
       alert('Failed to create campaign: ' + err.message)
@@ -35,7 +41,7 @@ export default function NewCampaignPage() {
   return (
     <div className="p-8 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-6">Create New Campaign</h1>
-      <form onSubmit={handleCreate} className="space-y-4">
+      <form onSubmit={handleCreate} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Campaign Name
@@ -63,6 +69,37 @@ export default function NewCampaignPage() {
             </p>
           )}
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Sender
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setSender('todd_vitzthum')}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${
+                sender === 'todd_vitzthum'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Todd Vitzthum
+            </button>
+            <button
+              type="button"
+              onClick={() => setSender('jeff_richmond')}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${
+                sender === 'jeff_richmond'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Jeff Richmond
+            </button>
+          </div>
+        </div>
+
         <div className="flex gap-2">
           <button
             type="button"

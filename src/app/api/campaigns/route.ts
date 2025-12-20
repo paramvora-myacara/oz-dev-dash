@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
       emailFormat: row.email_format,
       status: row.status,
       totalRecipients: row.total_recipients,
+      sender: row.sender,
       sentCount: emailStats[row.id]?.sent || 0,
       failedCount: emailStats[row.id]?.failed || 0,
       createdAt: row.created_at,
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, templateSlug, sections, subjectLine, emailFormat } = body;
+    const { name, templateSlug, sections, subjectLine, emailFormat, sender } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -133,6 +134,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!sender || !['todd_vitzthum', 'jeff_richmond'].includes(sender)) {
+      return NextResponse.json({ error: 'Valid sender is required' }, { status: 400 });
+    }
+
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from('campaigns')
@@ -143,6 +148,7 @@ export async function POST(request: NextRequest) {
         subject_line: subjectLine || { mode: 'static', content: '' },
         email_format: emailFormat || 'text',
         status: 'draft',
+        sender,
       })
       .select()
       .single();
@@ -160,6 +166,7 @@ export async function POST(request: NextRequest) {
       emailFormat: data.email_format,
       status: data.status,
       totalRecipients: data.total_recipients,
+      sender: data.sender,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     }, { status: 201 });
