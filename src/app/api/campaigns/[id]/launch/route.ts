@@ -4,16 +4,26 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { toZonedTime } from 'date-fns-tz';
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling';
 
-// Domain configuration (same as upload route)
-const DOMAIN_CONFIG = [
-  { domain: 'connect-ozlistings.com', sender_name: 'jeff' },
-  { domain: 'engage-ozlistings.com', sender_name: 'jeffrey' },
-  { domain: 'get-ozlistings.com', sender_name: 'jeff.richmond' },
-  { domain: 'join-ozlistings.com', sender_name: 'jeff.r' },
-  { domain: 'outreach-ozlistings.com', sender_name: 'jeffrey.r' },
-  { domain: 'ozlistings-reach.com', sender_name: 'jeff' },
-  { domain: 'reach-ozlistings.com', sender_name: 'jeffrey' },
+// Base domains (without sender-specific configuration)
+const BASE_DOMAINS = [
+  'connect-ozlistings.com',
+  'engage-ozlistings.com',
+  'get-ozlistings.com',
+  'join-ozlistings.com',
+  'outreach-ozlistings.com',
+  'ozlistings-reach.com',
+  'reach-ozlistings.com',
 ];
+
+// Generate domain config based on campaign sender
+function generateDomainConfig(sender: 'todd_vitzthum' | 'jeff_richmond') {
+  const senderName = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
+
+  return BASE_DOMAINS.map(domain => ({
+    domain,
+    sender_name: senderName,
+  }));
+}
 
 const TIMEZONE = process.env.TIMEZONE || 'America/Los_Angeles';
 const WORKING_HOUR_START = 9;
@@ -66,6 +76,9 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Generate domain config based on campaign sender
+    const DOMAIN_CONFIG = generateDomainConfig(campaign.sender);
 
     // 2. Get staged emails to approve (paged to avoid 1k caps)
     const countQuery = supabase

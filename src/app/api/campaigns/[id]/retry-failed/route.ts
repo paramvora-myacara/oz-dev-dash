@@ -3,16 +3,26 @@ import { verifyAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling'
 
-// Keep in sync with launch route
-const DOMAIN_CONFIG = [
-  { domain: 'connect-ozlistings.com', sender_name: 'jeff' },
-  { domain: 'engage-ozlistings.com', sender_name: 'jeffrey' },
-  { domain: 'get-ozlistings.com', sender_name: 'jeff.richmond' },
-  { domain: 'join-ozlistings.com', sender_name: 'jeff.r' },
-  { domain: 'outreach-ozlistings.com', sender_name: 'jeffrey.r' },
-  { domain: 'ozlistings-reach.com', sender_name: 'jeff' },
-  { domain: 'reach-ozlistings.com', sender_name: 'jeffrey' },
-]
+// Base domains (without sender-specific configuration)
+const BASE_DOMAINS = [
+  'connect-ozlistings.com',
+  'engage-ozlistings.com',
+  'get-ozlistings.com',
+  'join-ozlistings.com',
+  'outreach-ozlistings.com',
+  'ozlistings-reach.com',
+  'reach-ozlistings.com',
+];
+
+// Generate domain config based on campaign sender
+function generateDomainConfig(sender: 'todd_vitzthum' | 'jeff_richmond') {
+  const senderName = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
+
+  return BASE_DOMAINS.map(domain => ({
+    domain,
+    sender_name: senderName,
+  }));
+}
 
 const TIMEZONE = process.env.TIMEZONE || 'America/Los_Angeles'
 const WORKING_HOUR_START = 9
@@ -40,7 +50,21 @@ export async function POST(
     const { id: campaignId } = await params
     const supabase = createAdminClient()
 
-    // 1) Fetch failed emails for this campaign
+    // 1) Verify campaign exists and get sender
+    const { data: campaign } = await supabase
+      .from('campaigns')
+      .select('sender')
+      .eq('id', campaignId)
+      .single()
+
+    if (!campaign) {
+      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+    }
+
+    // Generate domain config based on campaign sender
+    const DOMAIN_CONFIG = generateDomainConfig(campaign.sender)
+
+    // 2) Fetch failed emails for this campaign
     const { data: failedEmails, error: failedError } = await supabase
       .from('email_queue')
       .select('*')

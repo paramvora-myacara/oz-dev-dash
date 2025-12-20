@@ -425,13 +425,17 @@ export async function POST(
     const textBody = !isHtml ? emailBody : undefined;
     const htmlBody = isHtml ? emailBody : undefined;
     
+    // Generate sender email based on campaign sender
+    const senderName = campaign.sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
+    const fromEmail = `${senderName}@connect-ozlistings.com`;
+
     // Build payload matching backend email_sender.py exactly
     // Note: Test sends do NOT include campaign_id to avoid polluting campaign metrics
     const sparkpostPayload: Record<string, any> = {
       // campaign_id is intentionally omitted for test sends
       recipients: [{ address: { email: testEmail } }],
       content: {
-        from: 'jeff@connect-ozlistings.com',
+        from: fromEmail,
         subject,
       },
       options: {

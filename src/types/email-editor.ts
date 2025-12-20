@@ -26,6 +26,7 @@ export interface EmailTemplate {
 export type CampaignStatus = 'draft' | 'staged' | 'scheduled' | 'sending' | 'completed' | 'paused' | 'cancelled';
 export type EmailFormat = 'html' | 'text';
 export type QueuedEmailStatus = 'staged' | 'queued' | 'processing' | 'sent' | 'failed' | 'rejected';
+export type CampaignSender = 'todd_vitzthum' | 'jeff_richmond';
 
 export interface Campaign {
   id: string;
@@ -40,6 +41,7 @@ export interface Campaign {
   emailFormat: EmailFormat;
   status: CampaignStatus;
   totalRecipients: number;
+  sender: CampaignSender;
   sentCount?: number; // Number of successfully sent emails
   failedCount?: number; // Number of failed emails
   createdAt: string;
