@@ -5,8 +5,6 @@ import { Listing } from '@/types/listing';
 // =================================================================================================
 export const theAldenBrocktonMAData: Listing = {
   "listingName": "The Alden",
-  "listingSlug": "alden-brockton-ma",
-  "projectId": "alden-brockton-ma-001",
   "sections": [
     {
       "data": {
