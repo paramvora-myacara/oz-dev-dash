@@ -280,7 +280,7 @@ export default function PreviewPanel({
               </button>
 
               {showSampleDropdown && (
-                <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-lg z-10 max-h-64 overflow-y-auto py-1">
+                <div className="absolute left-0 mt-2 w-56 sm:w-64 max-w-xs bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto py-1">
                   {sampleData.rows.slice(0, 10).map((row, index) => (
                     <button
                       key={index}
