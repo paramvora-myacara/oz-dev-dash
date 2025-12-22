@@ -5,7 +5,6 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import {
   GripVertical,
@@ -16,9 +15,6 @@ import {
   Sparkles,
   Target,
   FileText,
-  Bold,
-  Italic,
-  Link as LinkIcon,
   MousePointerClick,
   Pencil,
   X,
@@ -83,12 +79,8 @@ export default function Section({
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline',
-        },
+        bold: false,
+        italic: false,
       }),
       Placeholder.configure({
         placeholder: 'Write your content here...',
@@ -185,18 +177,6 @@ Write the personalized section now.`
     onChange({ ...section, selectedFields: newFields })
   }
 
-  const setLink = () => {
-    if (!editor) return
-    const previousUrl = editor.getAttributes('link').href
-    const url = window.prompt('Enter URL:', previousUrl)
-
-    if (url === null) return
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
-    }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-  }
 
   const insertFieldAtCursor = (fieldName: string) => {
     if (!editor) return
@@ -282,7 +262,9 @@ Write the personalized section now.`
             />
           ) : (
             <div>
-              <div className="text-sm sm:text-base font-medium text-gray-900 truncate">{section.name}</div>
+              <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                {section.type === 'button' ? 'Link/CTA button' : section.name}
+              </div>
               {!isExpanded && (
                 <div className="text-xs sm:text-sm text-gray-400 truncate mt-0.5">{getPreviewText()}</div>
               )}
@@ -488,30 +470,6 @@ Write the personalized section now.`
                   </div>
                 </div>
 
-                {/* Formatting Tools (right) */}
-                <div className="flex items-center gap-0.5 sm:gap-1">
-                  <button
-                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                    className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 transition-colors ${editor?.isActive('bold') ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
-                    title="Bold (Ctrl+B)"
-                  >
-                    <Bold className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </button>
-                  <button
-                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                    className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 transition-colors ${editor?.isActive('italic') ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
-                    title="Italic (Ctrl+I)"
-                  >
-                    <Italic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </button>
-                  <button
-                    onClick={setLink}
-                    className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 transition-colors ${editor?.isActive('link') ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
-                    title="Add Link"
-                  >
-                    <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </button>
-                </div>
               </div>
 
               <EditorContent editor={editor} />
@@ -687,7 +645,7 @@ Write the personalized section now.`
           <div className="bg-white rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Delete Section?</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              Are you sure you want to delete "{section.name}"?
+              Are you sure you want to delete "{section.type === 'button' ? 'Link/CTA button' : section.name}"?
             </p>
             <div className="flex justify-end gap-2 sm:gap-3">
               <button
