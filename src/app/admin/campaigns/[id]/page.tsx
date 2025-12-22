@@ -637,6 +637,8 @@ export default function CampaignEditPage() {
 
         {currentStep === 'design' && (
           <EmailEditor
+            campaignId={campaignId}
+            campaign={campaign}
             initialTemplate={campaign.templateSlug ? { slug: campaign.templateSlug } as any : undefined}
             initialSections={campaign.sections}
             initialSubjectLine={campaign.subjectLine}
