@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { fromZonedTime, toZonedTime } from 'date-fns-tz'
+import { BASE_DOMAINS } from '../domains'
 
 export async function GET() {
   try {
@@ -75,7 +76,9 @@ export async function GET() {
     const WORKING_HOUR_END = 17 // 5pm
     const WORKING_HOURS = 8 // 9am-5pm
     const INTERVAL_MINUTES_BETWEEN_SAME_DOMAIN = 3.5
-    const DOMAIN_COUNT = 7
+    // Total number of active sending domains used for rotation.
+    // Keep this in sync automatically with the configured domains.
+    const DOMAIN_COUNT = BASE_DOMAINS.length
 
     // Get next scheduled emails (upcoming queued)
     const { data: nextScheduledRaw, error: scheduledError } = await supabase
@@ -146,8 +149,8 @@ export async function GET() {
     // Calculate capacity using same logic as upload route
     // Interval: 3.5 minutes between same-domain emails
     // Emails per domain per hour: 60 / 3.5 = ~17.14 emails/hour
-    // Total per hour: 17.14 * 7 domains = ~120 emails/hour
-    // Daily capacity: 120 * 8 hours = ~960 emails/day
+    // Total per hour: 17.14 * DOMAIN_COUNT domains
+    // Daily capacity: (17.14 * DOMAIN_COUNT) * 8 hours
     const MAX_DAILY_CAPACITY = Math.floor(WORKING_HOURS * emailsPerDomainPerHour * DOMAIN_COUNT)
 
     // Build schedule for the next 7 days

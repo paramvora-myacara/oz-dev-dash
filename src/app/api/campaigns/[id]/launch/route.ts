@@ -3,53 +3,7 @@ import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { toZonedTime } from 'date-fns-tz';
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling';
-
-// Base domains (without sender-specific configuration)
-const BASE_DOMAINS = [
-  // Original 7 domains (temporarily disabled for testing new domains)
-  'connect-ozlistings.com',
-  'engage-ozlistings.com',
-  'get-ozlistings.com',
-  'join-ozlistings.com',
-  'outreach-ozlistings.com',
-  'ozlistings-reach.com',
-  'reach-ozlistings.com',
-
-  // New warmed domains under test
-  'access-ozlistings.com',
-  'contact-ozlistings.com',
-  'direct-ozlistings.com',
-  'grow-ozlistings.com',
-  'growth-ozlistings.com',
-  'link-ozlistings.com',
-  'network-ozlistings.com',
-  'ozlistings-access.com',
-  'ozlistings-connect.com',
-  'ozlistings-contact.com',
-  'ozlistings-direct.com',
-  'ozlistings-engage.com',
-  'ozlistings-get.com',
-  'ozlistings-grow.com',
-  'ozlistings-join.com',
-  'ozlistings-link.com', 
-  'ozlistings-network.com', 
-  'ozlistings-outreach.com',
-  'ozlistings-team.com',
-  'ozlistngs-growth.com', //Works as is, no i 
-  'team-ozlistings.com', 
-];
-
-// Generate domain config based on campaign sender
-function generateDomainConfig(sender: 'todd_vitzthum' | 'jeff_richmond') {
-  const senderLocal = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond'
-  const displayName = sender === 'todd_vitzthum' ? 'Todd Vitzthum' : 'Jeff Richmond'
-
-  return BASE_DOMAINS.map((domain) => ({
-    domain,
-    sender_local: senderLocal,
-    display_name: displayName,
-  }))
-}
+import { generateDomainConfig } from '../../domains';
 
 const TIMEZONE = process.env.TIMEZONE || 'America/Los_Angeles';
 const WORKING_HOUR_START = 9;
