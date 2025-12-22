@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { generateEmailHtml } from '@/lib/email/generateEmailHtml';
+import { generateDomainConfig } from '../../domains';
 import Groq from 'groq-sdk';
 import type { Section } from '@/types/email-editor';
 
@@ -425,9 +426,10 @@ export async function POST(
     const textBody = !isHtml ? emailBody : undefined;
     const htmlBody = isHtml ? emailBody : undefined;
     
-    // Generate sender email based on campaign sender
-    const senderName = campaign.sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
-    const fromEmail = `${senderName}@connect-ozlistings.com`;
+    // Generate domain config based on campaign sender (same as launch API)
+    const DOMAIN_CONFIG = generateDomainConfig(campaign.sender);
+    const domainConfig = DOMAIN_CONFIG[0]; // Use first domain for test sends
+    const fromEmail = `${domainConfig.display_name} <${domainConfig.sender_local}@${domainConfig.domain}>`;
 
     // Build payload matching backend email_sender.py exactly
     // Note: Test sends do NOT include campaign_id to avoid polluting campaign metrics
@@ -437,6 +439,7 @@ export async function POST(
       content: {
         from: fromEmail,
         subject,
+        reply_to: 'todd@ozlistings.com',
       },
       options: {
         click_tracking: false, // Matching backend
