@@ -3,27 +3,7 @@ import { verifyAdmin } from '@/lib/admin/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { toZonedTime } from 'date-fns-tz';
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling';
-
-// Base domains (without sender-specific configuration)
-const BASE_DOMAINS = [
-  'connect-ozlistings.com',
-  'engage-ozlistings.com',
-  'get-ozlistings.com',
-  'join-ozlistings.com',
-  'outreach-ozlistings.com',
-  'ozlistings-reach.com',
-  'reach-ozlistings.com',
-];
-
-// Generate domain config based on campaign sender
-function generateDomainConfig(sender: 'todd_vitzthum' | 'jeff_richmond') {
-  const senderName = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
-
-  return BASE_DOMAINS.map(domain => ({
-    domain,
-    sender_name: senderName,
-  }));
-}
+import { generateDomainConfig } from '../../domains';
 
 const TIMEZONE = process.env.TIMEZONE || 'America/Los_Angeles';
 const WORKING_HOUR_START = 9;
@@ -205,7 +185,7 @@ export async function POST(
           id: email.id,
           status: 'queued',
           domain_index: domainIndex,
-          from_email: `${domainConfig.sender_name}@${domainConfig.domain}`,
+          from_email: `${domainConfig.display_name} <${domainConfig.sender_local}@${domainConfig.domain}>`,
           scheduled_for: scheduledFor.toISOString(),
         };
       });

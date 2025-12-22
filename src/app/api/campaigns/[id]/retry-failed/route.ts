@@ -2,27 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/lib/scheduling'
-
-// Base domains (without sender-specific configuration)
-const BASE_DOMAINS = [
-  'connect-ozlistings.com',
-  'engage-ozlistings.com',
-  'get-ozlistings.com',
-  'join-ozlistings.com',
-  'outreach-ozlistings.com',
-  'ozlistings-reach.com',
-  'reach-ozlistings.com',
-];
-
-// Generate domain config based on campaign sender
-function generateDomainConfig(sender: 'todd_vitzthum' | 'jeff_richmond') {
-  const senderName = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
-
-  return BASE_DOMAINS.map(domain => ({
-    domain,
-    sender_name: senderName,
-  }));
-}
+import { generateDomainConfig } from '../../domains'
 
 const TIMEZONE = process.env.TIMEZONE || 'America/Los_Angeles'
 const WORKING_HOUR_START = 9
@@ -135,7 +115,7 @@ export async function POST(
       return {
         id: email.id,
         domainIndex,
-        fromEmail: `${domainConfig.sender_name}@${domainConfig.domain}`,
+        fromEmail: `${domainConfig.display_name} <${domainConfig.sender_local}@${domainConfig.domain}>`,
         scheduledFor,
       }
     })
