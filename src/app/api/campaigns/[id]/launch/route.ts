@@ -6,6 +6,7 @@ import { adjustToWorkingHours, getStartTimeInTimezone, ScheduleConfig } from '@/
 
 // Base domains (without sender-specific configuration)
 const BASE_DOMAINS = [
+  // Original 7 domains (temporarily disabled for testing new domains)
   'connect-ozlistings.com',
   'engage-ozlistings.com',
   'get-ozlistings.com',
@@ -13,16 +14,41 @@ const BASE_DOMAINS = [
   'outreach-ozlistings.com',
   'ozlistings-reach.com',
   'reach-ozlistings.com',
+
+  // New warmed domains under test
+  'access-ozlistings.com',
+  'contact-ozlistings.com',
+  'direct-ozlistings.com',
+  'grow-ozlistings.com',
+  'growth-ozlistings.com',
+  'link-ozlistings.com',
+  'network-ozlistings.com',
+  'ozlistings-access.com',
+  'ozlistings-connect.com',
+  'ozlistings-contact.com',
+  'ozlistings-direct.com',
+  'ozlistings-engage.com',
+  'ozlistings-get.com',
+  'ozlistings-grow.com',
+  'ozlistings-join.com',
+  'ozlistings-link.com', 
+  'ozlistings-network.com', 
+  'ozlistings-outreach.com',
+  'ozlistings-team.com',
+  'ozlistngs-growth.com', //Works as is, no i 
+  'team-ozlistings.com', 
 ];
 
 // Generate domain config based on campaign sender
 function generateDomainConfig(sender: 'todd_vitzthum' | 'jeff_richmond') {
-  const senderName = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond';
+  const senderLocal = sender === 'todd_vitzthum' ? 'todd.vitzthum' : 'jeff.richmond'
+  const displayName = sender === 'todd_vitzthum' ? 'Todd Vitzthum' : 'Jeff Richmond'
 
-  return BASE_DOMAINS.map(domain => ({
+  return BASE_DOMAINS.map((domain) => ({
     domain,
-    sender_name: senderName,
-  }));
+    sender_local: senderLocal,
+    display_name: displayName,
+  }))
 }
 
 const TIMEZONE = process.env.TIMEZONE || 'America/Los_Angeles';
@@ -205,7 +231,7 @@ export async function POST(
           id: email.id,
           status: 'queued',
           domain_index: domainIndex,
-          from_email: `${domainConfig.sender_name}@${domainConfig.domain}`,
+          from_email: `${domainConfig.display_name} <${domainConfig.sender_local}@${domainConfig.domain}>`,
           scheduled_for: scheduledFor.toISOString(),
         };
       });
