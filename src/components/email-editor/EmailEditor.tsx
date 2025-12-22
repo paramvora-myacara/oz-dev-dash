@@ -357,15 +357,6 @@ export default function EmailEditor({
       <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         {/* Mobile Stacked */}
         <div className="flex flex-col gap-3 lg:hidden">
-          {/* Header Info */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-500">Recipients:</span>
-              <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{recipientCount}</span>
-            </div>
-            <SaveStatusIndicator />
-          </div>
-
           {/* Template & Continue */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -429,12 +420,6 @@ export default function EmailEditor({
 
         {/* Desktop Row */}
         <div className="hidden lg:flex items-center gap-4">
-          {/* Recipient Badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-700">{recipientCount} recipients</span>
-          </div>
-
           {/* Template Selector */}
           <div className="relative">
             <button

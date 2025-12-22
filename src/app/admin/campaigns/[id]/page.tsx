@@ -593,7 +593,9 @@ export default function CampaignEditPage() {
       {/* Stepper */}
       <CampaignStepper
         currentStep={currentStep}
-        recipientCount={stagedCount}
+        recipientCount={currentStep === 'review' || currentStep === 'format-sample'
+          ? (stagedCount || (campaign?.totalRecipients || (campaign as any)?.total_recipients || 0))
+          : (campaign?.totalRecipients || (campaign as any)?.total_recipients || 0)}
         onBack={currentStep === 'review' ? handleBackToDesign : undefined}
         onBackToRecipients={currentStep === 'design' ? handleBackToRecipients : undefined}
         onLaunch={currentStep === 'review' ? () => {
