@@ -39,6 +39,7 @@ export async function GET(
       emailFormat: data.email_format,
       status: data.status,
       totalRecipients: data.total_recipients,
+      subjectPrompt: (data as any).subject_prompt ?? null,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     });
@@ -82,6 +83,7 @@ export async function PUT(
     if (body.sections !== undefined) updates.sections = body.sections;
     if (body.subjectLine !== undefined) updates.subject_line = body.subjectLine;
     if (body.emailFormat !== undefined) updates.email_format = body.emailFormat;
+    if (body.subjectPrompt !== undefined) updates.subject_prompt = body.subjectPrompt;
     if (body.status !== undefined) updates.status = body.status;
 
     // If status is being changed to 'draft', delete all staged emails
@@ -116,6 +118,7 @@ export async function PUT(
       emailFormat: data.email_format,
       status: data.status,
       totalRecipients: data.total_recipients,
+      subjectPrompt: (data as any).subject_prompt ?? null,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     });

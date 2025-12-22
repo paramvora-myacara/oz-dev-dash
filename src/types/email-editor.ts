@@ -40,6 +40,7 @@ export interface Campaign {
   };
   emailFormat: EmailFormat;
   status: CampaignStatus;
+  subjectPrompt?: string | null;
   totalRecipients: number;
   sender: CampaignSender;
   sentCount?: number; // Number of successfully sent emails

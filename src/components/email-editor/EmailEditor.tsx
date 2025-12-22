@@ -6,7 +6,7 @@ import { Plus, ChevronDown, Upload, Pencil, Eye, X, AlertTriangle, ArrowRight, F
 import SectionList from './SectionList'
 import PreviewPanel from './PreviewPanel'
 import AddSectionModal from './AddSectionModal'
-import type { Section, SectionMode, SectionType, EmailTemplate, SampleData } from '@/types/email-editor'
+import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign } from '@/types/email-editor'
 import { DEFAULT_TEMPLATES } from '@/types/email-editor'
 import { extractTemplateFields, validateTemplateFields } from '@/lib/utils/status-labels'
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
@@ -15,7 +15,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 interface EmailEditorProps {
   campaignId: string;
-  campaign?: any;
+  campaign?: Campaign;
   initialTemplate?: EmailTemplate;
   initialSections: Section[];
   initialSubjectLine: { mode: SectionMode; content: string; selectedFields?: string[] };
@@ -103,7 +103,10 @@ export default function EmailEditor({
   // Subject generation state
   const [generatingSubject, setGeneratingSubject] = useState(false)
   const [showSubjectModal, setShowSubjectModal] = useState(false)
-  const [subjectPrompt, setSubjectPrompt] = useState('')
+  const [subjectPrompt, setSubjectPrompt] = useState(
+    campaign?.subjectPrompt ||
+      'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced 50+ year-old developer who does not know what Opportunity Zones are, and we have already accounted for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
+  )
   const [modalSubject, setModalSubject] = useState('')
 
   // Mark unsaved changes
@@ -215,7 +218,7 @@ export default function EmailEditor({
     setSubjectPrompt(prev =>
       prev && prev.trim().length > 0
         ? prev
-        : 'Generate a compelling email subject line for this campaign that will get high open rates. Make it professional but attention-grabbing, under 60 characters.'
+        : 'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced developer who does not know what Opportunity Zones are, and we have to account for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
     )
     setModalSubject(subjectLine.content || '')
     setShowSubjectModal(true)
@@ -595,8 +598,8 @@ export default function EmailEditor({
       {/* Subject Generation Modal */}
       {showSubjectModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-6">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-blue-600" />
@@ -634,8 +637,8 @@ export default function EmailEditor({
                     value={subjectPrompt}
                     onChange={(e) => setSubjectPrompt(e.target.value)}
                     placeholder="Describe what kind of subject line you want..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                    rows={6}
                   />
                   <p className="text-xs text-gray-500 mt-2">
                     The AI will have access to your campaign name and email content to generate relevant subject lines.

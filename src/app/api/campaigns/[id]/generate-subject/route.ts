@@ -71,16 +71,17 @@ export async function POST(
     }
 
     // Generate subject using AI
-    const prompt = `Generate a compelling email subject line for this campaign.
+    // NOTE: All behavioral instructions (audience, tone, constraints) come from `instructions`,
+    // which is fully visible/editable in the frontend. The backend only adds factual context.
+    const prompt = `${instructions}
 
-CAMPAIGN: "${campaign.name}"
+---
+CAMPAIGN CONTEXT:
+- Name: "${campaign.name}"
 
 EMAIL CONTENT CONTEXT:
 ${emailContent}
-
-INSTRUCTIONS: ${instructions}
-
-Keep the subject line under 60 characters and make it professional but attention-grabbing.`;
+`;
 
     // Initialize Groq client
     const groq = new Groq({ apiKey: groqApiKey });
@@ -114,6 +115,19 @@ Keep the subject line under 60 characters and make it professional but attention
     // Validate response structure
     if (!responseData.subject || typeof responseData.subject !== 'string') {
       throw new Error('Invalid response structure from AI');
+    }
+
+    // Persist the prompt used for this campaign (best-effort; don't fail generation if this fails)
+    try {
+      await supabase
+        .from('campaigns')
+        .update({
+          subject_prompt: instructions,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+    } catch (e) {
+      console.error('Failed to persist subject_prompt for campaign', id, e);
     }
 
     return NextResponse.json({ subject: responseData.subject });
