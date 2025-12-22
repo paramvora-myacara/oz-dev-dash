@@ -439,7 +439,7 @@ export async function POST(
       content: {
         from: fromEmail,
         subject,
-        reply_to: 'todd@ozlistings.com',
+        reply_to: 'communications@ozlistings.com',
       },
       options: {
         click_tracking: false, // Matching backend
