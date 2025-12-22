@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import { Plus, ChevronDown, Upload, Pencil, Eye, X, AlertTriangle, ArrowRight, FileText, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, ChevronDown, Upload, Pencil, Eye, X, AlertTriangle, ArrowRight, FileText, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 import SectionList from './SectionList'
 import PreviewPanel from './PreviewPanel'
 import AddSectionModal from './AddSectionModal'
-import type { Section, SectionMode, SectionType, EmailTemplate, SampleData } from '@/types/email-editor'
+import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign } from '@/types/email-editor'
 import { DEFAULT_TEMPLATES } from '@/types/email-editor'
 import { extractTemplateFields, validateTemplateFields } from '@/lib/utils/status-labels'
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
@@ -14,6 +14,8 @@ import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 interface EmailEditorProps {
+  campaignId: string;
+  campaign?: Campaign;
   initialTemplate?: EmailTemplate;
   initialSections: Section[];
   initialSubjectLine: { mode: SectionMode; content: string; selectedFields?: string[] };
@@ -32,6 +34,8 @@ interface EmailEditorProps {
 const AUTOSAVE_DELAY = 1500
 
 export default function EmailEditor({
+  campaignId,
+  campaign,
   initialTemplate,
   initialSections,
   initialSubjectLine,
@@ -95,6 +99,15 @@ export default function EmailEditor({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const isInitialMount = useRef(true)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Subject generation state
+  const [generatingSubject, setGeneratingSubject] = useState(false)
+  const [showSubjectModal, setShowSubjectModal] = useState(false)
+  const [subjectPrompt, setSubjectPrompt] = useState(
+    campaign?.subjectPrompt ||
+      'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced 50+ year-old developer who does not know what Opportunity Zones are, and we have already accounted for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
+  )
+  const [modalSubject, setModalSubject] = useState('')
 
   // Mark unsaved changes
   useEffect(() => {
@@ -200,6 +213,47 @@ export default function EmailEditor({
     }
   }, [sections, subjectLine, emailFormat, onAutoSave])
 
+  const handleOpenSubjectModal = useCallback(() => {
+    // Seed prompt and subject with sensible defaults
+    setSubjectPrompt(prev =>
+      prev && prev.trim().length > 0
+        ? prev
+        : 'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced developer who does not know what Opportunity Zones are, and we have to account for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
+    )
+    setModalSubject(subjectLine.content || '')
+    setShowSubjectModal(true)
+  }, [subjectLine.content])
+
+  const handleGenerateSubject = useCallback(async () => {
+    if (!campaign) return
+
+    setGeneratingSubject(true)
+    try {
+      const response = await fetch(`/api/campaigns/${campaign.id || campaignId}/generate-subject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instructions: subjectPrompt })
+      })
+
+      if (!response.ok) throw new Error('Failed to generate subject')
+
+      const data = await response.json()
+      // Only update the subject shown in the modal – don't touch the actual subject field yet
+      setModalSubject(data.subject || '')
+    } catch (error) {
+      console.error('Subject generation failed:', error)
+      alert('Failed to generate subject line. Please try again.')
+    } finally {
+      setGeneratingSubject(false)
+    }
+  }, [campaign, campaignId, subjectPrompt])
+
+  const handleSaveSubject = useCallback(() => {
+    // Apply the modal subject to the actual subject line and close
+    setSubjectLine({ ...subjectLine, content: modalSubject })
+    setShowSubjectModal(false)
+  }, [modalSubject, subjectLine])
+
   const handleContinue = useCallback(() => {
     // Basic validation
     if (recipientCount === 0) return
@@ -303,15 +357,6 @@ export default function EmailEditor({
       <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         {/* Mobile Stacked */}
         <div className="flex flex-col gap-3 lg:hidden">
-          {/* Header Info */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-500">Recipients:</span>
-              <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{recipientCount}</span>
-            </div>
-            <SaveStatusIndicator />
-          </div>
-
           {/* Template & Continue */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -347,23 +392,34 @@ export default function EmailEditor({
           </div>
 
           {/* Subject */}
-          <input
-            type="text"
-            value={subjectLine.content}
-            onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
-            placeholder="Subject line..."
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg"
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500">Subject:</span>
+              <button
+                onClick={handleOpenSubjectModal}
+                disabled={generatingSubject}
+                title="Generate subject with AI"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {generatingSubject ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3" />
+                )}
+              </button>
+            </div>
+            <input
+              type="text"
+              value={subjectLine.content}
+              onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
+              placeholder="Subject line..."
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg"
+            />
+          </div>
         </div>
 
         {/* Desktop Row */}
         <div className="hidden lg:flex items-center gap-4">
-          {/* Recipient Badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-700">{recipientCount} recipients</span>
-          </div>
-
           {/* Template Selector */}
           <div className="relative">
             <button
@@ -391,13 +447,30 @@ export default function EmailEditor({
           {/* Subject Line */}
           <div className="flex-1 flex items-center gap-2">
             <span className="text-sm font-medium text-gray-500">Subject:</span>
-            <input
-              type="text"
-              value={subjectLine.content}
-              onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
-              placeholder="Enter subject line..."
-              className="flex-1 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-            />
+            <div className="flex-1 relative group">
+              <input
+                type="text"
+                value={subjectLine.content}
+                onChange={(e) => setSubjectLine({ ...subjectLine, content: e.target.value })}
+                placeholder="Enter subject line..."
+                className="w-full pr-28 pl-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+              />
+              <button
+                onClick={handleOpenSubjectModal}
+                disabled={generatingSubject}
+                title="Generate subject with AI"
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out overflow-hidden w-8 group-hover:w-28"
+              >
+                {generatingSubject ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+                )}
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  {generatingSubject ? 'Generating...' : 'AI Generate'}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Save Status & Continue */}
@@ -506,6 +579,95 @@ export default function EmailEditor({
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddSection}
       />
+
+      {/* Subject Generation Modal */}
+      {showSubjectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Generate Subject Line</h2>
+                  <p className="text-sm text-gray-600">Customize the AI prompt for your subject line</p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                {/* Current / Generated Subject Preview */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Subject Preview
+                  </label>
+                  <input
+                    type="text"
+                    value={modalSubject}
+                    readOnly
+                    placeholder="Generated subject will appear here..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-900"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Click &quot;Save&quot; to apply.
+                  </p>
+                </div>
+
+                {/* Prompt Editor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    AI Instructions
+                  </label>
+                  <textarea
+                    value={subjectPrompt}
+                    onChange={(e) => setSubjectPrompt(e.target.value)}
+                    placeholder="Describe what kind of subject line you want..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                    rows={6}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    The AI will have access to your campaign name and email content to generate relevant subject lines.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <button
+                    onClick={() => setShowSubjectModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleGenerateSubject}
+                    disabled={generatingSubject || !subjectPrompt.trim()}
+                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {generatingSubject ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Regenerating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Regenerate
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleSaveSubject}
+                    disabled={!modalSubject.trim()}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

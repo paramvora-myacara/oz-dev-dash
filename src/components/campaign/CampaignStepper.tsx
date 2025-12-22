@@ -97,10 +97,9 @@ export default function CampaignStepper({ currentStep, recipientCount, onBack, o
                     ${isPending ? 'text-gray-400' : ''}
                   `}
                 >
-                  {step.label}
-                  {step.id === 'review' && recipientCount !== undefined && recipientCount > 0 && (
-                    <span className="ml-1 text-xs">({recipientCount})</span>
-                  )}
+                  {step.id === 'select-recipients' && recipientCount !== undefined && recipientCount > 0
+                    ? `${recipientCount} Recipients Selected`
+                    : step.label}
                 </span>
               </div>
 

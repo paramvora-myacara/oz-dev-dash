@@ -5,7 +5,6 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import {
   GripVertical,
@@ -16,12 +15,10 @@ import {
   Sparkles,
   Target,
   FileText,
-  Bold,
-  Italic,
-  Link as LinkIcon,
   MousePointerClick,
   Pencil,
-  X
+  X,
+  Plus
 } from 'lucide-react'
 import type { Section as SectionType, SectionMode } from '@/types/email-editor'
 
@@ -49,8 +46,11 @@ export default function Section({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isEditorFocused, setIsEditorFocused] = useState(false)
   const [expandedFieldDetail, setExpandedFieldDetail] = useState<string | null>(null)
+  const [showFieldPicker, setShowFieldPicker] = useState(false)
+  const [showFullFieldPicker, setShowFullFieldPicker] = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const fieldPickerRef = useRef<HTMLDivElement>(null)
 
   // Sortable hook for drag-and-drop
   const {
@@ -79,12 +79,8 @@ export default function Section({
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline',
-        },
+        bold: false,
+        italic: false,
       }),
       Placeholder.configure({
         placeholder: 'Write your content here...',
@@ -112,16 +108,36 @@ export default function Section({
     }
   }, [section.content, section.mode, section.type, editor])
 
-  // Close menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowOverflowMenu(false)
       }
+      // Close field picker if clicking outside of it
+      if (showFieldPicker && fieldPickerRef.current) {
+        const isOutside = !fieldPickerRef.current.contains(event.target as Node)
+        if (isOutside) {
+          setShowFieldPicker(false)
+        }
+      }
     }
-    document.addEventListener('mousedown', handleClickOutside)
+    if (showFieldPicker || showOverflowMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [showFieldPicker, showOverflowMenu])
+
+  // Also close field picker on escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showFieldPicker) {
+        setShowFieldPicker(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showFieldPicker])
 
   // Focus name input when editing
   useEffect(() => {
@@ -161,17 +177,12 @@ Write the personalized section now.`
     onChange({ ...section, selectedFields: newFields })
   }
 
-  const setLink = () => {
-    if (!editor) return
-    const previousUrl = editor.getAttributes('link').href
-    const url = window.prompt('Enter URL:', previousUrl)
 
-    if (url === null) return
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
-    }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  const insertFieldAtCursor = (fieldName: string) => {
+    if (!editor) return
+
+    const fieldPlaceholder = `{{${fieldName}}}`
+    editor.chain().focus().insertContent(fieldPlaceholder).run()
   }
 
   // Get preview text for collapsed state
@@ -251,7 +262,9 @@ Write the personalized section now.`
             />
           ) : (
             <div>
-              <div className="text-sm sm:text-base font-medium text-gray-900 truncate">{section.name}</div>
+              <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                {section.type === 'button' ? 'Link/CTA button' : section.name}
+              </div>
               {!isExpanded && (
                 <div className="text-xs sm:text-sm text-gray-400 truncate mt-0.5">{getPreviewText()}</div>
               )}
@@ -390,34 +403,73 @@ Write the personalized section now.`
             </div>
           ) : section.mode === 'static' ? (
             /* Static Mode - Rich Text Editor */
-            <div className="rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
-              {/* Toolbar - Only visible when focused */}
-              <div className={`flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border-b transition-all ${isEditorFocused ? 'opacity-100' : 'opacity-0 h-0 py-0 border-b-0 overflow-hidden'
-                }`}>
-                <button
-                  onClick={() => editor?.chain().focus().toggleBold().run()}
-                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${editor?.isActive('bold') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
-                    }`}
-                  title="Bold"
-                >
-                  <Bold className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
-                <button
-                  onClick={() => editor?.chain().focus().toggleItalic().run()}
-                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${editor?.isActive('italic') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
-                    }`}
-                  title="Italic"
-                >
-                  <Italic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
-                <button
-                  onClick={setLink}
-                  className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:bg-gray-200 ${editor?.isActive('link') ? 'bg-gray-200 text-blue-600' : 'text-gray-600'
-                    }`}
-                  title="Add Link"
-                >
-                  <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
+            <div className="rounded-lg sm:rounded-xl border border-gray-200">
+              {/* Enhanced Toolbar - Always visible when section expanded */}
+              <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border-b">
+                {/* Field Insertion Tools (left) */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* Quick Field Buttons */}
+                  <button
+                    onClick={() => insertFieldAtCursor('Name')}
+                    className="px-2 py-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition-colors font-mono"
+                    title="Insert {{Name}}"
+                  >
+                    {'{{Name}}'}
+                  </button>
+                  <button
+                    onClick={() => insertFieldAtCursor('Company')}
+                    className="px-2 py-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition-colors font-mono"
+                    title="Insert {{Company}}"
+                  >
+                    {'{{Company}}'}
+                  </button>
+
+                  {/* Field Picker Dropdown */}
+                  <div className="relative" ref={fieldPickerRef}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFieldPicker(!showFieldPicker)
+                      }}
+                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                      title="More fields"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Fields
+                    </button>
+
+                    {showFieldPicker && (
+                      <div
+                        className="absolute left-0 top-full mt-1 w-72 max-w-xs bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 max-h-64 overflow-y-auto"
+                      >
+                        {availableFields.map((field) => {
+                          const fieldValue = fieldValues[field] || ''
+                          return (
+                            <button
+                              key={field}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                insertFieldAtCursor(field)
+                                setShowFieldPicker(false)
+                              }}
+                              className="w-full px-3 py-2 text-left hover:bg-gray-50 text-sm"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs text-gray-500 font-mono truncate mb-1">
+                                  {`{{${field}}}`}
+                                </div>
+                                <div className="text-sm text-gray-900 truncate">
+                                  {fieldValue || <span className="text-gray-400 italic">No value</span>}
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
 
               <EditorContent editor={editor} />
@@ -538,13 +590,62 @@ Write the personalized section now.`
         </div>
       )}
 
+      {/* Full Field Picker Modal */}
+      {showFullFieldPicker && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-semibold">Insert Dynamic Fields</h3>
+              <p className="text-sm text-gray-600">Click any field to insert it into your content</p>
+            </div>
+
+            <div className="p-4 max-h-96 overflow-y-auto">
+              <div className="space-y-1">
+                {availableFields.map((field) => {
+                  const fieldValue = fieldValues[field] || ''
+                  return (
+                    <button
+                      key={field}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        insertFieldAtCursor(field)
+                        setShowFullFieldPicker(false)
+                      }}
+                      className="w-full p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-500 font-mono truncate mb-1">
+                          {`{{${field}}}`}
+                        </div>
+                        <div className="text-sm text-gray-900 truncate">
+                          {fieldValue || <span className="text-gray-400 italic">No value</span>}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="p-4 border-t flex justify-end">
+              <button
+                onClick={() => setShowFullFieldPicker(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
           <div className="bg-white rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Delete Section?</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              Are you sure you want to delete "{section.name}"?
+              Are you sure you want to delete "{section.type === 'button' ? 'Link/CTA button' : section.name}"?
             </p>
             <div className="flex justify-end gap-2 sm:gap-3">
               <button

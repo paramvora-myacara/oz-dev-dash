@@ -593,7 +593,9 @@ export default function CampaignEditPage() {
       {/* Stepper */}
       <CampaignStepper
         currentStep={currentStep}
-        recipientCount={stagedCount}
+        recipientCount={currentStep === 'review' || currentStep === 'format-sample'
+          ? (stagedCount || (campaign?.totalRecipients || (campaign as any)?.total_recipients || 0))
+          : (campaign?.totalRecipients || (campaign as any)?.total_recipients || 0)}
         onBack={currentStep === 'review' ? handleBackToDesign : undefined}
         onBackToRecipients={currentStep === 'design' ? handleBackToRecipients : undefined}
         onLaunch={currentStep === 'review' ? () => {
@@ -637,6 +639,8 @@ export default function CampaignEditPage() {
 
         {currentStep === 'design' && (
           <EmailEditor
+            campaignId={campaignId}
+            campaign={campaign}
             initialTemplate={campaign.templateSlug ? { slug: campaign.templateSlug } as any : undefined}
             initialSections={campaign.sections}
             initialSubjectLine={campaign.subjectLine}

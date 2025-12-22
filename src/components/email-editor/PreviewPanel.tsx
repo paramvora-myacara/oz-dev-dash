@@ -72,6 +72,12 @@ export default function PreviewPanel({
     return debouncedSections.some((s) => s.mode === 'personalized')
   }, [debouncedSections])
 
+  // Only require AI generation when we actually have personalized sections
+  // and sample data to personalize against.
+  const needsPersonalizationPreview = useMemo(() => {
+    return hasPersonalizedSections && !!currentSample
+  }, [hasPersonalizedSections, currentSample])
+
   // Clear generated content when sample changes or sections change
   useEffect(() => {
     setGeneratedContent(null)
@@ -106,7 +112,7 @@ export default function PreviewPanel({
 
   // Handle Generate Preview button click
   const handleGeneratePreview = async () => {
-    if (!currentSample || !hasPersonalizedSections || isGenerating) return
+    if (!needsPersonalizationPreview || isGenerating) return
 
     setIsGenerating(true)
     setGenerationError(null)
@@ -232,7 +238,7 @@ export default function PreviewPanel({
       <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-b">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Regenerate Preview Button */}
-          {hasPersonalizedSections && currentSample && (
+          {needsPersonalizationPreview && (
             <button
               onClick={handleGeneratePreview}
               disabled={isGenerating}
@@ -280,7 +286,7 @@ export default function PreviewPanel({
               </button>
 
               {showSampleDropdown && (
-                <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-lg z-10 max-h-64 overflow-y-auto py-1">
+                <div className="absolute left-0 mt-2 w-56 sm:w-64 max-w-xs bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto py-1">
                   {sampleData.rows.slice(0, 10).map((row, index) => (
                     <button
                       key={index}
@@ -375,7 +381,7 @@ export default function PreviewPanel({
 
       {/* Preview Content - Responsive */}
       <div className="flex-1 overflow-auto p-2 sm:p-3 md:p-5 bg-gray-100 relative">
-        {!hasGeneratedOnce ? (
+        {needsPersonalizationPreview && !hasGeneratedOnce ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center p-8">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
