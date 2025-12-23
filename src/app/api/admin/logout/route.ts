@@ -16,14 +16,5 @@ export async function POST() {
     maxAge: 0,
   })
   
-  // Clear client-readable cookie
-  jar.set('oz_admin_ui', '', {
-    httpOnly: false,
-    sameSite: 'lax',
-    secure: isSecure,
-    path: '/',
-    maxAge: 0,
-  })
-  
   return NextResponse.json({ ok: true })
 } 
