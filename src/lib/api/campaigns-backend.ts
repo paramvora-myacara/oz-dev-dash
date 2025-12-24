@@ -139,8 +139,6 @@ export interface CampaignStatus {
   staged_count: number;
   queued_count: number;
   total_recipients: number;
-  is_generating: boolean;
-  is_launching: boolean;
   is_ready: boolean;
   is_launched: boolean;
 }

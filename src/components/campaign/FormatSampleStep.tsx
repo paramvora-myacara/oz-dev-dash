@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { ArrowLeft, ArrowRight, FileText, Code, Loader2, CheckCircle2, Users, Mail } from 'lucide-react'
 import type { EmailFormat, SampleData } from '@/types/email-editor'
-import type { GenerateProgress } from '@/lib/api/campaigns'
+import type { CampaignStatus } from '@/lib/api/campaigns-backend'
+import { RefreshCw } from 'lucide-react'
 
 interface FormatSampleStepProps {
   campaignId: string
@@ -14,7 +15,8 @@ interface FormatSampleStepProps {
   onBack: () => void
   onGenerateAll: (format: EmailFormat) => void
   isGeneratingAll: boolean
-  generateProgress?: GenerateProgress | null
+  campaignStatus?: CampaignStatus | null
+  onRefreshStatus?: () => void
 }
 
 export default function FormatSampleStep({
@@ -25,7 +27,8 @@ export default function FormatSampleStep({
   onBack,
   onGenerateAll,
   isGeneratingAll,
-  generateProgress,
+  campaignStatus,
+  onRefreshStatus,
 }: FormatSampleStepProps) {
   // Start with no format selected - user must pick one
   const [selectedFormat, setSelectedFormat] = useState<EmailFormat | null>(initialFormat || null)
@@ -196,43 +199,59 @@ export default function FormatSampleStep({
         </button>
 
         {/* Generate button */}
-        <button
-          onClick={handleGenerateAll}
-          disabled={!selectedFormat || isGeneratingAll || !recipientCount}
-          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGeneratingAll ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {generateProgress?.phase === 'ai_generation' && 'Generating AI content...'}
-              {generateProgress?.phase === 'building_emails' && 'Building emails...'}
-              {generateProgress?.phase === 'inserting' && 'Saving emails...'}
-              {!generateProgress?.phase && 'Starting...'}
-            </>
-          ) : !selectedFormat ? (
-            <>Select a format to continue</>
-          ) : (
-            <>
-              Generate {recipientCount || '...'} Emails
-              <ArrowRight className="w-4 h-4" />
-            </>
+        <div className="flex items-center gap-2">
+          {isGeneratingAll && onRefreshStatus && (
+            <button
+              onClick={onRefreshStatus}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              title="Refresh status"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           )}
-        </button>
+          <button
+            onClick={handleGenerateAll}
+            disabled={!selectedFormat || isGeneratingAll || !recipientCount}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGeneratingAll ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating emails... ({campaignStatus?.staged_count || 0} staged)
+              </>
+            ) : !selectedFormat ? (
+              <>Select a format to continue</>
+            ) : (
+              <>
+                Generate {recipientCount || '...'} Emails
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Progress bar when generating */}
-      {isGeneratingAll && generateProgress?.type === 'ai_progress' && (
-        <div className="bg-white border-b px-4 py-2">
+      {/* Status indicator when generating */}
+      {isGeneratingAll && campaignStatus && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex-1 bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${generateProgress.percentage || 0}%` }}
-              />
+            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900">
+                Generating emails...
+              </p>
+              <p className="text-xs text-blue-700">
+                {campaignStatus.staged_count} of {campaignStatus.total_recipients} emails staged
+              </p>
             </div>
-            <span className="text-xs text-gray-500 min-w-[80px] text-right">
-              {generateProgress.completed} / {generateProgress.total}
-            </span>
+            {onRefreshStatus && (
+              <button
+                onClick={onRefreshStatus}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                Refresh
+              </button>
+            )}
           </div>
         </div>
       )}
