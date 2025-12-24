@@ -762,7 +762,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                           <div className="mt-2">
                             <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
                             <div className="flex flex-wrap gap-1">
-                              {contact.history!.slice(0, 2).map((h: any, idx: number) => (
+                              {contact.history!.map((h: any, idx: number) => (
                                 <span
                                   key={idx}
                                   className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -770,11 +770,6 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                                   {h.campaigns?.name || 'Unknown Campaign'}
                                 </span>
                               ))}
-                              {contact.history!.length > 2 && (
-                                <span className="text-xs text-gray-400">
-                                  +{contact.history!.length - 2} more
-                                </span>
-                              )}
                             </div>
                           </div>
                         )}

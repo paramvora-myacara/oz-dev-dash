@@ -71,7 +71,7 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
         .from('contacts')
         .select(`
       *,
-      campaign_recipients!left (
+      history:campaign_recipients!left (
         campaign_id,
         status,
         sent_at,
@@ -127,13 +127,13 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
     if (filters.campaignHistory) {
         if (filters.campaignHistory === 'none') {
             // "Show me people I have NEVER contacted"
-            query = query.is('campaign_recipients.id', null);
+            query = query.is('history.id', null);
         } else if (filters.campaignHistory === 'any') {
             // "Show me people I HAVE contacted"
-            query = query.not('campaign_recipients.id', 'is', null);
+            query = query.not('history.id', 'is', null);
         } else {
             // "Show me people from Campaign X"
-            query = query.eq('campaign_recipients.campaign_id', filters.campaignHistory);
+            query = query.eq('history.campaign_id', filters.campaignHistory);
         }
     }
 
