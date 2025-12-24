@@ -1,9 +1,12 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Filter, Users, Check, X, ChevronDown, Loader2 } from 'lucide-react'
+
+import { Users, Check, X, Loader2, ChevronDown } from 'lucide-react'
 
 import { searchContacts, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
+import { getCampaigns } from '@/lib/api/campaigns-backend'
+import { type Campaign } from '@/types/email-editor'
 import { isValidEmail } from '@/lib/utils/validation'
 
 // Helper to detect multiple emails
@@ -69,34 +72,51 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const [activeResolutionContactId, setActiveResolutionContactId] = useState<string | null>(null)
   const [skippedResolutionIds, setSkippedResolutionIds] = useState<Set<string>>(new Set())
 
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
-  const [showFilters, setShowFilters] = useState(false)
-  const [showSourcesDropdown, setShowSourcesDropdown] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [advancedFilters, setAdvancedFilters] = useState({
-    role: '',
     locationFilter: '',
     source: '',
-    history: 'all' // 'all', 'none', 'any'
+    history: 'all' // 'all', 'none', 'any', or campaign UUID
   })
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // Pagination
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(50)
 
+  // Fetch campaigns for filter options
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const campaignData = await getCampaigns()
+        setCampaigns(campaignData)
+      } catch (error) {
+        console.error('Failed to fetch campaigns:', error)
+      }
+    }
+    fetchCampaigns()
+  }, [])
+
   // Fetch contacts from backend
   useEffect(() => {
     const fetchContacts = async () => {
       setIsLoading(true)
       try {
+        let campaignHistoryFilter: ContactFilters['campaignHistory'] = undefined
+        if (advancedFilters.history !== 'all') {
+          // Check if the selected value is a campaign UUID (not 'none' or 'any')
+          const isCampaignId = campaigns.some(campaign => campaign.id === advancedFilters.history)
+          if (isCampaignId) {
+            campaignHistoryFilter = advancedFilters.history
+          } else {
+            campaignHistoryFilter = advancedFilters.history as 'none' | 'any'
+          }
+        }
+
         const filters: ContactFilters = {
-          search: searchQuery,
-          role: advancedFilters.role,
           location: advancedFilters.locationFilter,
-          source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined, // Simple single source support for now
-          campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+          campaignHistory: campaignHistoryFilter
         }
 
         const { data, count } = await searchContacts(filters, page, pageSize)
@@ -112,7 +132,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     // Debounce search
     const timer = setTimeout(fetchContacts, 300)
     return () => clearTimeout(timer)
-  }, [searchQuery, selectedSources, advancedFilters, page, pageSize])
+  }, [advancedFilters, page, pageSize])
 
   // Reset page when filters or page size change
   useEffect(() => {
@@ -122,11 +142,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setIsSelectAllGlobal(false)
     setExcludedIds(new Set())
     setSelectedIds(new Set())
-  }, [searchQuery, selectedSources, advancedFilters, pageSize])
-
-  // Get unique sources for filter options - mocked for now or fetch aggregated
-  // Ideally this should come from a separate 'getSources' API or aggregation
-  const availableSources = ['developers.csv']
+  }, [advancedFilters, pageSize])
 
 
   const handleSelectAll = () => {
@@ -331,12 +347,20 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       let payload: any;
 
       if (isSelectAllGlobal) {
+        let campaignHistoryFilter: ContactFilters['campaignHistory'] = undefined
+        if (advancedFilters.history !== 'all') {
+          // Check if the selected value is a campaign UUID (not 'none' or 'any')
+          const isCampaignId = campaigns.some(campaign => campaign.id === advancedFilters.history)
+          if (isCampaignId) {
+            campaignHistoryFilter = advancedFilters.history
+          } else {
+            campaignHistoryFilter = advancedFilters.history as 'none' | 'any'
+          }
+        }
+
         const filters: ContactFilters = {
-          search: searchQuery,
-          role: advancedFilters.role,
           location: advancedFilters.locationFilter,
-          source: selectedSources.size > 0 ? Array.from(selectedSources)[0] : undefined,
-          campaignHistory: advancedFilters.history === 'all' ? undefined : (advancedFilters.history as 'none' | 'any')
+          campaignHistory: campaignHistoryFilter
         }
 
         payload = {
@@ -373,10 +397,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   }
 
   const clearFilters = () => {
-    setSearchQuery('')
-    setSelectedSources(new Set())
     setAdvancedFilters({
-      role: '',
       locationFilter: '',
       source: '',
       history: 'all'
@@ -390,69 +411,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   )
   const previouslyContactedCount = selectedContacts.filter(c => c.history && c.history.length > 0).length
 
-  // Multi-select dropdown helpers
-  const toggleSource = (source: string) => {
-    const newSources = new Set(selectedSources)
-    if (newSources.has(source)) {
-      newSources.delete(source)
-    } else {
-      newSources.add(source)
-    }
-    setSelectedSources(newSources)
-  }
 
-  const MultiSelectDropdown = ({
-    label,
-    options,
-    selected,
-    isOpen,
-    onToggle,
-    onClose,
-    onSelect,
-  }: {
-    label: string
-    options: string[]
-    selected: Set<string>
-    isOpen: boolean
-    onToggle: () => void
-    onClose: () => void
-    onSelect: (option: string) => void
-  }) => (
-    <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <button
-        onClick={onToggle}
-        className="w-full px-3 py-2 text-sm text-left bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
-      >
-        <span className={selected.size === 0 ? 'text-gray-500' : 'text-gray-900'}>
-          {selected.size === 0
-            ? `Select ${label.toLowerCase()}...`
-            : `${selected.size} selected`
-          }
-        </span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <>
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-            {options.map(option => (
-              <label key={option} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selected.has(option)}
-                  onChange={() => onSelect(option)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
-                />
-                <span className="text-sm capitalize">{option}</span>
-              </label>
-            ))}
-          </div>
-          <div className="fixed inset-0 z-0" onClick={onClose}></div>
-        </>
-      )}
-    </div>
-  )
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -468,114 +427,59 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
       {/* Search and Filters */}
       <div className="bg-white border-b px-4 sm:px-6 py-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Location Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Location Contains
+            </label>
             <input
               type="text"
-              placeholder="Search by name, email, company, location (CA/Texas)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="e.g. California, CA, New York..."
+              value={advancedFilters.locationFilter}
+              onChange={(e) => setAdvancedFilters(prev => ({ ...prev, locationFilter: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${(selectedSources.size > 0 ||
-              advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source)
-              ? 'bg-blue-100 text-blue-700 border border-blue-200'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-            {(selectedSources.size > 0 ||
-              advancedFilters.role || advancedFilters.locationFilter || advancedFilters.source) && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full">
-                  {selectedSources.size +
-                    (advancedFilters.role ? 1 : 0) +
-                    (advancedFilters.locationFilter ? 1 : 0) +
-                    (advancedFilters.source ? 1 : 0)}
-                </span>
-              )}
-            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
 
-        {/* Expanded Filters */}
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location Contains
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. California, CA, New York..."
-                  value={advancedFilters.locationFilter}
-                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, locationFilter: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
 
-              {/* Role Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Role/Title
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. CEO, Director..."
-                  value={advancedFilters.role}
-                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, role: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Sources Filter */}
-              <MultiSelectDropdown
-                label="Sources"
-                options={availableSources}
-                selected={selectedSources}
-                isOpen={showSourcesDropdown}
-                onToggle={() => setShowSourcesDropdown(!showSourcesDropdown)}
-                onClose={() => setShowSourcesDropdown(false)}
-                onSelect={toggleSource}
-              />
-
-              {/* History Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact History
-                </label>
-                <select
-                  value={advancedFilters.history}
-                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, history: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">Show All</option>
-                  <option value="none">Never Contacted</option>
-                  <option value="any">Previously Contacted</option>
-                </select>
-              </div>
-
-              {/* Clear Filters */}
-              <div className="flex items-end">
-                <button
-                  onClick={clearFilters}
-                  className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                >
-                  Clear all filters
-                </button>
-              </div>
-            </div>
+          {/* History Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contact History
+            </label>
+            <select
+              value={advancedFilters.history}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                history: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Show All</option>
+              <option value="none">Never Contacted</option>
+              <option value="any">Previously Contacted</option>
+              {campaigns
+                .filter((campaign) => campaign.id !== campaignId)
+                .map((campaign) => (
+                  <option key={campaign.id} value={campaign.id}>
+                    {campaign.name}
+                  </option>
+                ))}
+            </select>
           </div>
-        )}
+
+          {/* Clear Filters */}
+          <div className="flex items-end">
+            <button
+              onClick={clearFilters}
+              className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              Clear all filters
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Pagination Controls */}
@@ -608,7 +512,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className="block w-20 pl-3 pr-8 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                className="block w-24 pl-3 pr-8 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
               >
                 <option value={10}>10</option>
                 <option value={50}>50</option>
@@ -724,8 +628,9 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                       />
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Left: Contact Info */}
+                          <div className="min-w-0 w-1/3 max-w-xs flex-none">
                             <div className="flex items-center gap-2">
                               <h3 className="text-sm font-medium text-gray-900 truncate">
                                 {contact.name || 'Unknown Name'}
@@ -752,27 +657,33 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                             <p className="text-sm text-gray-500 truncate">{contact.company}</p>
                           </div>
 
-                          <div className="text-right ml-4">
+                          {/* Middle: Outreach History Preview */}
+                          <div className="flex-1 min-w-0 px-2">
+                            {hasHistory ? (
+                              <div>
+                                <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {contact.history!.map((h: any, idx: number) => (
+                                    <span
+                                      key={idx}
+                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                    >
+                                      {h.campaigns?.name || 'Unknown Campaign'}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              // Spacer if no history to keep alignment clean
+                              <div></div>
+                            )}
+                          </div>
+
+                          {/* Right: Location */}
+                          <div className="text-right shrink-0 w-48">
                             <p className="text-sm text-gray-500">{contact.location}</p>
                           </div>
                         </div>
-
-                        {/* Outreach History Preview */}
-                        {hasHistory && (
-                          <div className="mt-2">
-                            <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
-                            <div className="flex flex-wrap gap-1">
-                              {contact.history!.map((h: any, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                >
-                                  {h.campaigns?.name || 'Unknown Campaign'}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -785,8 +696,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
                 <p className="text-gray-500">
-                  {searchQuery || selectedSources.size > 0
-                    ? 'Try adjusting your search or filters'
+                  {advancedFilters.locationFilter || advancedFilters.history !== 'all'
+                    ? 'Try adjusting your filters'
                     : 'No contacts available'
                   }
                 </p>

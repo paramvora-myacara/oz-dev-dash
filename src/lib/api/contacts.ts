@@ -6,7 +6,7 @@ export interface ContactFilters {
     role?: string;
     location?: string;
     source?: string;
-    campaignHistory?: 'any' | 'none' | string; // 'none' = never contacted, 'any' = contacted at least once, or UUID
+    campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
 }
 
 export interface Contact {
@@ -63,6 +63,62 @@ const getExpandedSearchTerms = (input: string): string[] => {
 
     return terms;
 };
+
+// Helper function for "never contacted" filter
+async function getNeverContactedContacts(filters: ContactFilters, page: number, pageSize: number) {
+    const supabase = createClient();
+
+    // Use left join and filter where joined table id is null
+    let query = supabase
+        .from('contacts')
+        .select(`
+          *,
+          history:campaign_recipients!left (
+            campaign_id,
+            status,
+            sent_at,
+            campaigns (name)
+          )
+        `, { count: 'exact' })
+        .filter('history', 'is', null);
+
+    // Apply other filters
+    if (filters.search) {
+        const searchTerms = getExpandedSearchTerms(filters.search);
+        const conditions = [];
+        conditions.push(`search_vector.fts.${filters.search}`);
+        conditions.push(`name.ilike.%${filters.search}%`);
+        conditions.push(`company.ilike.%${filters.search}%`);
+        conditions.push(`email.ilike.%${filters.search}%`);
+        searchTerms.forEach(term => {
+            conditions.push(`location.ilike.%${term}%`);
+        });
+        query = query.or(conditions.join(','));
+    }
+
+    if (filters.role) {
+        query = query.ilike('role', `%${filters.role}%`);
+    }
+    if (filters.location) {
+        const locTerms = getExpandedSearchTerms(filters.location);
+        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
+        query = query.or(locConditions.join(','));
+    }
+    if (filters.source) {
+        query = query.eq('source', filters.source);
+    }
+
+    const { data, error, count } = await query
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error searching contacts:', error);
+        throw error;
+    }
+
+    return { data: data as Contact[], count };
+}
 
 export async function searchContacts(filters: ContactFilters, page = 0, pageSize = 50) {
     const supabase = createClient();
@@ -126,14 +182,49 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
     // 3. History Filter
     if (filters.campaignHistory) {
         if (filters.campaignHistory === 'none') {
-            // "Show me people I have NEVER contacted"
-            query = query.is('history.id', null);
+            // "Show me people I have NEVER contacted" - use separate query for this case
+            return await getNeverContactedContacts(filters, page, pageSize);
         } else if (filters.campaignHistory === 'any') {
-            // "Show me people I HAVE contacted"
-            query = query.not('history.id', 'is', null);
+            // "Show me people I HAVE contacted" - use inner join
+            query = supabase
+                .from('contacts')
+                .select(`
+                  *,
+                  history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                  )
+                `, { count: 'exact' });
+        } else if (Array.isArray(filters.campaignHistory)) {
+            // "Show me people from selected campaigns" - use inner join with in filter
+            query = supabase
+                .from('contacts')
+                .select(`
+                  *,
+                  history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                  )
+                `, { count: 'exact' })
+                .in('history.campaign_id', filters.campaignHistory);
         } else {
-            // "Show me people from Campaign X"
-            query = query.eq('history.campaign_id', filters.campaignHistory);
+            // "Show me people from Campaign X" - use inner join with filter (single campaign)
+            query = supabase
+                .from('contacts')
+                .select(`
+                  *,
+                  history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                  )
+                `, { count: 'exact' })
+                .eq('history.campaign_id', filters.campaignHistory);
         }
     }
 
@@ -186,11 +277,31 @@ export async function getAllContactIds(filters: ContactFilters) {
     // 3. History Filter
     if (filters.campaignHistory) {
         if (filters.campaignHistory === 'none') {
-            query = query.is('campaign_recipients.id', null);
+            // "Show me people I have NEVER contacted" - exclude contacts with any campaign history
+            const { data: recipients } = await supabase
+                .from('campaign_recipients')
+                .select('contact_id');
+            const contactedContactIds = (recipients || []).map(r => r.contact_id);
+            if (contactedContactIds.length > 0) {
+                query = query.not('id', 'in', `(${contactedContactIds.join(',')})`);
+            }
         } else if (filters.campaignHistory === 'any') {
-            query = query.not('campaign_recipients.id', 'is', null);
+            // "Show me people I HAVE contacted" - use inner join
+            query = supabase
+                .from('contacts')
+                .select('id, campaign_recipients!inner(campaign_id)');
+        } else if (Array.isArray(filters.campaignHistory)) {
+            // "Show me people from selected campaigns" - use inner join with in filter
+            query = supabase
+                .from('contacts')
+                .select('id, campaign_recipients!inner(campaign_id)')
+                .in('campaign_recipients.campaign_id', filters.campaignHistory);
         } else {
-            query = query.eq('campaign_recipients.campaign_id', filters.campaignHistory);
+            // "Show me people from Campaign X" - use inner join with filter
+            query = supabase
+                .from('contacts')
+                .select('id, campaign_recipients!inner(campaign_id)')
+                .eq('campaign_recipients.campaign_id', filters.campaignHistory);
         }
     }
 
