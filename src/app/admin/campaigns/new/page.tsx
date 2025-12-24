@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createCampaign } from '@/lib/api/campaigns'
+import { createCampaign } from '@/lib/api/campaigns-backend'
 import type { CampaignSender } from '@/types/email-editor'
 
 const MAX_CAMPAIGN_NAME_LENGTH = 25

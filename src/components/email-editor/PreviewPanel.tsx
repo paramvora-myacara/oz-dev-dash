@@ -59,7 +59,7 @@ export default function PreviewPanel({
   const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const currentSample = sampleData?.rows[selectedSampleIndex] || null
+  const currentSample = sampleData?.rows?.[selectedSampleIndex] || null
 
   // Debounce sections to prevent rapid re-renders during typing
   const debouncedSections = useDebounce(sections, 300)
@@ -118,7 +118,7 @@ export default function PreviewPanel({
     setGenerationError(null)
 
     try {
-      const response = await fetch('/api/preview/generate', {
+      const response = await fetch('/api/backend-proxy/campaigns/preview/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -272,7 +272,7 @@ export default function PreviewPanel({
           )}
 
           {/* Sample Selector */}
-          {sampleData && sampleData.rows.length > 0 && (
+          {sampleData && sampleData.rows && sampleData.rows.length > 0 && (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowSampleDropdown(!showSampleDropdown)}

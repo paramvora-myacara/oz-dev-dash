@@ -24,16 +24,10 @@ export async function POST(request: Request) {
   const isSecure = process.env.NODE_ENV === 'production'
   
   // Set httpOnly cookie for server-side auth
+  // This cookie is used by Next.js proxy routes to authenticate with FastAPI backend
+  // No client-readable cookies - all auth checks happen server-side for security
   cookieStore.set('oz_admin_basic', basic, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: isSecure,
-    path: '/',
-  })
-  
-  // Set client-readable cookie for UI state
-  cookieStore.set('oz_admin_ui', 'true', {
-    httpOnly: false,
     sameSite: 'lax',
     secure: isSecure,
     path: '/',

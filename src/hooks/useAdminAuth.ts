@@ -15,17 +15,6 @@ interface AdminData {
   }>;
 }
 
-// Helper function to check if admin cookie exists
-function hasAdminCookie(): boolean {
-  if (typeof document === 'undefined') return false;
-  
-  const hasCookie = document.cookie
-    .split(';')
-    .some(cookie => cookie.trim().startsWith('oz_admin_ui='));
-  
-  return hasCookie;
-}
-
 export function useAdminAuth() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
@@ -33,14 +22,8 @@ export function useAdminAuth() {
 
   useEffect(() => {
     const checkAdminAuth = async () => {
-      // First check if admin cookie exists client-side
-      if (!hasAdminCookie()) {
-        setIsAdmin(false);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Only make API call if admin cookie is present
+      // Always verify auth server-side - no client-side cookie checks
+      // This ensures credentials are never exposed to JavaScript
       try {
         const response = await fetch('/api/admin/me');
         

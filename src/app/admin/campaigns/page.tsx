@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Mail, RefreshCw, Calendar } from 'lucide-react'
-import { getCampaigns, deleteCampaign } from '@/lib/api/campaigns'
+import { getCampaigns, deleteCampaign, getGlobalStatus } from '@/lib/api/campaigns-backend'
 import { getStatusLabel, getStatusColor } from '@/lib/utils/status-labels'
 import type { Campaign } from '@/types/email-editor'
 
@@ -59,11 +59,16 @@ export default function CampaignsPage() {
   const fetchCampaignStatus = async () => {
     setIsRefreshing(true)
     try {
-      const response = await fetch('/api/campaigns/status')
-      if (response.ok) {
-        const data = await response.json()
-        setCampaignStatus(data)
-      }
+      const data = await getGlobalStatus()
+      // Transform backend response to match expected format
+      setCampaignStatus({
+        status: 'sending', // You may want to calculate this from the data
+        total: Object.values(data.emails || {}).reduce((sum: number, count: any) => sum + (count || 0), 0),
+        queued: data.emails?.queued || 0,
+        sent: data.emails?.sent || 0,
+        failed: data.emails?.failed || 0,
+        weekSchedule: data.weekSchedule || [],
+      })
     } catch (error) {
       console.error('Error fetching campaign status:', error)
     } finally {

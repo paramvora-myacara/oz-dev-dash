@@ -10,7 +10,8 @@ import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, type GenerateProgress } from '@/lib/api/campaigns'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, retryFailed } from '@/lib/api/campaigns-backend'
+import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
 import type { Campaign, QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
@@ -64,8 +65,8 @@ export default function CampaignEditPage() {
   const [retryingFailed, setRetryingFailed] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
 
-  // Generation progress state
-  const [generateProgress, setGenerateProgress] = useState<GenerateProgress | null>(null)
+  // Campaign status hook for polling generation/launch progress
+  const { status: campaignStatus, refresh: refreshStatus, isLoading: statusLoading } = useCampaignStatus(campaignId)
 
   // Regeneration state
   const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
@@ -133,6 +134,8 @@ export default function CampaignEditPage() {
       setSampleData(data)
     } catch (err) {
       console.error('Failed to load sample data:', err)
+      // Set empty structure to prevent undefined errors
+      setSampleData({ rows: [], columns: [] })
     }
   }
 
@@ -143,20 +146,22 @@ export default function CampaignEditPage() {
       let allEmails: any[] = []
       let offset = 0
       let hasMore = true
-      let totalCount = 0
 
       while (hasMore) {
         const result = await getStagedEmails(campaignId, { limit: PAGE_SIZE, offset })
         const emails = result.emails
         allEmails = allEmails.concat(emails)
-        totalCount = result.total
 
+        // If we got fewer emails than requested, we've reached the end
         if (emails.length < PAGE_SIZE) {
           hasMore = false
         } else {
           offset += PAGE_SIZE
         }
       }
+
+      // Total count is the actual number of emails we fetched
+      const totalCount = allEmails.length
 
       // Validate emails
       const invalid: {id: string, email: string}[] = []
@@ -328,37 +333,61 @@ export default function CampaignEditPage() {
     try {
       setGenerating(true)
       setError(null)
-      setGenerateProgress(null)
 
       // Save the format to the campaign first
       await updateCampaign(campaign.id || campaignId, { emailFormat: format })
 
-      // Generate emails with the DB flag and track progress
-      const result = await generateEmails(
+      // Start generation (returns immediately - background job)
+      await generateEmails(
         campaign.id || campaignId,
         null, // No CSV
-        (progress) => setGenerateProgress(progress),
+        undefined, // No progress callback - use status polling instead
         { useDatabaseRecipients: true }
       )
 
-      // Reload campaign and staged emails
-      await loadCampaign()
-      await loadStagedEmails()
+      // Refresh status immediately and start polling
+      await refreshStatus()
 
-      // Show validation errors modal if there are any
-      if (result.errors && result.errors.length > 0) {
-        setValidationErrors(result.errors)
-      }
-
-      // Move to review step
-      setCurrentStep('review')
     } catch (err: any) {
-      setError('Failed to generate emails: ' + err.message)
-    } finally {
       setGenerating(false)
-      setGenerateProgress(null)
+      setError('Failed to start email generation: ' + err.message)
     }
-  }, [campaign, campaignId])
+  }, [campaign, campaignId, refreshStatus])
+
+  // Watch for generation completion
+  // Check both campaign status and staged count for reliable detection
+  // campaignStatus.campaign_status is more reliable as it's fetched fresh from the status endpoint
+  useEffect(() => {
+    if (generating && campaignStatus && 
+        campaignStatus.campaign_status === 'staged' && 
+        campaignStatus.staged_count > 0) {
+      setGenerating(false)
+      loadCampaign()
+      loadStagedEmails()
+      setCurrentStep('review')
+    }
+  }, [generating, campaignStatus, loadCampaign, loadStagedEmails])
+
+  // Poll status while generating
+  useEffect(() => {
+    if (!generating) return
+    
+    const interval = setInterval(() => {
+      refreshStatus()
+    }, 2000)
+
+    const timeout = setTimeout(() => {
+      if (generating) {
+        setGenerating(false)
+        setError('Generation is taking longer than expected. Please refresh to check status.')
+      }
+    }, 60000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [generating, refreshStatus])
 
 
 
@@ -412,20 +441,55 @@ export default function CampaignEditPage() {
     try {
       setLaunching(true)
       setError(null)
-      const result = await launchCampaign(campaign.id || campaignId)
-      await loadCampaign()
-      setShowLaunchModal(false)
-      setCurrentStep('complete')
+      
+      // Start launch (returns immediately - background job)
+      await launchCampaign(campaign.id || campaignId)
+      
+      // Refresh status immediately
+      await refreshStatus()
 
-      // Show success and redirect
-      alert(`Campaign launched! ${result.queued} emails queued.`)
-      router.push('/admin/campaigns')
     } catch (err: any) {
-      setError('Failed to launch campaign: ' + err.message)
-    } finally {
       setLaunching(false)
+      setError('Failed to start campaign launch: ' + err.message)
     }
   }
+
+  // Watch for launch completion
+  // Check both campaign status and queued count for reliable detection
+  // campaignStatus.campaign_status is more reliable as it's fetched fresh from the status endpoint
+  useEffect(() => {
+    if (launching && campaignStatus && 
+        campaignStatus.campaign_status === 'scheduled' && 
+        campaignStatus.queued_count > 0) {
+      setLaunching(false)
+      loadCampaign()
+      setShowLaunchModal(false)
+      setCurrentStep('complete')
+      alert(`Campaign launched! ${campaignStatus.queued_count} emails queued.`)
+      // Stay on the campaign page to view the complete step with campaign statistics
+    }
+  }, [launching, campaignStatus, loadCampaign])
+
+  // Poll status while launching
+  useEffect(() => {
+    if (!launching) return
+    
+    const interval = setInterval(() => {
+      refreshStatus()
+    }, 2000)
+
+    const timeout = setTimeout(() => {
+      if (launching) {
+        setLaunching(false)
+        setError('Launch is taking longer than expected. Please refresh to check status.')
+      }
+    }, 60000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [launching, refreshStatus])
 
   const handleTestSend = async () => {
     if (!campaign || !testEmail) return
@@ -469,24 +533,26 @@ export default function CampaignEditPage() {
       setRetryingFailed(true)
       setError(null)
       setInfo(null)
-      const res = await fetch(`/api/campaigns/${campaign.id || campaignId}/retry-failed`, {
-        method: 'POST',
-        cache: 'no-store',
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to retry failed emails')
-      }
-      setInfo(`Retried ${data?.retried ?? 0} failed emails.`)
-      await loadSummary()
-      await loadFailedEmails()
-      await loadCampaign()
+      
+      // Start retry (returns immediately - background job)
+      await retryFailed(campaign.id || campaignId)
+      
+      setInfo('Retry started. Emails will be rescheduled. Refresh to see updates.')
+      
+      // Poll status and reload after a delay
+      setTimeout(async () => {
+        await refreshStatus()
+        await loadSummary()
+        await loadFailedEmails()
+        await loadCampaign()
+      }, 3000)
+      
     } catch (err: any) {
       setError(err.message || 'Failed to retry failed emails')
     } finally {
       setRetryingFailed(false)
     }
-  }, [campaign, campaignId, loadSummary, loadFailedEmails])
+  }, [campaign, campaignId, loadSummary, loadFailedEmails, refreshStatus])
 
   // Regenerate single email
   const handleRegenerateEmail = async (emailId: string) => {
@@ -528,6 +594,35 @@ export default function CampaignEditPage() {
       await loadStagedEmails()
     } catch (err: any) {
       setError('Failed to remove invalid recipient: ' + err.message)
+    }
+  }
+
+  // Remove all invalid recipients
+  const handleRemoveAllInvalidRecipients = async () => {
+    if (!campaign || invalidEmails.length === 0) return
+
+    try {
+      setError(null)
+      // Delete all invalid emails in parallel
+      const deletePromises = invalidEmails.map(invalid => 
+        fetch(`/api/campaigns/${campaign.id || campaignId}/emails/${invalid.id}`, {
+          method: 'DELETE',
+        })
+      )
+
+      const results = await Promise.allSettled(deletePromises)
+      
+      // Check for any failures
+      const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok))
+      if (failures.length > 0) {
+        throw new Error(`Failed to remove ${failures.length} invalid email(s)`)
+      }
+
+      // Clear invalid emails from state and reload staged emails
+      setInvalidEmails([])
+      await loadStagedEmails()
+    } catch (err: any) {
+      setError('Failed to remove all invalid recipients: ' + err.message)
     }
   }
 
@@ -662,13 +757,43 @@ export default function CampaignEditPage() {
             onBack={handleBackToDesignFromFormatSample}
             onGenerateAll={handleGenerateAllWithFormat}
             isGeneratingAll={generating}
-            generateProgress={generateProgress}
+            campaignStatus={campaignStatus}
+            onRefreshStatus={() => refreshStatus()}
           />
         )}
 
         {currentStep === 'review' && (
           <div className="h-full overflow-auto bg-gray-50">
             <div className="max-w-4xl mx-auto p-4 sm:p-6">
+              {/* Status indicator for generation/launch */}
+              {(generating || launching) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-yellow-600" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-900">
+                          {generating && 'Generating emails...'}
+                          {launching && 'Launching campaign...'}
+                        </p>
+                        <p className="text-xs text-yellow-700 mt-0.5">
+                          {generating && `${campaignStatus?.staged_count || 0} staged`}
+                          {launching && `${campaignStatus?.queued_count || 0} queued`}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => refreshStatus()}
+                      disabled={statusLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-yellow-700 bg-white border border-yellow-300 rounded-lg hover:bg-yellow-50 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${statusLoading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Info banner when returning to edit */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
@@ -760,11 +885,19 @@ export default function CampaignEditPage() {
                       {invalidEmails.length > 0 && (
                         <div className="border-b border-red-200 bg-red-50">
                           <div className="px-3 py-2">
-                            <div className="flex items-center gap-2 mb-2">
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                              <span className="text-xs font-medium text-red-800">
-                                Invalid Email Addresses ({invalidEmails.length})
-                              </span>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                                <span className="text-xs font-medium text-red-800">
+                                  Invalid Email Addresses ({invalidEmails.length})
+                                </span>
+                              </div>
+                              <button
+                                onClick={handleRemoveAllInvalidRecipients}
+                                className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1 transition-colors"
+                              >
+                                Remove All
+                              </button>
                             </div>
                             <div className="space-y-1">
                               {invalidEmails.slice(0, 5).map((invalid) => (

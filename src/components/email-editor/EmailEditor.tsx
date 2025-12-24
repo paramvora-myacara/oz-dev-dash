@@ -229,7 +229,7 @@ export default function EmailEditor({
 
     setGeneratingSubject(true)
     try {
-      const response = await fetch(`/api/campaigns/${campaign.id || campaignId}/generate-subject`, {
+      const response = await fetch(`/api/backend-proxy/campaigns/${campaign.id || campaignId}/generate-subject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instructions: subjectPrompt })
@@ -325,7 +325,7 @@ export default function EmailEditor({
   }
 
   const fieldValues = useMemo(() => {
-    if (!sampleData || !sampleData.rows.length) return {}
+    if (!sampleData || !sampleData.rows || !sampleData.rows.length) return {}
     return sampleData.rows[selectedSampleIndex] || {}
   }, [sampleData, selectedSampleIndex])
 
