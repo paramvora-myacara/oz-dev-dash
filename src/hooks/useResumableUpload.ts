@@ -41,21 +41,31 @@ export function useResumableUpload(): UseResumableUploadReturn {
 
   const uploadFile = useCallback(async (file: File, bucketName: string, fileName: string) => {
     const supabase = createClient()
-    
-    try {
-      // Get the current session for authentication
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        throw new Error('No active session found. Please sign in to upload files.')
-      }
 
+    try {
       // Get project ID from the Supabase URL
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-      const projectId = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
-      
+
+      // Handle both production Supabase URLs (https://project.supabase.co) and local development URLs
+      let projectId: string | null = null
+      let isLocalDev = false
+
+      // Check if it's a production Supabase URL
+      const prodMatch = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)
+      if (prodMatch) {
+        projectId = prodMatch[1]
+      } else {
+        // For local development, extract project info from the URL
+        // Local Supabase typically runs on URLs like http://127.0.0.1:54321 or http://localhost:54321
+        const url = new URL(supabaseUrl)
+        if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') {
+          isLocalDev = true
+          projectId = 'local' // Use a default project ID for local dev
+        }
+      }
+
       if (!projectId) {
-        throw new Error('Invalid Supabase URL configuration')
+        throw new Error('Invalid Supabase URL configuration. Expected format: https://project.supabase.co or http://127.0.0.1:54321')
       }
 
       setUploadState(prev => ({
@@ -66,12 +76,18 @@ export function useResumableUpload(): UseResumableUploadReturn {
       }))
 
       return new Promise<{ success: boolean; fileData?: any }>((resolve, reject) => {
+        // Construct the TUS endpoint based on environment
+        const endpoint = isLocalDev
+          ? `${supabaseUrl}/storage/v1/upload/resumable` // Local development endpoint
+          : `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable` // Production endpoint
+
         const upload = new tus.Upload(file, {
           // Use direct storage hostname for optimal performance
-          endpoint: `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
+          endpoint,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
-            authorization: `Bearer ${session.access_token}`,
+            authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             'x-upsert': 'true', // Allow overwriting existing files
           },
           uploadDataDuringCreation: true,
