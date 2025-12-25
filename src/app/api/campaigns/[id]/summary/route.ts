@@ -102,11 +102,15 @@ export async function GET(
       bounceRate: number | null
       countDelivered: number | null
       countBounced: number | null
+      unsubscribeRate: number | null
+      countUnsubscribed: number | null
     } = {
       deliveryRate: null,
       bounceRate: null,
       countDelivered: null,
       countBounced: null,
+      unsubscribeRate: null,
+      countUnsubscribed: null,
     }
 
     if (SPARKPOST_API_KEY && sent > 0) {
@@ -162,7 +166,7 @@ export async function GET(
         metricsUrl.searchParams.set('from', fromParam)
         metricsUrl.searchParams.set('to', toParam)
         metricsUrl.searchParams.set('campaigns', sparkpostCampaignId)
-        metricsUrl.searchParams.set('metrics', 'count_sent,count_delivered,count_bounce')
+        metricsUrl.searchParams.set('metrics', 'count_sent,count_delivered,count_bounce,count_link_unsubscribe,count_list_unsubscribe')
         metricsUrl.searchParams.set('timezone', 'UTC') // Explicitly set timezone
 
         console.log('[summary] Fetching SparkPost metrics', {
@@ -213,15 +217,21 @@ export async function GET(
             const countSent = campaignResult.count_sent || 0
             const countDelivered = campaignResult.count_delivered || 0
             const countBounce = campaignResult.count_bounce || 0
+            const countLinkUnsubscribe = campaignResult.count_link_unsubscribe || 0
+            const countListUnsubscribe = campaignResult.count_list_unsubscribe || 0
+            const countUnsubscribed = countLinkUnsubscribe + countListUnsubscribe
 
             const deliveryRate = countSent > 0 ? (countDelivered / countSent) * 100 : null
             const bounceRate = countSent > 0 ? (countBounce / countSent) * 100 : null
+            const unsubscribeRate = countDelivered > 0 ? (countUnsubscribed / countDelivered) * 100 : null
 
             sparkpostMetrics = {
               deliveryRate,
               bounceRate,
               countDelivered,
               countBounced: countBounce,
+              unsubscribeRate,
+              countUnsubscribed,
             }
 
             console.log('[summary] SparkPost metrics calculated:', {
@@ -230,8 +240,12 @@ export async function GET(
               countSent,
               countDelivered,
               countBounce,
+              countLinkUnsubscribe,
+              countListUnsubscribe,
+              countUnsubscribed,
               deliveryRate: deliveryRate !== null ? `${deliveryRate.toFixed(2)}%` : 'N/A',
               bounceRate: bounceRate !== null ? `${bounceRate.toFixed(2)}%` : 'N/A',
+              unsubscribeRate: unsubscribeRate !== null ? `${unsubscribeRate.toFixed(2)}%` : 'N/A',
             })
           } else {
             console.warn('[summary] Campaign result not found in SparkPost response', {

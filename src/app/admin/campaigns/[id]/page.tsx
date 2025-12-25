@@ -58,6 +58,8 @@ export default function CampaignEditPage() {
       bounceRate: number | null
       countDelivered: number | null
       countBounced: number | null
+      unsubscribeRate: number | null
+      countUnsubscribed: number | null
     }
   } | null>(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
@@ -1034,8 +1036,8 @@ export default function CampaignEditPage() {
                 </div>
               </div>
 
-              {/* Second row: Delivery Rate, Bounce Rate */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Second row: Delivery Rate, Bounce Rate, Unsubscribe Rate */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Delivery Rate</p>
                   <p className="text-xl font-semibold text-green-600">
@@ -1059,6 +1061,19 @@ export default function CampaignEditPage() {
                   <p className="text-[11px] text-gray-500">
                     {campaignSummary?.sparkpostMetrics?.countBounced !== null && campaignSummary?.sparkpostMetrics?.countBounced !== undefined
                       ? `${campaignSummary.sparkpostMetrics.countBounced.toLocaleString()} bounced`
+                      : 'No data'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Unsubscribe Rate</p>
+                  <p className="text-xl font-semibold text-red-600">
+                    {campaignSummary?.sparkpostMetrics?.unsubscribeRate !== null && campaignSummary?.sparkpostMetrics?.unsubscribeRate !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.unsubscribeRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.sparkpostMetrics?.countUnsubscribed !== null && campaignSummary?.sparkpostMetrics?.countUnsubscribed !== undefined && campaignSummary?.sparkpostMetrics?.countDelivered !== null && campaignSummary?.sparkpostMetrics?.countDelivered !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.countUnsubscribed.toLocaleString()} unsubs / ${campaignSummary.sparkpostMetrics.countDelivered.toLocaleString()} delivered`
                       : 'No data'}
                   </p>
                 </div>
