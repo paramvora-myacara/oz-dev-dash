@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { generateUnsubscribeToken } from '@/lib/email/unsubscribe';
 
-const SPARKPOST_API_KEY = process.env.SPARKPOST_API_KEY;
-
 // Verify HMAC token
 function verifyToken(email: string, token: string): boolean {
   const expectedToken = generateUnsubscribeToken(email);
@@ -35,28 +33,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Add to SparkPost suppression list
-    if (SPARKPOST_API_KEY) {
-      try {
-        await fetch('https://api.sparkpost.com/api/v1/suppression-list', {
-          method: 'PUT',
-          headers: {
-            'Authorization': SPARKPOST_API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            recipients: [{
-              recipient: email.toLowerCase(),
-              type: 'non_transactional',
-              description: 'User unsubscribed via link',
-            }],
-          }),
-        });
-      } catch (error) {
-        console.error('Failed to add to SparkPost suppression:', error);
-        // Continue anyway - at least show confirmation
-      }
-    }
+    // REMOVED: SparkPost now handles suppression automatically via data-msys-unsubscribe="1"
+    // The user is already added to the suppression list by SparkPost before reaching this page
 
     return new Response(renderSuccessPage(email), {
       status: 200,
