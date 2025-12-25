@@ -170,8 +170,6 @@ export interface CampaignSummary {
     bounceRate: number | null;
     countDelivered: number | null;
     countBounced: number | null;
-    unsubscribeRate: number | null;
-    countUnsubscribed: number | null;
   };
 }
 
