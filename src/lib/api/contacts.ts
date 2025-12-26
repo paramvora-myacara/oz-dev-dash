@@ -19,6 +19,10 @@ export interface Contact {
     source: string | null;
     details: any;
     is_valid_email?: boolean;
+    globally_unsubscribed?: boolean;
+    globally_bounced?: boolean;
+    suppression_reason?: string;
+    suppression_date?: string;
     history?: {
         campaign_id: string;
         status: string;
@@ -73,6 +77,10 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
         .from('contacts')
         .select(`
           *,
+          globally_unsubscribed,
+          globally_bounced,
+          suppression_reason,
+          suppression_date,
           history:campaign_recipients!left (
             campaign_id,
             status,
@@ -80,7 +88,10 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
             campaigns (name)
           )
         `, { count: 'exact' })
-        .filter('history', 'is', null);
+        .filter('history', 'is', null)
+        // Exclude globally suppressed contacts
+        .eq('globally_unsubscribed', false)
+        .eq('globally_bounced', false);
 
     // Apply other filters
     if (filters.search) {
@@ -120,6 +131,158 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
     return { data: data as Contact[], count };
 }
 
+export async function searchContactsForCampaign(filters: ContactFilters, page = 0, pageSize = 50) {
+    const supabase = createClient();
+
+    let query = supabase
+        .from('contacts')
+        .select(`
+      *,
+      globally_unsubscribed,
+      globally_bounced,
+      suppression_reason,
+      suppression_date,
+      history:campaign_recipients!left (
+        campaign_id,
+        status,
+        sent_at,
+        campaigns (name)
+      )
+    `, { count: 'exact' })
+        // Exclude globally suppressed contacts for campaign selection
+        .eq('globally_unsubscribed', false)
+        .eq('globally_bounced', false);
+
+    // 1. Text Search (Hybrid: FTS OR ILIKE)
+    if (filters.search) {
+        const searchTerms = getExpandedSearchTerms(filters.search);
+
+        // Build OR condition:
+        // 1. Match Search Vector (FTS) with original term
+        // 2. ILIKE match location with original term OR expanded term (State code/name)
+        // 3. ILIKE match Name/Company/Email with original term (for substring support)
+
+        const conditions = [];
+
+        // FTS (good for general keyword matching)
+        conditions.push(`search_vector.fts.${filters.search}`);
+
+        // Substring matches standard fields
+        conditions.push(`name.ilike.%${filters.search}%`);
+        conditions.push(`company.ilike.%${filters.search}%`);
+        conditions.push(`email.ilike.%${filters.search}%`);
+
+        // Metadata JSONB search (basic text cast)
+        // conditions.push(`details::text.ilike.%${filters.search}%`); // Optional, might be slow without index
+
+        // Expanded Location Matching (The fix for CA vs California)
+        searchTerms.forEach(term => {
+            conditions.push(`location.ilike.%${term}%`);
+        });
+
+        query = query.or(conditions.join(','));
+    }
+
+    // 2. Precise Column Filters
+    if (filters.role) {
+        query = query.ilike('role', `%${filters.role}%`);
+    }
+    if (filters.location) {
+        // Apply expansion to location filter too
+        const locTerms = getExpandedSearchTerms(filters.location);
+        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
+        query = query.or(locConditions.join(','));
+    }
+    if (filters.source) {
+        query = query.eq('source', filters.source);
+    }
+
+    // 3. History Filter
+    if (filters.campaignHistory) {
+        if (filters.campaignHistory === 'none') {
+            // "Show me people I have NEVER contacted" - use separate query for this case
+            return await getNeverContactedContacts(filters, page, pageSize);
+        } else if (filters.campaignHistory === 'any') {
+            // "Show me people I HAVE contacted" - use inner join
+            query = supabase
+                .from('contacts')
+                .select(`
+                  *,
+                  globally_unsubscribed,
+                  globally_bounced,
+                  suppression_reason,
+                  suppression_date,
+                  history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                  )
+                `, { count: 'exact' })
+                // Exclude globally suppressed contacts
+                .eq('globally_unsubscribed', false)
+                .eq('globally_bounced', false);
+        } else if (Array.isArray(filters.campaignHistory)) {
+            // "Show me people from selected campaigns" - use inner join with in filter
+            query = supabase
+                .from('contacts')
+                .select(`
+                  *,
+                  globally_unsubscribed,
+                  globally_bounced,
+                  suppression_reason,
+                  suppression_date,
+                  history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                  )
+                `, { count: 'exact' })
+                .in('history.campaign_id', filters.campaignHistory)
+                // Exclude globally suppressed contacts
+                .eq('globally_unsubscribed', false)
+                .eq('globally_bounced', false);
+        } else {
+            // "Show me people from Campaign X" - use inner join with filter (single campaign)
+            query = supabase
+                .from('contacts')
+                .select(`
+                  *,
+                  globally_unsubscribed,
+                  globally_bounced,
+                  suppression_reason,
+                  suppression_date,
+                  history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                  )
+                `, { count: 'exact' })
+                .eq('history.campaign_id', filters.campaignHistory)
+                // Exclude globally suppressed contacts
+                .eq('globally_unsubscribed', false)
+                .eq('globally_bounced', false);
+        }
+    }
+
+    // 4. Pagination
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await query
+        .range(from, to)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error searching contacts:', error);
+        throw error;
+    }
+
+    return { data: data as Contact[], count };
+}
+
 export async function searchContacts(filters: ContactFilters, page = 0, pageSize = 50) {
     const supabase = createClient();
 
@@ -127,6 +290,10 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
         .from('contacts')
         .select(`
       *,
+      globally_unsubscribed,
+      globally_bounced,
+      suppression_reason,
+      suppression_date,
       history:campaign_recipients!left (
         campaign_id,
         status,
@@ -190,6 +357,10 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
                 .from('contacts')
                 .select(`
                   *,
+                  globally_unsubscribed,
+                  globally_bounced,
+                  suppression_reason,
+                  suppression_date,
                   history:campaign_recipients!inner (
                     campaign_id,
                     status,
@@ -203,6 +374,10 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
                 .from('contacts')
                 .select(`
                   *,
+                  globally_unsubscribed,
+                  globally_bounced,
+                  suppression_reason,
+                  suppression_date,
                   history:campaign_recipients!inner (
                     campaign_id,
                     status,
@@ -217,6 +392,10 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
                 .from('contacts')
                 .select(`
                   *,
+                  globally_unsubscribed,
+                  globally_bounced,
+                  suppression_reason,
+                  suppression_date,
                   history:campaign_recipients!inner (
                     campaign_id,
                     status,

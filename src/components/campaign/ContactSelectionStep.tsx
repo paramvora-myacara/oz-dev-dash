@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 
 import { Users, Check, X, Loader2, ChevronDown } from 'lucide-react'
 
-import { searchContacts, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
+import { searchContactsForCampaign, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
 import { getCampaigns } from '@/lib/api/campaigns-backend'
 import { type Campaign } from '@/types/email-editor'
 import { isValidEmail } from '@/lib/utils/validation'
@@ -119,7 +119,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           campaignHistory: campaignHistoryFilter
         }
 
-        const { data, count } = await searchContacts(filters, page, pageSize)
+        const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
         setContacts(data || [])
         setTotalCount(count || 0)
       } catch (error) {

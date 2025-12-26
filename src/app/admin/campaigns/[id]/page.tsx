@@ -10,7 +10,7 @@ import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, retryFailed } from '@/lib/api/campaigns-backend'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed } from '@/lib/api/campaigns-backend'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
@@ -58,6 +58,8 @@ export default function CampaignEditPage() {
       bounceRate: number | null
       countDelivered: number | null
       countBounced: number | null
+      unsubscribeRate: number | null
+      countUnsubscribed: number | null
     }
   } | null>(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
@@ -69,7 +71,6 @@ export default function CampaignEditPage() {
   const { status: campaignStatus, refresh: refreshStatus, isLoading: statusLoading } = useCampaignStatus(campaignId)
 
   // Regeneration state
-  const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
 
   // Contact selection state
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
@@ -554,27 +555,6 @@ export default function CampaignEditPage() {
     }
   }, [campaign, campaignId, loadSummary, loadFailedEmails, refreshStatus])
 
-  // Regenerate single email
-  const handleRegenerateEmail = async (emailId: string) => {
-    if (!campaign) return
-
-    try {
-      setRegeneratingEmailId(emailId)
-      setError(null)
-      const result = await regenerateEmail(campaign.id || campaignId, emailId)
-
-      // Update the email in the local state
-      setStagedEmails(prev => prev.map(e =>
-        e.id === emailId
-          ? { ...e, subject: result.email.subject, body: result.email.body, isEdited: result.email.isEdited }
-          : e
-      ))
-    } catch (err: any) {
-      setError('Failed to regenerate email: ' + err.message)
-    } finally {
-      setRegeneratingEmailId(null)
-    }
-  }
 
   // Remove invalid recipient
   const handleRemoveInvalidRecipient = async (emailId: string) => {
@@ -626,15 +606,6 @@ export default function CampaignEditPage() {
     }
   }
 
-  // Auto-regenerate if body is empty whn expanded
-  useEffect(() => {
-    if (expandedEmailId) {
-      const email = stagedEmails.find(e => e.id === expandedEmailId)
-      if (email && !email.body && !regeneratingEmailId) {
-        handleRegenerateEmail(email.id)
-      }
-    }
-  }, [expandedEmailId, stagedEmails, regeneratingEmailId])
 
   if (loading) {
     return (
@@ -1034,8 +1005,8 @@ export default function CampaignEditPage() {
                 </div>
               </div>
 
-              {/* Second row: Delivery Rate, Bounce Rate */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Second row: Delivery Rate, Bounce Rate, Unsubscribe Rate */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white border rounded-lg p-3 shadow-sm">
                   <p className="text-xs uppercase text-gray-500 mb-1">Delivery Rate</p>
                   <p className="text-xl font-semibold text-green-600">
@@ -1059,6 +1030,19 @@ export default function CampaignEditPage() {
                   <p className="text-[11px] text-gray-500">
                     {campaignSummary?.sparkpostMetrics?.countBounced !== null && campaignSummary?.sparkpostMetrics?.countBounced !== undefined
                       ? `${campaignSummary.sparkpostMetrics.countBounced.toLocaleString()} bounced`
+                      : 'No data'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Unsubscribe Rate</p>
+                  <p className="text-xl font-semibold text-red-600">
+                    {campaignSummary?.sparkpostMetrics?.unsubscribeRate !== null && campaignSummary?.sparkpostMetrics?.unsubscribeRate !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.unsubscribeRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.sparkpostMetrics?.countUnsubscribed !== null && campaignSummary?.sparkpostMetrics?.countUnsubscribed !== undefined && campaignSummary?.sparkpostMetrics?.countDelivered !== null && campaignSummary?.sparkpostMetrics?.countDelivered !== undefined
+                      ? `${campaignSummary.sparkpostMetrics.countUnsubscribed.toLocaleString()} unsubs / ${campaignSummary.sparkpostMetrics.countDelivered.toLocaleString()} delivered`
                       : 'No data'}
                   </p>
                 </div>

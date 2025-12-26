@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Mail, RefreshCw, Calendar } from 'lucide-react'
+import { Plus, Trash2, Mail, RefreshCw, Calendar, Users } from 'lucide-react'
 import { getCampaigns, deleteCampaign, getGlobalStatus } from '@/lib/api/campaigns-backend'
 import { getStatusLabel, getStatusColor } from '@/lib/utils/status-labels'
 import type { Campaign } from '@/types/email-editor'
@@ -127,6 +127,13 @@ export default function CampaignsPage() {
           >
             <Mail size={20} />
             Inbox
+          </Link>
+          <Link
+            href="/admin/campaigns/contacts"
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Users size={20} />
+            Contacts
           </Link>
           <Link
             href="/admin/campaigns/new"

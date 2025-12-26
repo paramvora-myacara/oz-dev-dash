@@ -170,6 +170,8 @@ export interface CampaignSummary {
     bounceRate: number | null;
     countDelivered: number | null;
     countBounced: number | null;
+    unsubscribeRate: number | null;
+    countUnsubscribed: number | null;
   };
 }
 
@@ -329,16 +331,6 @@ export async function sendTestEmail(
   return { success: result.success };
 }
 
-// Regenerate single email AI content
-// Note: This endpoint may need to be implemented in the backend
-export async function regenerateEmail(
-  campaignId: string,
-  emailId: string
-): Promise<{ success: boolean; email: QueuedEmail }> {
-  // For now, we'll need to implement this endpoint in the backend
-  // This is a placeholder that will need backend support
-  throw new Error('Regenerate email endpoint not yet implemented in backend');
-}
 
 // Get sample recipients for campaign preview
 export async function getCampaignSampleRecipients(id: string, limit = 5): Promise<{ rows: any[]; columns: string[] }> {

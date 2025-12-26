@@ -6,6 +6,14 @@ ON CONFLICT (email) DO UPDATE SET
   role = EXCLUDED.role;
 SET session_replication_role = replica;
 
+-- Seed contacts
+INSERT INTO contacts (email, name, company) VALUES
+  ('aryan.jain@capmatch.com', 'Aryan Cap', 'CapMatch'),
+  ('aryan@ozlistings.com', 'Aryan OZL', 'OZ Listings'),
+  ('gamersupreme07@gmail.com', 'Alex Chen', 'GameDev Studios'),
+  ('aryan.jain@ozlistings.com', 'Aryan Bounce', 'OZL bounce')
+ON CONFLICT (email) DO NOTHING;
+
 --
 -- PostgreSQL database dump
 --
