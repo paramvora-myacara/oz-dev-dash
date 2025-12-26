@@ -10,7 +10,7 @@ import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, regenerateEmail, getCampaignSampleRecipients, retryFailed } from '@/lib/api/campaigns-backend'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed } from '@/lib/api/campaigns-backend'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
@@ -71,7 +71,6 @@ export default function CampaignEditPage() {
   const { status: campaignStatus, refresh: refreshStatus, isLoading: statusLoading } = useCampaignStatus(campaignId)
 
   // Regeneration state
-  const [regeneratingEmailId, setRegeneratingEmailId] = useState<string | null>(null)
 
   // Contact selection state
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
@@ -556,27 +555,6 @@ export default function CampaignEditPage() {
     }
   }, [campaign, campaignId, loadSummary, loadFailedEmails, refreshStatus])
 
-  // Regenerate single email
-  const handleRegenerateEmail = async (emailId: string) => {
-    if (!campaign) return
-
-    try {
-      setRegeneratingEmailId(emailId)
-      setError(null)
-      const result = await regenerateEmail(campaign.id || campaignId, emailId)
-
-      // Update the email in the local state
-      setStagedEmails(prev => prev.map(e =>
-        e.id === emailId
-          ? { ...e, subject: result.email.subject, body: result.email.body, isEdited: result.email.isEdited }
-          : e
-      ))
-    } catch (err: any) {
-      setError('Failed to regenerate email: ' + err.message)
-    } finally {
-      setRegeneratingEmailId(null)
-    }
-  }
 
   // Remove invalid recipient
   const handleRemoveInvalidRecipient = async (emailId: string) => {
@@ -628,15 +606,6 @@ export default function CampaignEditPage() {
     }
   }
 
-  // Auto-regenerate if body is empty whn expanded
-  useEffect(() => {
-    if (expandedEmailId) {
-      const email = stagedEmails.find(e => e.id === expandedEmailId)
-      if (email && !email.body && !regeneratingEmailId) {
-        handleRegenerateEmail(email.id)
-      }
-    }
-  }, [expandedEmailId, stagedEmails, regeneratingEmailId])
 
   if (loading) {
     return (
