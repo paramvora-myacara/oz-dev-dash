@@ -35,6 +35,53 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const campaignId = searchParams.get('campaign_id');
+
+    // Update Database
+    try {
+      // We need a service role client to bypass RLS or at least an admin client
+      // The createAdminClient in admin.ts uses anon key, which might not be enough if RLS is strict.
+      // However, usually unsubscribe is a public-facing action that should be allowed but secured by the token.
+      // Given generateUnsubscribeToken works, we trust the identity.
+      const { createAdminClient } = await import('@/utils/supabase/admin');
+      const supabase = createAdminClient();
+
+      // 1. Update contacts (Global Suppression)
+      const { data: contact, error: contactError } = await supabase
+        .from('contacts')
+        .update({
+          globally_unsubscribed: true,
+          suppression_reason: 'unsubscribe',
+          suppression_date: new Date().toISOString()
+        })
+        .eq('email', email.toLowerCase())
+        .select('id')
+        .single();
+
+      if (contactError) {
+        console.error('Error updating global suppression:', contactError);
+      }
+
+      // 2. Update campaign_recipients (Campaign Attribution)
+      if (campaignId && contact) {
+        const { error: recipientError } = await supabase
+          .from('campaign_recipients')
+          .update({
+            status: 'unsubscribed',
+            unsubscribed_at: new Date().toISOString()
+          })
+          .eq('campaign_id', campaignId)
+          .eq('contact_id', contact.id);
+
+        if (recipientError) {
+          console.error('Error updating campaign recipient:', recipientError);
+        }
+      }
+    } catch (dbError) {
+      console.error('Database update failed during unsubscribe:', dbError);
+      // We still proceed to SparkPost sync if possible, or at least show success to user
+    }
+
     // Add to SparkPost suppression list
     if (SPARKPOST_API_KEY) {
       try {

@@ -1,4 +1,5 @@
 import type { Section, CSVRow } from '@/types/email-editor'
+import { generateUnsubscribeUrl } from './unsubscribe'
 
 // Brand colors matching OutreachMarketing template
 const BRAND = {
@@ -26,11 +27,15 @@ export function generateEmailHtml(
   sections: Section[],
   subjectLine: string,
   sampleData: CSVRow | null,
-  unsubscribeUrl?: string,
+  campaignId?: string,
   generatedContent?: Record<string, string>
 ): string {
   const processedSubject = replaceVariables(subjectLine, sampleData)
-  
+
+  // Generate unsubscribe link using utility
+  const email = sampleData?.Email || '';
+  const unsubscribeUrl = generateUnsubscribeUrl(email, campaignId);
+
   // Build sections HTML
   const sectionsHtml = sections.map((section) => {
     if (section.type === 'button') {
@@ -47,7 +52,7 @@ export function generateEmailHtml(
         buttonText = replaceVariables(section.content, sampleData);
       }
       const buttonUrl = section.buttonUrl || '#'
-      
+
       return `
         <div style="margin: 24px 0; text-align: center;">
           <a href="${buttonUrl}" style="
@@ -83,7 +88,7 @@ export function generateEmailHtml(
               return `<p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND.textMuted}; line-height: 1.6;">${processedParagraph}</p>`
             })
             .join('')
-          
+
           return formattedContent;
         } else {
           // Placeholder for AI-generated content
@@ -100,9 +105,9 @@ export function generateEmailHtml(
               </div>
               <div style="font-size: 14px; color: ${BRAND.textMuted}; font-style: italic;">
                 AI will generate unique content for each recipient
-                ${section.selectedFields && section.selectedFields.length > 0 
-                  ? `<br><span style="font-size: 12px;">Using: ${section.selectedFields.join(', ')}</span>` 
-                  : ''}
+                ${section.selectedFields && section.selectedFields.length > 0
+              ? `<br><span style="font-size: 12px;">Using: ${section.selectedFields.join(', ')}</span>`
+              : ''}
               </div>
             </div>
           `
@@ -121,7 +126,7 @@ export function generateEmailHtml(
             return `<p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND.textMuted}; line-height: 1.6;">${processedParagraph}</p>`
           })
           .join('')
-        
+
         return formattedContent
       }
     }
@@ -208,7 +213,7 @@ export function generateEmailHtml(
       ">
         This email was sent to you because you're listed as a developer with
         an Opportunity Zone project. If you'd prefer not to receive these
-        emails, you can <a href="${unsubscribeUrl || (sampleData?.Email ? `/api/unsubscribe?email=${encodeURIComponent(sampleData.Email)}&token=TOKEN` : '#')}" style="color: ${BRAND.primary}; text-decoration: underline;">unsubscribe</a>.
+        emails, you can <a href="${unsubscribeUrl}" style="color: ${BRAND.primary}; text-decoration: underline;">unsubscribe</a>.
       </p>
       <p style="
         margin: 0;
