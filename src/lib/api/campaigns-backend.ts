@@ -10,11 +10,24 @@ import type { Campaign, QueuedEmail, LaunchResponse } from '@/types/email-editor
 // The proxy handles authentication server-side using httpOnly cookies
 const PROXY_BASE = '/api/backend-proxy/campaigns';
 
+/**
+ * Helper function to parse error response from API calls
+ * Handles both JSON and text error responses properly
+ */
+async function parseErrorResponse(res: Response): Promise<{ detail: string }> {
+  const errorText = await res.text();
+  try {
+    return JSON.parse(errorText);
+  } catch {
+    return { detail: errorText };
+  }
+}
+
 // Campaign CRUD
 export async function getCampaigns(): Promise<Campaign[]> {
   const res = await fetch(PROXY_BASE);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to fetch campaigns');
   }
   return res.json();
@@ -23,7 +36,7 @@ export async function getCampaigns(): Promise<Campaign[]> {
 export async function getCampaign(id: string): Promise<Campaign> {
   const res = await fetch(`${PROXY_BASE}/${id}`);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to fetch campaign');
   }
   return res.json();
@@ -36,7 +49,7 @@ export async function createCampaign(data: Partial<Campaign>): Promise<Campaign>
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to create campaign');
   }
   return res.json();
@@ -49,7 +62,7 @@ export async function updateCampaign(id: string, data: Partial<Campaign>): Promi
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to update campaign');
   }
   return res.json();
@@ -60,7 +73,7 @@ export async function deleteCampaign(id: string): Promise<void> {
     method: 'DELETE',
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to delete campaign');
   }
 }
@@ -86,7 +99,7 @@ export async function generateEmails(
   });
   
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to start generation');
   }
   
@@ -112,7 +125,7 @@ export async function launchCampaign(
   });
   
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to start launch');
   }
   
@@ -146,7 +159,7 @@ export interface CampaignStatus {
 export async function getCampaignStatus(campaignId: string): Promise<CampaignStatus> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/status`);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to fetch status');
   }
   return res.json();
@@ -178,7 +191,13 @@ export interface CampaignSummary {
 export async function getCampaignSummary(campaignId: string): Promise<CampaignSummary> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/summary`);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const errorText = await res.text();
+    let error;
+    try {
+      error = JSON.parse(errorText);
+    } catch {
+      error = { detail: errorText };
+    }
     throw new Error(error.detail || 'Failed to fetch summary');
   }
   return res.json();
@@ -188,7 +207,7 @@ export async function getCampaignSummary(campaignId: string): Promise<CampaignSu
 export async function getGlobalStatus(): Promise<any> {
   const res = await fetch(`${PROXY_BASE}/status`);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to fetch global status');
   }
   return res.json();
@@ -206,7 +225,7 @@ export async function testSend(
     body: JSON.stringify({ testEmail, recipientEmailId }),
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to send test email');
   }
   return res.json();
@@ -223,7 +242,7 @@ export async function generateSubject(
     body: JSON.stringify({ instructions }),
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to generate subject');
   }
   return res.json();
@@ -235,7 +254,7 @@ export async function retryFailed(campaignId: string): Promise<{ status: string;
     method: 'POST',
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to retry failed emails');
   }
   return res.json();
@@ -255,7 +274,7 @@ export async function getEmails(
   
   const res = await fetch(`${PROXY_BASE}/${campaignId}/emails?${params}`);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to fetch emails');
   }
   return res.json();
@@ -265,7 +284,7 @@ export async function getEmails(
 export async function getRecipients(campaignId: string): Promise<any[]> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/recipients`);
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to fetch recipients');
   }
   return res.json();
@@ -286,7 +305,7 @@ export async function addRecipients(
     }),
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to add recipients');
   }
   return res.json();
@@ -315,7 +334,7 @@ export async function updateStagedEmail(
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const error = await res.json().catch(async () => ({ detail: await res.text() }));
+    const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to update email');
   }
   return res.json();

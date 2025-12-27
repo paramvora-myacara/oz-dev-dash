@@ -10,7 +10,7 @@ import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed } from '@/lib/api/campaigns-backend'
+import { getCampaign, updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails } from '@/lib/api/campaigns-backend'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
@@ -195,11 +195,8 @@ export default function CampaignEditPage() {
     if (!campaignId) return
     try {
       setLoadingFailed(true)
-      const res = await fetch(`/api/campaigns/${campaignId}/emails?status=failed&limit=200`)
-      const json = await res.json()
-      if (json?.emails) {
-        setFailedEmails(json.emails)
-      }
+      const emails = await getEmails(campaignId, 'failed', 200)
+      setFailedEmails(emails)
     } catch (err) {
       console.error('Failed to load failed emails', err)
     } finally {
@@ -211,14 +208,13 @@ export default function CampaignEditPage() {
     if (!campaignId) return
     try {
       setLoadingSummary(true)
-      const res = await fetch(`/api/campaigns/${campaignId}/summary`)
-      const json = await res.json()
-      if (json?.counts) {
+      const summary = await getCampaignSummary(campaignId)
+      if (summary) {
         setCampaignSummary({
-          ...json.counts,
-          lastSentAt: json.lastSentAt,
-          nextScheduledFor: json.nextScheduledFor,
-          sparkpostMetrics: json.sparkpostMetrics,
+          ...summary.counts,
+          lastSentAt: summary.lastSentAt,
+          nextScheduledFor: summary.nextScheduledFor,
+          sparkpostMetrics: summary.sparkpostMetrics,
         })
       }
     } catch (err) {
