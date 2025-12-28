@@ -18,7 +18,7 @@ const isMultipleEmails = (emailStr: string) => {
   return getEmails(emailStr).length > 1;
 }
 
-const API_BASE = '/api/campaigns'
+const API_BASE = '/api/backend-proxy/campaigns'
 
 // State mapping for smart location filtering
 const STATE_MAPPING: Record<string, string> = {
@@ -139,11 +139,10 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   // Reset page when filters or page size change
   useEffect(() => {
     setPage(0)
-    // Clear selection when filters change (optional, but safer to avoid stale selections)
-    // For now keeping selection as user might want to select-search-select
+    // Reset global select all state since it depends on current page/filter results
     setIsSelectAllGlobal(false)
     setExcludedIds(new Set())
-    setSelectedIds(new Set())
+    // Preserve individual selections across filter changes for better UX
   }, [advancedFilters, pageSize])
 
 
@@ -373,11 +372,9 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           explicitSelections: selectedEmails // Still need these for email overrides if any
         }
       } else {
-        const selections = Array.from(selectedIds).map(id => ({
-          contact_id: id,
-          selected_email: selectedEmails[id] // might be undefined if single
-        }))
-        payload = { selections }
+        payload = {
+          contact_ids: Array.from(selectedIds)
+        }
       }
 
       // Save to backend

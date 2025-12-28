@@ -130,7 +130,8 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
 
     const { data, error, count } = await query
         .range(page * pageSize, (page + 1) * pageSize - 1)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
 
     if (error) {
         console.error('Error searching contacts:', error);
@@ -290,7 +291,8 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
 
     const { data, error, count } = await query
         .range(from, to)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
 
     if (error) {
         console.error('Error searching contacts:', error);
@@ -323,7 +325,7 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
     if (filters.search) {
         const searchTerms = getExpandedSearchTerms(filters.search);
 
-        // Build OR condition: 
+        // Build OR condition:
         // 1. Match Search Vector (FTS) with original term
         // 2. ILIKE match location with original term OR expanded term (State code/name)
         // 3. ILIKE match Name/Company/Email with original term (for substring support)
@@ -438,7 +440,8 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
 
     const { data, error, count } = await query
         .range(from, to)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
 
     if (error) {
         console.error('Error searching contacts:', error);
@@ -517,7 +520,7 @@ export async function getAllContactIds(filters: ContactFilters) {
         }
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order('created_at', { ascending: false }).order('id', { ascending: false });
 
     if (error) {
         console.error('Error fetching all contact IDs:', error);
