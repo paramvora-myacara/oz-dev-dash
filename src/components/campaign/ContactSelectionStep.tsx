@@ -18,7 +18,7 @@ const isMultipleEmails = (emailStr: string) => {
   return getEmails(emailStr).length > 1;
 }
 
-const API_BASE = '/api/campaigns'
+const API_BASE = '/api/backend-proxy/campaigns'
 
 // State mapping for smart location filtering
 const STATE_MAPPING: Record<string, string> = {
@@ -76,7 +76,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const [advancedFilters, setAdvancedFilters] = useState({
     locationFilter: '',
     source: '',
-    history: 'all' // 'all', 'none', 'any', or campaign UUID
+    history: 'all', // 'all', 'none', 'any', or campaign UUID
+    emailStatus: 'all' // 'all' (Valid+Catch-all), 'valid', 'catch-all'
   })
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -116,7 +117,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
-          campaignHistory: campaignHistoryFilter
+          campaignHistory: campaignHistoryFilter,
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
 
         const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
@@ -137,11 +139,10 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   // Reset page when filters or page size change
   useEffect(() => {
     setPage(0)
-    // Clear selection when filters change (optional, but safer to avoid stale selections)
-    // For now keeping selection as user might want to select-search-select
+    // Reset global select all state since it depends on current page/filter results
     setIsSelectAllGlobal(false)
     setExcludedIds(new Set())
-    setSelectedIds(new Set())
+    // Preserve individual selections across filter changes for better UX
   }, [advancedFilters, pageSize])
 
 
@@ -360,7 +361,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
-          campaignHistory: campaignHistoryFilter
+          campaignHistory: campaignHistoryFilter,
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
 
         payload = {
@@ -370,11 +372,9 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           explicitSelections: selectedEmails // Still need these for email overrides if any
         }
       } else {
-        const selections = Array.from(selectedIds).map(id => ({
-          contact_id: id,
-          selected_email: selectedEmails[id] // might be undefined if single
-        }))
-        payload = { selections }
+        payload = {
+          contact_ids: Array.from(selectedIds)
+        }
       }
 
       // Save to backend
@@ -400,7 +400,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setAdvancedFilters({
       locationFilter: '',
       source: '',
-      history: 'all'
+      history: 'all',
+      emailStatus: 'all'
     })
     setIsSelectAllGlobal(false)
   }
@@ -467,6 +468,25 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                     {campaign.name}
                   </option>
                 ))}
+            </select>
+          </div>
+
+          {/* Email Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email Status
+            </label>
+            <select
+              value={advancedFilters.emailStatus}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                emailStatus: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All (Valid + Catch-all)</option>
+              <option value="Valid">Only Valid</option>
+              <option value="Catch-all">Only Catch-all</option>
             </select>
           </div>
 
