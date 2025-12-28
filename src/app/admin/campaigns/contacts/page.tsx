@@ -49,7 +49,8 @@ export default function ContactsPage() {
   const [advancedFilters, setAdvancedFilters] = useState({
     locationFilter: '',
     source: '',
-    history: 'all' // 'all', 'none', 'any', or campaign UUID
+    history: 'all', // 'all', 'none', 'any', or campaign UUID
+    emailStatus: 'all' // 'all', 'valid', 'catch-all', 'invalid'
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -69,7 +70,8 @@ export default function ContactsPage() {
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
-          campaignHistory: campaignHistoryFilter
+          campaignHistory: campaignHistoryFilter,
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
 
         const { data, count } = await searchContacts(filters, page, pageSize)
@@ -96,7 +98,8 @@ export default function ContactsPage() {
     setAdvancedFilters({
       locationFilter: '',
       source: '',
-      history: 'all'
+      history: 'all',
+      emailStatus: 'all'
     })
   }
 
@@ -163,6 +166,26 @@ export default function ContactsPage() {
               <option value="all">Show All</option>
               <option value="none">Never Contacted</option>
               <option value="any">Previously Contacted</option>
+            </select>
+          </div>
+
+          {/* Email Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email Status
+            </label>
+            <select
+              value={advancedFilters.emailStatus}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                emailStatus: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Show All</option>
+              <option value="Valid">Valid Only</option>
+              <option value="Catch-all">Catch-all Only</option>
+              <option value="invalid">Invalid Only</option>
             </select>
           </div>
 
@@ -247,14 +270,16 @@ export default function ContactsPage() {
             <div className="divide-y divide-gray-200">
               {contacts.map((contact) => {
                 const isSuppressed = isContactSuppressed(contact)
+                const isInvalid = contact.details?.email_status === 'invalid'
                 const hasHistory = contact.history && contact.history.length > 0
+                const statusColor = contact.details?.email_status === 'Valid' ? 'text-green-600' :
+                  contact.details?.email_status === 'Catch-all' ? 'text-yellow-600' : 'text-red-500'
 
                 return (
                   <div
                     key={contact.id}
-                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors ${
-                      isSuppressed ? 'bg-red-50 border-l-4 border-red-400' : 'bg-white'
-                    }`}
+                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors ${isSuppressed || isInvalid ? 'bg-red-50 border-l-4 border-red-400' : 'bg-white'
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -269,6 +294,18 @@ export default function ContactsPage() {
                                 <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium">
                                   <EyeOff size={12} />
                                   Suppressed
+                                </div>
+                              )}
+                              {isInvalid && (
+                                <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                                  <AlertTriangle size={12} />
+                                  Invalid Email
+                                </div>
+                              )}
+                              {contact.details?.email_status === 'Catch-all' && (
+                                <div className="flex items-center gap-1 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                                  <RefreshCw size={12} />
+                                  Catch-all
                                 </div>
                               )}
                             </div>

@@ -76,7 +76,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const [advancedFilters, setAdvancedFilters] = useState({
     locationFilter: '',
     source: '',
-    history: 'all' // 'all', 'none', 'any', or campaign UUID
+    history: 'all', // 'all', 'none', 'any', or campaign UUID
+    emailStatus: 'all' // 'all' (Valid+Catch-all), 'valid', 'catch-all'
   })
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -116,7 +117,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
-          campaignHistory: campaignHistoryFilter
+          campaignHistory: campaignHistoryFilter,
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
 
         const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
@@ -360,7 +362,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
-          campaignHistory: campaignHistoryFilter
+          campaignHistory: campaignHistoryFilter,
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
 
         payload = {
@@ -400,7 +403,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setAdvancedFilters({
       locationFilter: '',
       source: '',
-      history: 'all'
+      history: 'all',
+      emailStatus: 'all'
     })
     setIsSelectAllGlobal(false)
   }
@@ -467,6 +471,25 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                     {campaign.name}
                   </option>
                 ))}
+            </select>
+          </div>
+
+          {/* Email Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email Status
+            </label>
+            <select
+              value={advancedFilters.emailStatus}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                emailStatus: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All (Valid + Catch-all)</option>
+              <option value="Valid">Only Valid</option>
+              <option value="Catch-all">Only Catch-all</option>
             </select>
           </div>
 

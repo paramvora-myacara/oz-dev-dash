@@ -7,6 +7,7 @@ export interface ContactFilters {
     location?: string;
     source?: string;
     campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
+    emailStatus?: string | string[];
 }
 
 export interface Contact {
@@ -119,6 +120,14 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
         query = query.eq('source', filters.source);
     }
 
+    if (filters.emailStatus) {
+        if (Array.isArray(filters.emailStatus)) {
+            query = query.in('details->>email_status', filters.emailStatus);
+        } else {
+            query = query.eq('details->>email_status', filters.emailStatus);
+        }
+    }
+
     const { data, error, count } = await query
         .range(page * pageSize, (page + 1) * pageSize - 1)
         .order('created_at', { ascending: false });
@@ -152,6 +161,14 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
         // Exclude globally suppressed contacts for campaign selection
         .eq('globally_unsubscribed', false)
         .eq('globally_bounced', false);
+
+    // Apply email_status filter
+    const statusFilter = filters.emailStatus || ['Valid', 'Catch-all'];
+    if (Array.isArray(statusFilter)) {
+        query = query.in('details->>email_status', statusFilter);
+    } else {
+        query = query.eq('details->>email_status', statusFilter);
+    }
 
     // 1. Text Search (Hybrid: FTS OR ILIKE)
     if (filters.search) {
@@ -346,6 +363,14 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
         query = query.eq('source', filters.source);
     }
 
+    if (filters.emailStatus) {
+        if (Array.isArray(filters.emailStatus)) {
+            query = query.in('details->>email_status', filters.emailStatus);
+        } else {
+            query = query.eq('details->>email_status', filters.emailStatus);
+        }
+    }
+
     // 3. History Filter
     if (filters.campaignHistory) {
         if (filters.campaignHistory === 'none') {
@@ -452,6 +477,14 @@ export async function getAllContactIds(filters: ContactFilters) {
         query = query.or(locConditions.join(','));
     }
     if (filters.source) query = query.eq('source', filters.source);
+
+    if (filters.emailStatus) {
+        if (Array.isArray(filters.emailStatus)) {
+            query = query.in('details->>email_status', filters.emailStatus);
+        } else {
+            query = query.eq('details->>email_status', filters.emailStatus);
+        }
+    }
 
     // 3. History Filter
     if (filters.campaignHistory) {
