@@ -462,7 +462,11 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
               <option value="all">All Types</option>
               <option value="developer">Developers Only</option>
               <option value="investor">Investors Only</option>
-              <option value="developer,investor">Both Types</option>
+              <option value="fund">Funds Only</option>
+              <option value="developer,investor">Dev + Investors</option>
+              <option value="developer,fund">Dev + Funds</option>
+              <option value="investor,fund">Investors + Funds</option>
+              <option value="developer,investor,fund">All Types</option>
             </select>
           </div>
 
