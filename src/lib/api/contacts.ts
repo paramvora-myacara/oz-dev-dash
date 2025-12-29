@@ -6,6 +6,7 @@ export interface ContactFilters {
     role?: string;
     location?: string;
     source?: string;
+    contactType?: string | string[]; // 'developer', 'investor', 'developer,investor', or array of these
     campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
     emailStatus?: string | string[];
 }
@@ -18,6 +19,7 @@ export interface Contact {
     role: string | null;
     location: string | null;
     source: string | null;
+    contact_type: string;
     details: any;
     is_valid_email?: boolean;
     globally_unsubscribed?: boolean;
@@ -69,6 +71,24 @@ const getExpandedSearchTerms = (input: string): string[] => {
     return terms;
 };
 
+// Helper function to apply contact type filtering to Supabase queries
+function applyContactTypeFilter(query: any, contactType?: string | string[]) {
+    if (!contactType) return query;
+
+    if (Array.isArray(contactType)) {
+        return query.in('contact_type', contactType);
+    } else {
+        // Handle comma-separated values like 'developer,investor'
+        if (contactType.includes(',')) {
+            // If filtering for 'developer,investor', match exactly
+            return query.eq('contact_type', contactType);
+        } else {
+            // If filtering for 'developer', match records that contain 'developer'
+            return query.ilike('contact_type', `%${contactType}%`);
+        }
+    }
+}
+
 // Helper function for "never contacted" filter
 async function getNeverContactedContacts(filters: ContactFilters, page: number, pageSize: number) {
     const supabase = createClient();
@@ -119,6 +139,7 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
     if (filters.source) {
         query = query.eq('source', filters.source);
     }
+    query = applyContactTypeFilter(query, filters.contactType);
 
     if (filters.emailStatus) {
         if (Array.isArray(filters.emailStatus)) {
@@ -214,6 +235,7 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
     if (filters.source) {
         query = query.eq('source', filters.source);
     }
+    query = applyContactTypeFilter(query, filters.contactType);
 
     // 3. History Filter
     if (filters.campaignHistory) {
@@ -364,6 +386,7 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
     if (filters.source) {
         query = query.eq('source', filters.source);
     }
+    query = applyContactTypeFilter(query, filters.contactType);
 
     if (filters.emailStatus) {
         if (Array.isArray(filters.emailStatus)) {
@@ -480,6 +503,7 @@ export async function getAllContactIds(filters: ContactFilters) {
         query = query.or(locConditions.join(','));
     }
     if (filters.source) query = query.eq('source', filters.source);
+    query = applyContactTypeFilter(query, filters.contactType);
 
     if (filters.emailStatus) {
         if (Array.isArray(filters.emailStatus)) {

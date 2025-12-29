@@ -76,6 +76,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const [advancedFilters, setAdvancedFilters] = useState({
     locationFilter: '',
     source: '',
+    contactType: 'developer', // 'all', 'developer', 'investor', 'both'
     history: 'all', // 'all', 'none', 'any', or campaign UUID
     emailStatus: 'all' // 'all' (Valid+Catch-all), 'valid', 'catch-all'
   })
@@ -117,6 +118,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
+          contactType: advancedFilters.contactType === 'all' ? undefined : advancedFilters.contactType,
           campaignHistory: campaignHistoryFilter,
           emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
@@ -400,6 +402,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setAdvancedFilters({
       locationFilter: '',
       source: '',
+      contactType: 'developer',
       history: 'all',
       emailStatus: 'all'
     })
@@ -443,7 +446,25 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
             />
           </div>
 
-
+          {/* Contact Type Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contact Type
+            </label>
+            <select
+              value={advancedFilters.contactType}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                contactType: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Types</option>
+              <option value="developer">Developers Only</option>
+              <option value="investor">Investors Only</option>
+              <option value="developer,investor">Both Types</option>
+            </select>
+          </div>
 
           {/* History Filter */}
           <div>
@@ -537,6 +558,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                 <option value={10}>10</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
+                <option value={500}>500</option>
                 <option value={1000}>1000</option>
               </select>
             </div>

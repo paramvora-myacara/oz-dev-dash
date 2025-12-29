@@ -49,6 +49,7 @@ export default function ContactsPage() {
   const [advancedFilters, setAdvancedFilters] = useState({
     locationFilter: '',
     source: '',
+    contactType: 'developer', // 'all', 'developer', 'investor', 'both'
     history: 'all', // 'all', 'none', 'any', or campaign UUID
     emailStatus: 'all' // 'all', 'valid', 'catch-all', 'invalid'
   })
@@ -70,6 +71,7 @@ export default function ContactsPage() {
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
+          contactType: advancedFilters.contactType === 'all' ? undefined : advancedFilters.contactType,
           campaignHistory: campaignHistoryFilter,
           emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
         }
@@ -98,6 +100,7 @@ export default function ContactsPage() {
     setAdvancedFilters({
       locationFilter: '',
       source: '',
+      contactType: 'developer',
       history: 'all',
       emailStatus: 'all'
     })
@@ -148,6 +151,26 @@ export default function ContactsPage() {
               onChange={(e) => setAdvancedFilters(prev => ({ ...prev, locationFilter: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+          </div>
+
+          {/* Contact Type Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contact Type
+            </label>
+            <select
+              value={advancedFilters.contactType}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                contactType: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Types</option>
+              <option value="developer">Developers Only</option>
+              <option value="investor">Investors Only</option>
+              <option value="developer,investor">Both Types</option>
+            </select>
           </div>
 
           {/* History Filter */}
@@ -236,6 +259,7 @@ export default function ContactsPage() {
                 <option value={10}>10</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
+                <option value={500}>500</option>
                 <option value={1000}>1000</option>
               </select>
             </div>
@@ -290,6 +314,16 @@ export default function ContactsPage() {
                               <h3 className="text-sm font-medium text-gray-900 truncate">
                                 {contact.name || 'Unknown Name'}
                               </h3>
+                              {/* Contact Type Badge */}
+                              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                contact.contact_type === 'developer' ? 'bg-blue-100 text-blue-800' :
+                                contact.contact_type === 'investor' ? 'bg-green-100 text-green-800' :
+                                contact.contact_type === 'developer,investor' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {contact.contact_type === 'developer,investor' ? 'Both' :
+                                 contact.contact_type || 'Unknown'}
+                              </div>
                               {isSuppressed && (
                                 <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium">
                                   <EyeOff size={12} />
