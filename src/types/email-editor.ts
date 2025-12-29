@@ -148,7 +148,7 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         type: 'text',
         mode: 'personalized',
         content: 'Mention their specific project and location. Sound impressed by what they\'re building.',
-        selectedFields: ['Name', 'Company', 'City', 'Address'],
+        selectedFields: ['FirstName', 'Company', 'City', 'Address'],
       },
       {
         id: 'pitch',
@@ -178,7 +178,7 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         type: 'text',
         mode: 'personalized',
         content: 'Add in some urgency reminder for this - make it more urgent',
-        selectedFields: ['Name', 'Company'],
+        selectedFields: ['FirstName', 'Company'],
       },
       {
         id: 'signoff',
@@ -201,7 +201,7 @@ export const DEFAULT_TEMPLATES: EmailTemplate[] = [
         type: 'text',
         mode: 'personalized',
         content: 'Reference your previous email and their project briefly.',
-        selectedFields: ['Name', 'Company'],
+        selectedFields: ['FirstName', 'Company'],
       },
       {
         id: 'value-add',
