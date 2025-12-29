@@ -369,6 +369,16 @@ export async function getCampaignSampleRecipients(id: string, limit = 5): Promis
     const row: Record<string, any> = {
       ...details,
       Name: contact.name || '',
+      FirstName: (() => {
+        const fullName = contact.name || '';
+        const parts = fullName.trim().split(' ', 1);
+        return parts[0] || '';
+      })(),
+      LastName: (() => {
+        const fullName = contact.name || '';
+        const parts = fullName.trim().split(' ', 1);
+        return parts.length > 1 ? parts.slice(1).join(' ') : '';
+      })(),
       Email: r.selected_email || contact.email || '',
       Company: contact.company || '',
       Role: contact.role || '',
