@@ -169,7 +169,11 @@ export default function ContactsPage() {
               <option value="all">All Types</option>
               <option value="developer">Developers Only</option>
               <option value="investor">Investors Only</option>
-              <option value="developer,investor">Both Types</option>
+              <option value="fund">Funds Only</option>
+              <option value="developer,investor">Dev + Investors</option>
+              <option value="developer,fund">Dev + Funds</option>
+              <option value="investor,fund">Investors + Funds</option>
+              <option value="developer,investor,fund">All Types</option>
             </select>
           </div>
 
@@ -318,10 +322,20 @@ export default function ContactsPage() {
                               <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                                 contact.contact_type === 'developer' ? 'bg-blue-100 text-blue-800' :
                                 contact.contact_type === 'investor' ? 'bg-green-100 text-green-800' :
+                                contact.contact_type === 'fund' ? 'bg-orange-100 text-orange-800' :
                                 contact.contact_type === 'developer,investor' ? 'bg-purple-100 text-purple-800' :
+                                contact.contact_type === 'developer,fund' ? 'bg-cyan-100 text-cyan-800' :
+                                contact.contact_type === 'investor,fund' ? 'bg-pink-100 text-pink-800' :
+                                contact.contact_type === 'developer,investor,fund' ? 'bg-indigo-100 text-indigo-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {contact.contact_type === 'developer,investor' ? 'Both' :
+                                {contact.contact_type === 'developer,investor' ? 'Dev+Inv' :
+                                 contact.contact_type === 'developer,fund' ? 'Dev+Fund' :
+                                 contact.contact_type === 'investor,fund' ? 'Inv+Fund' :
+                                 contact.contact_type === 'developer,investor,fund' ? 'All' :
+                                 contact.contact_type === 'developer' ? 'Dev' :
+                                 contact.contact_type === 'investor' ? 'Inv' :
+                                 contact.contact_type === 'fund' ? 'Fund' :
                                  contact.contact_type || 'Unknown'}
                               </div>
                               {isSuppressed && (

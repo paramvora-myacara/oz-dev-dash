@@ -6,7 +6,7 @@ export interface ContactFilters {
     role?: string;
     location?: string;
     source?: string;
-    contactType?: string | string[]; // 'developer', 'investor', 'developer,investor', or array of these
+    contactType?: string | string[]; // 'developer', 'investor', 'fund', or combinations like 'developer,investor,fund', or array
     campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
     emailStatus?: string | string[];
 }
