@@ -2,13 +2,13 @@
 -- Sample listings for testing DDV functionality
 
 -- Insert listing first without current_version_id to avoid circular dependency
-INSERT INTO listings (id, slug, title, has_vault, developer_entity_name, developer_ca_name, created_at, updated_at) VALUES
-  ('123e4567-e89b-12d3-a456-426614174000', 'alden-brockton-ma', 'Alden Brockton MA Development', true, 'Alden Development Corp', 'John Smith', NOW(), NOW())
+INSERT INTO listings (id, slug, title, has_vault, developer_contact_email, developer_website, created_at, updated_at) VALUES
+  ('123e4567-e89b-12d3-a456-426614174000', 'alden-brockton-ma', 'Alden Brockton MA Development', true, 'contact@alden.com', 'https://alden.com', NOW(), NOW())
 ON CONFLICT (slug) DO UPDATE SET
   title = EXCLUDED.title,
   has_vault = EXCLUDED.has_vault,
-  developer_entity_name = EXCLUDED.developer_entity_name,
-  developer_ca_name = EXCLUDED.developer_ca_name,
+  developer_contact_email = EXCLUDED.developer_contact_email,
+  developer_website = EXCLUDED.developer_website,
   updated_at = NOW();
 
 -- Add sample listing version for the Alden Brockton MA listing
