@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
   try {
@@ -9,22 +8,6 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
-      )
-    }
-    
-    // Fetch the developer information from the listings table
-    const supabase = await createClient()
-    const { data: listing, error: listingError } = await supabase
-      .from('listings')
-      .select('developer_entity_name, developer_ca_email, developer_ca_name')
-      .eq('slug', targetSlug)
-      .single()
-    
-    if (listingError || !listing) {
-      console.error('Error fetching listing:', listingError)
-      return NextResponse.json(
-        { error: 'Failed to fetch listing information' },
-        { status: 500 }
       )
     }
     
@@ -38,18 +21,6 @@ export async function POST(request: Request) {
           placeholder_name: "receiving party",
           name: fullName,
           email: email,
-        },
-        {
-          id: "2",
-          placeholder_name: "disclosing party",
-          name: listing.developer_ca_name || listing.developer_entity_name || "Development Entity",
-          email: listing.developer_ca_email || "noreply@development-entity.com"
-        }
-      ],
-      template_fields: [
-        {
-          api_id: "developer_entity_name",
-          value: listing.developer_entity_name || "Development Entity"
         }
       ]
     }
