@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { getListingPath } from '@/utils/helpers'
 
 const SIGNWELL_MODAL_CONTAINER_ID = 'signwell-modal-root'
 
@@ -28,10 +30,9 @@ export function useSignWell() {
 
   // SignWell document creation function
   const createSignWellDocument = useCallback(async (
-    fullName: string, 
+    fullName: string,
     email: string,
-    slug: string,
-    onSuccess?: (slug: string) => void
+    slug: string
   ) => {
     try {
       setIsLoading(true)
@@ -74,7 +75,7 @@ export function useSignWell() {
         
         if (typeof signWellEmbed !== 'undefined') {
           console.log('SignWell embedded signing found, opening modal...');
-          openSignWellModal(embeddedSigningUrl, signWellEmbed, slug, onSuccess);
+          openSignWellModal(embeddedSigningUrl, signWellEmbed, slug, fullName, email);
           return;
         }
         
@@ -104,7 +105,7 @@ export function useSignWell() {
         setTimeout(waitForSignWell, 100);
       };
       
-      const openSignWellModal = (url: string, SignWellConstructor: any, slug: string, onSuccess?: (slug: string) => void) => {
+      const openSignWellModal = (url: string, SignWellConstructor: any, slug: string, fullName: string, email: string) => {
         try {
           const container = ensureSignWellContainer()
           const config: Record<string, any> = {
@@ -113,9 +114,33 @@ export function useSignWell() {
               completed: async (e: any) => {
                 console.log('SignWell signing completed')
 
-                if (onSuccess) {
-                  onSuccess(slug)
+                // Record signing in database
+                try {
+                  const supabase = createClient()
+                  const { data: { user } } = await supabase.auth.getUser()
+
+                  if (user?.id) {
+                    const { error } = await supabase
+                      .from('user_signed_agreements')
+                      .insert({
+                        user_id: user.id,
+                        listing_slug: slug,
+                        full_name: fullName,
+                        email: email
+                      })
+                      .select()
+                      .single()
+
+                    if (error && error.code !== '23505') { // Ignore duplicate errors
+                      console.error('Failed to record signing:', error)
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error in signing completion:', error)
                 }
+
+                // Redirect to vault
+                window.location.href = getListingPath(`/${slug}/access-dd-vault`)
                 setBodySignWellState(false)
               },
               closed: (e: any) => {

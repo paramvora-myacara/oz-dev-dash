@@ -130,11 +130,8 @@ WHERE slug = 'your-listing-slug';
 | `title` | TEXT | No | Display title |
 | `current_version_id` | UUID | No | References current listing_versions.id |
 | `has_vault` | BOOLEAN | Yes | Whether listing has a vault |
-| `developer_entity_name` | TEXT | No | Developer company name |
-| `developer_ca_name` | TEXT | No | Developer contact name |
-| `developer_ca_email` | TEXT | No | Developer contact email |
-| `developer_contact_email` | TEXT | No | Additional contact email |
-| `developer_website` | TEXT | No | Developer website |
+| `developer_contact_email` | TEXT | No | Email for "Contact Developer" functionality |
+| `developer_website` | TEXT | No | Developer website displayed in sponsor profile |
 | `created_at` | TIMESTAMP | Yes | Creation timestamp |
 | `updated_at` | TIMESTAMP | Yes | Last update timestamp |
 

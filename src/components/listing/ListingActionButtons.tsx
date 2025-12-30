@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Tooltip } from '@/components/Tooltip';
 import { AuthModal, ConfirmationModal } from '@/components/AuthModal';
@@ -26,8 +27,26 @@ export default function ListingActionButtons({ slug }: ListingActionButtonsProps
     authContext
   } = useAuth();
 
+  const [hasSignedCAForCurrentListing, setHasSignedCAForCurrentListing] = useState(false);
+  const [isCheckingCA, setIsCheckingCA] = useState(false);
+
   // Check if user has signed CA for this listing
-  const hasSignedCAForCurrentListing = checkHasSignedCAForListing(slug);
+  useEffect(() => {
+    const checkCAStatus = async () => {
+      setIsCheckingCA(true);
+      try {
+        const hasSigned = await checkHasSignedCAForListing(slug);
+        setHasSignedCAForCurrentListing(hasSigned);
+      } catch (error) {
+        console.error('Error checking CA status:', error);
+        setHasSignedCAForCurrentListing(false);
+      } finally {
+        setIsCheckingCA(false);
+      }
+    };
+
+    checkCAStatus();
+  }, [slug, checkHasSignedCAForListing]);
 
   const handleVaultAccess = () => {
     if (hasSignedCAForCurrentListing) {
@@ -48,10 +67,16 @@ export default function ListingActionButtons({ slug }: ListingActionButtonsProps
             position="top"
           >
             <button
-              className="w-full md:w-[320px] px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
+              className="w-full md:w-[320px] px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 text-lg shadow-md hover:shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 disabled:opacity-50"
               onClick={handleVaultAccess}
+              disabled={isCheckingCA}
             >
-              {hasSignedCAForCurrentListing ? 'View Vault' : 'Request Vault Access'}
+              {isCheckingCA
+                ? 'Checking...'
+                : hasSignedCAForCurrentListing
+                  ? 'View Vault'
+                  : 'Request Vault Access'
+              }
             </button>
           </Tooltip>
           <button

@@ -5,9 +5,8 @@ create table if not exists public.listings (
   slug text unique not null,
   project_id text,
   title text,
-  developer_entity_name text,
-  developer_ca_email text,
-  developer_ca_name text,
+  developer_contact_email text,  -- For "Contact Developer" functionality
+  developer_website text,        -- Displayed in sponsor profile
   current_version_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

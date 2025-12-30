@@ -1,4 +1,6 @@
-# SignWell Recipients Implementation
+# SignWell Recipients Implementation (DEPRECATED)
+
+**⚠️ DEPRECATED:** This document describes the old implementation that used developer recipient fields. These database fields have been removed as of migration `20251230120318_remove_redundant_developer_fields.sql`. Developer information is now static text in the CA document template.
 
 This document outlines the implementation of dynamic recipients in the SignWell API integration, specifically for adding a "Developer Entity" recipient with the developer entity name and email based on the listing being signed.
 

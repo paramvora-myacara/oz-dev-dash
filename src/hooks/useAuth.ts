@@ -21,7 +21,7 @@ export function useAuth() {
   const [onAuthSuccess, setOnAuthSuccess] = useState<(() => void) | null>(null)
   const [authContext, setAuthContext] = useState<'vault-access' | 'contact-developer' | null>(null)
 
-  const { hasSignedCA, checkHasSignedCAForListing, markAsSigned } = useCASigning(userId, targetSlug)
+  const { hasSignedCA, checkHasSignedCAForListing } = useCASigning(userId, targetSlug)
   const { checkVaultAccessAndReturnResult } = useVaultAccess()
   const { createSignWellDocument, error: signWellError, setError: setSignWellError } = useSignWell()
 
@@ -29,7 +29,7 @@ export function useAuth() {
     setTargetSlug(slug)
 
     // Check if user has already signed a CA for this specific listing
-    const hasSignedCAForThisListing = userId ? checkHasSignedCAForListing(slug) : false
+    const hasSignedCAForThisListing = userId ? await checkHasSignedCAForListing(slug) : false
 
     if (hasSignedCAForThisListing && userId) {
       trackEvent(userId, 'request_vault_access', { propertyId: slug })
@@ -60,10 +60,7 @@ export function useAuth() {
 
         if (hasVault) {
           // Listing has vault access, proceed to SignWell
-          await createSignWellDocument(userFullName, userEmail, slug, (signedSlug) => {
-            markAsSigned(signedSlug)
-            window.location.href = getListingPath(`/${signedSlug}/access-dd-vault`)
-          })
+          await createSignWellDocument(userFullName, userEmail, slug)
         } else {
           // Listing doesn't have vault access, show confirmation modal
           setIsConfirmationModalOpen(true)
@@ -80,7 +77,7 @@ export function useAuth() {
     setAuthContext('vault-access')
     setIsAuthModalOpen(true)
 
-  }, [userId, userFullName, userEmail, trackEvent, checkVaultAccessAndReturnResult, createSignWellDocument, markAsSigned, checkHasSignedCAForListing])
+  }, [userId, userFullName, userEmail, trackEvent, checkVaultAccessAndReturnResult, createSignWellDocument, checkHasSignedCAForListing])
 
   const handleContactDeveloper = useCallback(async (slug: string) => {
     setTargetSlug(slug)
@@ -215,10 +212,7 @@ export function useAuth() {
 
               if (hasVault) {
                 // Listing has vault access, proceed to SignWell
-                await createSignWellDocument(fullName, email, targetSlug, (signedSlug) => {
-                  markAsSigned(signedSlug)
-                  window.location.href = getListingPath(`/${signedSlug}/access-dd-vault`)
-                })
+                await createSignWellDocument(fullName, email, targetSlug)
               } else {
                 // Listing doesn't have vault access, show confirmation modal
                 setIsConfirmationModalOpen(true)
@@ -244,32 +238,9 @@ export function useAuth() {
         setAuthError(result?.error || 'Authentication failed. Please try again.')
       }
     },
-    [signInOrUp, updateUserProfile, targetSlug, checkHasSignedCAForListing, checkVaultAccessAndReturnResult, createSignWellDocument, markAsSigned, onAuthSuccess, setOnAuthSuccess, setAuthError, authContext]
+    [signInOrUp, updateUserProfile, targetSlug, checkHasSignedCAForListing, checkVaultAccessAndReturnResult, createSignWellDocument, onAuthSuccess, setOnAuthSuccess, setAuthError, authContext]
   )
 
-  // New CA submission handler - ONLY handles document creation, no auth logic
-  const handleCASubmission = useCallback(async (
-    fullName: string,
-    email: string
-  ) => {
-    try {
-      // At this point, user should already be authenticated via handleSignInOrUp
-      // Just create the SignWell document
-      if (!targetSlug) {
-        console.error('No targetSlug available for SignWell document creation')
-        setAuthError('Missing property information. Please try again.')
-        return
-      }
-
-      await createSignWellDocument(fullName, email, targetSlug, (signedSlug) => {
-        markAsSigned(signedSlug)
-        window.location.href = getListingPath(`/${signedSlug}/access-dd-vault`)
-      })
-    } catch (error) {
-      console.error('Error in handleCASubmission:', error)
-      setAuthError('Failed to create confidentiality agreement. Please try again.')
-    }
-  }, [targetSlug, createSignWellDocument, markAsSigned, setAuthError])
 
   const closeModal = useCallback(() => {
     setIsAuthModalOpen(false)
@@ -291,7 +262,6 @@ export function useAuth() {
     handleRequestVaultAccess,
     handleContactDeveloper,
     handleSignInOrUp,
-    handleCASubmission,
     closeModal,
     authContext,
   }
