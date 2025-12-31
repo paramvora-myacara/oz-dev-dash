@@ -3,6 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { getAvailableImages, IMAGE_CATEGORIES } from '@/utils/supabaseImages';
+
+// User-friendly display names for categories
+const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
+  'general': 'General',
+  'details/property-overview/floorplansitemapsection/floorplan': 'Floor Plans',
+  'details/property-overview/floorplansitemapsection/sitemap': 'Site Maps',
+  'details/portfolio-projects/': 'Portfolio Projects'
+};
 import { getProjectIdFromSlug } from '@/utils/listing';
 
 interface ImageManagerProps {
@@ -181,7 +189,7 @@ export default function ImageManager({
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                 }`}
               >
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+                {CATEGORY_DISPLAY_NAMES[category] || category.charAt(0).toUpperCase() + category.slice(1)}
               </button>
             ))}
           </div>
