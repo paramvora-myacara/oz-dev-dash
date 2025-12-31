@@ -6,7 +6,8 @@ import { Plus, ChevronDown, Upload, Pencil, Eye, X, AlertTriangle, ArrowRight, F
 import SectionList from './SectionList'
 import PreviewPanel from './PreviewPanel'
 import AddSectionModal from './AddSectionModal'
-import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign } from '@/types/email-editor'
+import SequenceStepsSidebar from './SequenceStepsSidebar'
+import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
 import { DEFAULT_TEMPLATES } from '@/types/email-editor'
 import { extractTemplateFields, validateTemplateFields } from '@/lib/utils/status-labels'
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
@@ -93,6 +94,25 @@ export default function EmailEditor({
   // Mobile tab state
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
 
+  // Multi-step sequence state
+  const [steps, setSteps] = useState<CampaignStep[]>(() => {
+    // Initialize with existing campaign steps or create default step
+    if (campaign?.steps && campaign.steps.length > 0) {
+      return campaign.steps;
+    }
+    // Create a default step from current sections/subject
+    return [{
+      id: 'step-1',
+      campaignId: campaignId,
+      name: 'Initial Email',
+      subject: initialSubjectLine || { mode: 'static' as SectionMode, content: '' },
+      sections: initialSections || [],
+      edges: [],
+      createdAt: new Date().toISOString(),
+    }];
+  });
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
   // Autosave state
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
@@ -105,7 +125,7 @@ export default function EmailEditor({
   const [showSubjectModal, setShowSubjectModal] = useState(false)
   const [subjectPrompt, setSubjectPrompt] = useState(
     campaign?.subjectPrompt ||
-      'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced 50+ year-old developer who does not know what Opportunity Zones are, and we have already accounted for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
+    'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced 50+ year-old developer who does not know what Opportunity Zones are, and we have already accounted for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
   )
   const [modalSubject, setModalSubject] = useState('')
 
@@ -192,6 +212,58 @@ export default function EmailEditor({
     }
     setSections([...sections, newSection])
   }
+
+  // Step management handlers
+  const handleAddStep = useCallback(() => {
+    const newStepNumber = steps.length + 1;
+    const newStep: CampaignStep = {
+      id: `step-${Date.now()}`,
+      campaignId: campaignId,
+      name: `Follow-up ${newStepNumber - 1}`,
+      subject: { mode: 'static' as SectionMode, content: '' },
+      sections: [],
+      edges: [{ targetStepId: '', delayDays: 2, delayHours: 0, condition: null }],
+      createdAt: new Date().toISOString(),
+    };
+    setSteps([...steps, newStep]);
+    setCurrentStepIndex(steps.length);
+    // Reset editor to new step's empty content
+    setSections([]);
+    setSubjectLine({ mode: 'static', content: '' });
+  }, [steps, campaignId]);
+
+  const handleStepSelect = useCallback((index: number) => {
+    // Save current step's content first
+    setSteps(prevSteps => {
+      const updatedSteps = [...prevSteps];
+      updatedSteps[currentStepIndex] = {
+        ...updatedSteps[currentStepIndex],
+        sections,
+        subject: subjectLine,
+      };
+      return updatedSteps;
+    });
+
+    // Switch to selected step
+    setCurrentStepIndex(index);
+    const targetStep = steps[index];
+    setSections(targetStep?.sections || []);
+    setSubjectLine(targetStep?.subject || { mode: 'static', content: '' });
+  }, [currentStepIndex, sections, subjectLine, steps]);
+
+  const handleStepDelayChange = useCallback((stepIndex: number, delayDays: number, delayHours: number) => {
+    setSteps(prevSteps => {
+      const updatedSteps = [...prevSteps];
+      const edges = updatedSteps[stepIndex].edges || [];
+      if (edges.length > 0) {
+        edges[0] = { ...edges[0], delayDays, delayHours };
+      } else {
+        edges.push({ targetStepId: '', delayDays, delayHours, condition: null });
+      }
+      updatedSteps[stepIndex] = { ...updatedSteps[stepIndex], edges };
+      return updatedSteps;
+    });
+  }, []);
 
   const handleRetrySave = useCallback(async () => {
     if (!onAutoSave) return
@@ -542,22 +614,37 @@ export default function EmailEditor({
             </div>
 
             {/* Desktop View */}
-            <div className="hidden lg:block h-full">
-              <PanelGroup direction="horizontal">
-                <Panel defaultSize={50} minSize={30}>{EditPanelContent}</Panel>
-                <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize" />
-                <Panel defaultSize={50} minSize={30}>
-                  <PreviewPanel
-                    sections={sections}
-                    subjectLine={subjectLine}
-                    sampleData={sampleData}
-                    selectedSampleIndex={selectedSampleIndex}
-                    onSampleIndexChange={setSelectedSampleIndex}
-                    emailFormat={emailFormat}
-                    onFormatChange={setEmailFormat}
-                  />
-                </Panel>
-              </PanelGroup>
+            <div className="hidden lg:flex h-full">
+              {/* Steps Sidebar - only show if multi-step */}
+              {steps.length >= 1 && (
+                <SequenceStepsSidebar
+                  steps={steps}
+                  currentStepIndex={currentStepIndex}
+                  onStepSelect={handleStepSelect}
+                  onAddStep={handleAddStep}
+                  onDelayChange={handleStepDelayChange}
+                  isEditable={true}
+                />
+              )}
+
+              {/* Main editor panels */}
+              <div className="flex-1">
+                <PanelGroup direction="horizontal">
+                  <Panel defaultSize={50} minSize={30}>{EditPanelContent}</Panel>
+                  <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize" />
+                  <Panel defaultSize={50} minSize={30}>
+                    <PreviewPanel
+                      sections={sections}
+                      subjectLine={subjectLine}
+                      sampleData={sampleData}
+                      selectedSampleIndex={selectedSampleIndex}
+                      onSampleIndexChange={setSelectedSampleIndex}
+                      emailFormat={emailFormat}
+                      onFormatChange={setEmailFormat}
+                    />
+                  </Panel>
+                </PanelGroup>
+              </div>
             </div>
           </div>
         </div>
