@@ -185,12 +185,17 @@ export default function EmailEditor({
       name: `Follow-up ${newStepNumber - 1}`,
       subject: { mode: 'static' as SectionMode, content: '' },
       sections: [],
-      edges: [{ targetStepId: '', delayDays: 2, delayHours: 0, delayMinutes: 0, condition: null }],
+      edges: [], // Backend will handle edge management
     };
 
     try {
       const createdStep = await createStep(campaignId, defaultStepData);
-      setSteps(prev => [...prev, createdStep]);
+
+      // Backend automatically updated previous step's edges
+      // Refresh all steps to get updated edges
+      const updatedSteps = await getSteps(campaignId);
+      setSteps(updatedSteps);
+
       setCurrentStepIndex(steps.length);
       // Reset editor to new step's empty content
       setSections([]);
@@ -251,30 +256,44 @@ export default function EmailEditor({
   const handleDeleteStep = useCallback(async (stepId: string) => {
     try {
       await deleteStepApi(campaignId, stepId);
-      setSteps(prev => {
-        const remaining = prev.filter(s => s.id !== stepId);
-        // If we deleted the current step, move to the first one available
-        const deletedIndex = prev.findIndex(s => s.id === stepId);
-        if (currentStepIndex === deletedIndex) {
-          const nextIndex = Math.max(0, deletedIndex - 1);
-          setCurrentStepIndex(nextIndex);
-          const nextStep = remaining[nextIndex];
-          setSections(nextStep?.sections || []);
-          const subject = nextStep?.subject;
-          setSubjectLine(
-            subject && subject.mode && subject.content !== undefined
-              ? subject
-              : { mode: 'static', content: '' }
-          );
-        } else if (currentStepIndex > deletedIndex) {
-          setCurrentStepIndex(currentStepIndex - 1);
-        }
-        return remaining;
-      });
+
+      // Backend automatically updated adjacent edges
+      // Refresh all steps to get updated edges
+      const updatedSteps = await getSteps(campaignId);
+      setSteps(updatedSteps);
+
+      // If we deleted the current step, move to the first one available
+      const deletedIndex = steps.findIndex(s => s.id === stepId);
+      if (currentStepIndex === deletedIndex) {
+        const nextIndex = Math.max(0, deletedIndex - 1);
+        setCurrentStepIndex(nextIndex);
+        const nextStep = updatedSteps[nextIndex];
+        setSections(nextStep?.sections || []);
+        const subject = nextStep?.subject;
+        setSubjectLine(
+          subject && subject.mode && subject.content !== undefined
+            ? subject
+            : { mode: 'static', content: '' }
+        );
+      } else if (currentStepIndex > deletedIndex) {
+        setCurrentStepIndex(currentStepIndex - 1);
+      }
     } catch (err) {
       console.error('Failed to delete step:', err);
     }
-  }, [campaignId, currentStepIndex]);
+  }, [campaignId, currentStepIndex, steps]);
+
+  const handleDeleteStepByIndex = useCallback((index: number) => {
+    // Don't allow deleting the last step
+    if (steps.length <= 1) {
+      return;
+    }
+
+    const step = steps[index];
+    if (step?.id) {
+      handleDeleteStep(step.id);
+    }
+  }, [steps, handleDeleteStep]);
 
   const handleManualSave = useCallback(async () => {
     const currentStep = steps[currentStepIndex];
@@ -610,6 +629,7 @@ export default function EmailEditor({
                     currentStepIndex={currentStepIndex}
                     onStepSelect={handleStepSelect}
                     onAddStep={handleAddStep}
+                    onDeleteStep={handleDeleteStepByIndex}
                     onDelayChange={handleStepDelayChange}
                     isEditable={true}
                   />
@@ -639,6 +659,7 @@ export default function EmailEditor({
                   currentStepIndex={currentStepIndex}
                   onStepSelect={handleStepSelect}
                   onAddStep={handleAddStep}
+                  onDeleteStep={handleDeleteStepByIndex}
                   onDelayChange={handleStepDelayChange}
                   isEditable={true}
                 />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Mail, ChevronRight, Clock, GitBranch } from 'lucide-react';
+import { Plus, Mail, ChevronRight, Clock, GitBranch, Trash2 } from 'lucide-react';
 import type { CampaignStep, Section, SectionMode } from '@/types/email-editor';
 import { DelayBadge } from '@/components/sequences/DelayBadge';
 
@@ -10,6 +10,7 @@ interface SequenceStepsSidebarProps {
     currentStepIndex: number;
     onStepSelect: (index: number) => void;
     onAddStep: () => void;
+    onDeleteStep: (index: number) => void;
     onDelayChange: (stepIndex: number, delayDays: number, delayHours: number, delayMinutes: number) => void;
     isEditable?: boolean;
 }
@@ -23,6 +24,7 @@ export function SequenceStepsSidebar({
     currentStepIndex,
     onStepSelect,
     onAddStep,
+    onDeleteStep,
     onDelayChange,
     isEditable = true,
 }: SequenceStepsSidebarProps) {
@@ -94,10 +96,10 @@ export function SequenceStepsSidebar({
                                     <div className="flex-1 h-px bg-gray-200" />
                                     <div className="px-2">
                                         <DelayBadge
-                                            delayDays={step.edges?.[0]?.delayDays ?? 1}
-                                            delayHours={step.edges?.[0]?.delayHours ?? 0}
-                                            delayMinutes={step.edges?.[0]?.delayMinutes ?? 0}
-                                            onChange={(days, hours, minutes) => onDelayChange(index, days, hours, minutes)}
+                                            delayDays={steps[index - 1]?.edges?.[0]?.delayDays ?? 1}
+                                            delayHours={steps[index - 1]?.edges?.[0]?.delayHours ?? 0}
+                                            delayMinutes={steps[index - 1]?.edges?.[0]?.delayMinutes ?? 0}
+                                            onChange={(days, hours, minutes) => onDelayChange(index - 1, days, hours, minutes)}
                                             editable={isEditable}
                                             size="sm"
                                         />
@@ -131,7 +133,20 @@ export function SequenceStepsSidebar({
                                             {step.subject?.content || 'No subject'}
                                         </p>
                                     </div>
-                                    <Mail size={14} className={index === currentStepIndex ? 'text-blue-600' : 'text-gray-400'} />
+                                    {steps.length > 1 && (
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteStep(index);
+                                            }}
+                                            className={`p-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer ${
+                                                index === currentStepIndex ? 'text-blue-600' : 'text-gray-400'
+                                            }`}
+                                            title="Delete step"
+                                        >
+                                            <Trash2 size={14} />
+                                        </div>
+                                    )}
                                 </div>
                             </button>
                         </div>
