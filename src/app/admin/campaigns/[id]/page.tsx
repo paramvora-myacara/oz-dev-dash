@@ -29,7 +29,7 @@ export default function CampaignEditPage() {
   const [stagedEmails, setStagedEmails] = useState<QueuedEmail[]>([])
   const [stagedCount, setStagedCount] = useState(0)
   const [editedCount, setEditedCount] = useState(0)
-  const [invalidEmails, setInvalidEmails] = useState<{id: string, email: string}[]>([])
+  const [invalidEmails, setInvalidEmails] = useState<{ id: string, email: string }[]>([])
   const [validCount, setValidCount] = useState(0)
   const [currentStep, setCurrentStep] = useState<CampaignStep>('design')
   const [showLaunchModal, setShowLaunchModal] = useState(false)
@@ -165,7 +165,7 @@ export default function CampaignEditPage() {
       const totalCount = allEmails.length
 
       // Validate emails
-      const invalid: {id: string, email: string}[] = []
+      const invalid: { id: string, email: string }[] = []
       const validEmails = allEmails.filter(email => {
         if (!isValidEmail(email.toEmail)) {
           invalid.push({ id: email.id, email: email.toEmail })
@@ -355,9 +355,9 @@ export default function CampaignEditPage() {
   // Check both campaign status and staged count for reliable detection
   // campaignStatus.campaign_status is more reliable as it's fetched fresh from the status endpoint
   useEffect(() => {
-    if (generating && campaignStatus && 
-        campaignStatus.campaign_status === 'staged' && 
-        campaignStatus.staged_count > 0) {
+    if (generating && campaignStatus &&
+      campaignStatus.campaign_status === 'staged' &&
+      campaignStatus.staged_count > 0) {
       setGenerating(false)
       loadCampaign()
       loadStagedEmails()
@@ -368,7 +368,7 @@ export default function CampaignEditPage() {
   // Poll status while generating
   useEffect(() => {
     if (!generating) return
-    
+
     const interval = setInterval(() => {
       refreshStatus()
     }, 2000)
@@ -438,10 +438,10 @@ export default function CampaignEditPage() {
     try {
       setLaunching(true)
       setError(null)
-      
+
       // Start launch (returns immediately - background job)
       await launchCampaign(campaign.id || campaignId)
-      
+
       // Refresh status immediately
       await refreshStatus()
 
@@ -455,9 +455,9 @@ export default function CampaignEditPage() {
   // Check both campaign status and queued count for reliable detection
   // campaignStatus.campaign_status is more reliable as it's fetched fresh from the status endpoint
   useEffect(() => {
-    if (launching && campaignStatus && 
-        campaignStatus.campaign_status === 'scheduled' && 
-        campaignStatus.queued_count > 0) {
+    if (launching && campaignStatus &&
+      campaignStatus.campaign_status === 'scheduled' &&
+      campaignStatus.queued_count > 0) {
       setLaunching(false)
       loadCampaign()
       setShowLaunchModal(false)
@@ -470,7 +470,7 @@ export default function CampaignEditPage() {
   // Poll status while launching
   useEffect(() => {
     if (!launching) return
-    
+
     const interval = setInterval(() => {
       refreshStatus()
     }, 2000)
@@ -530,12 +530,12 @@ export default function CampaignEditPage() {
       setRetryingFailed(true)
       setError(null)
       setInfo(null)
-      
+
       // Start retry (returns immediately - background job)
       await retryFailed(campaign.id || campaignId)
-      
+
       setInfo('Retry started. Emails will be rescheduled. Refresh to see updates.')
-      
+
       // Poll status and reload after a delay
       setTimeout(async () => {
         await refreshStatus()
@@ -543,7 +543,7 @@ export default function CampaignEditPage() {
         await loadFailedEmails()
         await loadCampaign()
       }, 3000)
-      
+
     } catch (err: any) {
       setError(err.message || 'Failed to retry failed emails')
     } finally {
@@ -580,14 +580,14 @@ export default function CampaignEditPage() {
     try {
       setError(null)
       // Delete all invalid emails in parallel
-      const deletePromises = invalidEmails.map(invalid => 
+      const deletePromises = invalidEmails.map(invalid =>
         fetch(`/api/campaigns/${campaign.id || campaignId}/emails/${invalid.id}`, {
           method: 'DELETE',
         })
       )
 
       const results = await Promise.allSettled(deletePromises)
-      
+
       // Check for any failures
       const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok))
       if (failures.length > 0) {

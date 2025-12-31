@@ -6,18 +6,20 @@ import { useState, useRef, useEffect } from 'react';
 interface DelayBadgeProps {
     delayDays: number;
     delayHours: number;
-    onChange?: (days: number, hours: number) => void;
+    delayMinutes: number;
+    onChange?: (days: number, hours: number, minutes: number) => void;
     editable?: boolean;
     size?: 'sm' | 'md';
 }
 
 /**
  * Displays delay between sequence steps with optional inline editing.
- * Shows "Wait X days, Y hours" format with a clock icon.
+ * Shows "Wait X days, Y hours, Z mins" format with a clock icon.
  */
 export function DelayBadge({
     delayDays,
     delayHours,
+    delayMinutes,
     onChange,
     editable = false,
     size = 'md',
@@ -25,6 +27,7 @@ export function DelayBadge({
     const [isEditing, setIsEditing] = useState(false);
     const [days, setDays] = useState(delayDays);
     const [hours, setHours] = useState(delayHours);
+    const [minutes, setMinutes] = useState(delayMinutes);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown on outside click
@@ -38,18 +41,19 @@ export function DelayBadge({
             document.addEventListener('mousedown', handleClickOutside);
         }
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isEditing, days, hours]);
+    }, [isEditing, days, hours, minutes]);
 
     // Reset local state when props change
     useEffect(() => {
         setDays(delayDays);
         setHours(delayHours);
-    }, [delayDays, delayHours]);
+        setMinutes(delayMinutes);
+    }, [delayDays, delayHours, delayMinutes]);
 
     const handleSave = () => {
         setIsEditing(false);
-        if (onChange && (days !== delayDays || hours !== delayHours)) {
-            onChange(days, hours);
+        if (onChange && (days !== delayDays || hours !== delayHours || minutes !== delayMinutes)) {
+            onChange(days, hours, minutes);
         }
     };
 
@@ -59,7 +63,10 @@ export function DelayBadge({
             parts.push(`${delayDays} day${delayDays !== 1 ? 's' : ''}`);
         }
         if (delayHours > 0) {
-            parts.push(`${delayHours} hour${delayHours !== 1 ? 's' : ''}`);
+            parts.push(`${delayHours} hr${delayHours !== 1 ? 's' : ''}`);
+        }
+        if (delayMinutes > 0) {
+            parts.push(`${delayMinutes} min${delayMinutes !== 1 ? 's' : ''}`);
         }
         if (parts.length === 0) {
             return 'Immediately';
@@ -100,27 +107,40 @@ export function DelayBadge({
             {isEditing && (
                 <div className="absolute z-10 mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-4 min-w-[200px]">
                     <div className="space-y-3">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Days</label>
-                            <input
-                                type="number"
-                                min={0}
-                                max={30}
-                                value={days}
-                                onChange={(e) => setDays(Math.max(0, parseInt(e.target.value) || 0))}
-                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Hours</label>
-                            <input
-                                type="number"
-                                min={0}
-                                max={23}
-                                value={hours}
-                                onChange={(e) => setHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
-                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
+                        <div className="grid grid-cols-3 gap-2">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Days</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={30}
+                                    value={days}
+                                    onChange={(e) => setDays(Math.max(0, parseInt(e.target.value) || 0))}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Hours</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={23}
+                                    value={hours}
+                                    onChange={(e) => setHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Mins</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={59}
+                                    value={minutes}
+                                    onChange={(e) => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
                         </div>
                         <button
                             type="button"

@@ -10,7 +10,7 @@ interface SequenceStepsSidebarProps {
     currentStepIndex: number;
     onStepSelect: (index: number) => void;
     onAddStep: () => void;
-    onDelayChange: (stepIndex: number, delayDays: number, delayHours: number) => void;
+    onDelayChange: (stepIndex: number, delayDays: number, delayHours: number, delayMinutes: number) => void;
     isEditable?: boolean;
 }
 
@@ -44,8 +44,8 @@ export function SequenceStepsSidebar({
                             key={index}
                             onClick={() => onStepSelect(index)}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${index === currentStepIndex
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                                 }`}
                         >
                             {index + 1}
@@ -96,7 +96,8 @@ export function SequenceStepsSidebar({
                                         <DelayBadge
                                             delayDays={step.edges?.[0]?.delayDays ?? 1}
                                             delayHours={step.edges?.[0]?.delayHours ?? 0}
-                                            onChange={(days, hours) => onDelayChange(index, days, hours)}
+                                            delayMinutes={step.edges?.[0]?.delayMinutes ?? 0}
+                                            onChange={(days, hours, minutes) => onDelayChange(index, days, hours, minutes)}
                                             editable={isEditable}
                                             size="sm"
                                         />
@@ -109,15 +110,15 @@ export function SequenceStepsSidebar({
                             <button
                                 onClick={() => onStepSelect(index)}
                                 className={`w-full text-left p-3 rounded-lg border-2 transition-all ${index === currentStepIndex
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-transparent hover:bg-gray-100'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-transparent hover:bg-gray-100'
                                     }`}
                             >
                                 <div className="flex items-center gap-2">
                                     <div
                                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === currentStepIndex
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-200 text-gray-600'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-200 text-gray-600'
                                             }`}
                                     >
                                         {index + 1}

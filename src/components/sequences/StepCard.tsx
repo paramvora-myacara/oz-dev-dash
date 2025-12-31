@@ -12,7 +12,7 @@ interface StepCardProps {
     onSelect: () => void;
     onEdit: () => void;
     onDelete: () => void;
-    onDelayChange?: (delayDays: number, delayHours: number) => void;
+    onDelayChange?: (delayDays: number, delayHours: number, delayMinutes: number) => void;
     editable?: boolean;
     isDragging?: boolean;
     dragHandleProps?: Record<string, unknown>;
@@ -36,7 +36,7 @@ export function StepCard({
     dragHandleProps = {},
 }: StepCardProps) {
     // Get delay from first edge (for linear sequences)
-    const delay = step.edges?.[0] ?? { delayDays: 0, delayHours: 0 };
+    const delay = step.edges?.[0] ?? { delayDays: 0, delayHours: 0, delayMinutes: 0 };
 
     // Subject preview (truncated)
     const subjectPreview = step.subject?.content
@@ -55,6 +55,7 @@ export function StepCard({
                         <DelayBadge
                             delayDays={delay.delayDays}
                             delayHours={delay.delayHours}
+                            delayMinutes={delay.delayMinutes || 0}
                             onChange={onDelayChange}
                             editable={editable}
                             size="sm"

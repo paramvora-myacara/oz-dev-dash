@@ -11,6 +11,7 @@ import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Camp
 import { DEFAULT_TEMPLATES } from '@/types/email-editor'
 import { extractTemplateFields, validateTemplateFields } from '@/lib/utils/status-labels'
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
+import { getSteps, createStep, updateStep as updateStepApi, deleteStep as deleteStepApi } from '@/lib/api/campaigns-backend'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -92,24 +93,16 @@ export default function EmailEditor({
   const [validationError, setValidationError] = useState<{ fields: string[] } | null>(null)
 
   // Mobile tab state
-  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview' | 'steps'>('edit')
 
   // Multi-step sequence state
   const [steps, setSteps] = useState<CampaignStep[]>(() => {
     // Initialize with existing campaign steps or create default step
+    // Initialize with existing campaign steps if available
     if (campaign?.steps && campaign.steps.length > 0) {
       return campaign.steps;
     }
-    // Create a default step from current sections/subject
-    return [{
-      id: 'step-1',
-      campaignId: campaignId,
-      name: 'Initial Email',
-      subject: initialSubjectLine || { mode: 'static' as SectionMode, content: '' },
-      sections: initialSections || [],
-      edges: [],
-      createdAt: new Date().toISOString(),
-    }];
+    return [];
   });
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
@@ -129,6 +122,24 @@ export default function EmailEditor({
   )
   const [modalSubject, setModalSubject] = useState('')
 
+  // Load steps on mount
+  useEffect(() => {
+    const loadSteps = async () => {
+      try {
+        const fetchedSteps = await getSteps(campaignId);
+        if (fetchedSteps && fetchedSteps.length > 0) {
+          setSteps(fetchedSteps);
+          // Load first step content
+          setSections(fetchedSteps[0].sections || []);
+          setSubjectLine(fetchedSteps[0].subject || { mode: 'static', content: '' });
+        }
+      } catch (err) {
+        console.error('Failed to load steps:', err);
+      }
+    };
+    loadSteps();
+  }, [campaignId]);
+
   // Mark unsaved changes
   useEffect(() => {
     if (isInitialMount.current) {
@@ -141,14 +152,40 @@ export default function EmailEditor({
 
   // Autosave effect
   useEffect(() => {
-    if (!hasUnsavedChanges || !onAutoSave) return
+    if (!hasUnsavedChanges) return
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
 
     saveTimeoutRef.current = setTimeout(async () => {
       setSaveStatus('saving')
       try {
-        const success = await onAutoSave(sections, subjectLine, emailFormat)
+        const currentStep = steps[currentStepIndex];
+        let success = false;
+
+        if (currentStep && !currentStep.id.startsWith('step-')) {
+          // If it's a sequence step, save to step API
+          await updateStepApi(campaignId, currentStep.id, {
+            sections,
+            subject: subjectLine,
+          });
+
+          // Also update local steps state
+          setSteps(prev => {
+            const next = [...prev];
+            next[currentStepIndex] = { ...next[currentStepIndex], sections, subject: subjectLine };
+            return next;
+          });
+
+          // If it's the first step, also sync with campaign initial content for legacy compatibility
+          if (currentStepIndex === 0 && onAutoSave) {
+            await onAutoSave(sections, subjectLine, emailFormat);
+          }
+          success = true;
+        } else if (onAutoSave) {
+          // Fallback to campaign-level save if no steps exist
+          success = await onAutoSave(sections, subjectLine, emailFormat);
+        }
+
         if (success) {
           setSaveStatus('saved')
           setLastSavedAt(new Date())
@@ -159,7 +196,8 @@ export default function EmailEditor({
         } else {
           setSaveStatus('error')
         }
-      } catch {
+      } catch (err) {
+        console.error('Autosave failed:', err);
         setSaveStatus('error')
       }
     }, AUTOSAVE_DELAY)
@@ -167,7 +205,7 @@ export default function EmailEditor({
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
-  }, [hasUnsavedChanges, sections, subjectLine, emailFormat, onAutoSave])
+  }, [hasUnsavedChanges, sections, subjectLine, emailFormat, onAutoSave, steps, currentStepIndex, campaignId])
 
   useUnsavedChangesWarning(hasUnsavedChanges && saveStatus !== 'saving')
 
@@ -214,26 +252,47 @@ export default function EmailEditor({
   }
 
   // Step management handlers
-  const handleAddStep = useCallback(() => {
+  const handleAddStep = useCallback(async () => {
     const newStepNumber = steps.length + 1;
-    const newStep: CampaignStep = {
-      id: `step-${Date.now()}`,
-      campaignId: campaignId,
+    const defaultStepData = {
       name: `Follow-up ${newStepNumber - 1}`,
       subject: { mode: 'static' as SectionMode, content: '' },
       sections: [],
-      edges: [{ targetStepId: '', delayDays: 2, delayHours: 0, condition: null }],
-      createdAt: new Date().toISOString(),
+      edges: [{ targetStepId: '', delayDays: 2, delayHours: 0, delayMinutes: 0, condition: null }],
     };
-    setSteps([...steps, newStep]);
-    setCurrentStepIndex(steps.length);
-    // Reset editor to new step's empty content
-    setSections([]);
-    setSubjectLine({ mode: 'static', content: '' });
+
+    try {
+      setSaveStatus('saving');
+      const createdStep = await createStep(campaignId, defaultStepData);
+      setSteps(prev => [...prev, createdStep]);
+      setCurrentStepIndex(steps.length);
+      // Reset editor to new step's empty content
+      setSections([]);
+      setSubjectLine({ mode: 'static', content: '' });
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error('Failed to create step:', err);
+      setSaveStatus('error');
+    }
   }, [steps, campaignId]);
 
-  const handleStepSelect = useCallback((index: number) => {
-    // Save current step's content first
+  const handleStepSelect = useCallback(async (index: number) => {
+    // If there are unsaved changes, save the current step first
+    if (hasUnsavedChanges) {
+      const currentStep = steps[currentStepIndex];
+      if (currentStep && !currentStep.id.startsWith('step-')) {
+        try {
+          await updateStepApi(campaignId, currentStep.id, {
+            sections,
+            subject: subjectLine,
+          });
+        } catch (err) {
+          console.error('Failed to save step before switching:', err);
+        }
+      }
+    }
+
+    // Update local steps state with current content
     setSteps(prevSteps => {
       const updatedSteps = [...prevSteps];
       updatedSteps[currentStepIndex] = {
@@ -249,21 +308,55 @@ export default function EmailEditor({
     const targetStep = steps[index];
     setSections(targetStep?.sections || []);
     setSubjectLine(targetStep?.subject || { mode: 'static', content: '' });
-  }, [currentStepIndex, sections, subjectLine, steps]);
+    setHasUnsavedChanges(false);
+  }, [currentStepIndex, sections, subjectLine, steps, hasUnsavedChanges, campaignId]);
 
-  const handleStepDelayChange = useCallback((stepIndex: number, delayDays: number, delayHours: number) => {
-    setSteps(prevSteps => {
-      const updatedSteps = [...prevSteps];
-      const edges = updatedSteps[stepIndex].edges || [];
-      if (edges.length > 0) {
-        edges[0] = { ...edges[0], delayDays, delayHours };
-      } else {
-        edges.push({ targetStepId: '', delayDays, delayHours, condition: null });
-      }
-      updatedSteps[stepIndex] = { ...updatedSteps[stepIndex], edges };
-      return updatedSteps;
-    });
-  }, []);
+  const handleStepDelayChange = useCallback(async (stepIndex: number, delayDays: number, delayHours: number, delayMinutes: number) => {
+    const stepToUpdate = steps[stepIndex];
+    if (!stepToUpdate) return;
+
+    const updatedEdges = [...(stepToUpdate.edges || [])];
+    if (updatedEdges.length > 0) {
+      updatedEdges[0] = { ...updatedEdges[0], delayDays, delayHours, delayMinutes };
+    } else {
+      updatedEdges.push({ targetStepId: '', delayDays, delayHours, delayMinutes, condition: null });
+    }
+
+    try {
+      setSteps(prevSteps => {
+        const updatedSteps = [...prevSteps];
+        updatedSteps[stepIndex] = { ...updatedSteps[stepIndex], edges: updatedEdges };
+        return updatedSteps;
+      });
+
+      await updateStepApi(campaignId, stepToUpdate.id, { edges: updatedEdges });
+    } catch (err) {
+      console.error('Failed to update step delay:', err);
+    }
+  }, [steps, campaignId]);
+
+  const handleDeleteStep = useCallback(async (stepId: string) => {
+    try {
+      await deleteStepApi(campaignId, stepId);
+      setSteps(prev => {
+        const remaining = prev.filter(s => s.id !== stepId);
+        // If we deleted the current step, move to the first one available
+        const deletedIndex = prev.findIndex(s => s.id === stepId);
+        if (currentStepIndex === deletedIndex) {
+          const nextIndex = Math.max(0, deletedIndex - 1);
+          setCurrentStepIndex(nextIndex);
+          const nextStep = remaining[nextIndex];
+          setSections(nextStep?.sections || []);
+          setSubjectLine(nextStep?.subject || { mode: 'static', content: '' });
+        } else if (currentStepIndex > deletedIndex) {
+          setCurrentStepIndex(currentStepIndex - 1);
+        }
+        return remaining;
+      });
+    } catch (err) {
+      console.error('Failed to delete step:', err);
+    }
+  }, [campaignId, currentStepIndex]);
 
   const handleRetrySave = useCallback(async () => {
     if (!onAutoSave) return
@@ -591,25 +684,60 @@ export default function EmailEditor({
       <div className="flex-1 relative overflow-hidden">
         {/* Editor Wrapper */}
         <div className={`absolute inset-0 flex flex-col transition-opacity duration-300 ${isReadyToEdit ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-          {/* Mobile Tabs */}
-          <div className="lg:hidden bg-white border-b flex">
-            <button onClick={() => setActiveTab('edit')} className={`flex-1 py-3 text-sm font-medium ${activeTab === 'edit' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Edit</button>
-            <button onClick={() => setActiveTab('preview')} className={`flex-1 py-3 text-sm font-medium ${activeTab === 'preview' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Preview</button>
+          {/* Mobile Tab Switcher */}
+          <div className="flex lg:hidden bg-white border-b sticky top-0 z-20">
+            <button
+              onClick={() => setActiveTab('edit')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'edit' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setActiveTab('steps')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'steps' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              Steps
+            </button>
+            <button
+              onClick={() => setActiveTab('preview')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'preview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              Preview
+            </button>
           </div>
 
           <div className="flex-1 overflow-hidden">
             {/* Mobile View */}
             <div className="lg:hidden h-full">
-              {activeTab === 'edit' ? EditPanelContent : (
-                <PreviewPanel
-                  sections={sections}
-                  subjectLine={subjectLine}
-                  sampleData={sampleData}
-                  selectedSampleIndex={selectedSampleIndex}
-                  onSampleIndexChange={setSelectedSampleIndex}
-                  emailFormat={emailFormat}
-                  onFormatChange={setEmailFormat}
-                />
+              {activeTab === 'edit' && (
+                <div className="h-full overflow-y-auto">
+                  {EditPanelContent}
+                </div>
+              )}
+              {activeTab === 'steps' && (
+                <div className="h-full overflow-y-auto p-4 bg-gray-50">
+                  <SequenceStepsSidebar
+                    steps={steps}
+                    currentStepIndex={currentStepIndex}
+                    onStepSelect={handleStepSelect}
+                    onAddStep={handleAddStep}
+                    onDelayChange={handleStepDelayChange}
+                    isEditable={true}
+                  />
+                </div>
+              )}
+              {activeTab === 'preview' && (
+                <div className="h-full overflow-y-auto bg-gray-50">
+                  <PreviewPanel
+                    sections={sections}
+                    subjectLine={subjectLine}
+                    sampleData={sampleData}
+                    selectedSampleIndex={selectedSampleIndex}
+                    onSampleIndexChange={setSelectedSampleIndex}
+                    emailFormat={emailFormat}
+                    onFormatChange={setEmailFormat}
+                  />
+                </div>
               )}
             </div>
 

@@ -66,6 +66,7 @@ export interface StepEdge {
   targetStepId: string;
   delayDays: number;
   delayHours: number;
+  delayMinutes: number;
   condition?: StepCondition | null;
 }
 
