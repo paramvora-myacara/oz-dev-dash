@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import { Plus, ChevronDown, Upload, Pencil, Eye, X, AlertTriangle, ArrowRight, FileText, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react'
+import { Plus, ChevronDown, Upload, Pencil, Eye, X, AlertTriangle, ArrowRight, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 import SectionList from './SectionList'
 import PreviewPanel from './PreviewPanel'
 import AddSectionModal from './AddSectionModal'
@@ -235,7 +235,6 @@ export default function EmailEditor({
     setShowTemplateDropdown(false)
   }
 
-  const isReadyToEdit = selectedTemplate !== null && recipientCount > 0
 
   const handleAddSection = (name: string, type: SectionType, mode: SectionMode) => {
     const newSection: Section = {
@@ -683,7 +682,7 @@ export default function EmailEditor({
       {/* Main Content */}
       <div className="flex-1 relative overflow-hidden">
         {/* Editor Wrapper */}
-        <div className={`absolute inset-0 flex flex-col transition-opacity duration-300 ${isReadyToEdit ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 flex flex-col">
           {/* Mobile Tab Switcher */}
           <div className="flex lg:hidden bg-white border-b sticky top-0 z-20">
             <button
@@ -777,16 +776,6 @@ export default function EmailEditor({
           </div>
         </div>
 
-        {/* Empty State */}
-        <div className={`absolute inset-0 flex items-center justify-center bg-gray-50 transition-opacity duration-300 ${!isReadyToEdit ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">Select a template to start</h3>
-            <p className="text-gray-500 text-sm mt-2">You have {recipientCount} recipients selected.</p>
-          </div>
-        </div>
       </div>
 
       <AddSectionModal
