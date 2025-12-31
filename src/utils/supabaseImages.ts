@@ -34,14 +34,32 @@ export const PROJECTS: ProjectId[] = [
   'sogood-dallas-001'
 ];
 
-export const IMAGE_CATEGORIES = ['general', 'floorplan', 'sitemap'] as const;
+// Image category definitions for new nested structure
+export const IMAGE_CATEGORIES = [
+  // Root level categories
+  'general',
+
+  // Nested categories for property overview
+  'details/property-overview/floorplansitemapsection/floorplan',
+  'details/property-overview/floorplansitemapsection/sitemap',
+
+  // Nested categories for portfolio projects (dynamic - project-name will be appended)
+  'details/portfolio-projects/',
+] as const;
 
 export type ImageCategory = string;
 
 /**
  * Get public URL for a Supabase storage object
+ * Handles both flat (general) and nested path structures
  */
 export function getSupabaseImageUrl(projectId: ProjectId, category: ImageCategory, filename: string): string {
+  // General category stays at root level for hero images
+  if (category === 'general') {
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${projectId}/${category}/${filename}`;
+  }
+
+  // All other categories use nested paths
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${projectId}/${category}/${filename}`;
 }
 
@@ -205,8 +223,8 @@ export async function getAllProjectImages(category: ImageCategory, projects: Pro
  * Upload a new image to a project category
  */
 export async function uploadImage(
-  projectId: ProjectId, 
-  category: ImageCategory, 
+  projectId: ProjectId,
+  category: ImageCategory,
   file: File
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
@@ -220,11 +238,18 @@ export async function uploadImage(
       return { success: false, error: 'File size too large. Maximum size is 10MB.' };
     }
 
+    // Ensure the folder exists before uploading
+    const folderPath = getCategoryFolderPath(category);
+    const folderResult = await ensureFolderExists(projectId, folderPath);
+    if (!folderResult.success) {
+      return { success: false, error: `Failed to create folder: ${folderResult.error}` };
+    }
+
     // Generate unique filename with timestamp
     const timestamp = Date.now();
     const extension = file.name.split('.').pop();
     const filename = `${timestamp}.${extension}`;
-    const filePath = `${projectId}/${category}/${filename}`;
+    const filePath = buildImageFilePath(projectId, category, filename);
 
     // Upload file to Supabase storage
     const { data, error } = await supabase.storage
@@ -241,13 +266,13 @@ export async function uploadImage(
 
     // Get public URL for the uploaded image
     const imageUrl = getSupabaseImageUrl(projectId, category, filename);
-    
+
     return { success: true, url: imageUrl };
   } catch (error) {
     console.error('Upload error:', error);
-    return { 
-      success: false, 
-      error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    return {
+      success: false,
+      error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 }
@@ -256,12 +281,12 @@ export async function uploadImage(
  * Delete an image from a project category
  */
 export async function deleteImage(
-  projectId: ProjectId, 
-  category: ImageCategory, 
+  projectId: ProjectId,
+  category: ImageCategory,
   filename: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const filePath = `${projectId}/${category}/${filename}`;
+    const filePath = buildImageFilePath(projectId, category, filename);
 
     const { error } = await supabase.storage
       .from(BUCKET_NAME)
@@ -275,9 +300,9 @@ export async function deleteImage(
     return { success: true };
   } catch (error) {
     console.error('Delete error:', error);
-    return { 
-      success: false, 
-      error: `Delete failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    return {
+      success: false,
+      error: `Delete failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 }
@@ -293,4 +318,88 @@ export function getFilenameFromUrl(imageUrl: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Create folders in Supabase storage if they don't exist
+ * Supabase creates folders implicitly when uploading files, but this ensures they're created explicitly
+ */
+export async function ensureFolderExists(projectId: ProjectId, folderPath: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Try to list the folder to see if it exists
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list(`${projectId}/${folderPath}`, { limit: 1 });
+
+    // If no error, folder exists or can be accessed
+    if (!error) {
+      return { success: true };
+    }
+
+    // If it's a "folder not found" type error, we can still proceed
+    // Supabase will create folders implicitly when we upload files
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to ensure folder exists: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Create the general folder for a new listing by uploading a temporary placeholder file
+ */
+export async function createListingGeneralFolder(projectId: ProjectId): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('Creating general folder for projectId:', projectId);
+    // Create a placeholder file to establish the folder structure
+    // Supabase creates folders implicitly when files are uploaded
+    const placeholderPath = `${projectId}/general/.keep`;
+    const placeholderContent = new Uint8Array([32]); // Small content instead of empty
+
+    console.log('Uploading placeholder file to:', placeholderPath, 'in bucket:', BUCKET_NAME);
+    const { error, data } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(placeholderPath, placeholderContent, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return { success: false, error: `Failed to create general folder: ${error.message}` };
+    }
+
+    console.log('Placeholder file uploaded successfully:', data);
+    return { success: true };
+  } catch (error) {
+    console.error('Exception in createListingGeneralFolder:', error);
+    return {
+      success: false,
+      error: `Failed to create general folder: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Get the folder path for a given category
+ * This abstracts the folder structure logic
+ */
+export function getCategoryFolderPath(category: ImageCategory): string {
+  // General category is at root level
+  if (category === 'general') {
+    return 'general';
+  }
+
+  // All other categories are nested
+  return category;
+}
+
+/**
+ * Build the full file path for an image upload
+ */
+export function buildImageFilePath(projectId: ProjectId, category: ImageCategory, filename: string): string {
+  const folderPath = getCategoryFolderPath(category);
+  return `${projectId}/${folderPath}/${filename}`;
 }

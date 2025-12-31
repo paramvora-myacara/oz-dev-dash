@@ -36,5 +36,5 @@ export async function GET() {
     hostname: domainMap.get(r.listing_slug)
   }))
   
-  return NextResponse.json({ user, listings })
+  return NextResponse.json({ user: { id: user.id, email: user.email, role: user.role }, listings })
 } 

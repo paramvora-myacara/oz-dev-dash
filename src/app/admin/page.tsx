@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AddListingModal from '@/components/admin/AddListingModal'
 
 interface AdminUser {
   id: string
   email: string
+  role: string
 }
 
 interface Listing {
@@ -22,6 +24,9 @@ export default function AdminDashboard() {
   const [data, setData] = useState<AdminData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -30,8 +35,10 @@ export default function AdminDashboard() {
         const response = await fetch('/api/admin/me')
         if (response.ok) {
           const adminData = await response.json()
+          console.log('Admin data:', adminData) // Debug logging
           setData(adminData)
         } else {
+          console.log('Admin API error:', response.status, response.statusText) // Debug logging
           if (response.status === 401) {
             router.push('/admin/login')
             return
@@ -54,6 +61,38 @@ export default function AdminDashboard() {
       router.push('/admin/login')
     } catch (err) {
       console.error('Logout failed:', err)
+    }
+  }
+
+  const handleCreateListing = async (slug: string, title: string, sectionsJson: string) => {
+    setIsCreating(true)
+    setCreateError('')
+
+    try {
+      const response = await fetch('/api/admin/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ slug, title, sections: sectionsJson }),
+      })
+
+      if (response.ok) {
+        // Refresh the data to show the new listing
+        const refreshResponse = await fetch('/api/admin/me')
+        if (refreshResponse.ok) {
+          const adminData = await refreshResponse.json()
+          setData(adminData)
+        }
+        setShowAddModal(false)
+      } else {
+        const errorData = await response.json()
+        setCreateError(errorData.error || 'Failed to create listing')
+      }
+    } catch (err) {
+      setCreateError('Network error occurred')
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -95,10 +134,18 @@ export default function AdminDashboard() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Welcome, {data?.user.email}
+                Welcome, {data?.user.email} (Role: {data?.user.role})
               </p>
             </div>
             <div className="flex space-x-3">
+              {data?.user.role === 'internal_admin' && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  Add New Listing
+                </button>
+              )}
               {/* <a
                 href="/admin/analytics"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -179,6 +226,18 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+
+        {/* Add Listing Modal */}
+        <AddListingModal
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false)
+            setCreateError('')
+          }}
+          onSubmit={handleCreateListing}
+          isLoading={isCreating}
+          error={createError}
+        />
       </div>
     </div>
   )

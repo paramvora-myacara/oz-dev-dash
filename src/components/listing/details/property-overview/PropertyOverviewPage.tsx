@@ -36,8 +36,8 @@ const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex
   }
 };
 
-const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({ 
-  data, 
+const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({
+  data,
   isEditMode = false,
   listingSlug = ''
 }) => {
@@ -47,10 +47,12 @@ const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto">
-      <FloorplanSitemapSection 
+      {/* FloorplanSitemapSection handles its own placeholder in edit mode */}
+      <FloorplanSitemapSection
         isEditMode={isEditMode}
         listingSlug={listingSlug}
       />
+
       {data.sections.map((section, idx) => (
         <SectionRenderer key={idx} section={section} sectionIndex={idx} />
       ))}
