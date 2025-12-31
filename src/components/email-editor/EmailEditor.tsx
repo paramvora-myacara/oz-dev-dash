@@ -10,10 +10,8 @@ import SequenceStepsSidebar from './SequenceStepsSidebar'
 import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
 import { DEFAULT_TEMPLATES } from '@/types/email-editor'
 import { extractTemplateFields, validateTemplateFields } from '@/lib/utils/status-labels'
-import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning'
 import { getSteps, createStep, updateStep as updateStepApi, deleteStep as deleteStepApi } from '@/lib/api/campaigns-backend'
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 interface EmailEditorProps {
   campaignId: string;
@@ -33,7 +31,6 @@ interface EmailEditorProps {
   isContinuing: boolean;
 }
 
-const AUTOSAVE_DELAY = 1500
 
 export default function EmailEditor({
   campaignId,
@@ -106,12 +103,6 @@ export default function EmailEditor({
   });
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  // Autosave state
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const isInitialMount = useRef(true)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Subject generation state
   const [generatingSubject, setGeneratingSubject] = useState(false)
@@ -131,7 +122,12 @@ export default function EmailEditor({
           setSteps(fetchedSteps);
           // Load first step content
           setSections(fetchedSteps[0].sections || []);
-          setSubjectLine(fetchedSteps[0].subject || { mode: 'static', content: '' });
+          const subject = fetchedSteps[0].subject;
+          setSubjectLine(
+            subject && subject.mode && subject.content !== undefined
+              ? subject
+              : { mode: 'static', content: '' }
+          );
         }
       } catch (err) {
         console.error('Failed to load steps:', err);
@@ -140,74 +136,6 @@ export default function EmailEditor({
     loadSteps();
   }, [campaignId]);
 
-  // Mark unsaved changes
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-    setHasUnsavedChanges(true)
-    setSaveStatus('idle')
-  }, [sections, subjectLine, emailFormat])
-
-  // Autosave effect
-  useEffect(() => {
-    if (!hasUnsavedChanges) return
-
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-
-    saveTimeoutRef.current = setTimeout(async () => {
-      setSaveStatus('saving')
-      try {
-        const currentStep = steps[currentStepIndex];
-        let success = false;
-
-        if (currentStep && !currentStep.id.startsWith('step-')) {
-          // If it's a sequence step, save to step API
-          await updateStepApi(campaignId, currentStep.id, {
-            sections,
-            subject: subjectLine,
-          });
-
-          // Also update local steps state
-          setSteps(prev => {
-            const next = [...prev];
-            next[currentStepIndex] = { ...next[currentStepIndex], sections, subject: subjectLine };
-            return next;
-          });
-
-          // If it's the first step, also sync with campaign initial content for legacy compatibility
-          if (currentStepIndex === 0 && onAutoSave) {
-            await onAutoSave(sections, subjectLine, emailFormat);
-          }
-          success = true;
-        } else if (onAutoSave) {
-          // Fallback to campaign-level save if no steps exist
-          success = await onAutoSave(sections, subjectLine, emailFormat);
-        }
-
-        if (success) {
-          setSaveStatus('saved')
-          setLastSavedAt(new Date())
-          setHasUnsavedChanges(false)
-          setTimeout(() => {
-            setSaveStatus((current) => current === 'saved' ? 'idle' : current)
-          }, 2000)
-        } else {
-          setSaveStatus('error')
-        }
-      } catch (err) {
-        console.error('Autosave failed:', err);
-        setSaveStatus('error')
-      }
-    }, AUTOSAVE_DELAY)
-
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
-  }, [hasUnsavedChanges, sections, subjectLine, emailFormat, onAutoSave, steps, currentStepIndex, campaignId])
-
-  useUnsavedChangesWarning(hasUnsavedChanges && saveStatus !== 'saving')
 
   const availableFields = sampleData?.columns || []
 
@@ -261,36 +189,18 @@ export default function EmailEditor({
     };
 
     try {
-      setSaveStatus('saving');
       const createdStep = await createStep(campaignId, defaultStepData);
       setSteps(prev => [...prev, createdStep]);
       setCurrentStepIndex(steps.length);
       // Reset editor to new step's empty content
       setSections([]);
       setSubjectLine({ mode: 'static', content: '' });
-      setSaveStatus('saved');
     } catch (err) {
       console.error('Failed to create step:', err);
-      setSaveStatus('error');
     }
   }, [steps, campaignId]);
 
   const handleStepSelect = useCallback(async (index: number) => {
-    // If there are unsaved changes, save the current step first
-    if (hasUnsavedChanges) {
-      const currentStep = steps[currentStepIndex];
-      if (currentStep && !currentStep.id.startsWith('step-')) {
-        try {
-          await updateStepApi(campaignId, currentStep.id, {
-            sections,
-            subject: subjectLine,
-          });
-        } catch (err) {
-          console.error('Failed to save step before switching:', err);
-        }
-      }
-    }
-
     // Update local steps state with current content
     setSteps(prevSteps => {
       const updatedSteps = [...prevSteps];
@@ -306,9 +216,13 @@ export default function EmailEditor({
     setCurrentStepIndex(index);
     const targetStep = steps[index];
     setSections(targetStep?.sections || []);
-    setSubjectLine(targetStep?.subject || { mode: 'static', content: '' });
-    setHasUnsavedChanges(false);
-  }, [currentStepIndex, sections, subjectLine, steps, hasUnsavedChanges, campaignId]);
+    const subject = targetStep?.subject;
+    setSubjectLine(
+      subject && subject.mode && subject.content !== undefined
+        ? subject
+        : { mode: 'static', content: '' }
+    );
+  }, [currentStepIndex, sections, subjectLine, steps, campaignId]);
 
   const handleStepDelayChange = useCallback(async (stepIndex: number, delayDays: number, delayHours: number, delayMinutes: number) => {
     const stepToUpdate = steps[stepIndex];
@@ -346,7 +260,12 @@ export default function EmailEditor({
           setCurrentStepIndex(nextIndex);
           const nextStep = remaining[nextIndex];
           setSections(nextStep?.sections || []);
-          setSubjectLine(nextStep?.subject || { mode: 'static', content: '' });
+          const subject = nextStep?.subject;
+          setSubjectLine(
+            subject && subject.mode && subject.content !== undefined
+              ? subject
+              : { mode: 'static', content: '' }
+          );
         } else if (currentStepIndex > deletedIndex) {
           setCurrentStepIndex(currentStepIndex - 1);
         }
@@ -357,25 +276,30 @@ export default function EmailEditor({
     }
   }, [campaignId, currentStepIndex]);
 
-  const handleRetrySave = useCallback(async () => {
-    if (!onAutoSave) return
-    setSaveStatus('saving')
-    try {
-      const success = await onAutoSave(sections, subjectLine, emailFormat)
-      if (success) {
-        setSaveStatus('saved')
-        setLastSavedAt(new Date())
-        setHasUnsavedChanges(false)
-        setTimeout(() => {
-          setSaveStatus((current) => current === 'saved' ? 'idle' : current)
-        }, 2000)
-      } else {
-        setSaveStatus('error')
+  const handleManualSave = useCallback(async () => {
+    const currentStep = steps[currentStepIndex];
+    if (currentStep && !currentStep.id.startsWith('step-')) {
+      try {
+        await updateStepApi(campaignId, currentStep.id, {
+          sections,
+          subject: subjectLine,
+        });
+
+        // Update local state
+        setSteps(prev => {
+          const next = [...prev];
+          next[currentStepIndex] = { ...next[currentStepIndex], sections, subject: subjectLine };
+          return next;
+        });
+
+        // Show success feedback
+        alert('Step saved successfully!');
+      } catch (err) {
+        console.error('Failed to save step:', err);
+        alert('Failed to save step. Please try again.');
       }
-    } catch {
-      setSaveStatus('error')
     }
-  }, [sections, subjectLine, emailFormat, onAutoSave])
+  }, [campaignId, currentStepIndex, sections, subjectLine, steps]);
 
   const handleOpenSubjectModal = useCallback(() => {
     // Seed prompt and subject with sensible defaults
@@ -441,7 +365,6 @@ export default function EmailEditor({
     }
 
     setValidationError(null)
-    setHasUnsavedChanges(false)
     onContinue?.({
       sections,
       subjectLine,
@@ -449,44 +372,6 @@ export default function EmailEditor({
     })
   }, [sampleData, subjectLine, sections, emailFormat, onContinue, recipientCount])
 
-  const SaveStatusIndicator = () => {
-    if (saveStatus === 'saving') {
-      return (
-        <div className="flex items-center gap-1.5 text-gray-500 text-xs sm:text-sm">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          <span className="hidden sm:inline">Saving...</span>
-        </div>
-      )
-    }
-    if (saveStatus === 'saved') {
-      return (
-        <div className="flex items-center gap-1.5 text-green-600 text-xs sm:text-sm">
-          <Check className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Saved</span>
-        </div>
-      )
-    }
-    if (saveStatus === 'error') {
-      return (
-        <button
-          onClick={handleRetrySave}
-          className="flex items-center gap-1.5 text-red-600 text-xs sm:text-sm hover:text-red-700"
-        >
-          <AlertCircle className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Error - tap to retry</span>
-          <span className="sm:hidden">Retry</span>
-        </button>
-      )
-    }
-    if (lastSavedAt) {
-      return (
-        <div className="text-gray-400 text-xs hidden sm:block">
-          Saved
-        </div>
-      )
-    }
-    return null
-  }
 
   const fieldValues = useMemo(() => {
     if (!sampleData || !sampleData.rows || !sampleData.rows.length) return {}
@@ -637,9 +522,14 @@ export default function EmailEditor({
             </div>
           </div>
 
-          {/* Save Status & Continue */}
+          {/* Save & Continue */}
           <div className="flex items-center gap-3">
-            <SaveStatusIndicator />
+            <button
+              onClick={handleManualSave}
+              className="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              Save Step
+            </button>
             <button
               onClick={handleContinue}
               disabled={!canContinue || isContinuing}
