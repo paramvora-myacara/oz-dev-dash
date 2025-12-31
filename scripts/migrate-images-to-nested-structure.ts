@@ -6,8 +6,10 @@
  * This script:
  * 1. Finds all existing listings in the database
  * 2. For each listing, copies images from old flat paths to new nested paths
- * 3. Updates the JSON data in listing_versions to reflect new image paths
- * 4. LEAVES OLD FILES IN PLACE for safety
+ * 3. LEAVES OLD FILES IN PLACE for safety
+ *
+ * Note: Images are not stored in listing_versions JSON - they're handled entirely
+ * through Supabase storage paths. No JSON updates are needed.
  *
  * Run this script first, then test thoroughly before running cleanup.
  */
@@ -16,8 +18,38 @@ import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Load environment variables from .env file
+function loadEnvFile() {
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) {
+    throw new Error('.env file not found');
+  }
+
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  const envVars: { [key: string]: string } = {};
+
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        // Remove quotes if present
+        const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+        envVars[key.trim()] = value;
+      }
+    }
+  });
+
+  return envVars;
+}
+
+const envVars = loadEnvFile();
+const SUPABASE_URL = envVars.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = envVars.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in .env file');
+}
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
@@ -35,11 +67,6 @@ interface Listing {
   slug: string;
 }
 
-interface ListingVersion {
-  id: string;
-  listing_id: string;
-  data: any;
-}
 
 /**
  * Get all listings from the database
@@ -56,24 +83,6 @@ async function getAllListings(): Promise<Listing[]> {
   return data || [];
 }
 
-/**
- * Get the current version for a listing
- */
-async function getCurrentListingVersion(listingId: string): Promise<ListingVersion | null> {
-  const { data, error } = await supabase
-    .from('listing_versions')
-    .select('id, listing_id, data')
-    .eq('listing_id', listingId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-    throw new Error(`Failed to fetch listing version: ${error.message}`);
-  }
-
-  return data;
-}
 
 /**
  * List all files in a Supabase storage folder
@@ -143,47 +152,6 @@ async function copyStorageFile(oldPath: string, newPath: string): Promise<void> 
   }
 }
 
-/**
- * Update image paths in listing version JSON
- */
-async function updateListingVersionImages(listingVersionId: string, oldData: any): Promise<void> {
-  const updatedData = { ...oldData };
-
-  if (updatedData.images) {
-    // Update general images (these stay the same)
-    // updatedData.images.general remains unchanged
-
-    // Update floorplan images
-    if (updatedData.images.floorplan && Array.isArray(updatedData.images.floorplan)) {
-      updatedData.images.floorplan = updatedData.images.floorplan.map((path: string) => {
-        // Convert old path like "listing-slug-001/floorplan/image.jpg"
-        // to new path like "listing-slug-001/details/property-overview/floorplansitemapsection/floorplan/image.jpg"
-        return path.replace(/\/floorplan\//, '/details/property-overview/floorplansitemapsection/floorplan/');
-      });
-    }
-
-    // Update sitemap images
-    if (updatedData.images.sitemap && Array.isArray(updatedData.images.sitemap)) {
-      updatedData.images.sitemap = updatedData.images.sitemap.map((path: string) => {
-        // Convert old path like "listing-slug-001/sitemap/image.jpg"
-        // to new path like "listing-slug-001/details/property-overview/floorplansitemapsection/sitemap/image.jpg"
-        return path.replace(/\/sitemap\//, '/details/property-overview/floorplansitemapsection/sitemap/');
-      });
-    }
-  }
-
-  // Update the listing version
-  const { error } = await supabase
-    .from('listing_versions')
-    .update({ data: updatedData })
-    .eq('id', listingVersionId);
-
-  if (error) {
-    throw new Error(`Failed to update listing version ${listingVersionId}: ${error.message}`);
-  }
-
-  console.log(`✓ Updated image paths in listing version ${listingVersionId}`);
-}
 
 /**
  * Migrate images for a single listing
@@ -194,14 +162,7 @@ async function migrateListingImages(listing: Listing): Promise<void> {
   const projectId = `${listing.slug}-001`;
 
   try {
-    // Get current listing version
-    const version = await getCurrentListingVersion(listing.id);
-    if (!version) {
-      console.log(`⚠️  No version found for listing ${listing.slug}, skipping`);
-      return;
-    }
-
-    let migratedAny = false;
+    let migratedCount = 0;
 
     // Migrate floorplan images
     const floorplanFiles = await listStorageFiles(`${projectId}/floorplan`);
@@ -211,8 +172,8 @@ async function migrateListingImages(listing: Listing): Promise<void> {
         const oldPath = `${projectId}/floorplan/${filename}`;
         const newPath = `${projectId}/details/property-overview/floorplansitemapsection/floorplan/${filename}`;
         await copyStorageFile(oldPath, newPath);
+        migratedCount++;
       }
-      migratedAny = true;
     }
 
     // Migrate sitemap images
@@ -223,18 +184,15 @@ async function migrateListingImages(listing: Listing): Promise<void> {
         const oldPath = `${projectId}/sitemap/${filename}`;
         const newPath = `${projectId}/details/property-overview/floorplansitemapsection/sitemap/${filename}`;
         await copyStorageFile(oldPath, newPath);
+        migratedCount++;
       }
-      migratedAny = true;
     }
 
-    // Update JSON paths if we migrated anything
-    if (migratedAny) {
-      await updateListingVersionImages(version.id, version.data);
-    } else {
+    if (migratedCount === 0) {
       console.log(`ℹ️  No images to migrate for ${listing.slug}`);
+    } else {
+      console.log(`✅ Migrated ${migratedCount} images for ${listing.slug}`);
     }
-
-    console.log(`✅ Completed migration for ${listing.slug}`);
 
   } catch (error) {
     console.error(`❌ Failed to migrate images for ${listing.slug}:`, error);
