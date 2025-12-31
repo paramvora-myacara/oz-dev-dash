@@ -148,18 +148,24 @@ async function verifyMigration(listing: Listing): Promise<{ canCleanup: boolean;
   const projectId = `${listing.slug}-001`;
   const issues: string[] = [];
 
-  // Check floorplan images
+  // Check floorplan images - only verify files that existed in old structure
   const oldFloorplanFiles = await listStorageFiles(`${projectId}/floorplan`);
   for (const filename of oldFloorplanFiles) {
+    // Skip placeholder files created during migration or seeding
+    if (filename === '.keep' || filename === '.emptyFolderPlaceholder') continue;
+
     const newPath = `${projectId}/details/property-overview/floorplansitemapsection/floorplan/${filename}`;
     if (!(await fileExists(newPath))) {
       issues.push(`Missing new floorplan file: ${newPath}`);
     }
   }
 
-  // Check sitemap images
+  // Check sitemap images - only verify files that existed in old structure
   const oldSitemapFiles = await listStorageFiles(`${projectId}/sitemap`);
   for (const filename of oldSitemapFiles) {
+    // Skip placeholder files created during migration or seeding
+    if (filename === '.keep' || filename === '.emptyFolderPlaceholder') continue;
+
     const newPath = `${projectId}/details/property-overview/floorplansitemapsection/sitemap/${filename}`;
     if (!(await fileExists(newPath))) {
       issues.push(`Missing new sitemap file: ${newPath}`);
