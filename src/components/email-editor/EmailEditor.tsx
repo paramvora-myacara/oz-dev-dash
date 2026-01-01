@@ -191,9 +191,18 @@ export default function EmailEditor({
         onDelayChange={async (stepIndex, delayDays, delayHours, delayMinutes) => {
           const step = stepsManager.steps[stepIndex]
           if (step?.id) {
-            await stepsManager.updateStep(step.id, {
-              edges: [{ targetStepId: '', delayDays, delayHours, delayMinutes, condition: null }]
-            })
+            // Update the first edge's delay values while preserving targetStepId
+            const currentEdges = step.edges || []
+            const updatedEdges = [...currentEdges]
+            if (updatedEdges.length > 0) {
+              updatedEdges[0] = {
+                ...updatedEdges[0],
+                delayDays,
+                delayHours,
+                delayMinutes
+              }
+            }
+            await stepsManager.updateStep(step.id, { edges: updatedEdges })
           }
         }}
         sampleData={sampleData}

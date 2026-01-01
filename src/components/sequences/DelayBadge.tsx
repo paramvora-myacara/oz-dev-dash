@@ -30,6 +30,13 @@ export function DelayBadge({
     const [minutes, setMinutes] = useState(delayMinutes);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Sync local state with props
+    useEffect(() => {
+        setDays(delayDays);
+        setHours(delayHours);
+        setMinutes(delayMinutes);
+    }, [delayDays, delayHours, delayMinutes]);
+
     // Close dropdown on outside click
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -41,37 +48,19 @@ export function DelayBadge({
             document.addEventListener('mousedown', handleClickOutside);
         }
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isEditing, days, hours, minutes]);
-
-    // Reset local state when props change
-    useEffect(() => {
-        setDays(delayDays);
-        setHours(delayHours);
-        setMinutes(delayMinutes);
-    }, [delayDays, delayHours, delayMinutes]);
+    }, [isEditing]);
 
     const handleSave = () => {
+        onChange?.(days, hours, minutes);
         setIsEditing(false);
-        if (onChange && (days !== delayDays || hours !== delayHours || minutes !== delayMinutes)) {
-            onChange(days, hours, minutes);
-        }
     };
 
     const formatDelay = () => {
         const parts: string[] = [];
-        if (delayDays > 0) {
-            parts.push(`${delayDays} day${delayDays !== 1 ? 's' : ''}`);
-        }
-        if (delayHours > 0) {
-            parts.push(`${delayHours} hr${delayHours !== 1 ? 's' : ''}`);
-        }
-        if (delayMinutes > 0) {
-            parts.push(`${delayMinutes} min${delayMinutes !== 1 ? 's' : ''}`);
-        }
-        if (parts.length === 0) {
-            return 'Immediately';
-        }
-        return `Wait ${parts.join(', ')}`;
+        if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+        if (hours > 0) parts.push(`${hours} hr${hours !== 1 ? 's' : ''}`);
+        if (minutes > 0) parts.push(`${minutes} min${minutes !== 1 ? 's' : ''}`);
+        return parts.length ? `Wait ${parts.join(', ')}` : 'Immediately';
     };
 
     const sizeClasses = {
