@@ -41,19 +41,6 @@ ADD COLUMN IF NOT EXISTS entry_step_id UUID REFERENCES campaign_steps(id) ON DEL
 ALTER TABLE campaigns 
 ADD COLUMN IF NOT EXISTS exit_conditions JSONB DEFAULT '{"reply": true, "unsubscribe": true, "bounce": true, "spamComplaint": true}';
 
--- Timezone for scheduling emails
-ALTER TABLE campaigns 
-ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/New_York';
-
--- Working hours for sending (optional)
-ALTER TABLE campaigns 
-ADD COLUMN IF NOT EXISTS working_hours_start INTEGER DEFAULT 9;
-
-ALTER TABLE campaigns 
-ADD COLUMN IF NOT EXISTS working_hours_end INTEGER DEFAULT 17;
-
-ALTER TABLE campaigns 
-ADD COLUMN IF NOT EXISTS skip_weekends BOOLEAN DEFAULT true;
 
 -- ============================================
 -- 3. Extend campaign_recipients for sequences
