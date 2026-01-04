@@ -407,27 +407,6 @@ export async function getCampaignSampleRecipients(id: string, limit = 5): Promis
 
 // ---------- Campaign Steps (for sequences) ----------
 
-export interface CreateStepRequest {
-  name: string;
-  subject: {
-    mode: SectionMode;
-    content: string;
-    selectedFields?: string[];
-  };
-  sections?: Section[];
-  edges?: StepEdge[];
-}
-
-export interface UpdateStepRequest {
-  name?: string;
-  subject?: {
-    mode: SectionMode;
-    content: string;
-    selectedFields?: string[];
-  };
-  sections?: Section[];
-  edges?: StepEdge[];
-}
 
 export async function getSteps(campaignId: string): Promise<CampaignStep[]> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/steps`, { credentials: 'include' });

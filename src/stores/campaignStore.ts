@@ -140,15 +140,6 @@ export const useCurrentStep = (stepId: string | null) => {
   );
 };
 
-// Debug hook - remove this after debugging
-export const useDebugSteps = () => {
-  return useCampaignStore(state => {
-    console.log('Store steps:', state.steps);
-    console.log('LocalStorage:', localStorage.getItem('campaign-store'));
-    return state.steps;
-  });
-};
-
 export const useUnsyncedCount = () => {
   return useCampaignStore(state => state.getUnsyncedSteps().length);
 };
