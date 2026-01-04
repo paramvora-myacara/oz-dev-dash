@@ -145,7 +145,8 @@ export function useEmailSteps({ campaignId }: UseEmailStepsOptions): UseEmailSte
 
   const syncUnsavedChanges = useCallback(async () => {
     // Send complete current state for set-based replacement
-    const currentSteps = Object.values(storeSteps)
+    // Use sorted steps to ensure correct sequence order for edge rebuilding
+    const currentSteps = steps
     if (currentSteps.length === 0) {
       return // Nothing to sync
     }
@@ -155,7 +156,7 @@ export function useEmailSteps({ campaignId }: UseEmailStepsOptions): UseEmailSte
 
     // Mark all steps as synced (they are now synced)
     markStepsSynced(currentSteps.map(step => step.id))
-  }, [campaignId, storeSteps, replaceCampaignSteps, markStepsSynced])
+  }, [campaignId, steps, replaceCampaignSteps, markStepsSynced])
 
   return {
     steps,
