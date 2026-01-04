@@ -17,7 +17,6 @@ interface EmailEditorProps {
   initialSections: Section[];
   initialSubjectLine: { mode: SectionMode; content: string; selectedFields?: string[] };
   initialEmailFormat: 'html' | 'text';
-  onAutoSave: (sections: Section[], subjectLine: { mode: SectionMode; content: string }, emailFormat: 'html' | 'text') => Promise<boolean>;
   sampleData: SampleData | null;
   recipientCount?: number;
   onContinue: (data: {
@@ -35,7 +34,6 @@ export default function EmailEditor({
   initialSections,
   initialSubjectLine,
   initialEmailFormat,
-  onAutoSave,
   sampleData,
   recipientCount = 0,
   onContinue,
@@ -49,8 +47,7 @@ export default function EmailEditor({
 
   // Custom hooks
   const stepsManager = useEmailSteps({
-    campaignId,
-    initialSteps: campaign?.steps
+    campaignId
   })
 
   const subjectGenerator = useSubjectGeneration({
@@ -106,30 +103,29 @@ export default function EmailEditor({
     stepsManager.updateCurrentStepContent(currentSections, subject)
   }, [currentSections, stepsManager])
 
-  const handleManualSave = useCallback(async () => {
-    if (currentStep?.id) {
-      try {
-        await stepsManager.updateStep(currentStep.id, {
-          sections: currentSections,
-          subject: currentSubject,
-        })
-        alert('Step saved successfully!')
-      } catch (err) {
-        console.error('Failed to save step:', err)
-        alert('Failed to save step. Please try again.')
-      }
-    }
-  }, [currentStep, currentSections, currentSubject, stepsManager])
 
-  const handleContinue = useCallback(() => {
+  const handleContinue = useCallback(async () => {
     if (!validation.canContinue) return
 
-    onContinue?.({
-      sections: currentSections,
-      subjectLine: currentSubject,
-      emailFormat,
-    })
-  }, [validation.canContinue, currentSections, currentSubject, emailFormat, onContinue])
+    try {
+      // Sync all unsaved changes before continuing
+      await stepsManager.syncUnsavedChanges()
+
+      onContinue?.({
+        sections: currentSections,
+        subjectLine: currentSubject,
+        emailFormat,
+      })
+    } catch (error) {
+      console.error('Failed to sync changes:', error)
+      // Still call onContinue - let the parent handle the error
+      onContinue?.({
+        sections: currentSections,
+        subjectLine: currentSubject,
+        emailFormat,
+      })
+    }
+  }, [validation.canContinue, currentSections, currentSubject, emailFormat, onContinue, stepsManager])
 
   const handleSubjectSave = useCallback((subject: string) => {
     handleSubjectChange({ ...currentSubject, content: subject })
@@ -154,7 +150,6 @@ export default function EmailEditor({
           continueDisabledReason={validation.continueDisabledReason}
           isContinuing={isContinuing}
           onContinue={handleContinue}
-          onManualSave={handleManualSave}
         />
       </div>
 
@@ -188,7 +183,7 @@ export default function EmailEditor({
         onStepSelect={stepsManager.setCurrentStepIndex}
         onAddStep={stepsManager.addStep}
         onDeleteStep={stepsManager.deleteStepByIndex}
-        onDelayChange={async (stepIndex, delayDays, delayHours, delayMinutes) => {
+        onDelayChange={(stepIndex, delayDays, delayHours, delayMinutes) => {
           const step = stepsManager.steps[stepIndex]
           if (step?.id) {
             // Update the first edge's delay values while preserving targetStepId
@@ -202,7 +197,8 @@ export default function EmailEditor({
                 delayMinutes
               }
             }
-            await stepsManager.updateStep(step.id, { edges: updatedEdges })
+            // Update step with new edges - this saves to localStorage automatically
+            stepsManager.updateStep(step.id, { edges: updatedEdges })
           }
         }}
         sampleData={sampleData}

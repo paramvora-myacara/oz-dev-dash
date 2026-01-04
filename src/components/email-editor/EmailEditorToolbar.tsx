@@ -22,7 +22,6 @@ interface EmailEditorToolbarProps {
   continueDisabledReason: string | null
   isContinuing: boolean
   onContinue: () => void
-  onManualSave: () => void
 
   // Layout
   isMobile?: boolean
@@ -42,7 +41,6 @@ export default function EmailEditorToolbar({
   continueDisabledReason,
   isContinuing,
   onContinue,
-  onManualSave,
   isMobile = false,
 }: EmailEditorToolbarProps) {
   if (isMobile) {
@@ -166,14 +164,8 @@ export default function EmailEditorToolbar({
         </div>
       </div>
 
-      {/* Save & Continue */}
+      {/* Continue */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={onManualSave}
-          className="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-        >
-          Save Step
-        </button>
         <button
           onClick={onContinue}
           disabled={!canContinue || isContinuing}

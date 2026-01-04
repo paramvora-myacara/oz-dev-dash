@@ -261,26 +261,6 @@ export default function CampaignEditPage() {
   }, [currentStep, loadSummary, loadFailedEmails])
 
   // Autosave handler - returns true on success, false on failure
-  const handleAutoSave = useCallback(async (
-    sections: Section[],
-    subjectLine: { mode: SectionMode; content: string },
-    emailFormat: 'html' | 'text'
-  ): Promise<boolean> => {
-    if (!campaign) return false
-
-    try {
-      const updated = await updateCampaign(campaign.id || campaignId, {
-        sections,
-        subjectLine,
-        emailFormat,
-      })
-      setCampaign(updated)
-      return true
-    } catch (err: any) {
-      console.error('Autosave failed:', err)
-      return false
-    }
-  }, [campaign, campaignId])
 
   // Continue from recipient selection to design step
   const handleContinueFromRecipients = useCallback((contactIds: string[]) => {
@@ -306,12 +286,15 @@ export default function CampaignEditPage() {
 
     try {
       setError(null)
-      // Save campaign content first
-      await updateCampaign(campaign.id || campaignId, {
-        sections: data.sections,
-        subjectLine: data.subjectLine,
-        emailFormat: data.emailFormat,
-      })
+
+      // EmailEditor handles step syncing internally via syncUnsavedChanges()
+      // We just need to handle campaign-level data (format, etc.) if needed
+      if (data.emailFormat !== campaign.emailFormat) {
+        await updateCampaign(campaign.id || campaignId, {
+          emailFormat: data.emailFormat,
+        })
+      }
+
       await loadCampaign()
       // Move to format-sample step
       setCurrentStep('format-sample')
@@ -707,7 +690,6 @@ export default function CampaignEditPage() {
             initialSections={campaign.sections}
             initialSubjectLine={campaign.subjectLine}
             initialEmailFormat={campaign.emailFormat}
-            onAutoSave={handleAutoSave}
             sampleData={sampleData}
             recipientCount={campaign.totalRecipients || (campaign as any).total_recipients || 0}
             onContinue={handleContinueToFormatSample}

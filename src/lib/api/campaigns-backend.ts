@@ -438,74 +438,23 @@ export async function getSteps(campaignId: string): Promise<CampaignStep[]> {
   return res.json();
 }
 
-export async function getStep(campaignId: string, stepId: string): Promise<CampaignStep> {
-  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps/${stepId}`, { credentials: 'include' });
-  if (!res.ok) {
-    const error = await parseErrorResponse(res);
-    throw new Error(error.detail || 'Failed to fetch step');
-  }
-  return res.json();
-}
-
-export async function createStep(campaignId: string, data: CreateStepRequest): Promise<CampaignStep> {
+export async function replaceCampaignSteps(
+  campaignId: string,
+  stepsData: CampaignStep[]
+): Promise<{ steps: CampaignStep[]; count: number }> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/steps`, {
-    method: 'POST',
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(data),
+    body: JSON.stringify(stepsData),
   });
   if (!res.ok) {
     const error = await parseErrorResponse(res);
-    throw new Error(error.detail || 'Failed to create step');
+    throw new Error(error.detail || 'Failed to replace campaign steps');
   }
   return res.json();
 }
 
-export async function updateStep(
-  campaignId: string,
-  stepId: string,
-  data: UpdateStepRequest
-): Promise<CampaignStep> {
-  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps/${stepId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const error = await parseErrorResponse(res);
-    throw new Error(error.detail || 'Failed to update step');
-  }
-  return res.json();
-}
-
-export async function deleteStep(campaignId: string, stepId: string): Promise<void> {
-  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps/${stepId}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const error = await parseErrorResponse(res);
-    throw new Error(error.detail || 'Failed to delete step');
-  }
-}
-
-export async function reorderSteps(
-  campaignId: string,
-  stepIds: string[]
-): Promise<CampaignStep[]> {
-  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps/reorder`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ stepIds }),
-  });
-  if (!res.ok) {
-    const error = await parseErrorResponse(res);
-    throw new Error(error.detail || 'Failed to reorder steps');
-  }
-  return res.json();
-}
 
 export async function testStep(
   campaignId: string,
