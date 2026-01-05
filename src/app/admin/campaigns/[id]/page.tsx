@@ -236,7 +236,7 @@ export default function CampaignEditPage() {
         setCurrentStep('design')
       }
     }
-  }, [campaignData, currentStep])
+  }, [campaignData])
 
   useEffect(() => {
     if (currentStep === 'complete') {
@@ -248,11 +248,12 @@ export default function CampaignEditPage() {
   // Autosave handler - returns true on success, false on failure
 
   // Continue from recipient selection to design step
-  const handleContinueFromRecipients = useCallback((contactIds: string[]) => {
+  const handleContinueFromRecipients = useCallback(async (contactIds: string[]) => {
     setSelectedContactIds(contactIds)
-    // Campaign data updates automatically, just set the step
     setCurrentStep('design')
-  }, [])
+    // Force refresh to ensure cache has latest recipient count before step routing logic runs
+    await refreshCampaignData()
+  }, [refreshCampaignData])
 
   // Back from design to recipient selection
   const handleBackToRecipients = useCallback(() => {
