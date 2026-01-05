@@ -1,14 +1,14 @@
 // Types for the Email Editor
 
 export type SectionMode = 'static' | 'personalized';
-export type SectionType = 'text' | 'button';
+export type SectionType = 'text' | 'button' | 'image';
 
 export interface Section {
   id: string;
   name: string;
-  type: SectionType; // 'text' for paragraphs, 'button' for CTA buttons
+  type: SectionType; // 'text' for paragraphs, 'button' for CTA buttons, 'image' for images
   mode: SectionMode;
-  content: string; // For static: the actual text; For personalized: AI instructions
+  content: string; // For static: the actual text/image URL; For personalized: AI instructions
   buttonUrl?: string; // URL for button type
   selectedFields?: string[]; // CSV fields to use (for personalized mode)
   order: number;
