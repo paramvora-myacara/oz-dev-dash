@@ -151,11 +151,17 @@ export function useEmailSteps({ campaignId }: UseEmailStepsOptions): UseEmailSte
       return // Nothing to sync
     }
 
-    // Replace all campaign steps with current state
-    await replaceCampaignSteps(campaignId, currentSteps)
+    try {
+      // Replace all campaign steps with current state
+      await replaceCampaignSteps(campaignId, currentSteps)
 
-    // Mark all steps as synced (they are now synced)
-    markStepsSynced(currentSteps.map(step => step.id))
+      // Mark all steps as synced (they are now synced)
+      const stepIds = currentSteps.map(step => step.id)
+      markStepsSynced(stepIds)
+    } catch (error) {
+      console.error('Sync failed:', error)
+      throw error
+    }
   }, [campaignId, steps, replaceCampaignSteps, markStepsSynced])
 
   return {

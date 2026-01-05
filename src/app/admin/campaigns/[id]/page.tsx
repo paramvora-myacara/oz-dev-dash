@@ -226,13 +226,17 @@ export default function CampaignEditPage() {
 
   // Update step when campaign status changes
   useEffect(() => {
+    // Use smart status: if polling shows staged emails, treat as staged regardless of campaign.status
+    const hasStagedEmails = (campaignStatus?.staged_count ?? 0) > 0
+    const effectiveStatus = hasStagedEmails ? 'staged' : campaign?.status
+
     if (campaign) {
-      if (campaign.status === 'staged') {
+      if (effectiveStatus === 'staged') {
         setCurrentStep('review')
         loadStagedEmails()
-      } else if (['scheduled', 'sending', 'completed'].includes(campaign.status as string)) {
+      } else if (['scheduled', 'sending', 'completed'].includes(effectiveStatus as string)) {
         setCurrentStep('complete')
-      } else if (campaign.status === 'draft') {
+      } else if (effectiveStatus === 'draft') {
         // Check if campaign has been through design phase (has sections) OR has recipients selected
         // Cast to any to handle potential property mismatch during dev
         const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
@@ -244,14 +248,13 @@ export default function CampaignEditPage() {
             setCurrentStep('design')
           }
         } else {
-          // New campaign - start with recipient selection
           setCurrentStep('select-recipients')
         }
       } else {
         setCurrentStep('design')
       }
     }
-  }, [campaign?.status, campaign?.sections, campaign?.totalRecipients])
+  }, [campaign?.status, campaignStatus?.staged_count, campaignStatus?.campaign_status, campaign?.sections, campaign?.totalRecipients])
 
   useEffect(() => {
     if (currentStep === 'complete') {
