@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
-import { useEmailSteps, useSubjectGeneration, useEmailValidation } from './hooks'
+import { useEmailSteps, useSubjectGeneration, useEmailValidation, useTemplateManagement } from './hooks'
 import EmailEditorToolbar from './EmailEditorToolbar'
 import EmailEditorLayout from './EmailEditorLayout'
 import SubjectGenerationModal from './SubjectGenerationModal'
@@ -47,9 +47,6 @@ export default function EmailEditor({
     campaignId
   })
 
-  // Template management is now handled at the step level
-  // EmailEditor loads step content directly via useEmailSteps
-
   const validation = useEmailValidation({
     sections: stepsManager.steps[stepsManager.currentStepIndex]?.sections || [],
     subjectLine: stepsManager.steps[stepsManager.currentStepIndex]?.subject || { mode: 'static', content: '' },
@@ -90,6 +87,11 @@ export default function EmailEditor({
     stepsManager.updateCurrentStepContent(currentSections, subject)
   }, [currentSections, stepsManager])
 
+  // Template management for email composition
+  const templateManager = useTemplateManagement({
+    initialSections: currentSections,
+    onSectionsChange: handleSectionsChange
+  })
 
   const handleContinue = useCallback(async () => {
     if (!validation.canContinue) return
@@ -124,11 +126,11 @@ export default function EmailEditor({
       {/* Top Bar */}
       <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         <EmailEditorToolbar
-          selectedTemplate={null}
-          showTemplateDropdown={false}
-          onToggleTemplateDropdown={() => {}}
-          onSelectTemplate={() => {}}
-          availableTemplates={[]}
+          selectedTemplate={templateManager.selectedTemplate}
+          showTemplateDropdown={templateManager.showDropdown}
+          onToggleTemplateDropdown={() => templateManager.setShowDropdown(!templateManager.showDropdown)}
+          onSelectTemplate={templateManager.selectTemplate}
+          availableTemplates={templateManager.availableTemplates}
           subjectLine={currentSubject}
           onSubjectChange={handleSubjectChange}
           onOpenSubjectModal={() => subjectGenerator.openModal(currentSubject.content)}
@@ -194,6 +196,7 @@ export default function EmailEditor({
         availableFields={availableFields}
         activeTab={activeTab}
         onActiveTabChange={setActiveTab}
+        onAddSection={() => setShowAddModal(true)}
       />
 
       {/* Modals */}

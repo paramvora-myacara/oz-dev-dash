@@ -32,6 +32,7 @@ interface EmailEditorLayoutProps {
   // UI state
   activeTab: 'edit' | 'preview' | 'steps'
   onActiveTabChange: (tab: 'edit' | 'preview' | 'steps') => void
+  onAddSection?: () => void
 }
 
 export default function EmailEditorLayout({
@@ -52,6 +53,7 @@ export default function EmailEditorLayout({
   availableFields,
   activeTab,
   onActiveTabChange,
+  onAddSection,
 }: EmailEditorLayoutProps) {
   const fieldValues = sampleData?.rows?.[selectedSampleIndex] || {}
 
@@ -66,7 +68,7 @@ export default function EmailEditorLayout({
         />
         <div className="mt-3">
           <button
-            onClick={() => {/* This should be handled by parent */}}
+            onClick={onAddSection}
             className="w-full flex items-center justify-center gap-2 py-4 sm:py-6 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-colors"
           >
             <span className="text-lg">+</span>
