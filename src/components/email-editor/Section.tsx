@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import Link from '@tiptap/extension-link'
 import {
   GripVertical,
   ChevronRight,
@@ -20,7 +21,14 @@ import {
   X,
   Plus,
   Image as ImageIcon,
-  Upload
+  Upload,
+  Bold,
+  Italic,
+  Heading1,
+  Heading2,
+  Heading3,
+  Link as LinkIcon,
+  RemoveFormatting
 } from 'lucide-react'
 import type { Section as SectionType, SectionMode } from '@/types/email-editor'
 import CampaignImagePicker from './CampaignImagePicker'
@@ -85,14 +93,20 @@ export default function Section({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: false,
+        heading: {
+          levels: [1, 2, 3],
+        },
         bulletList: false,
         orderedList: false,
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
-        bold: false,
-        italic: false,
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline',
+        },
       }),
       Placeholder.configure({
         placeholder: 'Write your content here...',
@@ -109,6 +123,22 @@ export default function Section({
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[100px] p-4 text-base',
+      },
+      handleKeyDown: (view, event) => {
+        // Handle keyboard shortcuts
+        if (event.ctrlKey || event.metaKey) {
+          switch (event.key) {
+            case 'b':
+              event.preventDefault()
+              editor?.chain().focus().toggleBold().run()
+              return true
+            case 'i':
+              event.preventDefault()
+              editor?.chain().focus().toggleItalic().run()
+              return true
+          }
+        }
+        return false
       },
     },
   })
@@ -544,7 +574,81 @@ Write the personalized section now.`
             <div className="rounded-lg sm:rounded-xl border border-gray-200">
               {/* Enhanced Toolbar - Always visible when section expanded */}
               <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border-b">
-                {/* Field Insertion Tools (left) */}
+                {/* Formatting Tools (left) */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* Rich Text Formatting Buttons */}
+                  <button
+                    onClick={() => editor?.chain().focus().toggleBold().run()}
+                    className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+                      editor?.isActive('bold') ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                    }`}
+                    title="Bold (Ctrl+B)"
+                  >
+                    <Bold className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleItalic().run()}
+                    className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+                      editor?.isActive('italic') ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                    }`}
+                    title="Italic (Ctrl+I)"
+                  >
+                    <Italic className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                    className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+                      editor?.isActive('heading', { level: 1 }) ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                    }`}
+                    title="Heading 1"
+                  >
+                    <Heading1 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                    className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+                      editor?.isActive('heading', { level: 2 }) ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                    }`}
+                    title="Heading 2"
+                  >
+                    <Heading2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+                    className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+                      editor?.isActive('heading', { level: 3 }) ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                    }`}
+                    title="Heading 3"
+                  >
+                    <Heading3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const url = window.prompt('Enter URL:')
+                      if (url) {
+                        editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+                      }
+                    }}
+                    className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${
+                      editor?.isActive('link') ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                    }`}
+                    title="Add Link"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => editor?.chain().focus().unsetAllMarks().run()}
+                    className="p-1.5 rounded hover:bg-gray-200 transition-colors text-gray-600"
+                    title="Remove Formatting"
+                  >
+                    <RemoveFormatting className="w-4 h-4" />
+                  </button>
+
+                  {/* Divider */}
+                  <div className="w-px h-6 bg-gray-300 mx-2" />
+                </div>
+
+                {/* Field Insertion Tools (right) */}
                 <div className="flex items-center gap-1 sm:gap-2">
                   {/* Quick Field Buttons */}
                   <button

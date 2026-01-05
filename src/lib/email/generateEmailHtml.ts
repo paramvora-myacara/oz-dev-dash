@@ -99,7 +99,17 @@ export function generateEmailHtml(
               const processedParagraph = paragraph
                 .replace(/\n/g, '<br>')
                 .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+                .replace(/<em>(.*?)<\/em>/g, '<em>$1</em>')
+                .replace(/<h1>(.*?)<\/h1>/g, `<h1 style="font-size: 24px; font-weight: bold; margin: 24px 0 16px 0; color: ${BRAND.textDark};">$1</h1>`)
+                .replace(/<h2>(.*?)<\/h2>/g, `<h2 style="font-size: 20px; font-weight: bold; margin: 20px 0 12px 0; color: ${BRAND.textDark};">$1</h2>`)
+                .replace(/<h3>(.*?)<\/h3>/g, `<h3 style="font-size: 18px; font-weight: bold; margin: 16px 0 10px 0; color: ${BRAND.textDark};">$1</h3>`)
                 .replace(/<a href="(.*?)">(.*?)<\/a>/g, `<a href="$1" style="color: ${BRAND.primary}; text-decoration: underline;">$2</a>`)
+
+              // If the paragraph contains only heading tags, don't wrap in <p>
+              if (processedParagraph.match(/^<h[1-3][^>]*>.*<\/h[1-3]>$/)) {
+                return processedParagraph
+              }
+
               return `<p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND.textMuted}; line-height: 1.6;">${processedParagraph}</p>`
             })
             .join('')
@@ -137,7 +147,17 @@ export function generateEmailHtml(
             const processedParagraph = paragraph
               .replace(/\n/g, '<br>')
               .replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>')
+              .replace(/<em>(.*?)<\/em>/g, '<em>$1</em>')
+              .replace(/<h1>(.*?)<\/h1>/g, `<h1 style="font-size: 24px; font-weight: bold; margin: 24px 0 16px 0; color: ${BRAND.textDark};">$1</h1>`)
+              .replace(/<h2>(.*?)<\/h2>/g, `<h2 style="font-size: 20px; font-weight: bold; margin: 20px 0 12px 0; color: ${BRAND.textDark};">$1</h2>`)
+              .replace(/<h3>(.*?)<\/h3>/g, `<h3 style="font-size: 18px; font-weight: bold; margin: 16px 0 10px 0; color: ${BRAND.textDark};">$1</h3>`)
               .replace(/<a href="(.*?)">(.*?)<\/a>/g, `<a href="$1" style="color: ${BRAND.primary}; text-decoration: underline;">$2</a>`)
+
+            // If the paragraph contains only heading tags, don't wrap in <p>
+            if (processedParagraph.match(/^<h[1-3][^>]*>.*<\/h[1-3]>$/)) {
+              return processedParagraph
+            }
+
             return `<p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND.textMuted}; line-height: 1.6;">${processedParagraph}</p>`
           })
           .join('')
