@@ -14,7 +14,6 @@ interface EmailEditorProps {
   campaignId: string;
   campaign?: Campaign;
   initialTemplate?: EmailTemplate;
-  initialSections: Section[];
   initialSubjectLine: { mode: SectionMode; content: string; selectedFields?: string[] };
   initialEmailFormat: 'html' | 'text';
   sampleData: SampleData | null;
@@ -31,7 +30,6 @@ export default function EmailEditor({
   campaignId,
   campaign,
   initialTemplate,
-  initialSections,
   initialSubjectLine,
   initialEmailFormat,
   sampleData,
@@ -57,7 +55,6 @@ export default function EmailEditor({
 
   const templateManager = useTemplateManagement({
     initialTemplate,
-    initialSections,
     onSectionsChange: (sections) => {
       stepsManager.updateCurrentStepContent(sections, stepsManager.steps[stepsManager.currentStepIndex]?.subject || { mode: 'static', content: '' })
     }

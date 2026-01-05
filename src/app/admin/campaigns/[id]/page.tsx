@@ -231,30 +231,28 @@ export default function CampaignEditPage() {
     const effectiveStatus = hasStagedEmails ? 'staged' : campaign?.status
 
     if (campaign) {
+      const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
+
       if (effectiveStatus === 'staged') {
         setCurrentStep('review')
         loadStagedEmails()
       } else if (['scheduled', 'sending', 'completed'].includes(effectiveStatus as string)) {
         setCurrentStep('complete')
       } else if (effectiveStatus === 'draft') {
-        // Check if campaign has been through design phase (has sections) OR has recipients selected
-        // Cast to any to handle potential property mismatch during dev
-        const totalRecipients = campaign.totalRecipients || (campaign as any).total_recipients || 0
-        const hasRecipients = totalRecipients > 0
-        if ((campaign.sections && campaign.sections.length > 0) || hasRecipients) {
-          // Only redirect if we are in an invalid step for this state
-          // Allow 'format-sample' as it's a valid substep of draft
+        // For draft campaigns: route based on recipients
+        if (totalRecipients === 0) {
+          setCurrentStep('select-recipients')
+        } else {
+          // Has recipients - go to design (allows format-sample as sub-step)
           if (currentStep !== 'design' && currentStep !== 'format-sample') {
             setCurrentStep('design')
           }
-        } else {
-          setCurrentStep('select-recipients')
         }
       } else {
         setCurrentStep('design')
       }
     }
-  }, [campaign?.status, campaignStatus?.staged_count, campaignStatus?.campaign_status, campaign?.sections, campaign?.totalRecipients])
+  }, [campaign?.status, campaignStatus?.staged_count, campaignStatus?.campaign_status, campaign?.totalRecipients, currentStep])
 
   useEffect(() => {
     if (currentStep === 'complete') {
@@ -690,7 +688,6 @@ export default function CampaignEditPage() {
             campaignId={campaignId}
             campaign={campaign}
             initialTemplate={campaign.templateSlug ? { slug: campaign.templateSlug } as any : undefined}
-            initialSections={campaign.sections}
             initialSubjectLine={campaign.subjectLine}
             initialEmailFormat={campaign.emailFormat}
             sampleData={sampleData}
