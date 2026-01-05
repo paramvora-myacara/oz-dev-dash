@@ -38,7 +38,22 @@ export function generateEmailHtml(
 
   // Build sections HTML
   const sectionsHtml = sections.map((section) => {
-    if (section.type === 'button') {
+    if (section.type === 'image') {
+      // Image section - only render if there's content (URL)
+      const imageUrl = section.content?.trim();
+      if (imageUrl) {
+        return `
+          <div style="margin: 24px 0; text-align: center;">
+            <img
+              src="${imageUrl}"
+              alt="${section.name}"
+              style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;"
+            />
+          </div>
+        `;
+      }
+      return ''; // Empty string if no image URL
+    } else if (section.type === 'button') {
       // CTA Button - Full Width
       let buttonText: string;
       if (section.mode === 'personalized') {

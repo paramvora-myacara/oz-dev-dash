@@ -403,3 +403,222 @@ export function buildImageFilePath(projectId: ProjectId, category: ImageCategory
   const folderPath = getCategoryFolderPath(category);
   return `${projectId}/${folderPath}/${filename}`;
 }
+
+// ==================== CAMPAIGN IMAGE FUNCTIONS ====================
+
+export const CAMPAIGN_IMAGE_CATEGORY = 'images';
+
+/**
+ * Sanitizes campaign name for filesystem-safe folder names
+ * - Converts spaces to dashes
+ * - Removes special characters except dashes and underscores
+ * - Converts to lowercase
+ * - Limits length to prevent filesystem issues
+ */
+export function sanitizeCampaignName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    // Replace spaces and multiple spaces with single dash
+    .replace(/\s+/g, '-')
+    // Remove special characters except dashes and underscores
+    .replace(/[^a-z0-9\-_]/g, '')
+    // Remove multiple consecutive dashes
+    .replace(/-+/g, '-')
+    // Remove leading/trailing dashes
+    .replace(/^-+|-+$/g, '')
+    // Limit length (filesystem friendly)
+    .substring(0, 50);
+}
+
+/**
+ * Generates campaign folder path: {sanitized-name}-{campaignId}
+ */
+export function getCampaignFolderName(campaignName: string, campaignId: string): string {
+  const sanitizedName = sanitizeCampaignName(campaignName);
+  return `${sanitizedName}-${campaignId}`;
+}
+
+/**
+ * Creates campaign image folder if it doesn't exist
+ */
+export async function ensureCampaignImageFolder(
+  campaignName: string,
+  campaignId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const folderName = getCampaignFolderName(campaignName, campaignId);
+    const placeholderPath = `campaigns/${folderName}/.keep`;
+
+    // Upload a tiny placeholder to create the folder structure
+    const placeholderContent = new Uint8Array([32]); // Single space character
+
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(placeholderPath, placeholderContent, {
+        cacheControl: '3600',
+        upsert: true  // Overwrite if exists
+      });
+
+    if (error) {
+      return { success: false, error: `Failed to create folder: ${error.message}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to create folder: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Get public URL for a campaign image
+ */
+export function getCampaignImageUrl(campaignName: string, campaignId: string, filename: string): string {
+  const folderName = getCampaignFolderName(campaignName, campaignId);
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/campaigns/${folderName}/${CAMPAIGN_IMAGE_CATEGORY}/${filename}`;
+}
+
+/**
+ * Get all available images for a campaign
+ */
+export async function getCampaignImages(campaignName: string, campaignId: string): Promise<string[]> {
+  try {
+    const folderName = getCampaignFolderName(campaignName, campaignId);
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list(`campaigns/${folderName}/${CAMPAIGN_IMAGE_CATEGORY}`);
+
+    if (error) return [];
+    if (!data) return [];
+
+    return data
+      .filter(file => file.name && isImageFile(file.name))
+      .map(file => getCampaignImageUrl(campaignName, campaignId, file.name));
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Upload an image to a campaign
+ */
+export async function uploadCampaignImage(
+  campaignName: string,
+  campaignId: string,
+  file: File
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    if (!isImageFile(file.name)) {
+      return { success: false, error: 'Invalid file type. Only image files are allowed.' };
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      return { success: false, error: 'File size too large. Maximum size is 10MB.' };
+    }
+
+    const folderName = getCampaignFolderName(campaignName, campaignId);
+    const timestamp = Date.now();
+    const extension = file.name.split('.').pop();
+    const filename = `${timestamp}.${extension}`;
+    const filePath = `campaigns/${folderName}/${CAMPAIGN_IMAGE_CATEGORY}/${filename}`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+      return { success: false, error: `Upload failed: ${error.message}` };
+    }
+
+    const imageUrl = getCampaignImageUrl(campaignName, campaignId, filename);
+    return { success: true, url: imageUrl };
+  } catch (error) {
+    console.error('Upload error:', error);
+    return {
+      success: false,
+      error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Delete a campaign image
+ */
+export async function deleteCampaignImage(
+  campaignName: string,
+  campaignId: string,
+  filename: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const folderName = getCampaignFolderName(campaignName, campaignId);
+    const filePath = `campaigns/${folderName}/${CAMPAIGN_IMAGE_CATEGORY}/${filename}`;
+
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Delete error:', error);
+      return { success: false, error: `Delete failed: ${error.message}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Delete error:', error);
+    return {
+      success: false,
+      error: `Delete failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Clean up all images for a campaign (used when campaign is deleted)
+ */
+export async function cleanupCampaignImages(
+  campaignName: string,
+  campaignId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const folderName = getCampaignFolderName(campaignName, campaignId);
+
+    // Get all files in the campaign folder
+    const { data: files, error: listError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list(`campaigns/${folderName}`, { limit: 1000 });
+
+    if (listError) {
+      return { success: false, error: `Failed to list files: ${listError.message}` };
+    }
+
+    if (!files || files.length === 0) {
+      return { success: true }; // Nothing to clean up
+    }
+
+    // Build file paths for deletion
+    const filePaths = files.map(file => `campaigns/${folderName}/${file.name}`);
+
+    // Delete all files
+    const { error: deleteError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove(filePaths);
+
+    if (deleteError) {
+      return { success: false, error: `Failed to delete files: ${deleteError.message}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}

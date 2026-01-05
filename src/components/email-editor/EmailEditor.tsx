@@ -8,6 +8,7 @@ import EmailEditorToolbar from './EmailEditorToolbar'
 import EmailEditorLayout from './EmailEditorLayout'
 import SubjectGenerationModal from './SubjectGenerationModal'
 import AddSectionModal from './AddSectionModal'
+import { EmailEditorContext } from './EmailEditorContext'
 
 
 interface EmailEditorProps {
@@ -161,43 +162,45 @@ export default function EmailEditor({
       )}
 
       {/* Main Content */}
-      <EmailEditorLayout
-        sections={currentSections}
-        onSectionsChange={handleSectionsChange}
-        subjectLine={currentSubject}
-        emailFormat={emailFormat}
-        onFormatChange={setEmailFormat}
-        steps={stepsManager.steps}
-        currentStepIndex={stepsManager.currentStepIndex}
-        onStepSelect={stepsManager.setCurrentStepIndex}
-        onAddStep={stepsManager.addStep}
-        onDeleteStep={stepsManager.deleteStepByIndex}
-        onDelayChange={(stepIndex, delayDays, delayHours, delayMinutes) => {
-          const step = stepsManager.steps[stepIndex]
-          if (step?.id) {
-            // Update the first edge's delay values while preserving targetStepId
-            const currentEdges = step.edges || []
-            const updatedEdges = [...currentEdges]
-            if (updatedEdges.length > 0) {
-              updatedEdges[0] = {
-                ...updatedEdges[0],
-                delayDays,
-                delayHours,
-                delayMinutes
+      <EmailEditorContext.Provider value={{ campaignName: campaign?.name, campaignId }}>
+        <EmailEditorLayout
+          sections={currentSections}
+          onSectionsChange={handleSectionsChange}
+          subjectLine={currentSubject}
+          emailFormat={emailFormat}
+          onFormatChange={setEmailFormat}
+          steps={stepsManager.steps}
+          currentStepIndex={stepsManager.currentStepIndex}
+          onStepSelect={stepsManager.setCurrentStepIndex}
+          onAddStep={stepsManager.addStep}
+          onDeleteStep={stepsManager.deleteStepByIndex}
+          onDelayChange={(stepIndex, delayDays, delayHours, delayMinutes) => {
+            const step = stepsManager.steps[stepIndex]
+            if (step?.id) {
+              // Update the first edge's delay values while preserving targetStepId
+              const currentEdges = step.edges || []
+              const updatedEdges = [...currentEdges]
+              if (updatedEdges.length > 0) {
+                updatedEdges[0] = {
+                  ...updatedEdges[0],
+                  delayDays,
+                  delayHours,
+                  delayMinutes
+                }
               }
+              // Update step with new edges - this saves to localStorage automatically
+              stepsManager.updateStep(step.id, { edges: updatedEdges })
             }
-            // Update step with new edges - this saves to localStorage automatically
-            stepsManager.updateStep(step.id, { edges: updatedEdges })
-          }
-        }}
-        sampleData={sampleData}
-        selectedSampleIndex={selectedSampleIndex}
-        onSampleIndexChange={setSelectedSampleIndex}
-        availableFields={availableFields}
-        activeTab={activeTab}
-        onActiveTabChange={setActiveTab}
-        onAddSection={() => setShowAddModal(true)}
-      />
+          }}
+          sampleData={sampleData}
+          selectedSampleIndex={selectedSampleIndex}
+          onSampleIndexChange={setSelectedSampleIndex}
+          availableFields={availableFields}
+          activeTab={activeTab}
+          onActiveTabChange={setActiveTab}
+          onAddSection={() => setShowAddModal(true)}
+        />
+      </EmailEditorContext.Provider>
 
       {/* Modals */}
       <AddSectionModal

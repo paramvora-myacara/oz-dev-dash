@@ -153,7 +153,10 @@ export default function PreviewPanel({
 
       const textContent = orderedSections
         .map((s) => {
-          if (s.type === 'button') {
+          if (s.type === 'image') {
+            // Skip images in text preview
+            return '';
+          } else if (s.type === 'button') {
             let buttonText: string;
             if (s.mode === 'personalized') {
               if (generatedContent && generatedContent[s.id]) {
@@ -401,7 +404,7 @@ export default function PreviewPanel({
               srcDoc={emailHtml}
               title="Email Preview"
               className="w-full h-full border-0 rounded-lg sm:rounded-xl"
-              sandbox="allow-same-origin"
+              sandbox=""
               style={{ minHeight: '400px' }}
             />
           </div>

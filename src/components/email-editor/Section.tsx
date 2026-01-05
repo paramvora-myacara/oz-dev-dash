@@ -18,9 +18,13 @@ import {
   MousePointerClick,
   Pencil,
   X,
-  Plus
+  Plus,
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react'
 import type { Section as SectionType, SectionMode } from '@/types/email-editor'
+import CampaignImagePicker from './CampaignImagePicker'
+import { useEmailEditor } from './EmailEditorContext'
 
 interface SectionProps {
   section: SectionType
@@ -32,6 +36,11 @@ interface SectionProps {
   onToggleExpand?: () => void
 }
 
+// Helper function to strip HTML tags
+const stripHtml = (html: string): string => {
+  return html.replace(/<[^>]*>/g, '');
+};
+
 export default function Section({
   section,
   onChange,
@@ -41,6 +50,7 @@ export default function Section({
   isExpanded = false,
   onToggleExpand
 }: SectionProps) {
+  const { campaignName, campaignId } = useEmailEditor()
   const [isEditingName, setIsEditingName] = useState(false)
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -48,6 +58,8 @@ export default function Section({
   const [expandedFieldDetail, setExpandedFieldDetail] = useState<string | null>(null)
   const [showFieldPicker, setShowFieldPicker] = useState(false)
   const [showFullFieldPicker, setShowFullFieldPicker] = useState(false)
+  const [showImagePicker, setShowImagePicker] = useState(false)
+  const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload')
   const nameInputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const fieldPickerRef = useRef<HTMLDivElement>(null)
@@ -86,9 +98,9 @@ export default function Section({
         placeholder: 'Write your content here...',
       }),
     ],
-    content: section.mode === 'static' && section.type !== 'button' ? section.content : '',
+    content: section.mode === 'static' && section.type === 'text' ? section.content : '',
     onUpdate: ({ editor }) => {
-      if (section.mode === 'static' && section.type !== 'button') {
+      if (section.mode === 'static' && section.type === 'text') {
         onChange({ ...section, content: editor.getHTML() })
       }
     },
@@ -103,10 +115,11 @@ export default function Section({
 
   // Update editor content when section changes
   useEffect(() => {
-    if (editor && section.mode === 'static' && section.type !== 'button' && editor.getHTML() !== section.content) {
+    if (editor && section.mode === 'static' && section.type === 'text' && editor.getHTML() !== section.content) {
       editor.commands.setContent(section.content)
     }
   }, [section.content, section.mode, section.type, editor])
+
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -190,6 +203,15 @@ Write the personalized section now.`
     if (section.type === 'button') {
       return section.content || 'Button'
     }
+    if (section.type === 'image') {
+      if (!section.content) return 'No image'
+      const cleanContent = stripHtml(section.content);
+      // Check if it's a URL (starts with http/https) or uploaded image
+      if (cleanContent.startsWith('http://') || cleanContent.startsWith('https://')) {
+        return 'Image URL entered'
+      }
+      return 'Image selected'
+    }
     if (section.mode === 'personalized') {
       return section.content || 'AI personalized content'
     }
@@ -202,6 +224,9 @@ Write the personalized section now.`
   const getModeIndicator = () => {
     if (section.type === 'button') {
       return { icon: MousePointerClick, label: 'Button', color: 'text-gray-500' }
+    }
+    if (section.type === 'image') {
+      return { icon: ImageIcon, label: 'Image', color: 'text-green-600' }
     }
     if (section.mode === 'personalized') {
       return { icon: Target, label: 'Personalized', color: 'text-blue-600' }
@@ -263,7 +288,7 @@ Write the personalized section now.`
           ) : (
             <div>
               <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
-                {section.type === 'button' ? 'Link/CTA button' : section.name}
+                {section.type === 'button' ? 'Link/CTA button' : section.type === 'image' ? 'Image' : section.name}
               </div>
               {!isExpanded && (
                 <div className="text-xs sm:text-sm text-gray-400 truncate mt-0.5">{getPreviewText()}</div>
@@ -306,7 +331,7 @@ Write the personalized section now.`
               </button>
 
               {/* Mode Toggle (for text sections only) */}
-              {section.type !== 'button' && (
+              {section.type === 'text' && (
                 <>
                   <div className="border-t border-gray-100 my-1" />
                   <button
@@ -400,6 +425,119 @@ Write the personalized section now.`
                   </a>
                 </div>
               </div>
+            </div>
+          ) : section.type === 'image' ? (
+            /* Image Type - Image Input */
+            <div className="space-y-4 sm:space-y-5">
+              {/* Input Mode Toggle */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-2 sm:mb-3">
+                  Image Source
+                </label>
+                <div className="flex gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setImageInputMode('upload')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
+                      imageInputMode === 'upload'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-base font-medium">Upload/Select</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setImageInputMode('url')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
+                      imageInputMode === 'url'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-base font-medium">Enter URL</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* URL Input Mode */}
+              {imageInputMode === 'url' && (
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
+                    Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={stripHtml(section.content || '')}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      onChange({ ...section, content: newValue });
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {section.content && !stripHtml(section.content).match(/^https?:\/\//) && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ⚠️ URL should start with http:// or https://
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Upload/Select Mode */}
+              {imageInputMode === 'upload' && (
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5 sm:mb-2">
+                    Selected Image
+                  </label>
+                  {section.content ? (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <img
+                          src={section.content}
+                          alt={section.name}
+                          className="max-w-full h-auto max-h-64 mx-auto block rounded"
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-center">
+                        {campaignName && campaignId && (
+                          <button
+                            onClick={() => setShowImagePicker(true)}
+                            className="text-sm text-blue-600 hover:text-blue-700 underline"
+                          >
+                            Change Image
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onChange({ ...section, content: '' })}
+                          className="text-sm text-red-600 hover:text-red-700 underline"
+                        >
+                          Remove Image
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 px-4 border-2 border-dashed border-gray-300 rounded-lg">
+                      <div className="text-4xl mb-2">🖼️</div>
+                      <p className="text-sm text-gray-500 mb-3">No image selected</p>
+                      {campaignName && campaignId ? (
+                        <button
+                          onClick={() => setShowImagePicker(true)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={16} />
+                          Select Image
+                        </button>
+                      ) : (
+                        <p className="text-xs text-gray-400">Campaign info needed to select images</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : section.mode === 'static' ? (
             /* Static Mode - Rich Text Editor */
@@ -645,7 +783,7 @@ Write the personalized section now.`
           <div className="bg-white rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Delete Section?</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              Are you sure you want to delete "{section.type === 'button' ? 'Link/CTA button' : section.name}"?
+              Are you sure you want to delete "{section.type === 'button' ? 'Link/CTA button' : section.type === 'image' ? 'Image' : section.name}"?
             </p>
             <div className="flex justify-end gap-2 sm:gap-3">
               <button
@@ -666,6 +804,20 @@ Write the personalized section now.`
             </div>
           </div>
         </div>
+      )}
+
+      {/* Campaign Image Picker Modal */}
+      {campaignName && campaignId && (
+        <CampaignImagePicker
+          campaignName={campaignName}
+          campaignId={campaignId}
+          isOpen={showImagePicker}
+          onClose={() => setShowImagePicker(false)}
+          onImageSelect={(imageUrl) => {
+            onChange({ ...section, content: imageUrl })
+            setShowImagePicker(false)
+          }}
+        />
       )}
     </div>
   )
