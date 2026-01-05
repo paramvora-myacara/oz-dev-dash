@@ -38,6 +38,7 @@ interface WeekDay {
   dayLabel: string
   dayOfWeek: string
   queued: number
+  projected?: number
   sent: number
   capacity: number
   remaining: number
@@ -72,9 +73,9 @@ interface CampaignStatusProps {
   isLoading?: boolean
 }
 
-export default function CampaignStatus({ 
-  data, 
-  onRefresh, 
+export default function CampaignStatus({
+  data,
+  onRefresh,
   isLoading = false
 }: CampaignStatusProps) {
 
@@ -86,12 +87,12 @@ export default function CampaignStatus({
     )
   }
 
-  const { 
-    status, 
-    total, 
-    queued, 
-    sent, 
-    failed, 
+  const {
+    status,
+    total,
+    queued,
+    sent,
+    failed,
     processing = 0,
     lastUpdated,
     recentActivity = [],
@@ -181,19 +182,20 @@ export default function CampaignStatus({
           <h3 className="text-sm font-medium text-gray-700 mb-3">7-Day Schedule (9am-5pm)</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
             {weekSchedule.map((day) => {
-              const usedCapacity = day.isToday ? day.sent + day.queued : day.queued
+              const usedCapacity = day.isToday
+                ? day.sent + day.queued + (day.projected || 0)
+                : day.queued + (day.projected || 0)
               const percentage = getCapacityPercentage(usedCapacity, day.capacity)
-              
+
               return (
                 <div
                   key={day.date}
-                  className={`rounded-lg p-3 border ${
-                    day.isToday 
+                  className={`rounded-lg p-3 border ${day.isToday
                       ? getCapacityColor(usedCapacity, day.capacity)
                       : day.queued > 0
                         ? 'bg-indigo-50 border-indigo-200'
                         : 'bg-gray-50 border-gray-200'
-                  }`}
+                    }`}
                 >
                   <div className="text-xs font-medium uppercase tracking-wider mb-1 opacity-75">
                     {day.dayLabel}
@@ -204,6 +206,16 @@ export default function CampaignStatus({
                   <div className="text-xs opacity-75">
                     queued
                   </div>
+                  {day.projected !== undefined && day.projected > 0 && (
+                    <div className="mt-1">
+                      <div className="text-lg font-bold text-blue-600">
+                        {day.projected.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-blue-500 opacity-75">
+                        projected
+                      </div>
+                    </div>
+                  )}
                   {day.isToday && day.sent > 0 && (
                     <div className="text-xs text-green-600 mt-1">
                       {day.sent} sent
@@ -211,15 +223,14 @@ export default function CampaignStatus({
                   )}
                   <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
                     <div
-                      className={`h-1.5 rounded-full transition-all ${
-                        percentage >= 90
+                      className={`h-1.5 rounded-full transition-all ${percentage >= 90
                           ? 'bg-red-500'
                           : percentage >= 70
-                          ? 'bg-yellow-500'
-                          : day.queued > 0
-                          ? 'bg-indigo-500'
-                          : 'bg-gray-300'
-                      }`}
+                            ? 'bg-yellow-500'
+                            : day.queued > 0
+                              ? 'bg-indigo-500'
+                              : 'bg-gray-300'
+                        }`}
                       style={{ width: `${Math.min(100, percentage)}%` }}
                     ></div>
                   </div>

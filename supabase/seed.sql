@@ -7,11 +7,11 @@ ON CONFLICT (email) DO UPDATE SET
 SET session_replication_role = replica;
 
 -- Seed contacts
-INSERT INTO contacts (email, name, company) VALUES
-  ('aryan.jain@capmatch.com', 'Aryan Cap', 'CapMatch'),
-  ('aryan@ozlistings.com', 'Aryan OZL', 'OZ Listings'),
-  ('gamersupreme07@gmail.com', 'Alex Chen', 'GameDev Studios'),
-  ('aryan.jain@ozlistings.com', 'Aryan Bounce', 'OZL bounce')
+INSERT INTO contacts (email, name, company, details) VALUES
+  ('aryan.jain@capmatch.com', 'Aryan Cap', 'CapMatch', '{"email_status":"Valid"}'::jsonb),
+  ('aryan@ozlistings.com', 'Aryan OZL', 'OZ Listings', '{"email_status":"Valid"}'::jsonb),
+  ('gamersupreme07@gmail.com', 'Alex Chen', 'GameDev Studios', '{"email_status":"Valid"}'::jsonb),
+  ('aryan.jain@ozlistings.com', 'Aryan Bounce', 'OZL bounce', '{"email_status":"Valid"}'::jsonb)
 ON CONFLICT (email) DO NOTHING;
 
 --

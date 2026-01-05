@@ -1,7 +1,11 @@
 import 'server-only'
 import { readBasicAuthCookie } from '@/lib/admin/auth'
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000'
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL
+
+if (!BACKEND_API_URL) {
+  throw new Error('NEXT_PUBLIC_BACKEND_API_URL environment variable is required')
+}
 
 /**
  * Helper function to get Basic auth header from httpOnly cookie

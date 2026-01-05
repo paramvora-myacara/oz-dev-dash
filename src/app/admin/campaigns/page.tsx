@@ -13,6 +13,7 @@ interface WeekDay {
   dayLabel: string
   dayOfWeek: string
   queued: number
+  projected?: number
   sent: number
   capacity: number
   remaining: number
@@ -202,9 +203,16 @@ export default function CampaignsPage() {
                       }}
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm font-medium text-blue-600">
-                          {campaign.name}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-blue-600">
+                            {campaign.name}
+                          </span>
+                          {campaign.entryStepId && (
+                            <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-purple-100 text-purple-700 rounded border border-purple-200">
+                              Sequence
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(campaign.status)}`}>
@@ -217,9 +225,8 @@ export default function CampaignsPage() {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">
                         {campaign.sentCount !== undefined ? campaign.sentCount : '—'}
                       </td>
-                      <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${
-                        (campaign.failedCount || 0) > 0 ? 'text-red-600' : 'text-gray-500'
-                      }`}>
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${(campaign.failedCount || 0) > 0 ? 'text-red-600' : 'text-gray-500'
+                        }`}>
                         {campaign.failedCount !== undefined ? campaign.failedCount : '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
@@ -265,7 +272,9 @@ export default function CampaignsPage() {
             {weekSchedule.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {weekSchedule.map((day) => {
-                  const usedCapacity = day.isToday ? day.sent + day.queued : day.queued
+                  const usedCapacity = day.isToday
+                    ? day.sent + day.queued + (day.projected || 0)
+                    : day.queued + (day.projected || 0)
                   const percentage = getCapacityPercentage(usedCapacity, day.capacity)
                   const isWeekend = (day.dayOfWeek || '').toLowerCase().startsWith('sat') || (day.dayOfWeek || '').toLowerCase().startsWith('sun')
 
@@ -273,8 +282,8 @@ export default function CampaignsPage() {
                     <div
                       key={day.date}
                       className={`rounded-lg p-3 border ${isWeekend
-                          ? 'bg-gray-100 border-gray-300 text-gray-500'
-                          : day.isToday
+                        ? 'bg-gray-100 border-gray-300 text-gray-500'
+                        : day.isToday
                           ? 'bg-blue-50 border-blue-300'
                           : day.queued > 0
                             ? 'bg-indigo-50 border-indigo-200'
@@ -290,6 +299,13 @@ export default function CampaignsPage() {
                       <div className="text-xs opacity-75">
                         queued
                       </div>
+                      {day.projected !== undefined && day.projected > 0 && (
+                        <div className="mt-1">
+                          <div className="text-xs font-bold text-blue-600">
+                            {day.projected.toLocaleString()} projected
+                          </div>
+                        </div>
+                      )}
                       {day.isToday && day.sent > 0 && (
                         <div className="text-xs text-green-600 mt-1">
                           {day.sent} sent
@@ -298,8 +314,8 @@ export default function CampaignsPage() {
                       <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
                         <div
                           className={`h-1.5 rounded-full transition-all ${isWeekend
-                              ? 'bg-gray-400'
-                              : percentage >= 90
+                            ? 'bg-gray-400'
+                            : percentage >= 90
                               ? 'bg-red-500'
                               : percentage >= 70
                                 ? 'bg-yellow-500'

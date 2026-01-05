@@ -4,7 +4,7 @@
  * Authentication is handled server-side by the proxy, keeping credentials secure.
  */
 
-import type { Campaign, QueuedEmail, LaunchResponse } from '@/types/email-editor';
+import type { Campaign, QueuedEmail, LaunchResponse, CampaignStep, StepEdge, Section, SectionMode } from '@/types/email-editor';
 
 // Use Next.js proxy routes instead of direct backend calls
 // The proxy handles authentication server-side using httpOnly cookies
@@ -97,14 +97,14 @@ export async function generateEmails(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ use_database_recipients: true }),
   });
-  
+
   if (!res.ok) {
     const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to start generation');
   }
-  
+
   const result = await res.json();
-  
+
   // For background jobs, we return immediately
   // Frontend should poll status endpoint
   return {
@@ -123,14 +123,14 @@ export async function launchCampaign(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(options || { all: true }),
   });
-  
+
   if (!res.ok) {
     const error = await parseErrorResponse(res);
     throw new Error(error.detail || 'Failed to start launch');
   }
-  
+
   const result = await res.json();
-  
+
   // For background jobs, return simplified response
   return {
     success: true,
@@ -148,10 +148,21 @@ export async function launchCampaign(
 
 // Campaign status
 export interface CampaignStatus {
-  campaign_status: string;
+  // Campaign fields (metadata only)
+  id: string;
+  name: string;
+  emailFormat: string;
+  sender: string;
+  sentCount?: number;
+  failedCount?: number;
+  createdAt: string;
+  updatedAt: string;
+
+  // Status fields
+  status: string;
   staged_count: number;
   queued_count: number;
-  total_recipients: number;
+  totalRecipients: number;
   is_ready: boolean;
   is_launched: boolean;
 }
@@ -271,7 +282,7 @@ export async function getEmails(
   if (status) params.append('status', status);
   params.append('limit', limit.toString());
   params.append('offset', offset.toString());
-  
+
   const res = await fetch(`${PROXY_BASE}/${campaignId}/emails?${params}`);
   if (!res.ok) {
     const error = await parseErrorResponse(res);
@@ -354,18 +365,18 @@ export async function sendTestEmail(
 // Get sample recipients for campaign preview
 export async function getCampaignSampleRecipients(id: string, limit = 5): Promise<{ rows: any[]; columns: string[] }> {
   const recipients = await getRecipients(id);
-  
+
   if (!recipients || recipients.length === 0) {
     return { rows: [], columns: [] };
   }
-  
+
   // Transform recipients into flat row objects
   const rows = recipients.slice(0, limit).map((r: any) => {
     const contact = r.contacts || (Array.isArray(r.contacts) ? r.contacts[0] : {});
-    
+
     // Flatten contact details if present
     const details = (contact.details as Record<string, string>) || {};
-    
+
     const row: Record<string, any> = {
       ...details,
       Name: contact.name || '',
@@ -385,7 +396,7 @@ export async function getCampaignSampleRecipients(id: string, limit = 5): Promis
       Location: contact.location || '',
       Phone: contact.phone_number || '',
     };
-    
+
     // Remove duplicates (lowercase versions)
     delete row['name'];
     delete row['email'];
@@ -393,15 +404,62 @@ export async function getCampaignSampleRecipients(id: string, limit = 5): Promis
     delete row['role'];
     delete row['location'];
     delete row['phone'];
-    
+
     return row;
   });
-  
+
   // Derive columns from all keys across rows
   const allKeys = new Set<string>(['Name', 'Email', 'Company', 'Role', 'Location']);
   rows.forEach(row => Object.keys(row).forEach(k => allKeys.add(k)));
   const columns = Array.from(allKeys);
-  
+
   return { rows, columns };
 }
 
+// ---------- Campaign Steps (for sequences) ----------
+
+
+export async function getSteps(campaignId: string): Promise<CampaignStep[]> {
+  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps`, { credentials: 'include' });
+  if (!res.ok) {
+    const error = await parseErrorResponse(res);
+    throw new Error(error.detail || 'Failed to fetch steps');
+  }
+  return res.json();
+}
+
+export async function replaceCampaignSteps(
+  campaignId: string,
+  stepsData: CampaignStep[]
+): Promise<{ steps: CampaignStep[]; count: number }> {
+  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(stepsData),
+  });
+  if (!res.ok) {
+    const error = await parseErrorResponse(res);
+    throw new Error(error.detail || 'Failed to replace campaign steps');
+  }
+  return res.json();
+}
+
+
+export async function testStep(
+  campaignId: string,
+  stepId: string,
+  testEmail: string
+): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${PROXY_BASE}/${campaignId}/steps/${stepId}/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ testEmail }),
+  });
+  if (!res.ok) {
+    const error = await parseErrorResponse(res);
+    throw new Error(error.detail || 'Failed to send test email');
+  }
+  return res.json();
+}

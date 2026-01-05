@@ -869,7 +869,7 @@ export async function POST(
         from_email: null,
         domain_index: null,
         scheduled_for: null,
-        delay_seconds: 0,
+        domain_index: 0,
       };
     });
 

@@ -43,10 +43,70 @@ export interface Campaign {
   subjectPrompt?: string | null;
   totalRecipients: number;
   sender: CampaignSender;
-  sentCount?: number; // Number of successfully sent emails
-  failedCount?: number; // Number of failed emails
+  sentCount?: number;
+  failedCount?: number;
   createdAt: string;
   updatedAt: string;
+  // Sequence fields (unified model: campaign with steps = sequence)
+  entryStepId?: string | null;
+  exitConditions?: ExitConditions;
+  steps?: CampaignStep[];
+  timezone?: string;
+  workingHoursStart?: number;
+  workingHoursEnd?: number;
+  skipWeekends?: boolean;
+  // Sequence stats
+  activeEnrollments?: number;
+  repliedCount?: number;
+}
+
+// ---------- Sequence Step Types ----------
+
+export interface StepEdge {
+  targetStepId: string;
+  delayDays: number;
+  delayHours: number;
+  delayMinutes: number;
+  condition?: StepCondition | null;
+}
+
+export interface StepCondition {
+  type: 'webinar_registered' | 'not_registered' | 'opened' | 'clicked' | 'custom';
+  value?: string;
+}
+
+export interface CampaignStep {
+  id: string;
+  campaignId: string;
+  name: string;
+  subject: {
+    mode: SectionMode;
+    content: string;
+    selectedFields?: string[];
+  };
+  sections: Section[];
+  edges: StepEdge[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ExitConditions {
+  reply: boolean;
+  unsubscribe: boolean;
+  bounce: boolean;
+  spamComplaint: boolean;
+}
+
+export const DEFAULT_EXIT_CONDITIONS: ExitConditions = {
+  reply: true,
+  unsubscribe: true,
+  bounce: true,
+  spamComplaint: true,
+};
+
+// Helper to check if a campaign is a sequence (has steps)
+export function isSequence(campaign: Campaign): boolean {
+  return campaign.entryStepId != null;
 }
 
 export interface QueuedEmail {
