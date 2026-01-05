@@ -167,11 +167,11 @@ export function generateEmailHtml(
       <table cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
           <td width="140" valign="middle">
-            <img 
-              src="https://ozlistings.com/oz-listings-horizontal2-logo-white.webp" 
-              alt="OZListings" 
-              width="140" 
-              height="32" 
+            <img
+              src="https://ozlistings.com/OZListings-Dark.png"
+              alt="OZListings"
+              width="140"
+              height="32"
               style="display: block; max-width: 140px; height: auto;"
             >
           </td>
