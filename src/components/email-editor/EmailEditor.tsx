@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
-import { useEmailSteps, useSubjectGeneration, useTemplateManagement, useEmailValidation } from './hooks'
+import { useEmailSteps, useSubjectGeneration, useEmailValidation } from './hooks'
 import EmailEditorToolbar from './EmailEditorToolbar'
 import EmailEditorLayout from './EmailEditorLayout'
 import SubjectGenerationModal from './SubjectGenerationModal'
@@ -13,9 +13,6 @@ import AddSectionModal from './AddSectionModal'
 interface EmailEditorProps {
   campaignId: string;
   campaign?: Campaign;
-  initialTemplate?: EmailTemplate;
-  initialSubjectLine: { mode: SectionMode; content: string; selectedFields?: string[] };
-  initialEmailFormat: 'html' | 'text';
   sampleData: SampleData | null;
   recipientCount?: number;
   onContinue: (data: {
@@ -29,16 +26,13 @@ interface EmailEditorProps {
 export default function EmailEditor({
   campaignId,
   campaign,
-  initialTemplate,
-  initialSubjectLine,
-  initialEmailFormat,
   sampleData,
   recipientCount = 0,
   onContinue,
   isContinuing,
 }: EmailEditorProps) {
   // Core state
-  const [emailFormat, setEmailFormat] = useState<'html' | 'text'>(initialEmailFormat || 'text')
+  const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('html')
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedSampleIndex, setSelectedSampleIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'edit' | 'preview' | 'steps'>('edit')
@@ -53,12 +47,8 @@ export default function EmailEditor({
     campaignId
   })
 
-  const templateManager = useTemplateManagement({
-    initialTemplate,
-    onSectionsChange: (sections) => {
-      stepsManager.updateCurrentStepContent(sections, stepsManager.steps[stepsManager.currentStepIndex]?.subject || { mode: 'static', content: '' })
-    }
-  })
+  // Template management is now handled at the step level
+  // EmailEditor loads step content directly via useEmailSteps
 
   const validation = useEmailValidation({
     sections: stepsManager.steps[stepsManager.currentStepIndex]?.sections || [],
@@ -134,11 +124,11 @@ export default function EmailEditor({
       {/* Top Bar */}
       <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         <EmailEditorToolbar
-          selectedTemplate={templateManager.selectedTemplate}
-          showTemplateDropdown={templateManager.showDropdown}
-          onToggleTemplateDropdown={() => templateManager.setShowDropdown(!templateManager.showDropdown)}
-          onSelectTemplate={templateManager.selectTemplate}
-          availableTemplates={templateManager.availableTemplates}
+          selectedTemplate={null}
+          showTemplateDropdown={false}
+          onToggleTemplateDropdown={() => {}}
+          onSelectTemplate={() => {}}
+          availableTemplates={[]}
           subjectLine={currentSubject}
           onSubjectChange={handleSubjectChange}
           onOpenSubjectModal={() => subjectGenerator.openModal(currentSubject.content)}

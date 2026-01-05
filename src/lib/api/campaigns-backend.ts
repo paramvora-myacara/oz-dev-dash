@@ -148,10 +148,21 @@ export async function launchCampaign(
 
 // Campaign status
 export interface CampaignStatus {
-  campaign_status: string;
+  // Campaign fields (metadata only)
+  id: string;
+  name: string;
+  emailFormat: string;
+  sender: string;
+  sentCount?: number;
+  failedCount?: number;
+  createdAt: string;
+  updatedAt: string;
+
+  // Status fields
+  status: string;
   staged_count: number;
   queued_count: number;
-  total_recipients: number;
+  totalRecipients: number;
   is_ready: boolean;
   is_launched: boolean;
 }
