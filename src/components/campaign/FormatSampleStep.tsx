@@ -241,7 +241,7 @@ export default function FormatSampleStep({
                 Generating emails...
               </p>
               <p className="text-xs text-blue-700">
-                {campaignStatus.staged_count} of {campaignStatus.total_recipients} emails staged
+                {campaignStatus.staged_count} of {campaignStatus.totalRecipients} emails staged
               </p>
             </div>
             {onRefreshStatus && (
