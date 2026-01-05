@@ -31,16 +31,8 @@ export type CampaignSender = 'todd_vitzthum' | 'jeff_richmond';
 export interface Campaign {
   id: string;
   name: string;
-  templateSlug: string | null;
-  sections: Section[];
-  subjectLine: {
-    mode: SectionMode;
-    content: string;
-    selectedFields?: string[];
-  };
   emailFormat: EmailFormat;
   status: CampaignStatus;
-  subjectPrompt?: string | null;
   totalRecipients: number;
   sender: CampaignSender;
   sentCount?: number;

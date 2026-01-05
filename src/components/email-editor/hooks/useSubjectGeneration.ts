@@ -27,14 +27,13 @@ export function useSubjectGeneration({ campaign, campaignId }: UseSubjectGenerat
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [subjectPrompt, setSubjectPrompt] = useState(
-    campaign?.subjectPrompt ||
     'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced 50+ year-old developer who does not know what Opportunity Zones are, and we have already accounted for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
   )
   const [modalSubject, setModalSubject] = useState('')
 
   const openModal = useCallback((currentSubject: string) => {
     // Seed prompt and subject with sensible defaults
-    setSubjectPrompt(prev =>
+    setSubjectPrompt((prev: string) =>
       prev && prev.trim().length > 0
         ? prev
         : 'Generate a highly professional, institutional-quality email subject line for U.S. real estate developers and real estate funds. Assume the recipient is an experienced developer who does not know what Opportunity Zones are, and we have to account for that in how we explain things. The subject should clearly and easily communicate the concrete benefits of using an Opportunity Zone structure for their project, not just a generic marketing statement. Focus on how OZ treatment helps them raise or deploy capital more efficiently, reduce taxes, or improve project economics. Keep it under 60 characters and optimized for opens.'
