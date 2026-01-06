@@ -9,6 +9,7 @@ export interface ContactFilters {
     contactType?: string | string[]; // 'developer', 'investor', 'fund', or combinations like 'developer,investor,fund', or array
     campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
     emailStatus?: string | string[];
+    leadStatus?: 'warm' | 'cold'; // Filter by warm/cold lead status
 }
 
 export interface Contact {
@@ -149,6 +150,17 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
         }
     }
 
+    // Apply lead_status filter (warm/cold)
+    if (filters.leadStatus) {
+        if (filters.leadStatus === 'warm') {
+            // Show only contacts explicitly marked as warm
+            query = query.eq('details->>lead_status', 'warm');
+        } else if (filters.leadStatus === 'cold') {
+            // Show contacts marked as cold OR without lead_status field (defaults to cold)
+            query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+        }
+    }
+
     const { data, error, count } = await query
         .range(page * pageSize, (page + 1) * pageSize - 1)
         .order('created_at', { ascending: false })
@@ -190,6 +202,17 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
         query = query.in('details->>email_status', statusFilter);
     } else {
         query = query.eq('details->>email_status', statusFilter);
+    }
+
+    // Apply lead_status filter (warm/cold)
+    if (filters.leadStatus) {
+        if (filters.leadStatus === 'warm') {
+            // Show only contacts explicitly marked as warm
+            query = query.eq('details->>lead_status', 'warm');
+        } else if (filters.leadStatus === 'cold') {
+            // Show contacts marked as cold OR without lead_status field (defaults to cold)
+            query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+        }
     }
 
     // 1. Text Search (Hybrid: FTS OR ILIKE)
@@ -262,6 +285,15 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
                 // Exclude globally suppressed contacts
                 .eq('globally_unsubscribed', false)
                 .eq('globally_bounced', false);
+
+            // Apply lead_status filter to the rebuilt query
+            if (filters.leadStatus) {
+                if (filters.leadStatus === 'warm') {
+                    query = query.eq('details->>lead_status', 'warm');
+                } else if (filters.leadStatus === 'cold') {
+                    query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+                }
+            }
         } else if (Array.isArray(filters.campaignHistory)) {
             // "Show me people from selected campaigns" - use inner join with in filter
             query = supabase
@@ -283,6 +315,15 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
                 // Exclude globally suppressed contacts
                 .eq('globally_unsubscribed', false)
                 .eq('globally_bounced', false);
+
+            // Apply lead_status filter to the rebuilt query
+            if (filters.leadStatus) {
+                if (filters.leadStatus === 'warm') {
+                    query = query.eq('details->>lead_status', 'warm');
+                } else if (filters.leadStatus === 'cold') {
+                    query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+                }
+            }
         } else {
             // "Show me people from Campaign X" - use inner join with filter (single campaign)
             query = supabase
@@ -304,6 +345,15 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
                 // Exclude globally suppressed contacts
                 .eq('globally_unsubscribed', false)
                 .eq('globally_bounced', false);
+
+            // Apply lead_status filter to the rebuilt query
+            if (filters.leadStatus) {
+                if (filters.leadStatus === 'warm') {
+                    query = query.eq('details->>lead_status', 'warm');
+                } else if (filters.leadStatus === 'cold') {
+                    query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+                }
+            }
         }
     }
 

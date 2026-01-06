@@ -73,12 +73,20 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const [skippedResolutionIds, setSkippedResolutionIds] = useState<Set<string>>(new Set())
 
   const [totalCount, setTotalCount] = useState(0)
-  const [advancedFilters, setAdvancedFilters] = useState({
+  const [advancedFilters, setAdvancedFilters] = useState<{
+    locationFilter: string;
+    source: string;
+    contactType: string;
+    history: string;
+    emailStatus: string;
+    leadStatus: 'warm' | 'cold';
+  }>({
     locationFilter: '',
     source: '',
-    contactType: 'developer', // 'all', 'developer', 'investor', 'both'
-    history: 'all', // 'all', 'none', 'any', or campaign UUID
-    emailStatus: 'all' // 'all' (Valid+Catch-all), 'valid', 'catch-all'
+    contactType: 'developer',
+    history: 'all',
+    emailStatus: 'all',
+    leadStatus: 'warm'
   })
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -120,7 +128,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           location: advancedFilters.locationFilter,
           contactType: advancedFilters.contactType === 'all' ? undefined : advancedFilters.contactType,
           campaignHistory: campaignHistoryFilter,
-          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
+          leadStatus: advancedFilters.leadStatus
         }
 
         const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
@@ -364,7 +373,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
           campaignHistory: campaignHistoryFilter,
-          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
+          leadStatus: advancedFilters.leadStatus
         }
 
         payload = {
@@ -404,7 +414,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       source: '',
       contactType: 'developer',
       history: 'all',
-      emailStatus: 'all'
+      emailStatus: 'all',
+      leadStatus: 'warm'
     })
     setIsSelectAllGlobal(false)
   }
@@ -512,6 +523,24 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
               <option value="all">All (Valid + Catch-all)</option>
               <option value="Valid">Only Valid</option>
               <option value="Catch-all">Only Catch-all</option>
+            </select>
+          </div>
+
+          {/* Lead Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Lead Status
+            </label>
+            <select
+              value={advancedFilters.leadStatus}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                leadStatus: e.target.value as 'warm' | 'cold'
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="warm">Warm Leads Only</option>
+              <option value="cold">Cold Leads Only</option>
             </select>
           </div>
 
