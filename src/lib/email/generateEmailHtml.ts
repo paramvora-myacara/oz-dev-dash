@@ -246,9 +246,7 @@ export function generateEmailHtml(
         font-size: 11px;
         color: ${BRAND.textLight};
       ">
-        This email was sent to you because you're listed as a developer with
-        an Opportunity Zone project. If you'd prefer not to receive these
-        emails, you can <a href="${unsubscribeUrl}" style="color: ${BRAND.primary}; text-decoration: underline;">unsubscribe</a>.
+        If you'd prefer not to receive these curated newsletters and updates, you can <a href="${unsubscribeUrl}" style="color: ${BRAND.primary}; text-decoration: underline;">unsubscribe</a>.
       </p>
       <p style="
         margin: 0;

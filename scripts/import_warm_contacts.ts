@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Load .env.local manually
-const envPath = path.join(process.cwd(), '.env.local');
+const envPath = path.join(process.cwd(), '.env');
 if (fs.existsSync(envPath)) {
     const envConfig = fs.readFileSync(envPath, 'utf-8');
     envConfig.split('\n').forEach(line => {
@@ -43,7 +43,7 @@ interface WarmContactRow {
 }
 
 async function importWarmContacts(filePath: string) {
-    console.log(`Reading warm contacts file: ${filePath}`);
+    console.log(`Reading merged warm contacts file: ${filePath}`);
 
     try {
         const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -59,7 +59,7 @@ async function importWarmContacts(filePath: string) {
             console.warn('CSV Parsing Errors:', errors);
         }
 
-        console.log(`Parsed ${data.length} warm contact rows.`);
+        console.log(`Parsed ${data.length} merged warm contact rows.`);
 
         const batchSize = 50;
         let processed = 0;
@@ -160,13 +160,14 @@ async function importWarmContacts(filePath: string) {
         }
 
         console.log('\n' + '='.repeat(60));
-        console.log('WARM CONTACTS IMPORT COMPLETE');
+        console.log('MERGED WARM CONTACTS IMPORT COMPLETE');
         console.log('='.repeat(60));
         console.log(`Total contacts processed: ${data.length}`);
         console.log(`Successfully processed: ${successCount}`);
         console.log(`Errors: ${errorCount}`);
-        console.log('\nNote: Existing contacts were updated to set lead_status="warm"');
-        console.log('New contacts were inserted with full warm list data');
+        console.log('\nNote: Merged webinar attendees + authenticated users');
+        console.log('All contacts marked as warm leads with valid email status');
+        console.log('Overlapping contacts enriched with both webinar and auth data');
 
     } catch (error) {
         console.error('Import failed:', error);
@@ -177,8 +178,8 @@ async function importWarmContacts(filePath: string) {
 // Check if file path is provided
 const filePath = process.argv[2];
 if (!filePath) {
-    console.error('Usage: npx tsx scripts/import_warm_contacts.ts <path-to-csv>');
-    console.error('Example: npx tsx scripts/import_warm_contacts.ts ../../../UsefulDocs/Outreach-Lists/WarmList/unified_warm_list.csv');
+    console.error('Usage: npx tsx scripts/import_warm_contacts.ts <path-to-merged-csv>');
+    console.error('Example: npx tsx scripts/import_warm_contacts.ts ../../../UsefulDocs/Outreach-Lists/WarmList/final_warm_contacts_merged.csv');
     process.exit(1);
 }
 
