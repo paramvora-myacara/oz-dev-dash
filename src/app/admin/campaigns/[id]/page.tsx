@@ -385,6 +385,7 @@ export default function CampaignEditPage() {
       setStagedEmails([])
       setStagedCount(0)
       setEditedCount(0)
+      setTestRecipientEmailId(null)
 
       // Refresh campaign data
       await refreshCampaignData()
