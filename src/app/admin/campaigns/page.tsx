@@ -178,12 +178,6 @@ export default function CampaignsPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Recipients
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sent
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Failed
-                    </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
@@ -221,13 +215,6 @@ export default function CampaignsPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {campaign.totalRecipients}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">
-                        {campaign.sentCount !== undefined ? campaign.sentCount : '—'}
-                      </td>
-                      <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${(campaign.failedCount || 0) > 0 ? 'text-red-600' : 'text-gray-500'
-                        }`}>
-                        {campaign.failedCount !== undefined ? campaign.failedCount : '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <button
