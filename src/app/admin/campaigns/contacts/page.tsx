@@ -49,9 +49,10 @@ export default function ContactsPage() {
   const [advancedFilters, setAdvancedFilters] = useState({
     locationFilter: '',
     source: '',
-    contactType: 'developer', // 'all', 'developer', 'investor', 'both'
+    contactType: 'all', // 'all', 'developer', 'investor', 'both'
     history: 'all', // 'all', 'none', 'any', or campaign UUID
-    emailStatus: 'all' // 'all', 'valid', 'catch-all', 'invalid'
+    emailStatus: 'all', // 'all', 'valid', 'catch-all', 'invalid'
+    tags: 'all' // 'all', 'both'
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -73,7 +74,8 @@ export default function ContactsPage() {
           location: advancedFilters.locationFilter,
           contactType: advancedFilters.contactType === 'all' ? undefined : advancedFilters.contactType,
           campaignHistory: campaignHistoryFilter,
-          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus
+          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
+          tags: advancedFilters.tags === 'all' ? undefined : advancedFilters.tags === 'both' ? ['family-office', 'multi-family-office'] : advancedFilters.tags
         }
 
         const { data, count } = await searchContacts(filters, page, pageSize)
@@ -100,9 +102,10 @@ export default function ContactsPage() {
     setAdvancedFilters({
       locationFilter: '',
       source: '',
-      contactType: 'developer',
+      contactType: 'all',
       history: 'all',
-      emailStatus: 'all'
+      emailStatus: 'all',
+      tags: 'all'
     })
   }
 
@@ -213,6 +216,24 @@ export default function ContactsPage() {
               <option value="Valid">Valid Only</option>
               <option value="Catch-all">Catch-all Only</option>
               <option value="invalid">Invalid Only</option>
+            </select>
+          </div>
+
+          {/* Tags Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+            </label>
+            <select
+              value={advancedFilters.tags}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                tags: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Tags</option>
+              <option value="both">Family Office + Multi-Family Office</option>
             </select>
           </div>
 

@@ -501,6 +501,18 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
         }
     }
 
+    // Apply tags filter
+    if (filters.tags) {
+        if (Array.isArray(filters.tags)) {
+            // Multiple tags: use OR condition
+            const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+            query = query.or(tagConditions.join(','));
+        } else {
+            // Single tag
+            query = query.eq('details->>Tags', filters.tags);
+        }
+    }
+
     // 3. History Filter
     if (filters.campaignHistory) {
         if (filters.campaignHistory === 'none') {
@@ -523,6 +535,16 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
                     campaigns (name)
                   )
                 `, { count: 'exact' });
+
+            // Apply tags filter to the rebuilt query
+            if (filters.tags) {
+                if (Array.isArray(filters.tags)) {
+                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+                    query = query.or(tagConditions.join(','));
+                } else {
+                    query = query.eq('details->>Tags', filters.tags);
+                }
+            }
         } else if (Array.isArray(filters.campaignHistory)) {
             // "Show me people from selected campaigns" - use inner join with in filter
             query = supabase
@@ -541,6 +563,16 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
                   )
                 `, { count: 'exact' })
                 .in('history.campaign_id', filters.campaignHistory);
+
+            // Apply tags filter to the rebuilt query
+            if (filters.tags) {
+                if (Array.isArray(filters.tags)) {
+                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+                    query = query.or(tagConditions.join(','));
+                } else {
+                    query = query.eq('details->>Tags', filters.tags);
+                }
+            }
         } else {
             // "Show me people from Campaign X" - use inner join with filter (single campaign)
             query = supabase
@@ -559,6 +591,16 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
                   )
                 `, { count: 'exact' })
                 .eq('history.campaign_id', filters.campaignHistory);
+
+            // Apply tags filter to the rebuilt query
+            if (filters.tags) {
+                if (Array.isArray(filters.tags)) {
+                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+                    query = query.or(tagConditions.join(','));
+                } else {
+                    query = query.eq('details->>Tags', filters.tags);
+                }
+            }
         }
     }
 
