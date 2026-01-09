@@ -10,6 +10,7 @@ export interface ContactFilters {
     campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
     emailStatus?: string | string[];
     leadStatus?: 'warm' | 'cold'; // Filter by warm/cold lead status
+    tags?: string | string[]; // Filter by tags in Details JSONB column (e.g., 'family-office', 'multi-family-office')
 }
 
 export interface Contact {
@@ -161,6 +162,18 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
         }
     }
 
+    // Apply tags filter
+    if (filters.tags) {
+        if (Array.isArray(filters.tags)) {
+            // Multiple tags: use OR condition
+            const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+            query = query.or(tagConditions.join(','));
+        } else {
+            // Single tag
+            query = query.eq('details->>Tags', filters.tags);
+        }
+    }
+
     const { data, error, count } = await query
         .range(page * pageSize, (page + 1) * pageSize - 1)
         .order('created_at', { ascending: false })
@@ -212,6 +225,18 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
         } else if (filters.leadStatus === 'cold') {
             // Show contacts marked as cold OR without lead_status field (defaults to cold)
             query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+        }
+    }
+
+    // Apply tags filter
+    if (filters.tags) {
+        if (Array.isArray(filters.tags)) {
+            // Multiple tags: use OR condition
+            const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+            query = query.or(tagConditions.join(','));
+        } else {
+            // Single tag
+            query = query.eq('details->>Tags', filters.tags);
         }
     }
 
@@ -294,6 +319,16 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
                     query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
                 }
             }
+
+            // Apply tags filter to the rebuilt query
+            if (filters.tags) {
+                if (Array.isArray(filters.tags)) {
+                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+                    query = query.or(tagConditions.join(','));
+                } else {
+                    query = query.eq('details->>Tags', filters.tags);
+                }
+            }
         } else if (Array.isArray(filters.campaignHistory)) {
             // "Show me people from selected campaigns" - use inner join with in filter
             query = supabase
@@ -324,6 +359,16 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
                     query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
                 }
             }
+
+            // Apply tags filter to the rebuilt query
+            if (filters.tags) {
+                if (Array.isArray(filters.tags)) {
+                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+                    query = query.or(tagConditions.join(','));
+                } else {
+                    query = query.eq('details->>Tags', filters.tags);
+                }
+            }
         } else {
             // "Show me people from Campaign X" - use inner join with filter (single campaign)
             query = supabase
@@ -352,6 +397,16 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
                     query = query.eq('details->>lead_status', 'warm');
                 } else if (filters.leadStatus === 'cold') {
                     query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
+                }
+            }
+
+            // Apply tags filter to the rebuilt query
+            if (filters.tags) {
+                if (Array.isArray(filters.tags)) {
+                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
+                    query = query.or(tagConditions.join(','));
+                } else {
+                    query = query.eq('details->>Tags', filters.tags);
                 }
             }
         }

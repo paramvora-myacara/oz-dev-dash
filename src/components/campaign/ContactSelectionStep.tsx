@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 
-import { Users, Check, X, Loader2, ChevronDown } from 'lucide-react'
+import { Users, Check, X, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
 
 import { searchContactsForCampaign, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
 import { getCampaigns } from '@/lib/api/campaigns-backend'
@@ -80,16 +80,19 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     history: string;
     emailStatus: string;
     leadStatus: 'warm' | 'cold';
+    tags: string;
   }>({
     locationFilter: '',
     source: '',
-    contactType: 'developer',
+    contactType: 'all',
     history: 'all',
     emailStatus: 'all',
-    leadStatus: 'warm'
+    leadStatus: 'cold',
+    tags: 'all'
   })
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [expandedContactIds, setExpandedContactIds] = useState<Set<string>>(new Set())
 
   // Pagination
   const [page, setPage] = useState(0)
@@ -129,7 +132,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           contactType: advancedFilters.contactType === 'all' ? undefined : advancedFilters.contactType,
           campaignHistory: campaignHistoryFilter,
           emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
-          leadStatus: advancedFilters.leadStatus
+          leadStatus: advancedFilters.leadStatus,
+          tags: advancedFilters.tags === 'all' ? undefined : advancedFilters.tags === 'both' ? ['family-office', 'multi-family-office'] : advancedFilters.tags
         }
 
         const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
@@ -374,7 +378,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           location: advancedFilters.locationFilter,
           campaignHistory: campaignHistoryFilter,
           emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
-          leadStatus: advancedFilters.leadStatus
+          leadStatus: advancedFilters.leadStatus,
+          tags: advancedFilters.tags === 'all' ? undefined : advancedFilters.tags === 'both' ? ['family-office', 'multi-family-office'] : advancedFilters.tags
         }
 
         payload = {
@@ -412,10 +417,11 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     setAdvancedFilters({
       locationFilter: '',
       source: '',
-      contactType: 'developer',
+      contactType: 'all',
       history: 'all',
       emailStatus: 'all',
-      leadStatus: 'warm'
+      leadStatus: 'cold',
+      tags: 'all'
     })
     setIsSelectAllGlobal(false)
   }
@@ -541,6 +547,24 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
             >
               <option value="warm">Warm Leads Only</option>
               <option value="cold">Cold Leads Only</option>
+            </select>
+          </div>
+
+          {/* Tags Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+            </label>
+            <select
+              value={advancedFilters.tags}
+              onChange={(e) => setAdvancedFilters(prev => ({
+                ...prev,
+                tags: e.target.value
+              }))}
+              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Tags</option>
+              <option value="both">Family Office + Multi-Family Office</option>
             </select>
           </div>
 
@@ -686,81 +710,160 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                   ? !excludedIds.has(contact.id)
                   : selectedIds.has(contact.id)
                 const hasHistory = contact.history && contact.history.length > 0
+                const isExpanded = expandedContactIds.has(contact.id)
 
                 return (
-                  <div
-                    key={contact.id}
-                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : ''
-                      }`}
-                    onClick={() => handleSelectContact(contact)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        readOnly
-                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
+                  <div key={contact.id}>
+                    <div
+                      className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''
+                        }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectContact(contact)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          {/* Left: Contact Info */}
-                          <div className="min-w-0 w-1/3 max-w-xs flex-none">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-medium text-gray-900 truncate">
-                                {contact.name || 'Unknown Name'}
-                              </h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm text-gray-500 truncate">
-                                {/* Show chosen email if multiple and selected, otherwise show raw */}
-                                {isSelected && selectedEmails[contact.id]
-                                  ? selectedEmails[contact.id]
-                                  : contact.email}
-                              </p>
-                              {isMultipleEmails(contact.email) && (
-                                <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 rounded-full" title="Multiple Emails">
-                                  Multi
-                                </span>
-                              )}
-                              {!isMultipleEmails(contact.email) && !isValidEmail(contact.email) && (
-                                <span className="text-red-500 text-xs flex items-center gap-0.5" title="Invalid Email">
-                                  ⚠️
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-500 truncate">{contact.company}</p>
-                          </div>
-
-                          {/* Middle: Outreach History Preview */}
-                          <div className="flex-1 min-w-0 px-2">
-                            {hasHistory ? (
-                              <div>
-                                <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {contact.history!.map((h: any, idx: number) => (
-                                    <span
-                                      key={idx}
-                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                    >
-                                      {h.campaigns?.name || 'Unknown Campaign'}
-                                    </span>
-                                  ))}
-                                </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            {/* Left: Contact Info */}
+                            <div className="min-w-0 w-1/3 max-w-xs flex-none">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                  {contact.name || 'Unknown Name'}
+                                </h3>
                               </div>
-                            ) : (
-                              // Spacer if no history to keep alignment clean
-                              <div></div>
-                            )}
-                          </div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-gray-500 truncate">
+                                  {/* Show chosen email if multiple and selected, otherwise show raw */}
+                                  {isSelected && selectedEmails[contact.id]
+                                    ? selectedEmails[contact.id]
+                                    : contact.email}
+                                </p>
+                                {isMultipleEmails(contact.email) && (
+                                  <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 rounded-full" title="Multiple Emails">
+                                    Multi
+                                  </span>
+                                )}
+                                {!isMultipleEmails(contact.email) && !isValidEmail(contact.email) && (
+                                  <span className="text-red-500 text-xs flex items-center gap-0.5" title="Invalid Email">
+                                    ⚠️
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-500 truncate">{contact.company}</p>
+                            </div>
 
-                          {/* Right: Location */}
-                          <div className="text-right shrink-0 w-48">
-                            <p className="text-sm text-gray-500">{contact.location}</p>
+                            {/* Middle: Outreach History Preview */}
+                            <div className="flex-1 min-w-0 px-2">
+                              {hasHistory ? (
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {contact.history!.map((h: any, idx: number) => (
+                                      <span
+                                        key={idx}
+                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                      >
+                                        {h.campaigns?.name || 'Unknown Campaign'}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                // Spacer if no history to keep alignment clean
+                                <div></div>
+                              )}
+                            </div>
+
+                            {/* Right: Location and Expand Button */}
+                            <div className="flex items-center gap-4 shrink-0">
+                              <div className="text-right w-48">
+                                <p className="text-sm text-gray-500">{contact.location}</p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setExpandedContactIds(prev => {
+                                    const newSet = new Set(prev)
+                                    if (newSet.has(contact.id)) {
+                                      newSet.delete(contact.id)
+                                    } else {
+                                      newSet.add(contact.id)
+                                    }
+                                    return newSet
+                                  })
+                                }}
+                                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                title="View details"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5 text-gray-500" />
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* Expanded Details Section */}
+                    {isExpanded && contact.details && (
+                      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
+                        <div className="ml-8">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3">Contact Details</h4>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-sm border border-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                                    Field
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                                    Value
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {Object.entries(contact.details).map(([key, value]) => {
+                                  let displayValue: React.ReactNode = '—'
+                                  
+                                  if (value !== null && value !== undefined) {
+                                    if (typeof value === 'object') {
+                                      displayValue = (
+                                        <pre className="text-xs bg-gray-50 p-2 rounded border border-gray-200 overflow-x-auto">
+                                          {JSON.stringify(value, null, 2)}
+                                        </pre>
+                                      )
+                                    } else if (typeof value === 'boolean') {
+                                      displayValue = value ? 'Yes' : 'No'
+                                    } else {
+                                      displayValue = String(value)
+                                    }
+                                  }
+                                  
+                                  return (
+                                    <tr key={key} className="hover:bg-gray-50">
+                                      <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap align-top">
+                                        {key}
+                                      </td>
+                                      <td className="px-4 py-3 text-sm text-gray-700 break-words max-w-md">
+                                        {displayValue}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
