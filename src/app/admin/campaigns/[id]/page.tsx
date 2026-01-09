@@ -522,7 +522,7 @@ export default function CampaignEditPage() {
     if (!campaignData) return
 
     try {
-      const res = await fetch(`/api/campaigns/${campaignData?.id || campaignId}/emails/${emailId}`, {
+      const res = await fetch(`/api/backend-proxy/campaigns/${campaignData?.id || campaignId}/emails/${emailId}`, {
         method: 'DELETE',
       })
 
@@ -546,7 +546,7 @@ export default function CampaignEditPage() {
       setError(null)
       // Delete all invalid emails in parallel
       const deletePromises = invalidEmails.map(invalid =>
-        fetch(`/api/campaigns/${campaignData?.id || campaignId}/emails/${invalid.id}`, {
+        fetch(`/api/backend-proxy/campaigns/${campaignData?.id || campaignId}/emails/${invalid.id}`, {
           method: 'DELETE',
         })
       )
