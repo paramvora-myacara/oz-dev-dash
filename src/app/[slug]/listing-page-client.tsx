@@ -63,6 +63,7 @@ export default function ListingPageClient({ listing, slug, isEditMode = false }:
               sectionIndex={sectionIndex} 
               isEditMode={isEditMode}
               executiveSummary={projectMetrics.executive_summary}
+              isVerifiedOzProject={listing.is_verified_oz_project}
             />;
         case 'tickerMetrics':
             return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;
