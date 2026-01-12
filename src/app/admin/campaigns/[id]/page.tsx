@@ -1,20 +1,21 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2, ArrowRight } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
 import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
+import RunningCampaignTabs from '@/components/campaign/RunningCampaignTabs'
 import { updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails } from '@/lib/api/campaigns-backend'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
-import type { QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
+import type { QueuedEmail, Section, SectionMode, SampleData, EmailFormat, Campaign } from '@/types/email-editor'
 import { createClient } from '@/utils/supabase/client'
 
 export default function CampaignEditPage() {
@@ -27,6 +28,18 @@ export default function CampaignEditPage() {
   const [generating, setGenerating] = useState(false)
   const [launching, setLaunching] = useState(false)
   const [stagedEmails, setStagedEmails] = useState<QueuedEmail[]>([])
+  
+  // State for save button in header (must be before any conditional returns)
+  const [canSave, setCanSave] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const saveHandlerRef = useRef<(() => void) | null>(null)
+
+  // Handle save from header button (must be before any conditional returns)
+  const handleHeaderSave = useCallback(() => {
+    if (saveHandlerRef.current) {
+      saveHandlerRef.current()
+    }
+  }, [])
   const [stagedCount, setStagedCount] = useState(0)
   const [editedCount, setEditedCount] = useState(0)
   const [invalidEmails, setInvalidEmails] = useState<{ id: string, email: string }[]>([])
@@ -67,8 +80,30 @@ export default function CampaignEditPage() {
   const [retryingFailed, setRetryingFailed] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
 
+  // Check if this is the always-on campaign slug (not a UUID)
+  const isAlwaysOnSlug = campaignId === 'welcome-drip-lead-magnets' || 
+                         campaignId === 'always-on-welcome-drip' ||
+                         campaignId?.toLowerCase().includes('welcome-drip')
+
   // Campaign data hook (includes status, polling for progress)
-  const { status: campaignData, refresh: refreshCampaignData, isLoading: dataLoading } = useCampaignStatus(campaignId)
+  // Skip API call for always-on campaign slug - we'll use placeholder data
+  const { status: campaignDataFromAPI, refresh: refreshCampaignData, isLoading: dataLoading } = useCampaignStatus(isAlwaysOnSlug ? null : campaignId)
+
+  // Create placeholder campaign data for always-on campaign
+  const placeholderCampaignData: Campaign | null = isAlwaysOnSlug ? {
+    id: campaignId,
+    name: 'Welcome Drip - Lead Magnets',
+    emailFormat: 'html',
+    status: 'scheduled',
+    totalRecipients: 1234,
+    sender: 'jeff_richmond',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    entryStepId: 'step-1'
+  } : null
+
+  // Use placeholder data if it's the always-on campaign slug, otherwise use API data
+  const campaignData = isAlwaysOnSlug ? placeholderCampaignData : (campaignDataFromAPI as Campaign | null)
 
   // Regeneration state
 
@@ -103,10 +138,13 @@ export default function CampaignEditPage() {
   // Campaign data loads automatically via useCampaignStatus hook
   // Set loading to false when campaignData is loaded or fails to load
   useEffect(() => {
-    if (campaignData || (!dataLoading && !campaignData)) {
+    if (isAlwaysOnSlug) {
+      // For always-on campaign, we have placeholder data immediately
+      setLoading(false)
+    } else if (campaignData || (!dataLoading && !campaignData)) {
       setLoading(false)
     }
-  }, [campaignData, dataLoading])
+  }, [campaignData, dataLoading, isAlwaysOnSlug])
 
   // Load sample data when campaignData is available and has recipients
   useEffect(() => {
@@ -579,7 +617,8 @@ export default function CampaignEditPage() {
     )
   }
 
-  if (!campaignData && !dataLoading) {
+  // For always-on campaign slug, skip the "not found" check
+  if (!isAlwaysOnSlug && !campaignData && !dataLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
@@ -593,6 +632,89 @@ export default function CampaignEditPage() {
     )
   }
 
+  // Check if this is an always-on campaign (by slug or by name/flag)
+  const isRunningCampaign = isAlwaysOnSlug ||
+                            campaignData?.name?.toLowerCase().includes('welcome drip') || 
+                            campaignData?.name?.toLowerCase().includes('always-on') ||
+                            (campaignData as any)?.is_running_campaign === true
+
+  // If it's an always-on campaign, show tabs interface
+  if (isRunningCampaign) {
+    return (
+      <div className="h-screen flex flex-col">
+        {/* Header */}
+        <div className="border-b bg-white px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Link href="/admin/campaigns" className="text-gray-600 hover:text-gray-800">
+                <ArrowLeft size={20} />
+              </Link>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg sm:text-xl font-bold">{campaignData?.name || 'New Campaign'}</h1>
+                  <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                    Always-On
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  {campaignData?.totalRecipients && campaignData.totalRecipients > 0 && `${campaignData.totalRecipients} enrolled`}
+                </p>
+              </div>
+            </div>
+
+            {/* Header actions */}
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                campaignData?.status === 'active' || !campaignData?.status
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-gray-100 text-gray-700'
+              }`}>
+                {campaignData?.status === 'paused' ? 'Paused' : 'Active'}
+              </span>
+              {canSave !== undefined && (
+                <button
+                  onClick={handleHeaderSave}
+                  disabled={!canSave || isSaving}
+                  title={!canSave ? 'No changes to save' : undefined}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    canSave && !isSaving
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      Save
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Interface */}
+        <RunningCampaignTabs 
+          campaign={campaignData as Campaign}
+          campaignId={campaignId}
+          onSave={handleHeaderSave}
+          isSaving={isSaving}
+          canSave={canSave}
+          onSaveStateChange={setCanSave}
+          onSavingStateChange={setIsSaving}
+          saveHandlerRef={saveHandlerRef}
+        />
+      </div>
+    )
+  }
+
+  // Otherwise, show the normal batch campaign interface
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}

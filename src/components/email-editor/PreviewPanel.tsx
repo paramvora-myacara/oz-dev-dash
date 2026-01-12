@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Monitor, Smartphone, ChevronDown, Users, Sparkles, Loader2, Eye } from 'lucide-react'
+import { Monitor, Smartphone, ChevronDown, Users, Sparkles, Loader2, Eye, ChevronRight } from 'lucide-react'
 import { generateEmailHtml } from '@/lib/email/generateEmailHtml'
 import type { Section, SectionMode, SampleData } from '@/types/email-editor'
 
@@ -38,6 +38,7 @@ interface PreviewPanelProps {
   onSampleIndexChange: (index: number) => void
   emailFormat: 'html' | 'text'
   onFormatChange: (format: 'html' | 'text') => void
+  onCollapse?: () => void
 }
 
 type DeviceType = 'desktop' | 'mobile'
@@ -50,6 +51,7 @@ export default function PreviewPanel({
   onSampleIndexChange,
   emailFormat,
   onFormatChange,
+  onCollapse,
 }: PreviewPanelProps) {
   const [device, setDevice] = useState<DeviceType>('desktop')
   const [showSampleDropdown, setShowSampleDropdown] = useState(false)
@@ -238,8 +240,8 @@ export default function PreviewPanel({
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Preview Header - Responsive */}
-      <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-b">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-b bg-white">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
           {/* Regenerate Preview Button */}
           {needsPersonalizationPreview && (
             <button
@@ -324,7 +326,16 @@ export default function PreviewPanel({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-auto">
+        {onCollapse && (
+          <button
+            onClick={onCollapse}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded ml-auto"
+            title="Collapse panel"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Email Format Toggle */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-md sm:rounded-lg p-0.5">
             <button

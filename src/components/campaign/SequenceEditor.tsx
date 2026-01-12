@@ -1,32 +1,31 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
-import { AlertTriangle, X } from 'lucide-react'
-import type { Section, SectionMode, SectionType, EmailTemplate, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
-import { useEmailSteps, useSubjectGeneration, useEmailValidation, useTemplateManagement } from './hooks'
-import EmailEditorToolbar from './EmailEditorToolbar'
-import EmailEditorLayout from './EmailEditorLayout'
-import SubjectGenerationModal from './SubjectGenerationModal'
-import AddSectionModal from './AddSectionModal'
-import { EmailEditorContext } from './EmailEditorContext'
+import { useState, useCallback, useEffect } from 'react'
+import { AlertTriangle, X, ArrowRight, Loader2 } from 'lucide-react'
+import type { Section, SectionMode, SectionType, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
+import { useEmailSteps, useSubjectGeneration, useEmailValidation, useTemplateManagement } from '@/components/email-editor/hooks'
+import SubjectGenerationModal from '@/components/email-editor/SubjectGenerationModal'
+import AddSectionModal from '@/components/email-editor/AddSectionModal'
+import { EmailEditorContext } from '@/components/email-editor/EmailEditorContext'
+import SequenceEditorLayout from './SequenceEditorLayout'
 
-
-interface EmailEditorProps {
-  campaignId: string;
-  campaign?: Campaign;
-  sampleData: SampleData | null;
-  recipientCount?: number;
+interface SequenceEditorProps {
+  campaignId: string
+  campaign?: Campaign
+  sampleData: SampleData | null
+  recipientCount?: number
   onContinue: (data: {
-    sections: Section[];
-    subjectLine: { mode: SectionMode; content: string };
-    emailFormat: 'html' | 'text';
-  }) => void;
-  isContinuing: boolean;
-  saveButtonText?: string; // Custom button text (default: "Continue")
-  skipAutoSync?: boolean; // If true, don't auto-sync before calling onContinue
+    sections: Section[]
+    subjectLine: { mode: SectionMode; content: string }
+    emailFormat: 'html' | 'text'
+  }) => void
+  isContinuing: boolean
+  saveButtonText?: string
+  skipAutoSync?: boolean
+  onSaveStateChange?: (canSave: boolean) => void
 }
 
-export default function EmailEditor({
+export default function SequenceEditor({
   campaignId,
   campaign,
   sampleData,
@@ -35,12 +34,11 @@ export default function EmailEditor({
   isContinuing,
   saveButtonText = 'Continue',
   skipAutoSync = false,
-}: EmailEditorProps) {
-  // Core state
+  onSaveStateChange,
+}: SequenceEditorProps) {
   const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('html')
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedSampleIndex, setSelectedSampleIndex] = useState(0)
-  const [activeTab, setActiveTab] = useState<'edit' | 'preview' | 'steps'>('edit')
 
   // Custom hooks
   const stepsManager = useEmailSteps({
@@ -59,6 +57,12 @@ export default function EmailEditor({
     recipientCount
   })
 
+  // Notify parent of save state changes
+  useEffect(() => {
+    if (onSaveStateChange) {
+      onSaveStateChange(validation.canContinue)
+    }
+  }, [validation.canContinue, onSaveStateChange])
 
   const availableFields = sampleData?.columns || []
 
@@ -66,7 +70,6 @@ export default function EmailEditor({
   const currentStep = stepsManager.steps[stepsManager.currentStepIndex]
   const currentSections = currentStep?.sections || []
   const currentSubject = currentStep?.subject || { mode: 'static', content: '' }
-
 
   // Event handlers
   const handleAddSection = useCallback((name: string, type: SectionType, mode: SectionMode) => {
@@ -127,28 +130,8 @@ export default function EmailEditor({
     handleSubjectChange({ ...currentSubject, content: subject })
   }, [currentSubject, handleSubjectChange])
 
-
   return (
     <div className="h-full flex flex-col bg-gray-100">
-      {/* Top Bar */}
-      <div className="bg-white border-b px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-        <EmailEditorToolbar
-          selectedTemplate={templateManager.selectedTemplate}
-          showTemplateDropdown={templateManager.showDropdown}
-          onToggleTemplateDropdown={() => templateManager.setShowDropdown(!templateManager.showDropdown)}
-          onSelectTemplate={templateManager.selectTemplate}
-          availableTemplates={templateManager.availableTemplates}
-          subjectLine={currentSubject}
-          onSubjectChange={handleSubjectChange}
-          onOpenSubjectModal={() => subjectGenerator.openModal(currentSubject.content)}
-          isGeneratingSubject={subjectGenerator.isGenerating}
-          canContinue={validation.canContinue}
-          continueDisabledReason={validation.continueDisabledReason}
-          isContinuing={isContinuing}
-          onContinue={handleContinue}
-          buttonText={saveButtonText}
-        />
-      </div>
 
       {/* Validation Banner */}
       {validation.validationError && (
@@ -168,9 +151,9 @@ export default function EmailEditor({
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content - 3 Panel Layout */}
       <EmailEditorContext.Provider value={{ campaignName: campaign?.name, campaignId }}>
-        <EmailEditorLayout
+        <SequenceEditorLayout
           sections={currentSections}
           onSectionsChange={handleSectionsChange}
           subjectLine={currentSubject}
@@ -203,9 +186,15 @@ export default function EmailEditor({
           selectedSampleIndex={selectedSampleIndex}
           onSampleIndexChange={setSelectedSampleIndex}
           availableFields={availableFields}
-          activeTab={activeTab}
-          onActiveTabChange={setActiveTab}
           onAddSection={() => setShowAddModal(true)}
+          selectedTemplate={templateManager.selectedTemplate}
+          showTemplateDropdown={templateManager.showDropdown}
+          onToggleTemplateDropdown={() => templateManager.setShowDropdown(!templateManager.showDropdown)}
+          onSelectTemplate={templateManager.selectTemplate}
+          availableTemplates={templateManager.availableTemplates}
+          onOpenSubjectModal={() => subjectGenerator.openModal(currentSubject.content)}
+          onSubjectChange={handleSubjectChange}
+          isGeneratingSubject={subjectGenerator.isGenerating}
         />
       </EmailEditorContext.Provider>
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Mail, RefreshCw, Calendar, Users } from 'lucide-react'
+import { Plus, Trash2, Mail, RefreshCw, Calendar, Users, Play, Pause, ArrowRight } from 'lucide-react'
 import { getCampaigns, deleteCampaign, getGlobalStatus } from '@/lib/api/campaigns-backend'
 import { getStatusLabel, getStatusColor } from '@/lib/utils/status-labels'
 import type { Campaign } from '@/types/email-editor'
@@ -38,6 +38,7 @@ export default function CampaignsPage() {
   const [campaignStatus, setCampaignStatus] = useState<CampaignStatusData | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
     loadCampaigns()
@@ -353,6 +354,96 @@ export default function CampaignsPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Always-On Campaign Card */}
+      <div className="mt-6 bg-white rounded-lg shadow border-2 border-green-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-green-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Welcome Drip - Lead Magnets
+              </h2>
+              <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                Always-On
+              </span>
+            </div>
+            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+              !isPaused 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-gray-100 text-gray-700'
+            }`}>
+              {!isPaused ? 'Active' : 'Paused'}
+            </span>
+          </div>
+        </div>
+        <div className="px-6 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Stats */}
+            <div className="flex items-center gap-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Enrolled</p>
+                <p className="text-2xl font-semibold text-gray-900">1,234</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Active</p>
+                <p className="text-2xl font-semibold text-gray-900">892</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Completed</p>
+                <p className="text-2xl font-semibold text-gray-900">342</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Last Enrollment</p>
+                <p className="text-sm font-medium text-gray-700">2 min ago</p>
+              </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  // Find the always-on campaign ID from the campaigns list, or use the slug
+                  const runningCampaign = campaigns.find(c => 
+                    c.name?.toLowerCase().includes('welcome drip') || 
+                    (c as any)?.is_running_campaign === true
+                  )
+                  if (runningCampaign) {
+                    router.push(`/admin/campaigns/${runningCampaign.id}`)
+                  } else {
+                    // Use slug for always-on campaign (will work with placeholder data)
+                    router.push('/admin/campaigns/welcome-drip-lead-magnets')
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                View Campaign
+                <ArrowRight size={16} />
+              </button>
+              <button
+                onClick={() => setIsPaused(!isPaused)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  !isPaused
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                {!isPaused ? (
+                  <>
+                    <Pause size={16} />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Play size={16} />
+                    Resume
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

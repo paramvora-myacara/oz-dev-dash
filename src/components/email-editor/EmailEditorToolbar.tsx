@@ -22,6 +22,7 @@ interface EmailEditorToolbarProps {
   continueDisabledReason: string | null
   isContinuing: boolean
   onContinue: () => void
+  buttonText?: string // Custom button text (default: "Continue")
 
   // Layout
   isMobile?: boolean
@@ -41,6 +42,7 @@ export default function EmailEditorToolbar({
   continueDisabledReason,
   isContinuing,
   onContinue,
+  buttonText = 'Continue',
   isMobile = false,
 }: EmailEditorToolbarProps) {
   if (isMobile) {
@@ -180,7 +182,7 @@ export default function EmailEditorToolbar({
             </>
           ) : (
             <>
-              Continue
+              {buttonText}
               <ArrowRight className="w-4 h-4" />
             </>
           )}
