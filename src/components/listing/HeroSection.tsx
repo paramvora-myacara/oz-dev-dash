@@ -67,6 +67,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                         </p>
                     )}
                     <div className="flex flex-wrap gap-3">
+                        {isVerifiedOzProject && (
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-700/50 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <ShieldCheck className="w-4 h-4" />
+                                Verified OZ Project
+                            </span>
+                        )}
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm">
                             <MapPin className="w-4 h-4" />
                             {data.location}
@@ -79,12 +85,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                             <Briefcase className="w-4 h-4" />
                             {data.fundName}
                         </span>
-                        {isVerifiedOzProject && (
-                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-700/50 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-                                <ShieldCheck className="w-4 h-4" />
-                                Verified OZ Project
-                            </span>
-                        )}
                     </div>
                 </div>
             </header>
