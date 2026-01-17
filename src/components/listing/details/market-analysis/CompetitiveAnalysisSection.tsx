@@ -82,7 +82,7 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
           ))}
         </div>
         {data.summary &&
-          <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl">
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
             <Editable 
               dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.summary`}
               value={data.summary}
@@ -152,20 +152,20 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
                     spacing="none"
                   />
                 </td>
-                <td className="py-3 text-green-600 dark:text-green-400 font-semibold">
+                <td className="py-3 text-blue-600 dark:text-blue-400 font-semibold">
                   <Editable 
                     dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].occupancy`}
                     value={property.occupancy}
-                    className="text-green-600 dark:text-green-400 font-semibold"
+                    className="text-blue-600 dark:text-blue-400 font-semibold"
                     as="span"
                     spacing="none"
                   />
                 </td>
-                <td className="py-3 text-purple-600 dark:text-purple-400 font-semibold">
+                <td className="py-3 text-blue-600 dark:text-blue-400 font-semibold">
                   <Editable 
                     dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.competitors[${idx}].rentGrowth`}
                     value={property.rentGrowth}
-                    className="text-purple-600 dark:text-purple-400 font-semibold"
+                    className="text-blue-600 dark:text-blue-400 font-semibold"
                     as="span"
                     spacing="none"
                   />
@@ -176,7 +176,7 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
         </table>
       </div>
       {data.summary &&
-        <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl">
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
           <Editable 
             dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.summary`}
             value={data.summary}

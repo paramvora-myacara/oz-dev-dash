@@ -189,7 +189,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
             </h3>
             <button 
               onClick={handleAddProject}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Add Project
             </button>
@@ -208,7 +208,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                 <div className="mb-4 flex justify-end">
                   <button 
                     onClick={() => handleRemoveProject(idx)}
-                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
                   >
                     Remove Project
                   </button>
@@ -218,7 +218,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
               <Editable 
                 dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].name`}
                 value={project.name}
-                className="text-3xl font-bold text-indigo-900 dark:text-indigo-300 mb-6"
+                className="text-3xl font-bold text-blue-900 dark:text-blue-300 mb-6"
               />
               
               <div className="space-y-4 flex-grow mb-6">
@@ -274,7 +274,7 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
                 <Editable 
                   dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].status`}
                   value={project.status}
-                  className="inline-block px-4 py-2 bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-full font-medium"
+                  className="inline-block px-4 py-2 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full font-medium"
                 />
               </div>
             </div>

@@ -39,11 +39,11 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
         {/* Sale Waterfall */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Sale Waterfall</h4>
+            <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Sale Waterfall</h4>
             {isEditing && (
               <button 
                 onClick={handleAddSaleWaterfall} 
-                className="px-2 py-1 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                className="px-2 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
               >
                 + Add
               </button>
@@ -51,24 +51,24 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
           </div>
           <div className="space-y-3">
             {saleWaterfall.map((item: any, idx: number) => (
-              <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <div key={idx} className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base font-semibold text-blue-600 dark:text-blue-400">
                         <Editable 
                           dataPath={`details.financialReturns.sections[${sectionIndex}].data.saleWaterfall[${idx}].priority`}
                           value={item.priority}
-                          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                          className="text-base font-semibold text-blue-600 dark:text-blue-400"
                           as="span"
                           spacing="none"
                         />
                       </span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-base font-medium text-gray-700 dark:text-gray-300">
                         <Editable 
                           dataPath={`details.financialReturns.sections[${sectionIndex}].data.saleWaterfall[${idx}].allocation`}
                           value={item.allocation}
-                          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                          className="text-base font-medium text-gray-700 dark:text-gray-300"
                           as="span"
                           spacing="none"
                         />
@@ -78,7 +78,7 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
                       dataPath={`details.financialReturns.sections[${sectionIndex}].data.saleWaterfall[${idx}].description`}
                       value={item.description}
                       inputType="multiline"
-                      className="text-sm text-gray-600 dark:text-gray-400"
+                      className="text-base text-gray-600 dark:text-gray-400"
                       as="span"
                       spacing="none"
                     />
@@ -86,7 +86,7 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
                   {isEditing && (
                     <button 
                       onClick={() => handleRemoveSaleWaterfall(idx)} 
-                      className="ml-2 px-2 py-1 text-sm rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                      className="ml-2 px-2 py-1 text-sm rounded border border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       -
                     </button>
@@ -100,11 +100,11 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
         {/* Distribution Waterfall */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Distribution Waterfall</h4>
+            <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Distribution Waterfall</h4>
             {isEditing && (
               <button 
                 onClick={handleAddCashFlow} 
-                className="px-2 py-1 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                className="px-2 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
               >
                 + Add
               </button>
@@ -112,34 +112,34 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
           </div>
           <div className="space-y-3">
             {cashFlowDistribution.map((item: any, idx: number) => (
-              <div key={idx} className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg">
+              <div key={idx} className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base font-semibold text-blue-600 dark:text-blue-400">
                         <Editable 
                           dataPath={`details.financialReturns.sections[${sectionIndex}].data.cashFlowDistribution[${idx}].priority`}
                           value={item.priority}
-                          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                          className="text-base font-semibold text-blue-600 dark:text-blue-400"
                           as="span"
                           spacing="none"
                         />
                       </span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span className="text-base font-medium text-gray-700 dark:text-gray-300">
                         <Editable 
                           dataPath={`details.financialReturns.sections[${sectionIndex}].data.cashFlowDistribution[${idx}].recipient`}
                           value={item.recipient}
-                          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                          className="text-base font-medium text-gray-700 dark:text-gray-300"
                           as="span"
                           spacing="none"
                         />
                       </span>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mb-1">
+                    <div className="text-base text-gray-500 dark:text-gray-500 mb-2">
                       <Editable 
                         dataPath={`details.financialReturns.sections[${sectionIndex}].data.cashFlowDistribution[${idx}].allocation`}
                         value={item.allocation}
-                        className="text-xs text-gray-500 dark:text-gray-500"
+                        className="text-base text-gray-500 dark:text-gray-500"
                         as="span"
                         spacing="none"
                       />
@@ -148,7 +148,7 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
                       dataPath={`details.financialReturns.sections[${sectionIndex}].data.cashFlowDistribution[${idx}].description`}
                       value={item.description}
                       inputType="multiline"
-                      className="text-sm text-gray-600 dark:text-gray-400"
+                      className="text-base text-gray-600 dark:text-gray-400"
                       as="span"
                       spacing="none"
                     />
@@ -156,7 +156,7 @@ const WaterfallSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
                   {isEditing && (
                     <button 
                       onClick={() => handleRemoveCashFlow(idx)} 
-                      className="ml-2 px-2 py-1 text-sm rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                      className="ml-2 px-2 py-1 text-sm rounded border border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       -
                     </button>

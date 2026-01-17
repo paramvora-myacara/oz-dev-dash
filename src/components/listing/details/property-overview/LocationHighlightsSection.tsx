@@ -8,7 +8,9 @@ const LocationHighlightsSection: React.FC<{ data: any; sectionIndex: number }> =
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {data.highlights.map((highlight: any, idx: number) => {
         const Icon = iconMap[highlight.icon];
-        const { bg, text } = highlight.colors || { bg: 'bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-600 dark:text-blue-400' };
+        // Force all cards to use blue colors
+        const bg = 'bg-blue-50 dark:bg-blue-900/10';
+        const text = 'text-blue-600 dark:text-blue-400';
         return (
           <div key={idx} className={`text-center p-6 ${bg} rounded-xl`}>
             {Icon && <Icon className={`w-8 h-8 ${text} mx-auto mb-3`} />}

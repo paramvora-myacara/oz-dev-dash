@@ -1,11 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=TASA+Orbiter:wght@400..800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
 :root {
   /* Primary palette - inspired by Apple's subtle gradients */
@@ -68,7 +64,7 @@ body {
 body {
   color: var(--text-primary);
   background: var(--primary-bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  font-family: "TASA Orbiter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -87,9 +83,14 @@ a {
 @layer base {
   body {
     @apply bg-white dark:bg-black text-black dark:text-white font-sans antialiased;
+    font-family: "TASA Orbiter", system-ui, sans-serif;
   }
   h1,h2,h3,h4,h5,h6 {
     @apply font-semibold tracking-tight;
+    font-family: "TASA Orbiter", system-ui, sans-serif;
+  }
+  p, span, div, a, button, input, textarea, select, label {
+    font-family: "TASA Orbiter", system-ui, sans-serif;
   }
 }
 

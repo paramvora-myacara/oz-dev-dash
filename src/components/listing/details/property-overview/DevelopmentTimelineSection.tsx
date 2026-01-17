@@ -7,7 +7,7 @@ const DevelopmentTimelineSection: React.FC<{ data: any; sectionIndex: number }> 
     <div className="space-y-6">
       {data.timeline.map((item: any, idx: number) => (
         <div key={idx} className="flex items-center space-x-4">
-          <div className={`w-4 h-4 rounded-full ${item.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+          <div className={`w-4 h-4 rounded-full ${item.status === 'completed' ? 'bg-blue-500' : 'bg-blue-500'}`}></div>
           <div>
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.timeline[${idx}].title`}

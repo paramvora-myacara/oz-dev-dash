@@ -8,14 +8,14 @@ const KeyFactsSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, 
         <Editable 
           dataPath={`details.propertyOverview.sections[${sectionIndex}].data.facts[${idx}].label`}
           value={fact.label}
-          className="text-lg font-semibold text-indigo-900 dark:text-indigo-300"
+          className="text-lg font-semibold text-blue-900 dark:text-blue-300"
           as="p"
           spacing="small"
         />
         <Editable 
           dataPath={`details.propertyOverview.sections[${sectionIndex}].data.facts[${idx}].value`}
           value={fact.value}
-          className="text-4xl font-bold text-indigo-900 dark:text-indigo-300"
+          className="text-4xl font-bold text-blue-900 dark:text-blue-300"
           as="p"
           spacing="medium"
         />
@@ -23,7 +23,7 @@ const KeyFactsSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, 
           dataPath={`details.propertyOverview.sections[${sectionIndex}].data.facts[${idx}].description`}
           value={fact.description}
           inputType="multiline"
-          className="text-sm text-indigo-700 dark:text-indigo-400"
+          className="text-sm text-blue-700 dark:text-blue-400"
           as="p"
           spacing="none"
         />

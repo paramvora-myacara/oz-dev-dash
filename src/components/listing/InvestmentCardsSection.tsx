@@ -51,45 +51,45 @@ const InvestmentCardsSection: React.FC<{ data: InvestmentCardsSectionData, listi
                 {data.cards.map((card, idx) => {
                     const cardStyles = {
                         'financial-returns': {
-                            gradient: "from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20",
-                            textColor: "text-emerald-900 dark:text-emerald-300",
-                            accentColor: "text-emerald-700 dark:text-emerald-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: TrendingUp
                         },
                         'fund-structure': {
-                            gradient: "from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/20",
-                            textColor: "text-emerald-900 dark:text-emerald-300",
-                            accentColor: "text-emerald-700 dark:text-emerald-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: BarChart3
                         },
                         'portfolio-projects': {
-                            gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
-                            textColor: "text-indigo-900 dark:text-indigo-300",
-                            accentColor: "text-indigo-700 dark:text-indigo-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: Building
                         },
                         'how-investors-participate': {
-                            gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20",
-                            textColor: "text-purple-900 dark:text-purple-300",
-                            accentColor: "text-purple-700 dark:text-purple-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: Handshake
                         },
                         'property-overview': {
-                            gradient: "from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20",
-                            textColor: "text-indigo-900 dark:text-indigo-300",
-                            accentColor: "text-indigo-700 dark:text-indigo-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: Building
                         },
                         'market-analysis': {
-                            gradient: "from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20",
-                            textColor: "text-purple-900 dark:text-purple-300",
-                            accentColor: "text-purple-700 dark:text-purple-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: Target
                         },
                         'sponsor-profile': {
-                            gradient: "from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-900/20",
-                            textColor: "text-orange-900 dark:text-orange-300",
-                            accentColor: "text-orange-700 dark:text-orange-400",
+                            gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20",
+                            textColor: "text-blue-900 dark:text-blue-300",
+                            accentColor: "text-blue-700 dark:text-blue-400",
                             icon: Users
                         }
                     };

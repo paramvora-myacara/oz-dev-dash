@@ -25,7 +25,7 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Unit Mix</h3>
         {isEditing && (
-          <button onClick={handleAdd} className="px-2 py-1 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700">+ Add</button>
+          <button onClick={handleAdd} className="px-2 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
         )}
       </div>
       <div className="overflow-x-auto">
@@ -81,7 +81,7 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
                 </td>
                 {isEditing && (
                   <td className="py-4 text-right">
-                    <button onClick={() => handleRemove(idx)} className="px-2 py-1 text-sm rounded border border-indigo-600 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">-</button>
+                    <button onClick={() => handleRemove(idx)} className="px-2 py-1 text-sm rounded border border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">-</button>
                   </td>
                 )}
               </tr>
@@ -90,7 +90,7 @@ const UnitMixSection: React.FC<{ data: any; sectionIndex: number }> = ({ data, s
         </table>
       </div>
       {data.specialFeatures && (
-        <div className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
           <Editable 
             dataPath={`details.propertyOverview.sections[${sectionIndex}].data.specialFeatures.title`}
             value={data.specialFeatures.title}

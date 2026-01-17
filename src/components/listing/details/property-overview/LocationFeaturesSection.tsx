@@ -9,7 +9,7 @@ const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = (
       return (
         <div key={idx} className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
           <div className="flex items-center space-x-3 mb-6">
-            {Icon && <Icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />}
+            {Icon && <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
             <Editable 
               dataPath={`details.propertyOverview.sections[${sectionIndex}].data.featureSections[${idx}].category`}
               value={highlight.category}
@@ -21,7 +21,7 @@ const LocationFeaturesSection: React.FC<{ data: any; sectionIndex: number }> = (
           <ul className="space-y-3">
             {highlight.features.map((feature: string, featureIdx: number) => (
               <li key={featureIdx} className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                 <Editable 
                   dataPath={`details.propertyOverview.sections[${sectionIndex}].data.featureSections[${idx}].features[${featureIdx}]`}
                   value={feature}

@@ -9,7 +9,7 @@ const ProjectionsSection: React.FC<{ data: any; sectionIndex: number }> = ({ dat
         <Editable 
           dataPath={`details.financialReturns.sections[${sectionIndex}].data.projections[${idx}].label`}
           value={projection.label}
-          className="text-lg font-semibold text-emerald-900 dark:text-emerald-300"
+          className="text-lg font-semibold text-blue-900 dark:text-blue-300"
           as="p"
           spacing="small"
         />
@@ -20,14 +20,14 @@ const ProjectionsSection: React.FC<{ data: any; sectionIndex: number }> = ({ dat
             <Editable 
               dataPath={`details.financialReturns.sections[${sectionIndex}].data.projections[${idx}].value`}
               value={projection.value}
-              className="text-4xl font-bold text-emerald-900 dark:text-emerald-300"
+              className="text-4xl font-bold text-blue-900 dark:text-blue-300"
               as="span"
               spacing="none"
             />
             <Editable 
               dataPath={`details.financialReturns.sections[${sectionIndex}].data.projections[${idx}].suffix`}
               value={projection.suffix || ''}
-              className="text-sm font-medium text-emerald-900 dark:text-emerald-300 ml-2"
+              className="text-sm font-medium text-blue-900 dark:text-blue-300 ml-2"
               as="span"
               spacing="none"
             />

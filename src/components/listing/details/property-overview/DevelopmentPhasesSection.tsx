@@ -6,7 +6,7 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Development Phases</h3>
     <div className="space-y-6">
       {data.phases.map((phase: any, idx: number) => (
-        <div key={idx} className="p-6 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
+        <div key={idx} className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Editable 
@@ -29,7 +29,7 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].units`}
                 value={phase.units}
                 inputType="number"
-                className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+                className="text-2xl font-bold text-blue-600 dark:text-blue-400"
                 as="p"
                 spacing="small"
               />
@@ -40,7 +40,7 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].sqft`}
                 value={phase.sqft}
                 inputType="number"
-                className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
+                className="text-2xl font-bold text-blue-600 dark:text-blue-400"
                 as="p"
                 spacing="small"
               />
@@ -50,7 +50,7 @@ const DevelopmentPhasesSection: React.FC<{ data: any; sectionIndex: number }> = 
               <Editable 
                 dataPath={`details.propertyOverview.sections[${sectionIndex}].data.phases[${idx}].status`}
                 value={phase.status}
-                className="text-lg font-semibold text-indigo-600 dark:text-indigo-400"
+                className="text-lg font-semibold text-blue-600 dark:text-blue-400"
                 as="p"
                 spacing="small"
               />
