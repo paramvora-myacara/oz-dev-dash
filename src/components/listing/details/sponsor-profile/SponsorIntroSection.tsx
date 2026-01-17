@@ -11,7 +11,7 @@ interface SponsorIntroSectionProps {
 const SponsorIntroSection: React.FC<SponsorIntroSectionProps> = ({ data, sectionIndex, developerWebsite }) => {
   const renderHighlightIcon = (iconName: string) => {
     const IconComponent = iconMap[iconName];
-    return IconComponent ? <IconComponent className="w-6 h-6 text-orange-500" /> : null;
+    return IconComponent ? <IconComponent className="w-6 h-6 text-blue-500" /> : null;
   };
 
   if (!data) {

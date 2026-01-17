@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
-import Header from '@/components/OZHeader/Header';
+import Navbar from '@/components/OZHeader/Navbar';
 import FooterWrapper from '@/components/OZFooter/FooterWrapper';
 
 export default function LayoutWrapper({
@@ -24,7 +24,7 @@ export default function LayoutWrapper({
   return (
     <div className="min-h-screen flex flex-col">
       <Suspense fallback={<div className="fixed top-0 left-0 right-0 z-50 h-20 bg-white dark:bg-black" />}>
-        <Header />
+        <Navbar />
       </Suspense>
       <main className="flex-1 pt-20">{children}</main>
       <FooterWrapper />

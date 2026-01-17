@@ -13,7 +13,7 @@ const LeadershipTeamSection: React.FC<{ data: any; sectionIndex: number }> = ({ 
     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Leadership Team</h3>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {data.teamMembers.map((member: any, idx: number) => (
-        <div key={idx} className="p-6 bg-orange-50 dark:bg-orange-900/10 rounded-xl">
+        <div key={idx} className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].name`}
             value={member.name}
@@ -24,7 +24,7 @@ const LeadershipTeamSection: React.FC<{ data: any; sectionIndex: number }> = ({ 
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].title`}
             value={member.title}
-            className="text-orange-600 dark:text-orange-400 font-medium"
+            className="text-blue-600 dark:text-blue-400 font-medium"
             as="p"
             spacing="small"
           />

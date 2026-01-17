@@ -18,27 +18,13 @@ const CompellingReasonsSection: React.FC<{ data: CompellingReasonsSectionData; s
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
           {data.reasons.map((reason, idx) => {
               const IconComponent = iconMap[reason.icon];
-              const cardStyles = [
-                {
-                    gradient: "from-emerald-50/20 via-emerald-100/20 to-green-200/20 dark:from-emerald-900/10 dark:via-emerald-800/10 dark:to-green-900/10",
-                    textColor: "text-emerald-900 dark:text-emerald-200",
-                    accentColor: "text-emerald-800 dark:text-emerald-300",
-                    iconColor: "text-emerald-600 dark:text-emerald-400"
-                },
-                {
-                    gradient: "from-blue-50/20 via-blue-100/20 to-indigo-200/20 dark:from-blue-900/10 dark:via-blue-800/10 dark:to-indigo-900/10",
+              // All cards use blue colors
+              const style = {
+                    gradient: "from-blue-50/20 via-blue-100/20 to-blue-200/20 dark:from-blue-900/10 dark:via-blue-800/10 dark:to-blue-900/10",
                     textColor: "text-blue-900 dark:text-blue-200",
                     accentColor: "text-blue-800 dark:text-blue-300",
                     iconColor: "text-blue-600 dark:text-blue-400"
-                },
-                {
-                    gradient: "from-purple-50/20 via-purple-100/20 to-pink-200/20 dark:from-purple-900/10 dark:via-purple-800/10 dark:to-pink-900/10",
-                    textColor: "text-purple-900 dark:text-purple-200",
-                    accentColor: "text-purple-800 dark:text-purple-300",
-                    iconColor: "text-purple-600 dark:text-purple-400"
-                }
-              ];
-              const style = cardStyles[idx % cardStyles.length];
+              };
 
               return (
                 <div

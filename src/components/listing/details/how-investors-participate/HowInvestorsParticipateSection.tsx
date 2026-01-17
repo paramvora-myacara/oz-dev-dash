@@ -63,7 +63,7 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
             </h3>
             <button 
               onClick={handleAddStep}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Add Step
             </button>
@@ -79,14 +79,14 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
               <div className="flex-shrink-0">
                 <button 
                   onClick={() => handleRemoveStep(idx)}
-                  className="mb-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  className="mb-4 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
                 >
                   Remove
                 </button>
               </div>
             )}
             
-            <div className="flex-shrink-0 flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-full">
+            <div className="flex-shrink-0 flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full">
               {getIconComponent(step.icon)}
             </div>
             
@@ -94,7 +94,7 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
               <Editable 
                 dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.steps[${idx}].title`}
                 value={step.title}
-                className="text-2xl font-bold text-purple-900 dark:text-purple-300 mb-4"
+                className="text-2xl font-bold text-blue-900 dark:text-blue-300 mb-4"
               />
               
               {/* Add Point Button */}
@@ -110,7 +110,7 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
               <ul className="space-y-3">
                 {step.points.map((point: any, pIdx: number) => (
                   <li key={pIdx} className="flex items-start">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-4 mt-[10px] flex-shrink-0" />
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-4 mt-[10px] flex-shrink-0" />
                     <div className="flex-1">
                       <Editable 
                         dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.steps[${idx}].points[${pIdx}]`}
@@ -122,7 +122,7 @@ const ParticipationStepsSection: React.FC<ParticipationStepsSectionProps> = ({ d
                     {isEditing && (
                       <button 
                         onClick={() => handleRemovePoint(idx, pIdx)}
-                        className="ml-2 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                        className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
                       >
                         ×
                       </button>
@@ -169,7 +169,7 @@ const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIn
             </h3>
             <button 
               onClick={handleAddDetail}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Add Detail
             </button>
@@ -187,7 +187,7 @@ const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIn
               {isEditing && (
                 <button 
                   onClick={() => handleRemoveDetail(idx)}
-                  className="mb-2 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                  className="mb-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
                 >
                   ×
                 </button>
@@ -195,7 +195,7 @@ const FundDetailsSection: React.FC<FundDetailsSectionProps> = ({ data, sectionIn
               <Editable 
                 dataPath={`details.howInvestorsParticipate.sections[${sectionIndex}].data.details[${idx}].label`}
                 value={item.label}
-                className="font-semibold text-lg text-purple-900 dark:text-purple-300"
+                className="font-semibold text-lg text-blue-900 dark:text-blue-300"
                 as="div"
               />
               <Editable 

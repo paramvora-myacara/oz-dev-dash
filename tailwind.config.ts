@@ -19,6 +19,23 @@ const config: Config = {
     },
     extend: {
       colors: {
+        primary: {
+          DEFAULT: '#1E88E5',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        },
+        navy: {
+          DEFAULT: '#212C38',
+          800: '#1C252F',
+        },
         "brand-primary": "#0D47A1",
         "brand-secondary": "#1976D2",
         "brand-accent": "#FFC107",
@@ -34,9 +51,10 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "Inter", "system-ui", "-apple-system", "BlinkMacSystemFont",
-          '"Segoe UI"', "Roboto", '"Helvetica Neue"', "Arial",
-          '"Noto Sans"', "sans-serif"
+          '"TASA Orbiter"', "system-ui", "sans-serif"
+        ],
+        brand: [
+          '"TASA Orbiter"', '"Montserrat"', "system-ui", "sans-serif"
         ]
       },
       transitionDuration: {

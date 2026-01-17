@@ -10,7 +10,7 @@ const PartnershipOverviewSection: React.FC<{ data: any; sectionIndex: number }> 
               <Editable 
                 dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.partners[${i}].name`}
                 value={partner.name}
-                className="text-lg font-semibold text-orange-600 dark:text-orange-400"
+                className="text-lg font-semibold text-blue-600 dark:text-blue-400"
                 as="p"
                 spacing="medium"
               />

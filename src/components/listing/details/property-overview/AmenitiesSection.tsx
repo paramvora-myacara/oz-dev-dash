@@ -9,8 +9,8 @@ const AmenitiesSection: React.FC<{ data: any; sectionIndex: number }> = ({ data,
       {data.amenities.map((amenity: any, idx: number) => {
         const Icon = iconMap[amenity.icon];
         return (
-          <div key={idx} className="flex items-center space-x-3 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl">
-            <div className="text-indigo-600 dark:text-indigo-400">
+          <div key={idx} className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl">
+            <div className="text-blue-600 dark:text-blue-400">
               {Icon && <Icon className="w-6 h-6" />}
             </div>
             <Editable 

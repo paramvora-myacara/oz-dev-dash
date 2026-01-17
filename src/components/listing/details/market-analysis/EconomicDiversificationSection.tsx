@@ -6,7 +6,7 @@ const EconomicDiversificationSection: React.FC<{ data: any; sectionIndex: number
     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Economic Diversification</h3>
     <div className="space-y-4">
       {data.sectors.map((sector: any, idx: number) => (
-        <div key={idx} className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+        <div key={idx} className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
           <Editable 
             dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.sectors[${idx}].title`}
             value={sector.title}
