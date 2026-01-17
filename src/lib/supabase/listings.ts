@@ -68,6 +68,17 @@ export async function listVersionsBySlug(slug: string): Promise<ListingVersionMe
   }))
 }
 
+export async function getListingIdBySlug(slug: string): Promise<string | null> {
+  const supabase = createAdminClient()
+  const { data: listingRow, error } = await supabase
+    .from('listings')
+    .select('id')
+    .eq('slug', slug)
+    .single()
+  if (error || !listingRow) return null
+  return listingRow.id
+}
+
 export async function getVersionData(slug: string, versionId: string): Promise<Listing | null> {
   const supabase = createAdminClient()
   const { data: listingRow } = await supabase

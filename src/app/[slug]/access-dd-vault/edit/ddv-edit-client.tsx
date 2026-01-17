@@ -12,9 +12,10 @@ interface DDVEditClientProps {
   listing: Listing
   files: DDVFile[]
   slug: string
+  listingId: string
 }
 
-export default function DDVEditClient({ listing, files, slug }: DDVEditClientProps) {
+export default function DDVEditClient({ listing, files, slug, listingId }: DDVEditClientProps) {
   const [currentFiles, setCurrentFiles] = useState<DDVFile[]>(files)
   const [deletingFile, setDeletingFile] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -55,8 +56,10 @@ export default function DDVEditClient({ listing, files, slug }: DDVEditClientPro
         ))
         
         // Use the resumable upload hook
-        const bucketName = `ddv-${slug}`
-        const result = await uploadFile(file, bucketName, file.name)
+        // Use single bucket with listing ID folder structure
+        const bucketName = 'ddv-vault'
+        const filePath = `${listingId}/${file.name}`
+        const result = await uploadFile(file, bucketName, filePath)
         
         // If upload is successful, add the file to the list with real data
         if (result.success && result.fileData) {
