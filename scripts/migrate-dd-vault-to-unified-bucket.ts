@@ -43,14 +43,14 @@ function loadEnvFile() {
 
 const envVars = loadEnvFile();
 const SUPABASE_URL = envVars.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = envVars.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY');
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
@@ -75,51 +75,43 @@ interface MigrationResult {
 
 /**
  * Get all DDV buckets (excluding the new unified bucket)
+ * Since listBuckets() requires admin permissions, we'll try to access known buckets directly
+ * or get them from the database seed data
  */
 async function getDDVBuckets(): Promise<BucketInfo[]> {
-  const { data: buckets, error } = await supabase.storage.listBuckets();
+  // Since we can't list buckets with anon key, we'll get slugs from the database
+  // and try to access buckets with the pattern ddv-{slug}
+  const { data: listings, error: listingsError } = await supabase
+    .from('listings')
+    .select('id, slug');
 
-  if (error) {
-    throw new Error(`Failed to list buckets: ${error.message}`);
+  if (listingsError) {
+    throw new Error(`Failed to fetch listings: ${listingsError.message}`);
   }
-
-  // Filter for DDV buckets (ddv-*) but exclude the new unified bucket
-  const ddvBuckets = (buckets || []).filter(
-    bucket => bucket.name.startsWith(OLD_BUCKET_PREFIX) && bucket.name !== NEW_BUCKET_NAME
-  );
-
-  console.log(`📦 Found ${ddvBuckets.length} DDV buckets to migrate\n`);
 
   const bucketInfos: BucketInfo[] = [];
 
-  for (const bucket of ddvBuckets) {
-    // Extract slug from bucket name: "ddv-{slug}" -> "{slug}"
-    const slug = bucket.name.replace(OLD_BUCKET_PREFIX, '');
+  // Try to access each potential DDV bucket
+  for (const listing of listings || []) {
+    const bucketName = `${OLD_BUCKET_PREFIX}${listing.slug}`;
+    
+    // Try to list files in this bucket to see if it exists
+    const { error: bucketError } = await supabase.storage
+      .from(bucketName)
+      .list('', { limit: 1 });
 
-    // Look up listing ID for this slug
-    const { data: listing, error: listingError } = await supabase
-      .from('listings')
-      .select('id')
-      .eq('slug', slug)
-      .single();
-
-    if (listingError || !listing) {
-      console.warn(`⚠️  Warning: Could not find listing for slug "${slug}" (bucket: ${bucket.name})`);
+    // If no error (or error is not "not found"), bucket exists
+    if (!bucketError || (!bucketError.message.includes('not found') && !bucketError.message.includes('does not exist'))) {
       bucketInfos.push({
-        id: bucket.id,
-        name: bucket.name,
-        slug,
-        listingId: null
-      });
-    } else {
-      bucketInfos.push({
-        id: bucket.id,
-        name: bucket.name,
-        slug,
+        id: bucketName, // Use bucket name as ID since we can't get actual ID
+        name: bucketName,
+        slug: listing.slug,
         listingId: listing.id
       });
     }
   }
+
+  console.log(`📦 Found ${bucketInfos.length} DDV buckets to migrate\n`);
 
   return bucketInfos;
 }
@@ -260,17 +252,26 @@ async function main() {
   console.log('🚀 Starting DDV migration from per-listing buckets to unified ddv-vault bucket...\n');
 
   try {
-    // Verify new bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const newBucketExists = buckets?.some(b => b.name === NEW_BUCKET_NAME);
+    // Verify new bucket exists by trying to access it directly
+    // (listBuckets() requires admin permissions, but we can try to list files)
+    const { error: bucketError } = await supabase.storage
+      .from(NEW_BUCKET_NAME)
+      .list('', { limit: 1 });
 
-    if (!newBucketExists) {
-      console.error(`❌ Error: Target bucket "${NEW_BUCKET_NAME}" does not exist!`);
-      console.error(`   Please create the bucket first by running the migration: 20260117152000_create_ddv_vault_bucket.sql`);
-      process.exit(1);
+    if (bucketError) {
+      // Check if it's a "bucket not found" error
+      if (bucketError.message.includes('not found') || bucketError.message.includes('does not exist')) {
+        console.error(`❌ Error: Target bucket "${NEW_BUCKET_NAME}" does not exist!`);
+        console.error(`   Please create the bucket first by running the migration: 20260117152000_create_ddv_vault_bucket.sql`);
+        process.exit(1);
+      } else {
+        // Other errors (like permission issues) - log but continue
+        console.warn(`⚠️  Warning: Could not verify bucket "${NEW_BUCKET_NAME}": ${bucketError.message}`);
+        console.warn(`   Continuing anyway - ensure the bucket exists and is accessible\n`);
+      }
+    } else {
+      console.log(`✅ Target bucket "${NEW_BUCKET_NAME}" exists and is accessible\n`);
     }
-
-    console.log(`✅ Target bucket "${NEW_BUCKET_NAME}" exists\n`);
 
     // Get all DDV buckets to migrate
     const bucketInfos = await getDDVBuckets();

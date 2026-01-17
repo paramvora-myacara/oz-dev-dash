@@ -77,16 +77,39 @@ export async function getDDVFileUrl(listingSlug: string, fileName: string): Prom
   }
   
   // File path includes listing ID folder
+  // Use unencoded path - Supabase handles encoding internally
   const filePath = `${listingId}/${fileName}`
   
   try {
-    const { data } = await supabase.storage
+    // Since the bucket is public, use getPublicUrl instead of createSignedUrl
+    const { data } = supabase.storage
       .from(bucketName)
-      .createSignedUrl(filePath, 3600) // 1 hour expiry
+      .getPublicUrl(filePath)
     
-    return data?.signedUrl || null
+    if (data?.publicUrl) {
+      console.log(`Generated public URL for ${filePath}: ${data.publicUrl}`)
+      return data.publicUrl
+    }
+    
+    // Fallback to signed URL if public URL doesn't work
+    console.log(`Public URL not available, trying signed URL for ${filePath}`)
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl(filePath, 3600)
+    
+    if (signedError) {
+      console.error(`Error generating signed URL for ${filePath} in bucket ${bucketName}:`, signedError)
+      return null
+    }
+    
+    if (signedData?.signedUrl) {
+      console.log(`Generated signed URL for ${filePath}`)
+      return signedData.signedUrl
+    }
+    
+    return null
   } catch (error) {
-    console.error(`Error generating signed URL for ${filePath} in bucket ${bucketName}:`, error)
+    console.error(`Error generating file URL for ${filePath} in bucket ${bucketName}:`, error)
     return null
   }
 } 

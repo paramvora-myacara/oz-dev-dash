@@ -27,23 +27,27 @@ export async function GET(
       )
     }
     
-    // Get the signed URL for the file
-    const signedUrl = await getDDVFileUrl(slug, fileName)
+    // Get the file URL (public or signed)
+    const fileUrl = await getDDVFileUrl(slug, fileName)
     
-    if (!signedUrl) {
+    if (!fileUrl) {
+      console.error(`Failed to get file URL for slug: ${slug}, fileName: ${fileName}`)
       return NextResponse.json(
         { error: 'File not found or access denied' },
         { status: 404 }
       )
     }
     
+    console.log(`Fetching file from URL: ${fileUrl}`)
+    
     // Fetch the file from Supabase storage
-    const response = await fetch(signedUrl)
+    const response = await fetch(fileUrl)
     
     if (!response.ok) {
+      console.error(`Failed to fetch file from ${fileUrl}: ${response.status} ${response.statusText}`)
       return NextResponse.json(
-        { error: 'Failed to fetch file' },
-        { status: 500 }
+        { error: `Failed to fetch file: ${response.status} ${response.statusText}` },
+        { status: response.status || 500 }
       )
     }
     

@@ -23,7 +23,7 @@ This guide explains how to migrate Due Diligence Vault files from the old per-li
 
 2. **Ensure environment variables are set:**
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## Migration Steps
 
