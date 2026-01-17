@@ -38,31 +38,14 @@ export async function GET(
       )
     }
     
-    console.log(`Fetching file from URL: ${fileUrl}`)
+    console.log(`Redirecting to file URL: ${fileUrl}`)
     
-    // Fetch the file from Supabase storage
-    const response = await fetch(fileUrl)
-    
-    if (!response.ok) {
-      console.error(`Failed to fetch file from ${fileUrl}: ${response.status} ${response.statusText}`)
-      return NextResponse.json(
-        { error: `Failed to fetch file: ${response.status} ${response.statusText}` },
-        { status: response.status || 500 }
-      )
-    }
-    
-    // Get the file content and headers
-    const fileBuffer = await response.arrayBuffer()
-    const contentType = response.headers.get('content-type') || 'application/octet-stream'
-    const contentLength = response.headers.get('content-length')
-    
-    // Return the file with appropriate headers
-    return new NextResponse(fileBuffer, {
-      status: 200,
+    // Redirect directly to Supabase storage URL
+    // Browser will download directly from Supabase, bypassing server-side fetch
+    // This avoids network restrictions and domain rewrite issues in production
+    return NextResponse.redirect(fileUrl, {
+      status: 302,
       headers: {
-        'Content-Type': contentType,
-        'Content-Length': contentLength || '',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
