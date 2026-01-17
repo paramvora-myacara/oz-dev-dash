@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { getPublishedListingBySlug } from '@/lib/supabase/listings';
+import { getPublishedListingBySlug, getListingIdBySlug } from '@/lib/supabase/listings';
 import { verifyAdminCanEditSlug } from '@/lib/admin/auth';
 import { getDDVFiles } from '@/lib/supabase/ddv';
 import DDVEditClient from './ddv-edit-client';
@@ -25,6 +25,12 @@ export default async function DDVEditPage({ params }: DDVEditPageProps) {
     notFound();
   }
 
+  // Get listing ID for DDV folder structure
+  const listingId = await getListingIdBySlug(slug);
+  if (!listingId) {
+    notFound();
+  }
+
   // Fetch the DDV files for this listing
   const files = await getDDVFiles(slug);
 
@@ -34,7 +40,8 @@ export default async function DDVEditPage({ params }: DDVEditPageProps) {
         <DDVEditClient 
           listing={listing} 
           files={files} 
-          slug={slug} 
+          slug={slug}
+          listingId={listingId}
         />
       </div>
     </div>

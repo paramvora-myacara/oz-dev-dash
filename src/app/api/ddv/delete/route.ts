@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { verifyAdminCanEditSlug } from '@/lib/admin/auth'
+import { getListingIdBySlug } from '@/lib/supabase/listings'
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -23,13 +24,25 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // Get listing ID from slug
+    const listingId = await getListingIdBySlug(listingSlug)
+    if (!listingId) {
+      return NextResponse.json(
+        { error: 'Listing not found' },
+        { status: 404 }
+      )
+    }
+
     const supabase = await createClient()
-    const bucketName = `ddv-${listingSlug}`
+    const bucketName = 'ddv-vault'
+    
+    // File path includes listing ID folder
+    const filePath = `${listingId}/${fileName}`
 
     // Delete file from Supabase storage
     const { error } = await supabase.storage
       .from(bucketName)
-      .remove([fileName])
+      .remove([filePath])
 
     if (error) {
       console.error('Error deleting file:', error)
