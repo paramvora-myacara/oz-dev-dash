@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useImperativeHandle, forwardRef } from 'react'
+import { useRef, useState, useImperativeHandle, forwardRef, useEffect } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels'
 import { GitBranch, Edit, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import CollapsedStrip from './CollapsedStrip'
@@ -9,6 +9,12 @@ import SectionList from '@/components/email-editor/SectionList'
 import PreviewPanel from '@/components/email-editor/PreviewPanel'
 import EditorHeader from './EditorHeader'
 import type { CampaignStep, Section, SectionMode, SampleData } from '@/types/email-editor'
+
+// New Editors
+import TriggerEditor from './editors/TriggerEditor'
+import SwitchEditor from './editors/SwitchEditor'
+import FilterEditor from './editors/FilterEditor'
+import { Node } from 'reactflow'
 
 interface SequenceEditorLayoutProps {
   // Content
@@ -80,10 +86,12 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
     const leftPanelRef = useRef<ImperativePanelHandle>(null)
     const middlePanelRef = useRef<ImperativePanelHandle>(null)
     const rightPanelRef = useRef<ImperativePanelHandle>(null)
-    
+
     const [leftPanelSize, setLeftPanelSize] = useState(20)
     const [middlePanelSize, setMiddlePanelSize] = useState(60)
     const [rightPanelSize, setRightPanelSize] = useState(0)
+
+    const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
     useImperativeHandle(ref, () => ({
       expandLeftPanel: () => leftPanelRef.current?.expand(),
@@ -92,10 +100,16 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
     }))
 
     const fieldValues = sampleData?.rows?.[selectedSampleIndex] || {}
-    
+
     const isLeftCollapsed = leftPanelSize <= 3.5
     const isMiddleCollapsed = middlePanelSize <= 3.5
     const isRightCollapsed = rightPanelSize <= 3.5
+
+    const handleNodeChange = (data: any) => {
+      if (!selectedNode) return;
+      setSelectedNode({ ...selectedNode, data: { ...selectedNode.data, ...data } });
+      // In real app, we would propagate this change up to a centralized store
+    }
 
     return (
       <div className="h-full flex flex-col bg-gray-100">
@@ -106,7 +120,7 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
             collapsible
             collapsedSize={3}
             minSize={3}
-            defaultSize={20}
+            defaultSize={30} // Increased default size for better node visibility
             onResize={(size) => setLeftPanelSize(size)}
             className="bg-white"
           >
@@ -134,6 +148,7 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
                     currentStepIndex={currentStepIndex}
                     onStepSelect={onStepSelect}
                     onAddStep={onAddStep}
+                    onNodeSelect={setSelectedNode}
                   />
                 </div>
               </div>
@@ -148,7 +163,7 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
             collapsible
             collapsedSize={3}
             minSize={3}
-            defaultSize={60}
+            defaultSize={50}
             onResize={(size) => setMiddlePanelSize(size)}
             className="bg-gray-50"
           >
@@ -160,45 +175,72 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
               />
             ) : (
               <div className="h-full flex flex-col">
-                {/* Editor Header with Template and Subject */}
-                {selectedTemplate !== undefined && onToggleTemplateDropdown && onSelectTemplate && availableTemplates && onOpenSubjectModal && onSubjectChange && (
-                  <EditorHeader
-                    selectedTemplate={selectedTemplate}
-                    showTemplateDropdown={showTemplateDropdown || false}
-                    onToggleTemplateDropdown={onToggleTemplateDropdown}
-                    onSelectTemplate={onSelectTemplate}
-                    availableTemplates={availableTemplates}
-                    subjectLine={subjectLine}
-                    onSubjectChange={onSubjectChange}
-                    onOpenSubjectModal={onOpenSubjectModal}
-                    isGeneratingSubject={isGeneratingSubject || false}
-                    onCollapse={() => middlePanelRef.current?.collapse()}
-                  />
-                )}
-                <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-5">
-                  <SectionList
-                    sections={sections}
-                    onSectionsChange={onSectionsChange}
-                    availableFields={availableFields}
-                    fieldValues={fieldValues}
-                  />
-                  <div className="mt-3">
-                    <button
-                      onClick={onAddSection}
-                      className="w-full flex items-center justify-center gap-2 py-4 sm:py-6 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-colors"
-                    >
-                      <span className="text-lg">+</span>
-                      Add Section
-                    </button>
+                {/* Conditionally Render Editor based on selectedNode type */}
+
+                {!selectedNode && (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center">
+                    <GitBranch className="w-12 h-12 mb-4 opacity-20" />
+                    <p className="font-medium">Select a node to configure</p>
+                    <p className="text-sm mt-2">Click on any node in the sequence flow on the left.</p>
                   </div>
-                </div>
+                )}
+
+                {selectedNode?.type === 'trigger' && (
+                  <TriggerEditor data={selectedNode.data} onChange={handleNodeChange} />
+                )}
+
+                {selectedNode?.type === 'switch' && (
+                  <SwitchEditor data={selectedNode.data} onChange={handleNodeChange} />
+                )}
+
+                {selectedNode?.type === 'filter' && (
+                  <FilterEditor data={selectedNode.data} onChange={handleNodeChange} />
+                )}
+
+                {/* Default to Email Editor for 'action' nodes or simplified flow for legacy compat */}
+                {(selectedNode?.type === 'action' || (!selectedNode && steps.length > 0)) && (
+                  <>
+                    {/* Editor Header with Template and Subject */}
+                    {selectedTemplate !== undefined && onToggleTemplateDropdown && onSelectTemplate && availableTemplates && onOpenSubjectModal && onSubjectChange && (
+                      <EditorHeader
+                        selectedTemplate={selectedTemplate}
+                        showTemplateDropdown={showTemplateDropdown || false}
+                        onToggleTemplateDropdown={onToggleTemplateDropdown}
+                        onSelectTemplate={onSelectTemplate}
+                        availableTemplates={availableTemplates}
+                        subjectLine={subjectLine}
+                        onSubjectChange={onSubjectChange}
+                        onOpenSubjectModal={onOpenSubjectModal}
+                        isGeneratingSubject={isGeneratingSubject || false}
+                        onCollapse={() => middlePanelRef.current?.collapse()}
+                      />
+                    )}
+                    <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-5">
+                      <SectionList
+                        sections={sections}
+                        onSectionsChange={onSectionsChange}
+                        availableFields={availableFields}
+                        fieldValues={fieldValues}
+                      />
+                      <div className="mt-3">
+                        <button
+                          onClick={onAddSection}
+                          className="w-full flex items-center justify-center gap-2 py-4 sm:py-6 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-white transition-colors"
+                        >
+                          <span className="text-lg">+</span>
+                          Add Section
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </Panel>
 
           <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-col-resize" />
 
-          {/* Right Panel: Preview */}
+          {/* Right Panel: Preview (Only show for Email/Action Nodes) */}
           <Panel
             ref={rightPanelRef}
             collapsible
@@ -215,18 +257,27 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
                 onExpand={() => rightPanelRef.current?.expand()}
               />
             ) : (
-              <div className="h-full flex flex-col">
-                <PreviewPanel
-                  sections={sections}
-                  subjectLine={subjectLine}
-                  sampleData={sampleData}
-                  selectedSampleIndex={selectedSampleIndex}
-                  onSampleIndexChange={onSampleIndexChange}
-                  emailFormat={emailFormat}
-                  onFormatChange={onFormatChange}
-                  onCollapse={() => rightPanelRef.current?.collapse()}
-                />
-              </div>
+              // Only show email preview if an Action/Email node is selected or default
+              (selectedNode?.type === 'action' || !selectedNode) ? (
+                <div className="h-full flex flex-col">
+                  <PreviewPanel
+                    sections={sections}
+                    subjectLine={subjectLine}
+                    sampleData={sampleData}
+                    selectedSampleIndex={selectedSampleIndex}
+                    onSampleIndexChange={onSampleIndexChange}
+                    emailFormat={emailFormat}
+                    onFormatChange={onFormatChange}
+                    onCollapse={() => rightPanelRef.current?.collapse()}
+                  />
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+                  <Eye className="w-8 h-8 mb-2 opacity-50" />
+                  <p>No preview available</p>
+                  <p className="text-xs">Preview is only available for Email Logic</p>
+                </div>
+              )
             )}
           </Panel>
         </PanelGroup>

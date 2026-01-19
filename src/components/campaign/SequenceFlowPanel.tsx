@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useEffect, useMemo } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import ReactFlow, {
   Node,
   Edge,
@@ -12,173 +12,210 @@ import ReactFlow, {
   addEdge,
   Connection,
   NodeTypes,
+  EdgeTypes,
   BackgroundVariant,
+  ReactFlowProvider,
+  useReactFlow,
+  Panel,
+  OnConnectStartParams,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import type { CampaignStep } from '@/types/email-editor'
+import { nodeTypes } from './node-editor/CustomNodes'
+import { edgeTypes } from './node-editor/CustomEdges'
+import NodePalette from './node-editor/NodePalette'
+import FloatingConnectionMenu from './node-editor/FloatingConnectionMenu'
 
 interface SequenceFlowPanelProps {
-  steps: CampaignStep[]
+  steps: CampaignStep[] // Keep for compat, but we might ignore or map initially
   currentStepIndex: number
-  onStepSelect: (index: number) => void
-  onAddStep: () => void
+  onStepSelect: (index: number) => void // Legacy: mapped to node selection if possible
+  onAddStep: () => void // Legacy
+  onNodeSelect?: (node: Node | null) => void // New prop for generic node selection
 }
 
-// Custom node component for steps
-function StepNode({ data }: { data: { label: string; stepIndex: number; isSelected: boolean } }) {
-  return (
-    <div className={`px-4 py-3 bg-white border-2 rounded-lg shadow-sm min-w-[150px] ${
-      data.isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-    }`}>
-      <div className="flex items-center gap-2">
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-          data.isSelected ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-        }`}>
-          {data.stepIndex + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{data.label}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
+const initialNodes: Node[] = [
+  {
+    id: 'trigger-1',
+    type: 'trigger',
+    position: { x: 250, y: 50 },
+    data: { label: 'User Signup' },
+  },
+  {
+    id: 'email-1',
+    type: 'action',
+    position: { x: 250, y: 200 },
+    data: { label: 'Welcome Email' },
+  },
+];
 
-// Custom node component for triggers (placeholder)
-function TriggerNode({ data }: { data: { label: string } }) {
-  return (
-    <div className="px-4 py-3 bg-green-50 border-2 border-green-300 rounded-lg shadow-sm min-w-[150px]">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-600 text-white">
-          ⚡
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{data.label}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
+const initialEdges: Edge[] = [
+  { id: 'e1-2', source: 'trigger-1', target: 'email-1', type: 'delay', data: { delay: '1d' } }
+];
 
-const nodeTypes: NodeTypes = {
-  step: StepNode,
-  trigger: TriggerNode,
-}
+function SequenceFlow({
+  onNodeSelect,
+}: { onNodeSelect?: (node: Node | null) => void }) {
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const { project } = useReactFlow();
 
-export default function SequenceFlowPanel({
-  steps,
-  currentStepIndex,
-  onStepSelect,
-  onAddStep,
-}: SequenceFlowPanelProps) {
-  const reactFlowWrapper = useRef<HTMLDivElement>(null)
-
-  // Compute nodes from steps
-  const computedNodes: Node[] = useMemo(() => [
-    // Placeholder trigger node
-    {
-      id: 'trigger-1',
-      type: 'trigger',
-      position: { x: 100, y: 50 },
-      data: { label: 'User Signup' },
-    },
-    // Step nodes
-    ...steps.map((step, index) => ({
-      id: step.id || `step-${index}`,
-      type: 'step',
-      position: { x: 100, y: 150 + index * 120 },
-      data: {
-        label: step.name || step.subject?.content || `Step ${index + 1}`,
-        stepIndex: index,
-        isSelected: index === currentStepIndex,
-      },
-    })),
-  ], [steps, currentStepIndex])
-
-  // Compute edges from steps
-  const computedEdges: Edge[] = useMemo(() => steps.flatMap((step, index) => {
-    if (index === 0) {
-      // First step connects from trigger
-      return [{
-        id: `edge-trigger-${step.id}`,
-        source: 'trigger-1',
-        target: step.id || `step-${index}`,
-        type: 'smoothstep',
-        animated: true,
-      }]
-    } else {
-      // Subsequent steps connect from previous step
-      const prevStep = steps[index - 1]
-      return [{
-        id: `edge-${prevStep.id}-${step.id}`,
-        source: prevStep.id || `step-${index - 1}`,
-        target: step.id || `step-${index}`,
-        type: 'smoothstep',
-        animated: true,
-        label: step.edges?.[0] 
-          ? `${step.edges[0].delayDays || 0}d ${step.edges[0].delayHours || 0}h ${step.edges[0].delayMinutes || 0}m`
-          : undefined,
-      }]
-    }
-  }), [steps])
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(computedNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(computedEdges)
-
-  // Update nodes when steps or currentStepIndex changes
-  useEffect(() => {
-    setNodes(computedNodes)
-  }, [computedNodes, setNodes])
-
-  // Update edges when steps change
-  useEffect(() => {
-    setEdges(computedEdges)
-  }, [computedEdges, setEdges])
+  // Floating Menu State
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+  const [connectingHandleId, setConnectingHandleId] = useState<string | null>(null);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge({ ...params, type: 'delay', data: { delay: '0m' } }, eds)),
     [setEdges]
-  )
+  );
 
-  const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      if (node.type === 'step' && node.data.stepIndex !== undefined) {
-        onStepSelect(node.data.stepIndex)
+  const onConnectStart = useCallback((_: any, { nodeId, handleId }: OnConnectStartParams) => {
+    setConnectingNodeId(nodeId);
+    setConnectingHandleId(handleId);
+  }, []);
+
+  const onConnectEnd = useCallback(
+    (event: any) => {
+      if (!connectingNodeId) return;
+
+      const targetIsPane = event.target.classList.contains('react-flow__pane');
+
+      if (targetIsPane && reactFlowWrapper.current) {
+        // Determine position relative to container
+        const { top, left } = reactFlowWrapper.current.getBoundingClientRect();
+        const clientX = event.clientX || event.changedTouches?.[0]?.clientX;
+        const clientY = event.clientY || event.changedTouches?.[0]?.clientY; // Handle touch if needed
+
+        setMenuPosition({
+          x: clientX - left,
+          y: clientY - top,
+        });
       }
     },
-    [onStepSelect]
-  )
+    [connectingNodeId]
+  );
+
+  const onMenuSelect = useCallback((type: string) => {
+    if (!menuPosition || !connectingNodeId) return;
+
+    const newNode: Node = {
+      id: `${type}-${Date.now()}`,
+      type,
+      position: project({ x: menuPosition.x, y: menuPosition.y }),
+      data: { label: `New ${type}` },
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+
+    // Create edge from the starting node to the new node
+    const newEdge: Edge = {
+      id: `e-${connectingNodeId}-${newNode.id}`,
+      source: connectingNodeId,
+      sourceHandle: connectingHandleId,
+      target: newNode.id,
+      type: 'delay', // Default edge type
+      data: { delay: '0m' },
+    };
+
+    setEdges((eds) => eds.concat(newEdge));
+    setMenuPosition(null);
+    setConnectingNodeId(null);
+    setConnectingHandleId(null);
+  }, [menuPosition, connectingNodeId, connectingHandleId, project, setNodes, setEdges]);
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      const type = event.dataTransfer.getData('application/reactflow');
+
+      // check if the dropped element is valid
+      if (typeof type === 'undefined' || !type) {
+        return;
+      }
+
+      const position = reactFlowWrapper.current?.getBoundingClientRect();
+      if (!position) return;
+
+      const target = project({
+        x: event.clientX - position.left,
+        y: event.clientY - position.top,
+      });
+
+      const newNode: Node = {
+        id: `${type}-${Date.now()}`,
+        type,
+        position: target,
+        data: { label: `New ${type}` },
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [project, setNodes]
+  );
+
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    if (onNodeSelect) onNodeSelect(node);
+    setMenuPosition(null);
+  }, [onNodeSelect]);
+
+  const onPaneClick = useCallback(() => {
+    if (onNodeSelect) onNodeSelect(null);
+    setMenuPosition(null);
+  }, [onNodeSelect]);
+
+  const onNodesDelete = useCallback((deleted: Node[]) => {
+    if (onNodeSelect) onNodeSelect(null);
+  }, [onNodeSelect]);
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* React Flow Canvas */}
-      <div ref={reactFlowWrapper} className="flex-1 w-full">
+    <div className="h-full flex flex-col bg-gray-50 relative">
+      <NodePalette />
+      <div className="flex-1 w-full h-full" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeClick={onNodeClick}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes as EdgeTypes}
+          onInit={(_instance) => console.log('flow loaded')}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          onNodesDelete={onNodesDelete}
+          deleteKeyCode={['Backspace', 'Delete']}
           fitView
-          fitViewOptions={{ padding: 0.8, minZoom: 0.2, maxZoom: 2 }}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.4 }}
         >
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           <Controls />
-          <MiniMap />
+          <MiniMap zoomable pannable />
+          <FloatingConnectionMenu
+            position={menuPosition}
+            onClose={() => setMenuPosition(null)}
+            onSelect={onMenuSelect}
+          />
         </ReactFlow>
       </div>
-      {/* Footer with Add Step button */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <button
-          onClick={onAddStep}
-          className="w-full px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          + Add Step
-        </button>
-      </div>
     </div>
-  )
+  );
+}
+
+export default function SequenceFlowPanel(props: SequenceFlowPanelProps) {
+  return (
+    <ReactFlowProvider>
+      <SequenceFlow {...props} />
+    </ReactFlowProvider>
+  );
 }

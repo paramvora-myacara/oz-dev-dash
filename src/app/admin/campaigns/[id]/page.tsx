@@ -28,7 +28,7 @@ export default function CampaignEditPage() {
   const [generating, setGenerating] = useState(false)
   const [launching, setLaunching] = useState(false)
   const [stagedEmails, setStagedEmails] = useState<QueuedEmail[]>([])
-  
+
   // State for save button in header (must be before any conditional returns)
   const [canSave, setCanSave] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -81,9 +81,9 @@ export default function CampaignEditPage() {
   const [info, setInfo] = useState<string | null>(null)
 
   // Check if this is the always-on campaign slug (not a UUID)
-  const isAlwaysOnSlug = campaignId === 'welcome-drip-lead-magnets' || 
-                         campaignId === 'always-on-welcome-drip' ||
-                         campaignId?.toLowerCase().includes('welcome-drip')
+  const isAlwaysOnSlug = campaignId === 'welcome-drip-lead-magnets' ||
+    campaignId === 'always-on-welcome-drip' ||
+    campaignId?.toLowerCase().includes('welcome-drip')
 
   // Campaign data hook (includes status, polling for progress)
   // Skip API call for always-on campaign slug - we'll use placeholder data
@@ -148,10 +148,10 @@ export default function CampaignEditPage() {
 
   // Load sample data when campaignData is available and has recipients
   useEffect(() => {
-    if (campaignData && campaignData.totalRecipients > 0) {
+    if (!isAlwaysOnSlug && campaignData && campaignData.totalRecipients > 0) {
       loadSampleData()
     }
-  }, [campaignData])
+  }, [campaignData, isAlwaysOnSlug])
 
   const loadSampleData = async () => {
     try {
@@ -634,9 +634,9 @@ export default function CampaignEditPage() {
 
   // Check if this is an always-on campaign (by slug or by name/flag)
   const isRunningCampaign = isAlwaysOnSlug ||
-                            campaignData?.name?.toLowerCase().includes('welcome drip') || 
-                            campaignData?.name?.toLowerCase().includes('always-on') ||
-                            (campaignData as any)?.is_running_campaign === true
+    campaignData?.name?.toLowerCase().includes('welcome drip') ||
+    campaignData?.name?.toLowerCase().includes('always-on') ||
+    (campaignData as any)?.is_running_campaign === true
 
   // If it's an always-on campaign, show tabs interface
   if (isRunningCampaign) {
@@ -664,11 +664,10 @@ export default function CampaignEditPage() {
 
             {/* Header actions */}
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                campaignData?.status === 'active' || !campaignData?.status
-                  ? 'bg-green-100 text-green-700' 
+              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${campaignData?.status === 'active' || !campaignData?.status
+                  ? 'bg-green-100 text-green-700'
                   : 'bg-gray-100 text-gray-700'
-              }`}>
+                }`}>
                 {campaignData?.status === 'paused' ? 'Paused' : 'Active'}
               </span>
               {canSave !== undefined && (
@@ -676,11 +675,10 @@ export default function CampaignEditPage() {
                   onClick={handleHeaderSave}
                   disabled={!canSave || isSaving}
                   title={!canSave ? 'No changes to save' : undefined}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    canSave && !isSaving
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${canSave && !isSaving
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   {isSaving ? (
                     <>
@@ -700,7 +698,7 @@ export default function CampaignEditPage() {
         </div>
 
         {/* Tabs Interface */}
-        <RunningCampaignTabs 
+        <RunningCampaignTabs
           campaign={campaignData as Campaign}
           campaignId={campaignId}
           onSave={handleHeaderSave}
