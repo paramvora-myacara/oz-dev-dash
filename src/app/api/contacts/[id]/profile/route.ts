@@ -54,28 +54,26 @@ export async function GET(
                 }));
             }
 
-            // Fetch profile summaries
-            const [interests, devProfile, invProfile] = await Promise.all([
-                supabase.from('user_interests').select('*').eq('user_id', userId).single(),
-                supabase.from('developer_profiles').select('*').eq('user_id', userId).single(),
-                supabase.from('investor_profiles').select('*').eq('user_id', userId).single()
-            ]);
+            // Fetch profile summaries with error handling (similar to user events)
+            const interests = await supabase.from('user_interests').select('*').eq('user_id', userId).single();
+            const devProfile = await supabase.from('developer_profiles').select('*').eq('user_id', userId).single();
+            const invProfile = await supabase.from('investor_profiles').select('*').eq('user_id', userId).single();
 
             profileData = {
-                communityMember: interests.data?.community_member || false,
-                viewedListings: interests.data?.viewed_listings || false,
-                investPageInterested: interests.data?.invest_page_interested || false,
-                dashboardAccessed: interests.data?.dashboard_accessed || false,
-                developerInfo: devProfile.data ? {
+                communityMember: interests.error ? false : interests.data?.community_member || false,
+                viewedListings: interests.error ? false : interests.data?.viewed_listings || false,
+                investPageInterested: interests.error ? false : interests.data?.invest_page_interested || false,
+                dashboardAccessed: interests.error ? false : interests.data?.dashboard_accessed || false,
+                developerInfo: devProfile.error ? null : {
                     locationOfDevelopment: devProfile.data.location_of_development,
                     ozStatus: devProfile.data.oz_status,
                     geographicalZone: devProfile.data.geographical_zone
-                } : null,
-                investorInfo: invProfile.data ? {
+                },
+                investorInfo: invProfile.error ? null : {
                     hasCapitalGain: invProfile.data.cap_gain_or_not,
                     gainSize: invProfile.data.size_of_cap_gain,
                     gainTiming: invProfile.data.time_of_cap_gain
-                } : null
+                }
             };
         }
 
