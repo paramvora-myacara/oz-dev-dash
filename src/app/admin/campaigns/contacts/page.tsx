@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Users, EyeOff, AlertTriangle, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Users, EyeOff, AlertTriangle, RefreshCw, ChevronRight, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react'
 import { searchContacts, type Contact, type ContactFilters } from '@/lib/api/contacts'
 import { isValidEmail } from '@/lib/utils/validation'
+import { ContactDetailPanel } from '@/components/contacts'
 
 // Helper to detect multiple emails
 const getEmails = (emailStr: string) => {
@@ -55,6 +56,7 @@ export default function ContactsPage() {
     tags: 'all' // 'all', 'both'
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
 
   // Pagination
   const [page, setPage] = useState(0)
@@ -295,7 +297,7 @@ export default function ContactsPage() {
                 className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="sr-only">Previous</span>
-                <RefreshCw className="h-5 w-5 rotate-180" aria-hidden="true" />
+                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
@@ -303,7 +305,7 @@ export default function ContactsPage() {
                 className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="sr-only">Next</span>
-                <RefreshCw className="h-5 w-5" aria-hidden="true" />
+                <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
               </button>
             </nav>
           </div>
@@ -327,8 +329,9 @@ export default function ContactsPage() {
                 return (
                   <div
                     key={contact.id}
-                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors ${isSuppressed || isInvalid ? 'bg-red-50 border-l-4 border-red-400' : 'bg-white'
+                    className={`px-4 sm:px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors ${isSuppressed || isInvalid ? 'bg-red-50 border-l-4 border-red-400' : 'bg-white'
                       }`}
+                    onClick={() => setSelectedContactId(contact.id)}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -340,24 +343,23 @@ export default function ContactsPage() {
                                 {contact.name || 'Unknown Name'}
                               </h3>
                               {/* Contact Type Badge */}
-                              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                contact.contact_type === 'developer' ? 'bg-blue-100 text-blue-800' :
-                                contact.contact_type === 'investor' ? 'bg-green-100 text-green-800' :
-                                contact.contact_type === 'fund' ? 'bg-orange-100 text-orange-800' :
-                                contact.contact_type === 'developer,investor' ? 'bg-purple-100 text-purple-800' :
-                                contact.contact_type === 'developer,fund' ? 'bg-cyan-100 text-cyan-800' :
-                                contact.contact_type === 'investor,fund' ? 'bg-pink-100 text-pink-800' :
-                                contact.contact_type === 'developer,investor,fund' ? 'bg-indigo-100 text-indigo-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
+                              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${contact.contact_type === 'developer' ? 'bg-blue-100 text-blue-800' :
+                                  contact.contact_type === 'investor' ? 'bg-green-100 text-green-800' :
+                                    contact.contact_type === 'fund' ? 'bg-orange-100 text-orange-800' :
+                                      contact.contact_type === 'developer,investor' ? 'bg-purple-100 text-purple-800' :
+                                        contact.contact_type === 'developer,fund' ? 'bg-cyan-100 text-cyan-800' :
+                                          contact.contact_type === 'investor,fund' ? 'bg-pink-100 text-pink-800' :
+                                            contact.contact_type === 'developer,investor,fund' ? 'bg-indigo-100 text-indigo-800' :
+                                              'bg-gray-100 text-gray-800'
+                                }`}>
                                 {contact.contact_type === 'developer,investor' ? 'Dev+Inv' :
-                                 contact.contact_type === 'developer,fund' ? 'Dev+Fund' :
-                                 contact.contact_type === 'investor,fund' ? 'Inv+Fund' :
-                                 contact.contact_type === 'developer,investor,fund' ? 'All' :
-                                 contact.contact_type === 'developer' ? 'Dev' :
-                                 contact.contact_type === 'investor' ? 'Inv' :
-                                 contact.contact_type === 'fund' ? 'Fund' :
-                                 contact.contact_type || 'Unknown'}
+                                  contact.contact_type === 'developer,fund' ? 'Dev+Fund' :
+                                    contact.contact_type === 'investor,fund' ? 'Inv+Fund' :
+                                      contact.contact_type === 'developer,investor,fund' ? 'All' :
+                                        contact.contact_type === 'developer' ? 'Dev' :
+                                          contact.contact_type === 'investor' ? 'Inv' :
+                                            contact.contact_type === 'fund' ? 'Fund' :
+                                              contact.contact_type || 'Unknown'}
                               </div>
                               {isSuppressed && (
                                 <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium">
@@ -392,6 +394,7 @@ export default function ContactsPage() {
                                   ⚠️
                                 </span>
                               )}
+                              <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
                             </div>
                             <p className="text-sm text-gray-500 truncate">{contact.company}</p>
                             {isSuppressed && (
@@ -453,6 +456,11 @@ export default function ContactsPage() {
           </div>
         </div>
       </div>
+
+      <ContactDetailPanel
+        contactId={selectedContactId}
+        onClose={() => setSelectedContactId(null)}
+      />
     </div>
   )
 }

@@ -7,7 +7,7 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  darkMode: 'class',
+  darkMode: ['class', "class"],
   theme: {
     screens: {
       'xs': '480px',
@@ -19,6 +19,7 @@ const config: Config = {
     },
     extend: {
       colors: {
+        // YOUR EXISTING CUSTOM BRAND COLORS
         primary: {
           DEFAULT: '#1E88E5',
           50: '#eff6ff',
@@ -47,22 +48,82 @@ const config: Config = {
         "bg-card": "#FFFFFF",
         success: "#2E7D32",
         warning: "#ED6C02",
-        error: "#D32F2F"
+        error: "#D32F2F",
+
+        // SHADCN/UI COLORS (for components)
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))'
+        },
+        // Note: 'primary' is already defined above for your custom colors
+        // shadcn components will use the CSS variables for primary color
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))'
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        chart: {
+          '1': 'hsl(var(--chart-1))',
+          '2': 'hsl(var(--chart-2))',
+          '3': 'hsl(var(--chart-3))',
+          '4': 'hsl(var(--chart-4))',
+          '5': 'hsl(var(--chart-5))'
+        }
       },
       fontFamily: {
+        // YOUR EXISTING FONTS
         sans: [
           '"TASA Orbiter"', "system-ui", "sans-serif"
         ],
         brand: [
           '"TASA Orbiter"', '"Montserrat"', "system-ui", "sans-serif"
+        ],
+        // SHADCN FONT STACK (will be used by components)
+        inter: [
+          'Inter',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'Noto Sans',
+          'sans-serif'
         ]
       },
       transitionDuration: {
         '600': '600ms'
+      },
+      // SHADCN BORDER RADIUS (needed for components)
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)'
       }
     }
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
 
 export default config; 
