@@ -1,55 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-
-import { Users, Check, X, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
-
+import { Users, Check, X, Loader2, ChevronDown, ChevronRight, EyeOff, AlertTriangle, Search, Filter, Mail } from 'lucide-react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { searchContactsForCampaign, getAllContactIds, type Contact, type ContactFilters } from '@/lib/api/contacts'
+import { getEmails, isMultipleEmails } from '@/lib/api/contacts/utils'
 import { getCampaigns } from '@/lib/api/campaigns-backend'
 import { type Campaign } from '@/types/email-editor'
 import { isValidEmail } from '@/lib/utils/validation'
-
-// Helper to detect multiple emails
-const getEmails = (emailStr: string) => {
-  return emailStr.split(',').map(e => e.trim()).filter(Boolean);
-}
-
-const isMultipleEmails = (emailStr: string) => {
-  return getEmails(emailStr).length > 1;
-}
-
-const API_BASE = '/api/backend-proxy/campaigns'
-
-// State mapping for smart location filtering
-const STATE_MAPPING: Record<string, string> = {
-  // State codes to names
-  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
-  'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
-  'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
-  'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
-  'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
-  'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
-  'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
-  'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
-  'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
-  'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
-  'DC': 'District of Columbia'
-}
-
-// Create reverse mapping (state names to codes)
-const STATE_NAME_TO_CODE = Object.entries(STATE_MAPPING).reduce((acc, [code, name]) => {
-  acc[name.toLowerCase()] = code
-  acc[code.toLowerCase()] = code // Also map code to itself for consistency
-  return acc
-}, {} as Record<string, string>)
-
-const getLocationSearchTerms = (input: string): string[] => {
-  // Simple pass-through since backend handles fuzzy matching now
-  return [input]
-}
-
-// Removed Mock Contacts
-
 
 interface ContactSelectionStepProps {
   campaignId: string
@@ -57,48 +15,47 @@ interface ContactSelectionStepProps {
   onBack: () => void
 }
 
+const API_BASE = '/api/backend-proxy/campaigns'
+
 export default function ContactSelectionStep({ campaignId, onContinue, onBack }: ContactSelectionStepProps) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-
   const [isSelectAllGlobal, setIsSelectAllGlobal] = useState(false)
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
-  // Track specifically chosen email for contacts with multiple options
   const [selectedEmails, setSelectedEmails] = useState<Record<string, string>>({})
-
-  // Modal state
-  // Modal state
   const [emailSelectionQueue, setEmailSelectionQueue] = useState<Contact[]>([])
   const [activeResolutionContactId, setActiveResolutionContactId] = useState<string | null>(null)
   const [skippedResolutionIds, setSkippedResolutionIds] = useState<Set<string>>(new Set())
-
   const [totalCount, setTotalCount] = useState(0)
   const [advancedFilters, setAdvancedFilters] = useState<{
     locationFilter: string;
     source: string;
-    contactType: string;
+    contactTypes: string[];
     history: string;
     emailStatus: string;
-    leadStatus: 'warm' | 'cold';
-    tags: string;
+    leadStatus: 'warm' | 'cold' | 'all';
+    tags: string[];
+    websiteEventTypes: string[];
+    websiteOperator: 'any' | 'all';
+    campaignResponse?: { campaignId: string, response: 'replied' | 'no_reply' | 'bounced' | 'all' };
   }>({
     locationFilter: '',
-    source: '',
-    contactType: 'all',
+    source: 'all',
+    contactTypes: [],
     history: 'all',
     emailStatus: 'all',
-    leadStatus: 'cold',
-    tags: 'all'
+    leadStatus: 'all',
+    tags: [],
+    websiteEventTypes: [],
+    websiteOperator: 'any'
   })
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [expandedContactIds, setExpandedContactIds] = useState<Set<string>>(new Set())
-
-  // Pagination
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(50)
+  const [showFilters, setShowFilters] = useState(true)
 
-  // Fetch campaigns for filter options
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
@@ -111,14 +68,12 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     fetchCampaigns()
   }, [])
 
-  // Fetch contacts from backend
   useEffect(() => {
     const fetchContacts = async () => {
       setIsLoading(true)
       try {
         let campaignHistoryFilter: ContactFilters['campaignHistory'] = undefined
         if (advancedFilters.history !== 'all') {
-          // Check if the selected value is a campaign UUID (not 'none' or 'any')
           const isCampaignId = campaigns.some(campaign => campaign.id === advancedFilters.history)
           if (isCampaignId) {
             campaignHistoryFilter = advancedFilters.history
@@ -129,11 +84,16 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
         const filters: ContactFilters = {
           location: advancedFilters.locationFilter,
-          contactType: advancedFilters.contactType === 'all' ? undefined : advancedFilters.contactType,
+          source: advancedFilters.source === 'all' ? undefined : advancedFilters.source,
+          contactType: advancedFilters.contactTypes.length > 0 ? advancedFilters.contactTypes : undefined,
           campaignHistory: campaignHistoryFilter,
           emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
-          leadStatus: advancedFilters.leadStatus,
-          tags: advancedFilters.tags === 'all' ? undefined : advancedFilters.tags === 'both' ? ['family-office', 'multi-family-office'] : advancedFilters.tags
+          leadStatus: advancedFilters.leadStatus === 'all' ? undefined : advancedFilters.leadStatus,
+          tags: advancedFilters.tags.length > 0 ? advancedFilters.tags : undefined,
+          websiteEvents: advancedFilters.websiteEventTypes.length > 0 ? { eventTypes: advancedFilters.websiteEventTypes, operator: advancedFilters.websiteOperator } : undefined,
+          campaignResponse: (advancedFilters.campaignResponse && advancedFilters.campaignResponse.response !== 'all')
+            ? { ...advancedFilters.campaignResponse, response: advancedFilters.campaignResponse.response as any }
+            : undefined
         }
 
         const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
@@ -146,20 +106,15 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       }
     }
 
-    // Debounce search
     const timer = setTimeout(fetchContacts, 300)
     return () => clearTimeout(timer)
-  }, [advancedFilters, page, pageSize])
+  }, [advancedFilters, page, pageSize, campaigns])
 
-  // Reset page when filters or page size change
   useEffect(() => {
     setPage(0)
-    // Reset global select all state since it depends on current page/filter results
     setIsSelectAllGlobal(false)
     setExcludedIds(new Set())
-    // Preserve individual selections across filter changes for better UX
   }, [advancedFilters, pageSize])
-
 
   const handleSelectAll = () => {
     if (isSelectAllGlobal) {
@@ -173,17 +128,14 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       const isPageSelected = allPageIds.length > 0 && allPageIds.every(id => selectedIds.has(id))
 
       if (isPageSelected) {
-        // Deselect all on this page, keep others
         const newSelected = new Set(selectedIds)
         allPageIds.forEach(id => newSelected.delete(id))
         setSelectedIds(newSelected)
       } else {
-        // Select all on this page, keep others
         const newSelected = new Set(selectedIds)
         allPageIds.forEach(id => newSelected.add(id))
         setSelectedIds(newSelected)
 
-        // Check for ambiguous contacts on this page and add to queue
         const ambiguousContacts = contacts.filter(c => isMultipleEmails(c.email))
         if (ambiguousContacts.length > 0) {
           setEmailSelectionQueue(prev => {
@@ -191,7 +143,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
             const newContacts = ambiguousContacts.filter(c => !existingIds.has(c.id))
             return [...prev, ...newContacts]
           })
-          if (!activeResolutionContactId && ambiguousContacts.length > 0) {
+          if (!activeResolutionContactId) {
             setActiveResolutionContactId(ambiguousContacts[0].id)
           }
         }
@@ -201,25 +153,17 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
 
   const handleSelectContact = (contact: Contact) => {
     const contactId = contact.id
-
-    // Global Mode Logic
     if (isSelectAllGlobal) {
       const newExcluded = new Set(excludedIds)
-      if (newExcluded.has(contactId)) {
-        newExcluded.delete(contactId)
-      } else {
-        newExcluded.add(contactId)
-      }
+      if (newExcluded.has(contactId)) newExcluded.delete(contactId)
+      else newExcluded.add(contactId)
       setExcludedIds(newExcluded)
       return
     }
 
     const newSelected = new Set(selectedIds)
-
-    // If unselecting, just remove
     if (newSelected.has(contactId)) {
       newSelected.delete(contactId)
-      // Cleanup specific email choice if any
       const newSelectedEmails = { ...selectedEmails }
       delete newSelectedEmails[contactId]
       setSelectedEmails(newSelectedEmails)
@@ -227,33 +171,22 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       return
     }
 
-    // If selecting
     if (isMultipleEmails(contact.email)) {
-      // Add to queue if not present
       if (!emailSelectionQueue.find(c => c.id === contact.id)) {
         setEmailSelectionQueue(prev => [...prev, contact])
-        if (!activeResolutionContactId) {
-          setActiveResolutionContactId(contact.id)
-        }
+        if (!activeResolutionContactId) setActiveResolutionContactId(contact.id)
       }
     } else {
-      // Single email, just select
       newSelected.add(contactId)
       setSelectedIds(newSelected)
     }
   }
 
-  // Global Select All Handler
-  const handleSelectAllGlobal = async () => {
+  const handleSelectAllGlobal = () => {
     setIsSelectAllGlobal(true)
     setExcludedIds(new Set())
     setSkippedResolutionIds(new Set())
-
-    // Visually select all info on current page for consistency
-    const allOnPage = new Set(contacts.map(c => c.id))
-    setSelectedIds(allOnPage)
-
-    // Check for ambiguous contacts on the current page to resolve
+    setSelectedIds(new Set(contacts.map(c => c.id)))
     const ambiguousContacts = contacts.filter(c => isMultipleEmails(c.email))
     if (ambiguousContacts.length > 0) {
       setEmailSelectionQueue(prev => {
@@ -261,96 +194,58 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
         const newContacts = ambiguousContacts.filter(c => !existingIds.has(c.id))
         return [...prev, ...newContacts]
       })
-      if (!activeResolutionContactId && ambiguousContacts.length > 0) {
-        setActiveResolutionContactId(ambiguousContacts[0].id)
-      }
+      if (!activeResolutionContactId) setActiveResolutionContactId(ambiguousContacts[0].id)
     }
   }
 
   const handleEmailSelectionConfirm = (contactId: string, email: string) => {
-    // If it was skipped, unskip it
     if (skippedResolutionIds.has(contactId)) {
-      const newSkipped = new Set(skippedResolutionIds)
-      newSkipped.delete(contactId)
-      setSkippedResolutionIds(newSkipped)
-
-      // Re-enable in global/local selection
-      if (isSelectAllGlobal) {
-        const newExcluded = new Set(excludedIds)
-        newExcluded.delete(contactId)
-        setExcludedIds(newExcluded)
-      } else {
-        const newSelected = new Set(selectedIds)
-        newSelected.add(contactId)
-        setSelectedIds(newSelected)
-      }
+      setSkippedResolutionIds(prev => {
+        const next = new Set(prev)
+        next.delete(contactId)
+        return next
+      })
+      if (isSelectAllGlobal) setExcludedIds(prev => {
+        const next = new Set(prev)
+        next.delete(contactId)
+        return next
+      })
+      else setSelectedIds(prev => new Set(prev).add(contactId))
     } else {
-      // Standard selection logic
-      const newSelected = new Set(selectedIds)
-      newSelected.add(contactId)
-      setSelectedIds(newSelected)
+      setSelectedIds(prev => new Set(prev).add(contactId))
     }
-
-
-    setSelectedEmails(prev => ({
-      ...prev,
-      [contactId]: email
-    }))
-
-    // Auto-advance
+    setSelectedEmails(prev => ({ ...prev, [contactId]: email }))
     const currentIndex = emailSelectionQueue.findIndex(c => c.id === contactId)
-    if (currentIndex < emailSelectionQueue.length - 1) {
-      setActiveResolutionContactId(emailSelectionQueue[currentIndex + 1].id)
-    }
+    if (currentIndex < emailSelectionQueue.length - 1) setActiveResolutionContactId(emailSelectionQueue[currentIndex + 1].id)
   }
 
   const handleSkippedSelection = (contactId: string) => {
-    // Mark as skipped visual
-    const newSkipped = new Set(skippedResolutionIds)
-    newSkipped.add(contactId)
-    setSkippedResolutionIds(newSkipped)
-
-    // Remove from selection / Add to exclusion
-    if (isSelectAllGlobal) {
-      const newExcluded = new Set(excludedIds)
-      newExcluded.add(contactId)
-      setExcludedIds(newExcluded)
-    } else {
-      const newSelected = new Set(selectedIds)
-      newSelected.delete(contactId)
-      setSelectedIds(newSelected)
-    }
-
-    // Cleanup specific email choice if any
-    const newSelectedEmails = { ...selectedEmails }
-    delete newSelectedEmails[contactId]
-    setSelectedEmails(newSelectedEmails)
-
-    // Auto-advance
+    setSkippedResolutionIds(prev => new Set(prev).add(contactId))
+    if (isSelectAllGlobal) setExcludedIds(prev => new Set(prev).add(contactId))
+    else setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.delete(contactId)
+      return next
+    })
+    setSelectedEmails(prev => {
+      const next = { ...prev }
+      delete next[contactId]
+      return next
+    })
     const currentIndex = emailSelectionQueue.findIndex(c => c.id === contactId)
-    if (currentIndex < emailSelectionQueue.length - 1) {
-      setActiveResolutionContactId(emailSelectionQueue[currentIndex + 1].id)
-    }
+    if (currentIndex < emailSelectionQueue.length - 1) setActiveResolutionContactId(emailSelectionQueue[currentIndex + 1].id)
   }
 
   const closeResolutionModal = () => {
-    // Auto-deselect unresolved contacts
-    const unresolvedContacts = emailSelectionQueue.filter(contact =>
-      !selectedEmails[contact.id] && !skippedResolutionIds.has(contact.id)
-    )
-
-    if (unresolvedContacts.length > 0) {
-      if (isSelectAllGlobal) {
-        const newExcluded = new Set(excludedIds)
-        unresolvedContacts.forEach(c => newExcluded.add(c.id))
-        setExcludedIds(newExcluded)
-      } else {
-        const newSelected = new Set(selectedIds)
-        unresolvedContacts.forEach(c => newSelected.delete(c.id))
-        setSelectedIds(newSelected)
-      }
+    const unresolved = emailSelectionQueue.filter(contact => !selectedEmails[contact.id] && !skippedResolutionIds.has(contact.id))
+    if (unresolved.length > 0) {
+      if (isSelectAllGlobal) setExcludedIds(prev => {
+        const next = new Set(prev); unresolved.forEach(c => next.add(c.id)); return next
+      })
+      else setSelectedIds(prev => {
+        const next = new Set(prev); unresolved.forEach(c => next.delete(c.id)); return next
+      })
     }
-
     setEmailSelectionQueue([])
     setActiveResolutionContactId(null)
     setSkippedResolutionIds(new Set())
@@ -359,51 +254,38 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const handleContinue = async () => {
     setIsLoading(true)
     try {
-      // Build payload
       let payload: any;
-
       if (isSelectAllGlobal) {
         let campaignHistoryFilter: ContactFilters['campaignHistory'] = undefined
         if (advancedFilters.history !== 'all') {
-          // Check if the selected value is a campaign UUID (not 'none' or 'any')
           const isCampaignId = campaigns.some(campaign => campaign.id === advancedFilters.history)
-          if (isCampaignId) {
-            campaignHistoryFilter = advancedFilters.history
-          } else {
-            campaignHistoryFilter = advancedFilters.history as 'none' | 'any'
-          }
+          if (isCampaignId) campaignHistoryFilter = advancedFilters.history
+          else campaignHistoryFilter = advancedFilters.history as 'none' | 'any'
         }
-
-        const filters: ContactFilters = {
-          location: advancedFilters.locationFilter,
-          campaignHistory: campaignHistoryFilter,
-          emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
-          leadStatus: advancedFilters.leadStatus,
-          tags: advancedFilters.tags === 'all' ? undefined : advancedFilters.tags === 'both' ? ['family-office', 'multi-family-office'] : advancedFilters.tags
-        }
-
         payload = {
           selectAllMatching: true,
-          filters,
+          filters: {
+            location: advancedFilters.locationFilter,
+            campaignHistory: campaignHistoryFilter,
+            emailStatus: advancedFilters.emailStatus === 'all' ? undefined : advancedFilters.emailStatus,
+            leadStatus: advancedFilters.leadStatus === 'all' ? undefined : advancedFilters.leadStatus,
+            tags: advancedFilters.tags.length > 0 ? advancedFilters.tags : undefined,
+            contactType: advancedFilters.contactTypes.length > 0 ? advancedFilters.contactTypes : undefined,
+            websiteEvents: advancedFilters.websiteEventTypes.length > 0 ? { eventTypes: advancedFilters.websiteEventTypes, operator: advancedFilters.websiteOperator } : undefined,
+            campaignResponse: advancedFilters.campaignResponse
+          },
           exclusions: Array.from(excludedIds),
-          explicitSelections: selectedEmails // Still need these for email overrides if any
+          explicitSelections: selectedEmails
         }
       } else {
-        payload = {
-          contact_ids: Array.from(selectedIds)
-        }
+        payload = { contact_ids: Array.from(selectedIds), explicitSelections: selectedEmails }
       }
-
-      // Save to backend
       const res = await fetch(`${API_BASE}/${campaignId}/recipients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      if (!res.ok) throw new Error(await res.text());
-
-      // Navigate
+      if (!res.ok) throw new Error(await res.text())
       onContinue(Array.from(selectedIds))
     } catch (err) {
       console.error('Failed to save recipients:', err)
@@ -416,661 +298,407 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
   const clearFilters = () => {
     setAdvancedFilters({
       locationFilter: '',
-      source: '',
-      contactType: 'all',
+      source: 'all',
+      contactTypes: [],
       history: 'all',
       emailStatus: 'all',
-      leadStatus: 'cold',
-      tags: 'all'
+      leadStatus: 'all',
+      tags: [],
+      websiteEventTypes: [],
+      websiteOperator: 'any'
     })
     setIsSelectAllGlobal(false)
   }
 
-  const selectedContacts = contacts.filter(c =>
-    (isSelectAllGlobal && !excludedIds.has(c.id)) ||
-    (!isSelectAllGlobal && selectedIds.has(c.id))
-  )
-  const previouslyContactedCount = selectedContacts.filter(c => c.history && c.history.length > 0).length
+  const selectedCount = isSelectAllGlobal ? totalCount - excludedIds.size : selectedIds.size
 
-
+  const toggleTag = (tagName: string) => {
+    setAdvancedFilters(prev => {
+      const next = prev.tags.includes(tagName)
+        ? prev.tags.filter(t => t !== tagName)
+        : [...prev.tags, tagName];
+      return { ...prev, tags: next };
+    });
+  }
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-4 sm:px-6 py-4">
+      <div className="bg-white border-b px-4 sm:px-6 py-4 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Select Recipients</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Choose contacts from your database to include in this campaign
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Choose contacts from your database to include in this campaign</p>
         </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+        >
+          <Filter className="w-4 h-4" />
+          {showFilters ? 'Hide Filters' : 'Show Filters'}
+        </button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="bg-white border-b px-4 sm:px-6 py-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Location Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Location Contains
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. California, CA, New York..."
-              value={advancedFilters.locationFilter}
-              onChange={(e) => setAdvancedFilters(prev => ({ ...prev, locationFilter: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+      <Sheet open={showFilters} onOpenChange={setShowFilters}>
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader className="mb-8">
+            <SheetTitle className="text-2xl font-bold flex items-center gap-2">
+              <Filter className="w-6 h-6 text-blue-600" />
+              Advanced Filters
+            </SheetTitle>
+          </SheetHeader>
 
-          {/* Contact Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contact Type
-            </label>
-            <select
-              value={advancedFilters.contactType}
-              onChange={(e) => setAdvancedFilters(prev => ({
-                ...prev,
-                contactType: e.target.value
-              }))}
-              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Types</option>
-              <option value="developer">Developers Only</option>
-              <option value="investor">Investors Only</option>
-              <option value="fund">Funds Only</option>
-              <option value="developer,investor">Dev + Investors</option>
-              <option value="developer,fund">Dev + Funds</option>
-              <option value="investor,fund">Investors + Funds</option>
-              <option value="developer,investor,fund">All Types</option>
-            </select>
-          </div>
-
-          {/* History Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contact History
-            </label>
-            <select
-              value={advancedFilters.history}
-              onChange={(e) => setAdvancedFilters(prev => ({
-                ...prev,
-                history: e.target.value
-              }))}
-              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Show All</option>
-              <option value="none">Never Contacted</option>
-              <option value="any">Previously Contacted</option>
-              {campaigns
-                .filter((campaign) => campaign.id !== campaignId)
-                .map((campaign) => (
-                  <option key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Email Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Status
-            </label>
-            <select
-              value={advancedFilters.emailStatus}
-              onChange={(e) => setAdvancedFilters(prev => ({
-                ...prev,
-                emailStatus: e.target.value
-              }))}
-              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All (Valid + Catch-all)</option>
-              <option value="Valid">Only Valid</option>
-              <option value="Catch-all">Only Catch-all</option>
-            </select>
-          </div>
-
-          {/* Lead Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lead Status
-            </label>
-            <select
-              value={advancedFilters.leadStatus}
-              onChange={(e) => setAdvancedFilters(prev => ({
-                ...prev,
-                leadStatus: e.target.value as 'warm' | 'cold'
-              }))}
-              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="warm">Warm Leads Only</option>
-              <option value="cold">Cold Leads Only</option>
-            </select>
-          </div>
-
-          {/* Tags Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags
-            </label>
-            <select
-              value={advancedFilters.tags}
-              onChange={(e) => setAdvancedFilters(prev => ({
-                ...prev,
-                tags: e.target.value
-              }))}
-              className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Tags</option>
-              <option value="both">Family Office + Multi-Family Office</option>
-            </select>
-          </div>
-
-          {/* Clear Filters */}
-          <div className="flex items-end">
-            <button
-              onClick={clearFilters}
-              className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              Clear all filters
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="bg-white border-t px-4 py-3 flex items-center justify-between sm:px-6">
-        <div className="flex-1 flex justify-between sm:hidden">
-          <button
-            onClick={() => setPage(p => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => setPage(p => p + 1)}
-            disabled={(page + 1) * pageSize >= totalCount}
-            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              Showing <span className="font-medium">{Math.min(page * pageSize + 1, totalCount)}</span> to <span className="font-medium">{Math.min((page + 1) * pageSize, totalCount)}</span> of <span className="font-medium">{totalCount}</span> results
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">Rows per page:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="block w-24 pl-3 pr-8 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              >
-                <option value={10}>10</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-                <option value={500}>500</option>
-                <option value={1000}>1000</option>
-              </select>
-            </div>
-            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-              <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Previous</span>
-                <ChevronDown className="h-5 w-5 rotate-90" aria-hidden="true" />
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={(page + 1) * pageSize >= totalCount}
-                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Next</span>
-                <ChevronDown className="h-5 w-5 -rotate-90" aria-hidden="true" />
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
-
-      {/* Scrollable List Container (adjusted to not conflict with flex layout) */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full flex flex-col"> {/* Changed to flex-col to stack list and pagination if needed inside, but pagination is outside now */}
-          {/* Main List Area */}
-          {/* Contact List */}
-          <div className="flex-1 overflow-auto bg-white">
-            {/* Selection Header */}
-            <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleSelectAll}
-                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
+          <div className="space-y-8">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                   <input
-                    type="checkbox"
-                    checked={
-                      isSelectAllGlobal
-                        ? (contacts.every(c => !excludedIds.has(c.id)))
-                        : (contacts.length > 0 && contacts.every(c => selectedIds.has(c.id)))
-                    }
-                    readOnly
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    type="text"
+                    placeholder="State, City, or Code..."
+                    value={advancedFilters.locationFilter}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, locationFilter: e.target.value }))}
+                    className="w-full pl-10 pr-3 py-2 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   />
-                  Select All ({contacts.length})
-                </button>
+                </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {isSelectAllGlobal
-                  ? `${totalCount - excludedIds.size} selected`
-                  : `${selectedIds.size} selected`
-                }
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Types</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  {['developer', 'investor', 'fund', 'broker'].map(type => (
+                    <label key={type} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white cursor-pointer text-sm font-medium transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={advancedFilters.contactTypes.includes(type)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...advancedFilters.contactTypes, type]
+                            : advancedFilters.contactTypes.filter(t => t !== type);
+                          setAdvancedFilters(prev => ({ ...prev, contactTypes: next }));
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="capitalize">{type}s</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Website Activity</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  {[
+                    { id: 'tax_calculator_used', label: 'Used Tax Calculator' },
+                    { id: 'investor_qualification_submitted', label: 'Qualified Investor' },
+                    { id: 'oz_check_completed', label: 'OZ Check' },
+                    { id: 'viewed_listings', label: 'Viewed Listings' },
+                    { id: 'community_interest_expressed', label: 'Expressed Interest' }
+                  ].map(event => (
+                    <label key={event.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white cursor-pointer text-sm font-medium transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={advancedFilters.websiteEventTypes.includes(event.id)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...advancedFilters.websiteEventTypes, event.id]
+                            : advancedFilters.websiteEventTypes.filter(id => id !== event.id);
+                          setAdvancedFilters(prev => ({ ...prev, websiteEventTypes: next }));
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{event.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Tags / Specialization</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  {[
+                    { id: 'family-office', label: 'Family Office' },
+                    { id: 'multi-family-office', label: 'Multi-Family Office' }
+                  ].map(tag => (
+                    <label key={tag.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white cursor-pointer text-sm font-medium transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={advancedFilters.tags.includes(tag.id)}
+                        onChange={() => toggleTag(tag.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{tag.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Campaign Response</label>
+                <div className="flex gap-2">
+                  <select
+                    value={advancedFilters.campaignResponse?.response || 'all'}
+                    onChange={(e) => {
+                      const val = e.target.value as any
+                      setAdvancedFilters(prev => ({
+                        ...prev,
+                        campaignResponse: val === 'all' ? undefined : { campaignId: prev.campaignResponse?.campaignId || '', response: val }
+                      }))
+                    }}
+                    className="w-full px-3 py-2 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                  >
+                    <option value="all">Any Status</option>
+                    <option value="replied">Replied</option>
+                    <option value="no_reply">No Reply</option>
+                    <option value="bounced">Bounced</option>
+                  </select>
+                </div>
+                <select
+                  disabled={!advancedFilters.campaignResponse || advancedFilters.campaignResponse.response === 'all'}
+                  value={advancedFilters.campaignResponse?.campaignId || ''}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setAdvancedFilters(prev => ({
+                      ...prev,
+                      campaignResponse: prev.campaignResponse ? { ...prev.campaignResponse, campaignId: val } : undefined
+                    }))
+                  }}
+                  className="w-full mt-2 px-3 py-2 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50"
+                >
+                  <option value="">Campaign...</option>
+                  {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email Status</label>
+                  <select
+                    value={advancedFilters.emailStatus}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, emailStatus: e.target.value }))}
+                    className="w-full px-3 py-2 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="Valid">Verified</option>
+                    <option value="Catch-all">Catch-all</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Lead Status</label>
+                  <select
+                    value={advancedFilters.leadStatus}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, leadStatus: e.target.value as any }))}
+                    className="w-full px-3 py-2 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                  >
+                    <option value="all">Any Status</option>
+                    <option value="warm">Warm</option>
+                    <option value="cold">Cold</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Outreach History</label>
+                <select
+                  value={advancedFilters.history}
+                  onChange={(e) => setAdvancedFilters(prev => ({ ...prev, history: e.target.value }))}
+                  className="w-full px-3 py-2 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                >
+                  <option value="all">All Outreach Status</option>
+                  <option value="none">Never Contacted</option>
+                  <option value="any">Previously Contacted</option>
+                  {campaigns.filter(c => c.id !== campaignId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
             </div>
 
-            {/* Contact Items */}
+            <div className="flex flex-col gap-3 pt-4">
+              <button onClick={clearFilters} className="w-full px-6 py-3 text-sm font-bold text-red-600 border border-red-100 rounded-lg hover:bg-red-50 transition-all uppercase tracking-widest active:scale-[0.98]">
+                Reset All Filters
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-            {/* "Select All" Banner */}
-            {!isSelectAllGlobal && contacts.length > 0 && contacts.every(c => selectedIds.has(c.id)) && totalCount > contacts.length && (
-              <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
-                <span className="font-medium">All {contacts.length} contacts on this page are selected.</span>
-                {' '}
-                <button
-                  onClick={handleSelectAllGlobal}
-                  className="font-bold underline hover:text-blue-900"
-                >
-                  Select all {totalCount} contacts matching this search
-                </button>
-              </div>
-            )}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-3 flex items-center justify-between z-10">
+          <button onClick={handleSelectAll} className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={contacts.length > 0 && (isSelectAllGlobal ? contacts.every(c => !excludedIds.has(c.id)) : contacts.every(c => selectedIds.has(c.id)))}
+              readOnly
+              className="rounded border-gray-300 text-blue-600"
+            />
+            Select Page ({contacts.length})
+          </button>
+          <div className="text-sm text-gray-500">{selectedCount} total selected</div>
+        </div>
 
-            {isSelectAllGlobal && (
-              <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
-                <span className="font-medium">All {totalCount} contacts matching this search are selected.</span>
-                {' '}
-                <button
-                  onClick={() => setIsSelectAllGlobal(false)}
-                  className="font-bold underline hover:text-blue-900"
-                >
-                  Clear selection
-                </button>
-              </div>
-            )}
+        {!isSelectAllGlobal && contacts.length > 0 && contacts.every(c => selectedIds.has(c.id)) && totalCount > contacts.length && (
+          <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 text-sm text-blue-700 text-center">
+            All {contacts.length} on this page selected. <button onClick={handleSelectAllGlobal} className="font-bold underline">Select all {totalCount}</button>
+          </div>
+        )}
 
-            <div className="divide-y divide-gray-200">
-              {contacts.map((contact) => {
-                const isSelected = isSelectAllGlobal
-                  ? !excludedIds.has(contact.id)
-                  : selectedIds.has(contact.id)
-                const hasHistory = contact.history && contact.history.length > 0
-                const isExpanded = expandedContactIds.has(contact.id)
+        <div className="flex-1 overflow-auto bg-white">
+          <div className="divide-y divide-gray-200">
+            {contacts.map((contact) => {
+              const isSelected = isSelectAllGlobal ? !excludedIds.has(contact.id) : selectedIds.has(contact.id)
+              const isExpanded = expandedContactIds.has(contact.id)
+              return (
+                <div key={contact.id}>
+                  <div className={`px-4 sm:px-6 py-4 hover:bg-gray-50 flex items-start gap-3 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectContact(contact)}
+                      className="mt-1 rounded border-gray-300 text-blue-600"
+                    />
+                    <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                      <div className="md:col-span-1">
+                        <h3 className="text-sm font-bold text-gray-900 truncate">{contact.name || 'Unknown'}</h3>
+                        <p className="text-xs text-gray-500 truncate font-medium">{selectedEmails[contact.id] || contact.email}</p>
+                        {isMultipleEmails(contact.email) && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 rounded-full font-bold uppercase tracking-tight">Multi-Email</span>}
+                      </div>
 
-                return (
-                  <div key={contact.id}>
-                    <div
-                      className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''
-                        }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleSelectContact(contact)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
+                      <div className="md:col-span-1">
+                        <p className="text-sm text-gray-700 truncate font-medium">{contact.company}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {contact.contact_types ? contact.contact_types.map(t => (
+                            <span key={t} className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${t === 'developer' ? 'bg-blue-100 text-blue-700 border border-blue-200' : t === 'investor' ? 'bg-green-100 text-green-700 border border-green-200' :
+                              t === 'fund' ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-700 border border-gray-200'
+                              }`}>{t}</span>
+                          )) : <span className="text-[10px] text-gray-500 uppercase font-black">{contact.contact_type}</span>}
+                        </div>
+                      </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4">
-                            {/* Left: Contact Info */}
-                            <div className="min-w-0 w-1/3 max-w-xs flex-none">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-sm font-medium text-gray-900 truncate">
-                                  {contact.name || 'Unknown Name'}
-                                </h3>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-gray-500 truncate">
-                                  {/* Show chosen email if multiple and selected, otherwise show raw */}
-                                  {isSelected && selectedEmails[contact.id]
-                                    ? selectedEmails[contact.id]
-                                    : contact.email}
-                                </p>
-                                {isMultipleEmails(contact.email) && (
-                                  <span className="bg-yellow-100 text-yellow-800 text-xs px-1.5 rounded-full" title="Multiple Emails">
-                                    Multi
-                                  </span>
-                                )}
-                                {!isMultipleEmails(contact.email) && !isValidEmail(contact.email) && (
-                                  <span className="text-red-500 text-xs flex items-center gap-0.5" title="Invalid Email">
-                                    ⚠️
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-500 truncate">{contact.company}</p>
-                            </div>
+                      <div className="md:col-span-1">
+                        {contact.history && contact.history.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {contact.history.slice(0, 2).map((h: any, i) => (
+                              <span key={i} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 truncate max-w-[120px] font-bold">
+                                {h.campaigns?.name}
+                              </span>
+                            ))}
+                            {contact.history.length > 2 && <span className="text-[10px] text-gray-400 font-bold">+{contact.history.length - 2}</span>}
+                          </div>
+                        ) : <span className="text-xs text-gray-400 italic">No history</span>}
+                      </div>
 
-                            {/* Middle: Outreach History Preview */}
-                            <div className="flex-1 min-w-0 px-2">
-                              {hasHistory ? (
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Previously contacted in:</div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {contact.history!.map((h: any, idx: number) => (
-                                      <span
-                                        key={idx}
-                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                      >
-                                        {h.campaigns?.name || 'Unknown Campaign'}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : (
-                                // Spacer if no history to keep alignment clean
-                                <div></div>
-                              )}
-                            </div>
-
-                            {/* Right: Location and Expand Button */}
-                            <div className="flex items-center gap-4 shrink-0">
-                              <div className="text-right w-48">
-                                <p className="text-sm text-gray-500">{contact.location}</p>
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setExpandedContactIds(prev => {
-                                    const newSet = new Set(prev)
-                                    if (newSet.has(contact.id)) {
-                                      newSet.delete(contact.id)
-                                    } else {
-                                      newSet.add(contact.id)
-                                    }
-                                    return newSet
-                                  })
-                                }}
-                                className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                title="View details"
-                              >
-                                {isExpanded ? (
-                                  <ChevronDown className="w-5 h-5 text-gray-500" />
-                                ) : (
-                                  <ChevronRight className="w-5 h-5 text-gray-500" />
-                                )}
-                              </button>
-                            </div>
+                      <div className="md:col-span-1 flex items-center justify-end gap-2">
+                        <span className="text-[11px] font-bold text-gray-500 truncate max-w-[120px] uppercase tracking-wide">{contact.location}</span>
+                        <button
+                          className="p-1 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all"
+                          onClick={() => setExpandedContactIds(prev => {
+                            const next = new Set(prev); if (next.has(contact.id)) next.delete(contact.id); else next.add(contact.id); return next
+                          })}
+                        >
+                          {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="bg-gray-50 px-12 py-6 border-t border-b text-xs shadow-inner">
+                      <div className="grid grid-cols-2 gap-8">
+                        <div>
+                          <h4 className="font-bold text-gray-400 uppercase tracking-widest mb-3">Profile Data</h4>
+                          <pre className="overflow-auto max-h-60 bg-white p-4 rounded-xl border border-gray-100 font-mono text-[10px]">{JSON.stringify(contact.details, null, 2)}</pre>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-400 uppercase tracking-widest mb-3">Communication Logs</h4>
+                          <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center justify-center h-40">
+                            <p className="text-gray-400 italic">Activity log coming soon...</p>
                           </div>
                         </div>
                       </div>
                     </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
-                    {/* Expanded Details Section */}
-                    {isExpanded && contact.details && (
-                      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        <div className="ml-8">
-                          <h4 className="text-sm font-semibold text-gray-900 mb-3">Contact Details</h4>
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow-sm border border-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                                    Field
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                                    Value
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {Object.entries(contact.details).map(([key, value]) => {
-                                  let displayValue: React.ReactNode = '—'
-                                  
-                                  if (value !== null && value !== undefined) {
-                                    if (typeof value === 'object') {
-                                      displayValue = (
-                                        <pre className="text-xs bg-gray-50 p-2 rounded border border-gray-200 overflow-x-auto">
-                                          {JSON.stringify(value, null, 2)}
-                                        </pre>
-                                      )
-                                    } else if (typeof value === 'boolean') {
-                                      displayValue = value ? 'Yes' : 'No'
-                                    } else {
-                                      displayValue = String(value)
-                                    }
-                                  }
-                                  
-                                  return (
-                                    <tr key={key} className="hover:bg-gray-50">
-                                      <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap align-top">
-                                        {key}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-gray-700 break-words max-w-md">
-                                        {displayValue}
-                                      </td>
-                                    </tr>
-                                  )
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            {contacts.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
-                <p className="text-gray-500">
-                  {advancedFilters.locationFilter || advancedFilters.history !== 'all'
-                    ? 'Try adjusting your filters'
-                    : 'No contacts available'
-                  }
-                </p>
-              </div>
-            )}
+        <div className="bg-white border-t px-4 sm:px-6 py-3 flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Results {Math.min(page * pageSize + 1, totalCount)} – {Math.min((page + 1) * pageSize, totalCount)} / {totalCount}</p>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-all"><ChevronRight className="rotate-180 w-4 h-4 text-gray-600" /></button>
+            <span className="text-xs font-semibold text-gray-900">PAGE {page + 1}</span>
+            <button onClick={() => setPage(p => p + 1)} disabled={(page + 1) * pageSize >= totalCount} className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-all"><ChevronRight className="w-4 h-4 text-gray-600" /></button>
           </div>
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
       {(selectedIds.size > 0 || isSelectAllGlobal) && (
-        <div className="bg-white border-t px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="font-medium text-gray-900">
-                  {isSelectAllGlobal
-                    ? `${totalCount - excludedIds.size} contacts selected`
-                    : `${selectedIds.size} contacts selected`
-                  }
-                </p>
-                <p className="text-sm text-gray-500">
-                  {previouslyContactedCount} previously contacted
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setSelectedIds(new Set())
-                  setIsSelectAllGlobal(false)
-                  setExcludedIds(new Set())
-                }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Clear Selection
-              </button>
-              <button
-                onClick={handleContinue}
-                disabled={isLoading}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Continuing...
-                  </>
-                ) : (
-                  <>
-                    Continue to Design Email
-                    <Check className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+        <div className="bg-white border-t px-4 sm:px-6 py-4 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+          <div>
+            <p className="text-base font-bold text-gray-900">{selectedCount} RECIPIENTS SELECTED</p>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => { setSelectedIds(new Set()); setIsSelectAllGlobal(false); setExcludedIds(new Set()) }} className="px-6 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-900 border border-gray-100 rounded-lg transition-all">UNSELECT ALL</button>
+            <button onClick={handleContinue} disabled={isLoading} className="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-bold text-sm hover:bg-blue-700 shadow-md flex items-center gap-2 transition-all transform active:scale-95 disabled:grayscale">
+              {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : 'CONTINUE TO SEQUENCE'}
+              <Check className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
-      {/* Multiple Email Selection Modal (Two-Pane) */}
+
       {emailSelectionQueue.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-6">
-          <div className="bg-white rounded-xl shadow-2xl w-[900px] max-w-full h-[600px] max-h-full flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[600px] flex flex-col overflow-hidden transform animate-in zoom-in-95 duration-200">
+            <div className="px-8 py-6 border-b flex justify-between items-center bg-gray-50/50">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Resolve Email Addresses</h3>
-                <p className="text-sm text-gray-500">
-                  Select the correct email for {emailSelectionQueue.length} contact{emailSelectionQueue.length !== 1 ? 's' : ''}
-                </p>
+                <h3 className="font-bold text-xl text-gray-900 tracking-tight flex items-center gap-3">
+                  <Mail className="w-6 h-6 text-blue-600" />
+                  RESOLVE MULTIPLE EMAILS
+                </h3>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{emailSelectionQueue.length} Contacts require selection</p>
               </div>
               <button
                 onClick={closeResolutionModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+                className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-gray-100"
+              ><X className="w-6 h-6 text-gray-400" /></button>
             </div>
-
-            {/* Content Area */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Left Pane: Contact List */}
-              <div className="w-1/3 bg-gray-50 border-r border-gray-200 overflow-y-auto">
-                <div className="divide-y divide-gray-200">
-                  {emailSelectionQueue.map((contact) => {
-                    const isResolved = !!selectedEmails[contact.id]
-                    const isSkipped = skippedResolutionIds.has(contact.id)
-                    const isActive = activeResolutionContactId === contact.id
-
-                    return (
-                      <button
-                        key={contact.id}
-                        onClick={() => setActiveResolutionContactId(contact.id)}
-                        className={`w-full text-left px-4 py-4 hover:bg-white transition-colors flex items-start gap-3 ${isActive ? 'bg-white border-l-4 border-blue-600 shadow-sm' : 'border-l-4 border-transparent'
-                          }`}
-                      >
-                        <div className={`mt-0.5 rounded-full p-1 ${isResolved ? 'bg-green-100 text-green-600' :
-                          isSkipped ? 'bg-red-100 text-red-600' : 'bg-gray-200 text-gray-400'
-                          }`}>
-                          {isResolved && <Check className="w-3 h-3" />}
-                          {isSkipped && <X className="w-3 h-3" />}
-                          {!isResolved && !isSkipped && <div className="w-3 h-3" />}
-                        </div>
-                        <div className="min-w-0">
-                          <p className={`text-sm font-medium truncate ${isActive ? 'text-blue-700' : 'text-gray-900'}`}>
-                            {contact.name || 'Unknown'}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {isResolved ? selectedEmails[contact.id] : isSkipped ? 'Ignored' : 'Selection required'}
-                          </p>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
+              <div className="w-1/3 bg-gray-50/50 border-r overflow-y-auto overflow-x-hidden">
+                {emailSelectionQueue.map(c => (
+                  <button key={c.id} onClick={() => setActiveResolutionContactId(c.id)} className={`w-full text-left p-6 border-b border-gray-100 transition-all relative ${activeResolutionContactId === c.id ? 'bg-white shadow-sm' : 'hover:bg-white/50'}`}>
+                    {activeResolutionContactId === c.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-sm" />}
+                    <p className={`font-bold truncate ${activeResolutionContactId === c.id ? 'text-blue-600' : 'text-gray-900'}`}>{c.name}</p>
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mt-1">{selectedEmails[c.id] || 'WAITING FOR SELECTION'}</p>
+                  </button>
+                ))}
               </div>
-
-              {/* Right Pane: Email Options */}
-              <div className="w-2/3 bg-white overflow-y-auto p-6 lg:p-10">
-                {activeResolutionContactId ? (
-                  (() => {
-                    const contact = emailSelectionQueue.find(c => c.id === activeResolutionContactId)!
-                    const currentSelection = selectedEmails[contact.id]
-
-                    return (
-                      <div className="max-w-md mx-auto">
-                        <div className="text-center mb-8">
-                          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                            {contact.name?.[0]?.toUpperCase() || '?'}
-                          </div>
-                          <h4 className="text-xl font-medium text-gray-900 mb-1">{contact.name}</h4>
-                          {contact.company && (
-                            <p className="text-md text-gray-700 font-medium mb-3">{contact.company}</p>
-                          )}
-                          <p className="text-gray-500">
-                            Found multiple email addresses. Which one should act as the primary contact?
-                          </p>
+              <div className="flex-1 p-16 flex flex-col items-center justify-center bg-white">
+                {activeResolutionContactId ? (() => {
+                  const c = emailSelectionQueue.find(x => x.id === activeResolutionContactId)!
+                  return (
+                    <div className="w-full max-w-sm animate-in slide-in-from-right-4 duration-300">
+                      <div className="text-center mb-10">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 font-black text-2xl">
+                          {c.name?.[0]?.toUpperCase()}
                         </div>
-
-                        <div className="space-y-3">
-                          {getEmails(contact.email).map((email) => (
-                            <button
-                              key={email}
-                              onClick={() => handleEmailSelectionConfirm(contact.id, email)}
-                              className={`w-full relative flex items-center p-4 rounded-xl border-2 text-left transition-all ${currentSelection === email
-                                ? 'border-blue-600 bg-blue-50'
-                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                                }`}
-                            >
-                              <div className="flex-1">
-                                <span className={`block font-medium ${currentSelection === email ? 'text-blue-900' : 'text-gray-900'}`}>
-                                  {email}
-                                </span>
-                                {!isValidEmail(email) && <span className="text-red-500 text-xs">Invalid format</span>}
-                              </div>
-                              {currentSelection === email && (
-                                <div className="bg-blue-600 text-white p-1 rounded-full">
-                                  <Check className="w-4 h-4" />
-                                </div>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center">
-                          <button
-                            onClick={() => handleSkippedSelection(contact.id)}
-                            className="flex items-center gap-2 text-gray-500 hover:text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                            Remove from selection
-                          </button>
-                        </div>
+                        <h4 className="font-black text-2xl text-gray-900 tracking-tight">{c.name}</h4>
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-1">Select Primary Outreach Address</p>
                       </div>
-                    )
-                  })()
-                ) : (
-                  <div className="h-full flex items-center justify-center text-gray-400">
-                    <p>Select a contact to resolve</p>
-                  </div>
-                )}
+                      <div className="space-y-3">
+                        {getEmails(c.email).map(e => (
+                          <button key={e} onClick={() => handleEmailSelectionConfirm(c.id, e)} className={`w-full p-5 border border-gray-200 rounded-lg text-left transition-all flex items-center justify-between group ${selectedEmails[c.id] === e ? 'border-blue-600 bg-blue-50' : 'hover:border-blue-200 hover:bg-blue-50/30'}`}>
+                            <span className={`font-bold ${selectedEmails[c.id] === e ? 'text-blue-700' : 'text-gray-600'}`}>{e}</span>
+                            <Check className={`w-5 h-5 ${selectedEmails[c.id] === e ? 'text-blue-600 scale-110' : 'text-transparent group-hover:text-blue-200'} transition-all`} />
+                          </button>
+                        ))}
+                      </div>
+                      <button onClick={() => handleSkippedSelection(c.id)} className="mt-8 w-full text-center text-red-500 text-xs font-semibold uppercase tracking-widest hover:text-red-700 transition-colors">REMOVE FROM CAMPAIGN</button>
+                    </div>
+                  )
+                })() : <p className="text-gray-400 font-bold uppercase tracking-widest">Select a contact to resolve</p>}
               </div>
             </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
-              <div className="text-sm text-gray-500">
-                {Object.keys(selectedEmails).filter(id => emailSelectionQueue.find(c => c.id === id)).length} of {emailSelectionQueue.length} resolved
-              </div>
-              <button
-                onClick={closeResolutionModal}
-                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors shadow-sm"
-              >
-                Done
-              </button>
+            <div className="px-8 py-6 border-t flex justify-end bg-gray-50/50">
+              <button onClick={closeResolutionModal} className="bg-gray-900 text-white px-10 py-3 rounded-lg font-bold text-sm tracking-tight hover:bg-black transition-all">DONE RESOLVING</button>
             </div>
           </div>
         </div>
