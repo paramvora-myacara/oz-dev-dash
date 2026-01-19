@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
+import { ContactFilterBuilder } from './contacts/FilterBuilder';
 
 // Define the filter interface
 export interface ContactFilters {
@@ -9,8 +10,10 @@ export interface ContactFilters {
     contactType?: string | string[]; // 'developer', 'investor', 'fund', or combinations like 'developer,investor,fund', or array
     campaignHistory?: 'any' | 'none' | string | string[]; // 'none' = never contacted, 'any' = contacted at least once, string = single campaign UUID, string[] = multiple campaign UUIDs
     emailStatus?: string | string[];
-    leadStatus?: 'warm' | 'cold'; // Filter by warm/cold lead status
-    tags?: string | string[]; // Filter by tags in Details JSONB column (e.g., 'family-office', 'multi-family-office')
+    leadStatus?: 'warm' | 'cold' | 'all';
+    tags?: string | string[];
+    websiteEvents?: { eventTypes: string[], operator?: 'any' | 'all' };
+    campaignResponse?: { campaignId: string, response: 'replied' | 'no_reply' | 'bounced' | 'completed_sequence' };
 }
 
 export interface Contact {
@@ -22,6 +25,7 @@ export interface Contact {
     location: string | null;
     source: string | null;
     contact_type: string;
+    contact_types?: string[];
     details: any;
     is_valid_email?: boolean;
     globally_unsubscribed?: boolean;
@@ -36,66 +40,27 @@ export interface Contact {
     }[];
 }
 
-// State Mapping for Smart Search
-const STATE_NAME_TO_CODE: Record<string, string> = {
-    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-    'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
-    'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
-    'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
-    'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-    'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
-    'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
-    'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
-    'district of columbia': 'DC'
-};
-
-const CODE_TO_STATE_NAME = Object.entries(STATE_NAME_TO_CODE).reduce((acc, [name, code]) => {
-    acc[code] = name;
-    return acc;
-}, {} as Record<string, string>);
-
-const getExpandedSearchTerms = (input: string): string[] => {
-    const terms = [input];
-    const lower = input.toLowerCase().trim();
-
-    // If input is full state name, add code
-    if (STATE_NAME_TO_CODE[lower]) {
-        terms.push(STATE_NAME_TO_CODE[lower]);
-    }
-
-    // If input is code, add full state name
-    if (CODE_TO_STATE_NAME[input.toUpperCase()]) {
-        terms.push(CODE_TO_STATE_NAME[input.toUpperCase()]);
-    }
-
-    return terms;
-};
-
-// Helper function to apply contact type filtering to Supabase queries
-function applyContactTypeFilter(query: any, contactType?: string | string[]) {
-    if (!contactType) return query;
-
-    if (Array.isArray(contactType)) {
-        return query.in('contact_type', contactType);
-    } else {
-        // Handle comma-separated values like 'developer,investor'
-        if (contactType.includes(',')) {
-            // If filtering for 'developer,investor', match exactly
-            return query.eq('contact_type', contactType);
-        } else {
-            // If filtering for 'developer', match records that contain 'developer'
-            return query.ilike('contact_type', `%${contactType}%`);
-        }
-    }
+/**
+ * Shared logic to apply filters using the FilterBuilder.
+ */
+function applyFilters(builder: ContactFilterBuilder, filters: ContactFilters) {
+    return builder
+        .withTextSearch(filters.search)
+        .withLocation(filters.location)
+        .withRole(filters.role)
+        .withSource(filters.source)
+        .withContactType(filters.contactType)
+        .withLeadStatus(filters.leadStatus)
+        .withEmailStatus(filters.emailStatus)
+        .withTags(filters.tags)
+        .withWebsiteEvent(filters.websiteEvents?.eventTypes, { operator: filters.websiteEvents?.operator })
+        .withCampaignResponse(filters.campaignResponse?.campaignId!, filters.campaignResponse?.response!);
 }
 
 // Helper function for "never contacted" filter
 async function getNeverContactedContacts(filters: ContactFilters, page: number, pageSize: number) {
     const supabase = createClient();
 
-    // Use left join and filter where joined table id is null
     let query = supabase
         .from('contacts')
         .select(`
@@ -111,70 +76,12 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
             campaigns (name)
           )
         `, { count: 'exact' })
-        .filter('history', 'is', null)
-        // Exclude globally suppressed contacts
-        .eq('globally_unsubscribed', false)
-        .eq('globally_bounced', false);
+        .filter('history', 'is', null);
 
-    // Apply other filters
-    if (filters.search) {
-        const searchTerms = getExpandedSearchTerms(filters.search);
-        const conditions = [];
-        conditions.push(`search_vector.fts.${filters.search}`);
-        conditions.push(`name.ilike.%${filters.search}%`);
-        conditions.push(`company.ilike.%${filters.search}%`);
-        conditions.push(`email.ilike.%${filters.search}%`);
-        searchTerms.forEach(term => {
-            conditions.push(`location.ilike.%${term}%`);
-        });
-        query = query.or(conditions.join(','));
-    }
+    const builder = new ContactFilterBuilder(query).excludeSuppressed();
+    applyFilters(builder, filters);
 
-    if (filters.role) {
-        query = query.ilike('role', `%${filters.role}%`);
-    }
-    if (filters.location) {
-        const locTerms = getExpandedSearchTerms(filters.location);
-        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
-        query = query.or(locConditions.join(','));
-    }
-    if (filters.source) {
-        query = query.eq('source', filters.source);
-    }
-    query = applyContactTypeFilter(query, filters.contactType);
-
-    if (filters.emailStatus) {
-        if (Array.isArray(filters.emailStatus)) {
-            query = query.in('details->>email_status', filters.emailStatus);
-        } else {
-            query = query.eq('details->>email_status', filters.emailStatus);
-        }
-    }
-
-    // Apply lead_status filter (warm/cold)
-    if (filters.leadStatus) {
-        if (filters.leadStatus === 'warm') {
-            // Show only contacts explicitly marked as warm
-            query = query.eq('details->>lead_status', 'warm');
-        } else if (filters.leadStatus === 'cold') {
-            // Show contacts marked as cold OR without lead_status field (defaults to cold)
-            query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
-        }
-    }
-
-    // Apply tags filter
-    if (filters.tags) {
-        if (Array.isArray(filters.tags)) {
-            // Multiple tags: use OR condition
-            const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-            query = query.or(tagConditions.join(','));
-        } else {
-            // Single tag
-            query = query.eq('details->>Tags', filters.tags);
-        }
-    }
-
-    const { data, error, count } = await query
+    const { data, error, count } = await builder.build().query
         .range(page * pageSize, (page + 1) * pageSize - 1)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -190,233 +97,78 @@ async function getNeverContactedContacts(filters: ContactFilters, page: number, 
 export async function searchContactsForCampaign(filters: ContactFilters, page = 0, pageSize = 50) {
     const supabase = createClient();
 
-    let query = supabase
-        .from('contacts')
-        .select(`
-      *,
-      globally_unsubscribed,
-      globally_bounced,
-      suppression_reason,
-      suppression_date,
-      history:campaign_recipients!left (
-        campaign_id,
-        status,
-        sent_at,
-        campaigns (name)
-      )
-    `, { count: 'exact' })
-        // Exclude globally suppressed contacts for campaign selection
-        .eq('globally_unsubscribed', false)
-        .eq('globally_bounced', false);
+    // 1. Determine the base query structure based on history filter
+    let baseQuery;
 
-    // Apply email_status filter
-    const statusFilter = filters.emailStatus || ['Valid', 'Catch-all'];
-    if (Array.isArray(statusFilter)) {
-        query = query.in('details->>email_status', statusFilter);
+    if (filters.campaignHistory === 'none') {
+        return await getNeverContactedContacts(filters, page, pageSize);
+    } else if (filters.campaignHistory === 'any') {
+        baseQuery = supabase
+            .from('contacts')
+            .select(`
+                *,
+                globally_unsubscribed,
+                globally_bounced,
+                suppression_reason,
+                suppression_date,
+                history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                )
+            `, { count: 'exact' });
+    } else if (filters.campaignHistory && (typeof filters.campaignHistory === 'string' || Array.isArray(filters.campaignHistory))) {
+        baseQuery = supabase
+            .from('contacts')
+            .select(`
+                *,
+                globally_unsubscribed,
+                globally_bounced,
+                suppression_reason,
+                suppression_date,
+                history:campaign_recipients!inner (
+                    campaign_id,
+                    status,
+                    sent_at,
+                    campaigns (name)
+                )
+            `, { count: 'exact' });
+
+        if (Array.isArray(filters.campaignHistory)) {
+            baseQuery = baseQuery.in('history.campaign_id', filters.campaignHistory);
+        } else {
+            baseQuery = baseQuery.eq('history.campaign_id', filters.campaignHistory);
+        }
     } else {
-        query = query.eq('details->>email_status', statusFilter);
-    }
-
-    // Apply lead_status filter (warm/cold)
-    if (filters.leadStatus) {
-        if (filters.leadStatus === 'warm') {
-            // Show only contacts explicitly marked as warm
-            query = query.eq('details->>lead_status', 'warm');
-        } else if (filters.leadStatus === 'cold') {
-            // Show contacts marked as cold OR without lead_status field (defaults to cold)
-            query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
-        }
-    }
-
-    // Apply tags filter
-    if (filters.tags) {
-        if (Array.isArray(filters.tags)) {
-            // Multiple tags: use OR condition
-            const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-            query = query.or(tagConditions.join(','));
-        } else {
-            // Single tag
-            query = query.eq('details->>Tags', filters.tags);
-        }
-    }
-
-    // 1. Text Search (Hybrid: FTS OR ILIKE)
-    if (filters.search) {
-        const searchTerms = getExpandedSearchTerms(filters.search);
-
-        // Build OR condition:
-        // 1. Match Search Vector (FTS) with original term
-        // 2. ILIKE match location with original term OR expanded term (State code/name)
-        // 3. ILIKE match Name/Company/Email with original term (for substring support)
-
-        const conditions = [];
-
-        // FTS (good for general keyword matching)
-        conditions.push(`search_vector.fts.${filters.search}`);
-
-        // Substring matches standard fields
-        conditions.push(`name.ilike.%${filters.search}%`);
-        conditions.push(`company.ilike.%${filters.search}%`);
-        conditions.push(`email.ilike.%${filters.search}%`);
-
-        // Metadata JSONB search (basic text cast)
-        // conditions.push(`details::text.ilike.%${filters.search}%`); // Optional, might be slow without index
-
-        // Expanded Location Matching (The fix for CA vs California)
-        searchTerms.forEach(term => {
-            conditions.push(`location.ilike.%${term}%`);
-        });
-
-        query = query.or(conditions.join(','));
-    }
-
-    // 2. Precise Column Filters
-    if (filters.role) {
-        query = query.ilike('role', `%${filters.role}%`);
-    }
-    if (filters.location) {
-        // Apply expansion to location filter too
-        const locTerms = getExpandedSearchTerms(filters.location);
-        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
-        query = query.or(locConditions.join(','));
-    }
-    if (filters.source) {
-        query = query.eq('source', filters.source);
-    }
-    query = applyContactTypeFilter(query, filters.contactType);
-
-    // 3. History Filter
-    if (filters.campaignHistory) {
-        if (filters.campaignHistory === 'none') {
-            // "Show me people I have NEVER contacted" - use separate query for this case
-            return await getNeverContactedContacts(filters, page, pageSize);
-        } else if (filters.campaignHistory === 'any') {
-            // "Show me people I HAVE contacted" - use inner join
-            query = supabase
-                .from('contacts')
-                .select(`
-                  *,
-                  globally_unsubscribed,
-                  globally_bounced,
-                  suppression_reason,
-                  suppression_date,
-                  history:campaign_recipients!inner (
+        baseQuery = supabase
+            .from('contacts')
+            .select(`
+                *,
+                globally_unsubscribed,
+                globally_bounced,
+                suppression_reason,
+                suppression_date,
+                history:campaign_recipients!left (
                     campaign_id,
                     status,
                     sent_at,
                     campaigns (name)
-                  )
-                `, { count: 'exact' })
-                // Exclude globally suppressed contacts
-                .eq('globally_unsubscribed', false)
-                .eq('globally_bounced', false);
-
-            // Apply lead_status filter to the rebuilt query
-            if (filters.leadStatus) {
-                if (filters.leadStatus === 'warm') {
-                    query = query.eq('details->>lead_status', 'warm');
-                } else if (filters.leadStatus === 'cold') {
-                    query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
-                }
-            }
-
-            // Apply tags filter to the rebuilt query
-            if (filters.tags) {
-                if (Array.isArray(filters.tags)) {
-                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-                    query = query.or(tagConditions.join(','));
-                } else {
-                    query = query.eq('details->>Tags', filters.tags);
-                }
-            }
-        } else if (Array.isArray(filters.campaignHistory)) {
-            // "Show me people from selected campaigns" - use inner join with in filter
-            query = supabase
-                .from('contacts')
-                .select(`
-                  *,
-                  globally_unsubscribed,
-                  globally_bounced,
-                  suppression_reason,
-                  suppression_date,
-                  history:campaign_recipients!inner (
-                    campaign_id,
-                    status,
-                    sent_at,
-                    campaigns (name)
-                  )
-                `, { count: 'exact' })
-                .in('history.campaign_id', filters.campaignHistory)
-                // Exclude globally suppressed contacts
-                .eq('globally_unsubscribed', false)
-                .eq('globally_bounced', false);
-
-            // Apply lead_status filter to the rebuilt query
-            if (filters.leadStatus) {
-                if (filters.leadStatus === 'warm') {
-                    query = query.eq('details->>lead_status', 'warm');
-                } else if (filters.leadStatus === 'cold') {
-                    query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
-                }
-            }
-
-            // Apply tags filter to the rebuilt query
-            if (filters.tags) {
-                if (Array.isArray(filters.tags)) {
-                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-                    query = query.or(tagConditions.join(','));
-                } else {
-                    query = query.eq('details->>Tags', filters.tags);
-                }
-            }
-        } else {
-            // "Show me people from Campaign X" - use inner join with filter (single campaign)
-            query = supabase
-                .from('contacts')
-                .select(`
-                  *,
-                  globally_unsubscribed,
-                  globally_bounced,
-                  suppression_reason,
-                  suppression_date,
-                  history:campaign_recipients!inner (
-                    campaign_id,
-                    status,
-                    sent_at,
-                    campaigns (name)
-                  )
-                `, { count: 'exact' })
-                .eq('history.campaign_id', filters.campaignHistory)
-                // Exclude globally suppressed contacts
-                .eq('globally_unsubscribed', false)
-                .eq('globally_bounced', false);
-
-            // Apply lead_status filter to the rebuilt query
-            if (filters.leadStatus) {
-                if (filters.leadStatus === 'warm') {
-                    query = query.eq('details->>lead_status', 'warm');
-                } else if (filters.leadStatus === 'cold') {
-                    query = query.or('details->>lead_status.eq.cold,details->>lead_status.is.null');
-                }
-            }
-
-            // Apply tags filter to the rebuilt query
-            if (filters.tags) {
-                if (Array.isArray(filters.tags)) {
-                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-                    query = query.or(tagConditions.join(','));
-                } else {
-                    query = query.eq('details->>Tags', filters.tags);
-                }
-            }
-        }
+                )
+            `, { count: 'exact' });
     }
 
-    // 4. Pagination
+    // 2. Apply filters using the common builder
+    const builder = new ContactFilterBuilder(baseQuery).excludeSuppressed();
+
+    // Default email status for campaigns if not provided
+    const emailStatus = filters.emailStatus || ['Valid', 'Catch-all'];
+    applyFilters(builder, { ...filters, emailStatus });
+
     const from = page * pageSize;
     const to = from + pageSize - 1;
 
-    const { data, error, count } = await query
+    const { data, error, count } = await builder.build().query
         .range(from, to)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -432,183 +184,73 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
 export async function searchContacts(filters: ContactFilters, page = 0, pageSize = 50) {
     const supabase = createClient();
 
-    let query = supabase
-        .from('contacts')
-        .select(`
-      *,
-      globally_unsubscribed,
-      globally_bounced,
-      suppression_reason,
-      suppression_date,
-      history:campaign_recipients!left (
-        campaign_id,
-        status,
-        sent_at,
-        campaigns (name)
-      )
-    `, { count: 'exact' });
+    let baseQuery;
 
-    // 1. Text Search (Hybrid: FTS OR ILIKE)
-    if (filters.search) {
-        const searchTerms = getExpandedSearchTerms(filters.search);
-
-        // Build OR condition:
-        // 1. Match Search Vector (FTS) with original term
-        // 2. ILIKE match location with original term OR expanded term (State code/name)
-        // 3. ILIKE match Name/Company/Email with original term (for substring support)
-
-        const conditions = [];
-
-        // FTS (good for general keyword matching)
-        conditions.push(`search_vector.fts.${filters.search}`);
-
-        // Substring matches standard fields
-        conditions.push(`name.ilike.%${filters.search}%`);
-        conditions.push(`company.ilike.%${filters.search}%`);
-        conditions.push(`email.ilike.%${filters.search}%`);
-
-        // Metadata JSONB search (basic text cast)
-        // conditions.push(`details::text.ilike.%${filters.search}%`); // Optional, might be slow without index
-
-        // Expanded Location Matching (The fix for CA vs California)
-        searchTerms.forEach(term => {
-            conditions.push(`location.ilike.%${term}%`);
-        });
-
-        query = query.or(conditions.join(','));
-    }
-
-    // 2. Precise Column Filters
-    if (filters.role) {
-        query = query.ilike('role', `%${filters.role}%`);
-    }
-    if (filters.location) {
-        // Apply expansion to location filter too
-        const locTerms = getExpandedSearchTerms(filters.location);
-        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
-        query = query.or(locConditions.join(','));
-    }
-    if (filters.source) {
-        query = query.eq('source', filters.source);
-    }
-    query = applyContactTypeFilter(query, filters.contactType);
-
-    if (filters.emailStatus) {
-        if (Array.isArray(filters.emailStatus)) {
-            query = query.in('details->>email_status', filters.emailStatus);
-        } else {
-            query = query.eq('details->>email_status', filters.emailStatus);
-        }
-    }
-
-    // Apply tags filter
-    if (filters.tags) {
-        if (Array.isArray(filters.tags)) {
-            // Multiple tags: use OR condition
-            const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-            query = query.or(tagConditions.join(','));
-        } else {
-            // Single tag
-            query = query.eq('details->>Tags', filters.tags);
-        }
-    }
-
-    // 3. History Filter
-    if (filters.campaignHistory) {
-        if (filters.campaignHistory === 'none') {
-            // "Show me people I have NEVER contacted" - use separate query for this case
-            return await getNeverContactedContacts(filters, page, pageSize);
-        } else if (filters.campaignHistory === 'any') {
-            // "Show me people I HAVE contacted" - use inner join
-            query = supabase
-                .from('contacts')
-                .select(`
-                  *,
-                  globally_unsubscribed,
-                  globally_bounced,
-                  suppression_reason,
-                  suppression_date,
-                  history:campaign_recipients!inner (
+    if (filters.campaignHistory === 'none') {
+        return await getNeverContactedContacts(filters, page, pageSize);
+    } else if (filters.campaignHistory === 'any') {
+        baseQuery = supabase
+            .from('contacts')
+            .select(`
+                *,
+                globally_unsubscribed,
+                globally_bounced,
+                suppression_reason,
+                suppression_date,
+                history:campaign_recipients!inner (
                     campaign_id,
                     status,
                     sent_at,
                     campaigns (name)
-                  )
-                `, { count: 'exact' });
-
-            // Apply tags filter to the rebuilt query
-            if (filters.tags) {
-                if (Array.isArray(filters.tags)) {
-                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-                    query = query.or(tagConditions.join(','));
-                } else {
-                    query = query.eq('details->>Tags', filters.tags);
-                }
-            }
-        } else if (Array.isArray(filters.campaignHistory)) {
-            // "Show me people from selected campaigns" - use inner join with in filter
-            query = supabase
-                .from('contacts')
-                .select(`
-                  *,
-                  globally_unsubscribed,
-                  globally_bounced,
-                  suppression_reason,
-                  suppression_date,
-                  history:campaign_recipients!inner (
+                )
+            `, { count: 'exact' });
+    } else if (filters.campaignHistory && (typeof filters.campaignHistory === 'string' || Array.isArray(filters.campaignHistory))) {
+        baseQuery = supabase
+            .from('contacts')
+            .select(`
+                *,
+                globally_unsubscribed,
+                globally_bounced,
+                suppression_reason,
+                suppression_date,
+                history:campaign_recipients!inner (
                     campaign_id,
                     status,
                     sent_at,
                     campaigns (name)
-                  )
-                `, { count: 'exact' })
-                .in('history.campaign_id', filters.campaignHistory);
+                )
+            `, { count: 'exact' });
 
-            // Apply tags filter to the rebuilt query
-            if (filters.tags) {
-                if (Array.isArray(filters.tags)) {
-                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-                    query = query.or(tagConditions.join(','));
-                } else {
-                    query = query.eq('details->>Tags', filters.tags);
-                }
-            }
+        if (Array.isArray(filters.campaignHistory)) {
+            baseQuery = baseQuery.in('history.campaign_id', filters.campaignHistory);
         } else {
-            // "Show me people from Campaign X" - use inner join with filter (single campaign)
-            query = supabase
-                .from('contacts')
-                .select(`
-                  *,
-                  globally_unsubscribed,
-                  globally_bounced,
-                  suppression_reason,
-                  suppression_date,
-                  history:campaign_recipients!inner (
+            baseQuery = baseQuery.eq('history.campaign_id', filters.campaignHistory);
+        }
+    } else {
+        baseQuery = supabase
+            .from('contacts')
+            .select(`
+                *,
+                globally_unsubscribed,
+                globally_bounced,
+                suppression_reason,
+                suppression_date,
+                history:campaign_recipients!left (
                     campaign_id,
                     status,
                     sent_at,
                     campaigns (name)
-                  )
-                `, { count: 'exact' })
-                .eq('history.campaign_id', filters.campaignHistory);
-
-            // Apply tags filter to the rebuilt query
-            if (filters.tags) {
-                if (Array.isArray(filters.tags)) {
-                    const tagConditions = filters.tags.map(tag => `details->>Tags.eq.${tag}`);
-                    query = query.or(tagConditions.join(','));
-                } else {
-                    query = query.eq('details->>Tags', filters.tags);
-                }
-            }
-        }
+                )
+            `, { count: 'exact' });
     }
 
-    // 4. Pagination
+    const builder = new ContactFilterBuilder(baseQuery);
+    applyFilters(builder, filters);
+
     const from = page * pageSize;
     const to = from + pageSize - 1;
 
-    const { data, error, count } = await query
+    const { data, error, count } = await builder.build().query
         .range(from, to)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -624,79 +266,42 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
 export async function getAllContactIds(filters: ContactFilters) {
     const supabase = createClient();
 
-    let query = supabase
-        .from('contacts')
-        .select('id, campaign_recipients!left(campaign_id)');
+    let baseQuery;
 
-    // 1. Text Search
-    if (filters.search) {
-        const searchTerms = getExpandedSearchTerms(filters.search);
-        const conditions = [];
-        conditions.push(`search_vector.fts.${filters.search}`);
-        conditions.push(`name.ilike.%${filters.search}%`);
-        conditions.push(`company.ilike.%${filters.search}%`);
-        conditions.push(`email.ilike.%${filters.search}%`);
-        searchTerms.forEach(term => {
-            conditions.push(`location.ilike.%${term}%`);
-        });
-        query = query.or(conditions.join(','));
-    }
+    if (filters.campaignHistory === 'none') {
+        const { data: recipients } = await supabase
+            .from('campaign_recipients')
+            .select('contact_id');
+        const contactedContactIds = (recipients || []).map(r => r.contact_id);
 
-    // 2. Precise Column Filters
-    if (filters.role) query = query.ilike('role', `%${filters.role}%`);
-    if (filters.location) {
-        const locTerms = getExpandedSearchTerms(filters.location);
-        const locConditions = locTerms.map(t => `location.ilike.%${t}%`);
-        query = query.or(locConditions.join(','));
-    }
-    if (filters.source) query = query.eq('source', filters.source);
-    query = applyContactTypeFilter(query, filters.contactType);
-
-    if (filters.emailStatus) {
-        if (Array.isArray(filters.emailStatus)) {
-            query = query.in('details->>email_status', filters.emailStatus);
-        } else {
-            query = query.eq('details->>email_status', filters.emailStatus);
+        baseQuery = supabase.from('contacts').select('id');
+        if (contactedContactIds.length > 0) {
+            baseQuery = baseQuery.not('id', 'in', `(${contactedContactIds.join(',')})`);
         }
-    }
-
-    // 3. History Filter
-    if (filters.campaignHistory) {
-        if (filters.campaignHistory === 'none') {
-            // "Show me people I have NEVER contacted" - exclude contacts with any campaign history
-            const { data: recipients } = await supabase
-                .from('campaign_recipients')
-                .select('contact_id');
-            const contactedContactIds = (recipients || []).map(r => r.contact_id);
-            if (contactedContactIds.length > 0) {
-                query = query.not('id', 'in', `(${contactedContactIds.join(',')})`);
-            }
-        } else if (filters.campaignHistory === 'any') {
-            // "Show me people I HAVE contacted" - use inner join
-            query = supabase
-                .from('contacts')
-                .select('id, campaign_recipients!inner(campaign_id)');
-        } else if (Array.isArray(filters.campaignHistory)) {
-            // "Show me people from selected campaigns" - use inner join with in filter
-            query = supabase
-                .from('contacts')
-                .select('id, campaign_recipients!inner(campaign_id)')
-                .in('campaign_recipients.campaign_id', filters.campaignHistory);
+    } else if (filters.campaignHistory === 'any') {
+        baseQuery = supabase.from('contacts').select('id, campaign_recipients!inner(campaign_id)');
+    } else if (filters.campaignHistory && (typeof filters.campaignHistory === 'string' || Array.isArray(filters.campaignHistory))) {
+        baseQuery = supabase.from('contacts').select('id, campaign_recipients!inner(campaign_id)');
+        if (Array.isArray(filters.campaignHistory)) {
+            baseQuery = baseQuery.in('campaign_recipients.campaign_id', filters.campaignHistory);
         } else {
-            // "Show me people from Campaign X" - use inner join with filter
-            query = supabase
-                .from('contacts')
-                .select('id, campaign_recipients!inner(campaign_id)')
-                .eq('campaign_recipients.campaign_id', filters.campaignHistory);
+            baseQuery = baseQuery.eq('campaign_recipients.campaign_id', filters.campaignHistory);
         }
+    } else {
+        baseQuery = supabase.from('contacts').select('id');
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false }).order('id', { ascending: false });
+    const builder = new ContactFilterBuilder(baseQuery);
+    applyFilters(builder, filters);
+
+    const { data, error } = await builder.build().query
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
 
     if (error) {
         console.error('Error fetching all contact IDs:', error);
         throw error;
     }
 
-    return data.map(c => c.id);
+    return data.map((c: any) => c.id);
 }
