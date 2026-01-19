@@ -623,6 +623,20 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
         <div className="bg-white border-t px-4 sm:px-6 py-3 flex items-center justify-between">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Results {Math.min(page * pageSize + 1, totalCount)} – {Math.min((page + 1) * pageSize, totalCount)} / {totalCount}</p>
           <div className="flex items-center gap-3">
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setPage(0)
+              }}
+              className="px-3 py-1 text-xs border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
+              <option value={250}>250 per page</option>
+              <option value={500}>500 per page</option>
+              <option value={1000}>1000 per page</option>
+            </select>
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-all"><ChevronRight className="rotate-180 w-4 h-4 text-gray-600" /></button>
             <span className="text-xs font-semibold text-gray-900">PAGE {page + 1}</span>
             <button onClick={() => setPage(p => p + 1)} disabled={(page + 1) * pageSize >= totalCount} className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-all"><ChevronRight className="w-4 h-4 text-gray-600" /></button>

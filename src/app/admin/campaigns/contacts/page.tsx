@@ -331,7 +331,7 @@ export default function ContactsPage() {
               </div>
 
               <div className="w-16 flex justify-end">
-                <div className="p-3 rounded-2xl bg-gray-50 text-gray-300 group-hover:bg-blue-600 group-hover:text-white transition-all transform group-hover:rotate-12 group-hover:scale-110 shadow-sm">
+                <div className="p-3 rounded-2xl bg-gray-50 text-gray-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
                   <ChevronRight className="w-6 h-6" />
                 </div>
               </div>
@@ -348,7 +348,23 @@ export default function ContactsPage() {
       </div>
 
       <div className="bg-white border-t px-8 py-5 flex items-center justify-between z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-        <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">Page {page + 1} – Showing {pageSize} records</p>
+        <div className="flex items-center gap-4">
+          <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">Page {page + 1} – Showing {pageSize} records</p>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value))
+              setPage(0)
+            }}
+            className="px-3 py-1 text-xs border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+          >
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={250}>250</option>
+            <option value={500}>500</option>
+            <option value={1000}>1000</option>
+          </select>
+        </div>
         <div className="flex gap-4">
           <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="p-3 border border-gray-100 rounded-lg hover:bg-gray-50 disabled:opacity-20 transition-all hover:border-gray-300 shadow-sm active:scale-95"><ChevronLeft className="w-5 h-5 text-gray-600" /></button>
           <button onClick={() => setPage(p => p + 1)} disabled={(page + 1) * pageSize >= totalCount} className="px-6 py-3 border border-blue-100 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-20 transition-all font-bold text-sm tracking-tight flex items-center gap-2 shadow-sm active:scale-95 shadow-blue-100">NEXT PAGE <ChevronRight className="w-4 h-4" /></button>
