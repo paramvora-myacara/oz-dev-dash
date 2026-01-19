@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { verifyAdmin } from '@/lib/admin/auth';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function GET(
     request: NextRequest,
@@ -7,13 +8,14 @@ export async function GET(
 ) {
     try {
         const { id: contactId } = await params;
-        const supabase = await createClient();
 
-        // 1. Verify session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        // 1. Verify admin authentication
+        const adminUser = await verifyAdmin();
+        if (!adminUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const supabase = createAdminClient();
 
         // 2. Fetch Contact Info
         const { data: contact, error: contactError } = await supabase
