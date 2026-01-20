@@ -18,6 +18,8 @@ import ReactFlow, {
   useReactFlow,
   Panel,
   OnConnectStartParams,
+  OnNodesChange,
+  OnEdgesChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import type { CampaignStep } from '@/types/email-editor'
@@ -25,6 +27,7 @@ import { nodeTypes } from './node-editor/CustomNodes'
 import { edgeTypes } from './node-editor/CustomEdges'
 import NodePalette from './node-editor/NodePalette'
 import FloatingConnectionMenu from './node-editor/FloatingConnectionMenu'
+import { useFlowEditor } from './FlowEditorContext'
 
 interface SequenceFlowPanelProps {
   steps: CampaignStep[]
@@ -32,39 +35,28 @@ interface SequenceFlowPanelProps {
   onStepSelect: (index: number) => void
   onAddStep: () => void
   onNodeSelect?: (node: Node | null) => void
-  campaignType: 'batch' | 'always_on' // Added prop
+  campaignType: 'batch' | 'always_on'
+  nodes: Node[]
+  edges: Edge[]
+  onNodesChange: OnNodesChange
+  onEdgesChange: OnEdgesChange
+  setNodes: (nodes: Node[] | ((nds: Node[]) => Node[])) => void
+  setEdges: (edges: Edge[] | ((eds: Edge[]) => Edge[])) => void
 }
-
-const initialNodesBatch: Node[] = [
-  {
-    id: 'email-1',
-    type: 'action',
-    position: { x: 250, y: 100 },
-    data: { label: 'Initial Blast' },
-  },
-];
-
-const initialNodesAlwaysOn: Node[] = [
-  {
-    id: 'event-1',
-    type: 'event', // Changed from trigger
-    position: { x: 250, y: 50 },
-    data: { label: 'User Signup', eventType: 'page_view' },
-  },
-];
 
 function SequenceFlow({
   onNodeSelect,
   campaignType,
-}: { onNodeSelect?: (node: Node | null) => void, campaignType: 'batch' | 'always_on' }) {
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  setNodes,
+  setEdges,
+}: SequenceFlowPanelProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-
-  // Initialize nodes based on campaign type
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    campaignType === 'always_on' ? initialNodesAlwaysOn : initialNodesBatch
-  );
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { project } = useReactFlow();
+  const { setSelectedNode, setSelectedEdge } = useFlowEditor();
 
   // Floating Menu State
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
@@ -82,7 +74,15 @@ function SequenceFlow({
         }
       }
 
-      setEdges((eds) => addEdge({ ...params, type: 'delay', data: { delay: '0m' } }, eds));
+      // Check if it's a data connection
+      const isDataConnection =
+        params.sourceHandle?.includes('data') ||
+        params.targetHandle?.includes('data');
+
+      const edgeType = isDataConnection ? 'smoothstep' : 'delay';
+      const edgeData = isDataConnection ? {} : { delay: '0m', delayData: { days: 0, hours: 0, minutes: 0, seconds: 0 } };
+
+      setEdges((eds) => addEdge({ ...params, type: edgeType, data: edgeData }, eds));
     },
     [setEdges, campaignType, nodes]
   );
@@ -178,18 +178,34 @@ function SequenceFlow({
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    // Update context
+    setSelectedNode(node);
+
+    // Maintain prop compatibility
     if (onNodeSelect) onNodeSelect(node);
     setMenuPosition(null);
-  }, [onNodeSelect]);
+  }, [onNodeSelect, setSelectedNode]);
+
+  const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
+    // Update context
+    setSelectedEdge(edge);
+    setMenuPosition(null);
+  }, [setSelectedEdge]);
 
   const onPaneClick = useCallback(() => {
+    // Update context
+    setSelectedNode(null);
+    setSelectedEdge(null);
+
+    // Maintain prop compatibility
     if (onNodeSelect) onNodeSelect(null);
     setMenuPosition(null);
-  }, [onNodeSelect]);
+  }, [onNodeSelect, setSelectedNode, setSelectedEdge]);
 
   const onNodesDelete = useCallback((deleted: Node[]) => {
+    setSelectedNode(null);
     if (onNodeSelect) onNodeSelect(null);
-  }, [onNodeSelect]);
+  }, [onNodeSelect, setSelectedNode]);
 
   return (
     <div className="h-full flex flex-col bg-gray-50 relative">
@@ -203,12 +219,33 @@ function SequenceFlow({
           onConnect={onConnect}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
+          isValidConnection={(connection) => {
+            // Strict 1:1 Connection Enforcement
+
+            // 1. Check if Target Handle is already occupied
+            // (Standard for strict sequential flow: an input slot should only take one wire)
+            const targetOccupied = edges.some(
+              e => e.target === connection.target && e.targetHandle === connection.targetHandle
+            );
+            if (targetOccupied) return false;
+
+            // 2. Check if Source Handle is already occupied
+            // (User requested: "each output of the switch node can only be connected to one node")
+            // This generally applies to control flow to keep it strict logic.
+            const sourceOccupied = edges.some(
+              e => e.source === connection.source && e.sourceHandle === connection.sourceHandle
+            );
+            if (sourceOccupied) return false;
+
+            return true;
+          }}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes as EdgeTypes}
           onInit={(_instance) => console.log('flow loaded')}
           onDrop={onDrop}
           onDragOver={onDragOver}
           onNodeClick={onNodeClick}
+          onEdgeClick={onEdgeClick}
           onPaneClick={onPaneClick}
           onNodesDelete={onNodesDelete}
           deleteKeyCode={['Backspace', 'Delete']}
@@ -231,7 +268,7 @@ function SequenceFlow({
 export default function SequenceFlowPanel(props: SequenceFlowPanelProps) {
   return (
     <ReactFlowProvider>
-      <SequenceFlow {...props} campaignType={props.campaignType} />
+      <SequenceFlow {...props} />
     </ReactFlowProvider>
   );
 }

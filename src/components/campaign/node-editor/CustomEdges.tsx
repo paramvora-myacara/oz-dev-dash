@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
-import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge } from 'reactflow';
+import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge, useReactFlow } from 'reactflow';
 import { Clock } from 'lucide-react';
+import { useFlowEditor } from '../FlowEditorContext';
 
 const DelayEdge: FC<EdgeProps> = ({
   id,
@@ -13,7 +14,10 @@ const DelayEdge: FC<EdgeProps> = ({
   style = {},
   markerEnd,
   data,
+  selected,
 }) => {
+  const { selectEdge } = useFlowEditor();
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -25,13 +29,12 @@ const DelayEdge: FC<EdgeProps> = ({
 
   const onEdgeClick = (evt: React.MouseEvent) => {
     evt.stopPropagation();
-    // In a real app, this would open a delay config
-    alert(`Configure Delay for edge ${id}\nCurrent: ${data?.delay || 'None'}`);
+    selectEdge(id);
   };
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+      <BaseEdge path={edgePath} markerEnd={markerEnd} style={{ ...style, strokeWidth: selected ? 2 : 1, stroke: selected ? '#2563eb' : (style.stroke || '#b1b1b7') }} />
       <EdgeLabelRenderer>
         <div
           style={{
@@ -39,15 +42,19 @@ const DelayEdge: FC<EdgeProps> = ({
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             fontSize: 12,
             pointerEvents: 'all',
+            zIndex: 1000,
           }}
           className="nodrag nopan"
         >
           <button
-            className="flex items-center gap-1 bg-white border border-gray-300 rounded-full px-2 py-1 shadow-sm hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className={`flex items-center gap-1 bg-white border rounded-full px-2 py-1 shadow-sm transition-colors ${selected
+              ? 'border-blue-500 text-blue-600 ring-2 ring-blue-100'
+              : 'border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600'
+              }`}
             onClick={onEdgeClick}
           >
             <Clock className="w-3 h-3" />
-            <span className="text-[10px] font-medium text-gray-600">
+            <span className="text-[10px] font-medium">
               {data?.delay ? data.delay : '0m'}
             </span>
           </button>
@@ -60,3 +67,4 @@ const DelayEdge: FC<EdgeProps> = ({
 export const edgeTypes = {
   delay: DelayEdge,
 };
+

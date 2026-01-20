@@ -71,8 +71,12 @@ const ActionNode = memo(({ data, isConnectable, selected }: NodeProps) => {
 });
 
 const SwitchNode = memo(({ data, isConnectable, selected }: NodeProps) => {
+  // Ensure we rely on the same default as the editor if data is missing
+  const conditions = data.conditions || [{ id: 1 }];
+  const inputIds = data.inputIds || ['input-1']; // Default to one input
+
   return (
-    <div className={`px-4 py-3 bg-purple-50 border-2 rounded-lg shadow-sm min-w-[150px] ${selected ? 'border-purple-500 ring-2 ring-purple-100' : 'border-purple-300'}`}>
+    <div className={`px-4 py-3 bg-purple-50 border-2 rounded-lg shadow-sm min-w-[200px] ${selected ? 'border-purple-500 ring-2 ring-purple-100' : 'border-purple-300'}`}>
       {/* Input for Control Flow (Trigger/Prev Step) */}
       <Handle
         type="target"
@@ -83,44 +87,68 @@ const SwitchNode = memo(({ data, isConnectable, selected }: NodeProps) => {
         style={{ left: '50%', top: -10 }}
       />
 
-      {/* Input for Data Source */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="data-in"
-        isConnectable={isConnectable}
-        className="w-5 h-5 bg-orange-400 !rounded-sm border-2 border-white"
-        style={{ top: '50%', left: -10 }}
-      />
+      {/* Dynamic Data Inputs */}
+      {inputIds.map((inputId: string, index: number) => {
+        // Calculate vertical position to spread them out if multiple
+        const topPos = inputIds.length === 1 ? '50%' : `${((index + 1) / (inputIds.length + 1)) * 100}%`;
 
-      <div className="flex flex-col items-center gap-1">
+        return (
+          <div key={inputId} className="absolute left-0" style={{ top: topPos, transform: 'translate(-50%, -50%)' }}>
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={inputId}
+              isConnectable={isConnectable}
+              className="w-5 h-5 bg-orange-400 !rounded-sm border-2 border-white"
+              style={{ position: 'relative', transform: 'none' }}
+            />
+          </div>
+        )
+      })}
+
+      <div className="flex flex-col items-center gap-1 mb-4">
         <GitFork className="w-6 h-6 text-purple-600" />
         <p className="text-sm font-medium text-purple-900">Switch</p>
+
+        {/* Helper to show # of inputs */}
+        {inputIds.length > 1 && (
+          <span className="text-[10px] text-gray-500 bg-purple-100 px-1.5 rounded-full">
+            {inputIds.length} Inputs
+          </span>
+        )}
       </div>
 
-      {/* Dynamic Output Handles would technically be better, but for mock let's have 2 default */}
-      <div className="absolute -bottom-3 left-0 w-full flex justify-between px-4">
-        <div className="relative">
+      {/* Dynamic Output Handles */}
+      <div className="absolute -bottom-3 left-0 w-full flex justify-between px-4 gap-4">
+        {conditions.map((condition: any, index: number) => (
+          <div key={condition.id || index} className="relative flex flex-col items-center group">
+            <Handle
+              type="source"
+              position={Position.Bottom}
+              id={`case-${condition.id || index + 1}`}
+              isConnectable={isConnectable}
+              className="w-5 h-5 bg-purple-500 border-2 border-white"
+              style={{ position: 'relative', transform: 'none', left: 0, bottom: -6 }}
+            />
+            <span className="absolute top-5 text-[9px] text-purple-700 whitespace-nowrap font-medium px-1 bg-purple-50 rounded opacity-80 group-hover:opacity-100 transition-opacity">
+              Case {index + 1}
+            </span>
+          </div>
+        ))}
+
+        {/* Default Handle */}
+        <div className="relative flex flex-col items-center group">
           <Handle
             type="source"
             position={Position.Bottom}
-            id="case-1"
+            id="default"
             isConnectable={isConnectable}
-            className="w-5 h-5 bg-purple-500 border-2 border-white"
+            className="w-5 h-5 bg-purple-400 border-2 border-white"
             style={{ position: 'relative', transform: 'none', left: 0, bottom: -6 }}
           />
-          <span className="absolute top-5 left-[-10px] text-[10px] text-purple-700 whitespace-nowrap font-medium">Case 1</span>
-        </div>
-        <div className="relative">
-          <Handle
-            type="source"
-            position={Position.Bottom}
-            id="case-2"
-            isConnectable={isConnectable}
-            className="w-5 h-5 bg-purple-500 border-2 border-white"
-            style={{ position: 'relative', transform: 'none', left: 0, bottom: -6 }}
-          />
-          <span className="absolute top-5 left-[-10px] text-[10px] text-purple-700 whitespace-nowrap font-medium">Default</span>
+          <span className="absolute top-5 text-[9px] text-purple-700 whitespace-nowrap font-medium px-1 bg-purple-50 rounded opacity-80 group-hover:opacity-100 transition-opacity">
+            Default
+          </span>
         </div>
       </div>
     </div>

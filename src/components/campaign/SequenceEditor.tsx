@@ -134,6 +134,19 @@ export default function SequenceEditor({
     handleSubjectChange({ ...currentSubject, content: subject })
   }, [currentSubject, handleSubjectChange])
 
+  // Sync node changes back to the store steps
+  const handleNodeUpdate = useCallback((nodeId: string, data: any) => {
+    // Only sync for Action/Email nodes content
+    if (data.sections || data.subject) {
+      stepsManager.updateStep(nodeId, {
+        sections: data.sections || [],
+        subject: data.subject || { mode: 'static', content: '' },
+        // Ensure name exists if creating new
+        name: data.label || `Email Step ${nodeId}`
+      });
+    }
+  }, [stepsManager]);
+
   return (
     <div className="h-full flex flex-col bg-gray-100">
 
@@ -158,6 +171,7 @@ export default function SequenceEditor({
       {/* Main Content - 3 Panel Layout */}
       <EmailEditorContext.Provider value={{ campaignName: campaign?.name, campaignId }}>
         <SequenceEditorLayout
+          campaignId={campaignId}
           sections={currentSections}
           onSectionsChange={handleSectionsChange}
           subjectLine={currentSubject}
@@ -205,6 +219,7 @@ export default function SequenceEditor({
           isContinuing={isContinuing}
           canContinue={validation.canContinue}
           campaignType={campaignType}
+          onNodeUpdate={handleNodeUpdate}
         />
       </EmailEditorContext.Provider>
 
