@@ -8,14 +8,14 @@ const MarketMetricsSection: React.FC<{ data: any; sectionIndex: number }> = ({ d
         <Editable 
           dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.metrics[${idx}].label`}
           value={metric.label}
-          className="text-lg font-semibold text-purple-900 dark:text-purple-300"
+          className="text-lg font-semibold text-blue-900 dark:text-blue-300"
           as="p"
           spacing="small"
         />
         <Editable 
           dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.metrics[${idx}].value`}
           value={metric.value}
-          className="text-4xl font-bold text-purple-900 dark:text-purple-300"
+          className="text-4xl font-bold text-blue-900 dark:text-blue-300"
           as="p"
           spacing="medium"
         />
@@ -23,7 +23,7 @@ const MarketMetricsSection: React.FC<{ data: any; sectionIndex: number }> = ({ d
           dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.metrics[${idx}].description`}
           value={metric.description}
           inputType="multiline"
-          className="text-sm text-purple-700 dark:text-purple-400"
+          className="text-sm text-blue-700 dark:text-blue-400"
           as="p"
           spacing="none"
         />

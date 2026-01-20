@@ -161,7 +161,7 @@ export function AuthModal({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
+            className="w-full mt-6 px-8 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50"
           >
             {isLoading ? 'Processing...' : (
               authContext === 'contact-developer' 

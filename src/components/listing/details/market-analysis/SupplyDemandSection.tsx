@@ -10,7 +10,7 @@ const SupplyDemandSection: React.FC<{ data: any; sectionIndex: number }> = ({ da
         const Icon = iconMap[item.icon];
         return (
           <div key={idx} className="flex items-start space-x-3">
-            <div className="text-2xl">{Icon && <Icon className="w-6 h-6 text-red-500" />}</div>
+            <div className="text-2xl">{Icon && <Icon className="w-6 h-6 text-blue-500" />}</div>
             <div>
               <Editable 
                 dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.analysis[${idx}].title`}

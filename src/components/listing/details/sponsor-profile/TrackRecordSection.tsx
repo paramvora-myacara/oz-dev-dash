@@ -16,7 +16,7 @@ const TrackRecordSection: React.FC<{ data: any; sectionIndex: number }> = ({ dat
           <Editable 
             dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.metrics[${idx}].label`}
             value={record.label}
-            className="text-lg font-semibold text-orange-900 dark:text-orange-300"
+            className="text-lg font-semibold text-blue-900 dark:text-blue-300"
             as="p"
             spacing="small"
           />
@@ -24,7 +24,7 @@ const TrackRecordSection: React.FC<{ data: any; sectionIndex: number }> = ({ dat
         <Editable 
           dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.metrics[${idx}].value`}
           value={record.value}
-          className="text-4xl font-bold text-orange-900 dark:text-orange-300"
+          className="text-4xl font-bold text-blue-900 dark:text-blue-300"
           as="p"
           spacing="medium"
         />
@@ -32,7 +32,7 @@ const TrackRecordSection: React.FC<{ data: any; sectionIndex: number }> = ({ dat
           dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.metrics[${idx}].description`}
           value={record.description}
           inputType="multiline"
-          className="text-sm text-orange-700 dark:text-orange-400"
+          className="text-sm text-blue-700 dark:text-blue-400"
           as="p"
           spacing="none"
         />

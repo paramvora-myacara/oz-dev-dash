@@ -10,8 +10,8 @@ const KeyMarketDriversSection: React.FC<{ data: any; sectionIndex: number }> = (
           const Icon = iconMap[driver.icon];
           return (
             <div key={idx} className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
-                {Icon && <Icon className="w-8 h-8 text-purple-600 dark:text-purple-400" />}
+                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                {Icon && <Icon className="w-8 h-8 text-blue-600 dark:text-blue-400" />}
                 </div>
                 <Editable 
                   dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.drivers[${idx}].title`}

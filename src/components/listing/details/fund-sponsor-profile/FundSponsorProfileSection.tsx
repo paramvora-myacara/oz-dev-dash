@@ -98,7 +98,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
   };
 
   const getIconComponent = (entityIndex: number) => {
-    return entityIndex === 0 ? <Star className="w-8 h-8 text-orange-500" /> : <Briefcase className="w-8 h-8 text-orange-500" />;
+    return entityIndex === 0 ? <Star className="w-8 h-8 text-blue-500" /> : <Briefcase className="w-8 h-8 text-blue-500" />;
   };
 
   return (
@@ -112,7 +112,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
             </h3>
             <button 
               onClick={handleAddEntity}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Add Entity
             </button>
@@ -128,7 +128,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
               <div className="mb-4 flex justify-end">
                 <button 
                   onClick={() => handleRemoveEntity(entityIdx)}
-                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
                 >
                   Remove Entity
                 </button>
@@ -144,13 +144,13 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.entities[${entityIdx}].name`}
                       value={entity.name}
-                      className="text-2xl font-bold text-orange-900 dark:text-orange-300"
+                      className="text-2xl font-bold text-blue-900 dark:text-blue-300"
                       as="div"
                     />
                     <Editable 
                       dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.entities[${entityIdx}].role`}
                       value={entity.role}
-                      className="text-lg font-semibold text-orange-700 dark:text-orange-400"
+                      className="text-lg font-semibold text-blue-700 dark:text-blue-400"
                       as="div"
                     />
                   </div>
@@ -169,7 +169,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                 <ul className="space-y-3">
                   {entity.descriptionPoints.map((point: string, pIdx: number) => (
                     <li key={pIdx} className="flex items-start">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full mr-4 mt-[10px] flex-shrink-0" />
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-4 mt-[10px] flex-shrink-0" />
                       <div className="flex-1">
                         <Editable 
                           dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.entities[${entityIdx}].descriptionPoints[${pIdx}]`}
@@ -181,7 +181,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                       {isEditing && (
                         <button 
                           onClick={() => handleRemoveDescriptionPoint(entityIdx, pIdx)}
-                          className="ml-2 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                          className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
                         >
                           ×
                         </button>
@@ -212,7 +212,7 @@ const FundSponsorProfileSection: React.FC<FundSponsorProfileSectionProps> = ({
                       {isEditing && (
                         <button 
                           onClick={() => handleRemoveTeamMember(entityIdx, memberIdx)}
-                          className="mb-2 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                          className="mb-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
                         >
                           ×
                         </button>

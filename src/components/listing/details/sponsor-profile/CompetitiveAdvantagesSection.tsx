@@ -16,8 +16,8 @@ const CompetitiveAdvantagesSection: React.FC<{ data: any; sectionIndex: number }
           <div className="space-y-4">
             {data.advantages.slice(0,2).map((advantage: any, i: number) => (
               <div key={i} className="flex items-start space-x-4">
-                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <Editable 
@@ -42,8 +42,8 @@ const CompetitiveAdvantagesSection: React.FC<{ data: any; sectionIndex: number }
           <div className="space-y-4">
              {data.advantages.slice(2,4).map((advantage: any, i: number) => (
               <div key={i} className="flex items-start space-x-4">
-                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <Editable 

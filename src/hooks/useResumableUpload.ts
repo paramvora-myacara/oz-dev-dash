@@ -18,7 +18,7 @@ interface UploadState {
 }
 
 interface UseResumableUploadReturn extends UploadState {
-  uploadFile: (file: File, bucketName: string, fileName: string) => Promise<{ success: boolean; fileData?: any }>
+  uploadFile: (file: File, bucketName: string, filePath: string) => Promise<{ success: boolean; fileData?: any }>
   resetUpload: () => void
 }
 
@@ -39,7 +39,7 @@ export function useResumableUpload(): UseResumableUploadReturn {
     })
   }, [])
 
-  const uploadFile = useCallback(async (file: File, bucketName: string, fileName: string) => {
+  const uploadFile = useCallback(async (file: File, bucketName: string, filePath: string) => {
     const supabase = createClient()
 
     try {
@@ -94,7 +94,7 @@ export function useResumableUpload(): UseResumableUploadReturn {
           removeFingerprintOnSuccess: true,
           metadata: {
             bucketName: bucketName,
-            objectName: fileName,
+            objectName: filePath,
             contentType: file.type,
             cacheControl: '3600',
           },

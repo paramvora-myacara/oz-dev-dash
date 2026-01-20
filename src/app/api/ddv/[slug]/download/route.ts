@@ -27,38 +27,25 @@ export async function GET(
       )
     }
     
-    // Get the signed URL for the file
-    const signedUrl = await getDDVFileUrl(slug, fileName)
+    // Get the file URL (public or signed)
+    const fileUrl = await getDDVFileUrl(slug, fileName)
     
-    if (!signedUrl) {
+    if (!fileUrl) {
+      console.error(`Failed to get file URL for slug: ${slug}, fileName: ${fileName}`)
       return NextResponse.json(
         { error: 'File not found or access denied' },
         { status: 404 }
       )
     }
     
-    // Fetch the file from Supabase storage
-    const response = await fetch(signedUrl)
+    console.log(`Redirecting to file URL: ${fileUrl}`)
     
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch file' },
-        { status: 500 }
-      )
-    }
-    
-    // Get the file content and headers
-    const fileBuffer = await response.arrayBuffer()
-    const contentType = response.headers.get('content-type') || 'application/octet-stream'
-    const contentLength = response.headers.get('content-length')
-    
-    // Return the file with appropriate headers
-    return new NextResponse(fileBuffer, {
-      status: 200,
+    // Redirect directly to Supabase storage URL
+    // Browser will download directly from Supabase, bypassing server-side fetch
+    // This avoids network restrictions and domain rewrite issues in production
+    return NextResponse.redirect(fileUrl, {
+      status: 302,
       headers: {
-        'Content-Type': contentType,
-        'Content-Length': contentLength || '',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'

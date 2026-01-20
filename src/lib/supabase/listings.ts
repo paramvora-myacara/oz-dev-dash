@@ -8,7 +8,7 @@ export async function getPublishedListingBySlug(slug: string): Promise<Listing |
   // First get the listing to find its current version
   const { data: listing, error: listingError } = await supabase
     .from('listings')
-    .select('id, current_version_id, developer_website')
+    .select('id, current_version_id, developer_website, is_verified_oz_project')
     .eq('slug', slug)
     .single()
     
@@ -33,6 +33,7 @@ export async function getPublishedListingBySlug(slug: string): Promise<Listing |
     ...(version.data as Listing),
     newsLinks: (version.news_links as NewsCardMetadata[]) || [],
     developer_website: listing.developer_website || null,
+    is_verified_oz_project: listing.is_verified_oz_project || false,
   };
 }
 
@@ -65,6 +66,17 @@ export async function listVersionsBySlug(slug: string): Promise<ListingVersionMe
     ...version,
     is_current: version.id === listingRow.current_version_id
   }))
+}
+
+export async function getListingIdBySlug(slug: string): Promise<string | null> {
+  const supabase = createAdminClient()
+  const { data: listingRow, error } = await supabase
+    .from('listings')
+    .select('id')
+    .eq('slug', slug)
+    .single()
+  if (error || !listingRow) return null
+  return listingRow.id
 }
 
 export async function getVersionData(slug: string, versionId: string): Promise<Listing | null> {

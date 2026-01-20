@@ -10,7 +10,7 @@ import CompellingReasonsSection from '@/components/listing/CompellingReasonsSect
 import ExecutiveSummarySection from '@/components/listing/ExecutiveSummarySection';
 import InvestmentCardsSection from '@/components/listing/InvestmentCardsSection';
 import InTheNewsSection from '@/components/listing/InTheNewsSection';
-import InvestmentComparisonChart from '@/components/listing/InvestmentComparisonChart';
+import Calculator from '@/components/listing/Calculator';
 import ListingActionButtons from '@/components/listing/ListingActionButtons';
 import { getProjectMetricsBySlug } from '@/lib/supabase/ozProjects';
 import React from 'react'; // Added missing import for React
@@ -63,6 +63,7 @@ export default function ListingPageClient({ listing, slug, isEditMode = false }:
               sectionIndex={sectionIndex} 
               isEditMode={isEditMode}
               executiveSummary={projectMetrics.executive_summary}
+              isVerifiedOzProject={listing.is_verified_oz_project}
             />;
         case 'tickerMetrics':
             return <TickerMetricsSection data={section.data} sectionIndex={sectionIndex} />;
@@ -82,15 +83,10 @@ export default function ListingPageClient({ listing, slug, isEditMode = false }:
 
   listing.sections.forEach((section, idx) => {
     if (!hasRenderedNewsSection && (section.type === 'executiveSummary')) {
-      // Insert the tax calculator graph before the news section
+      // Insert the tax calculator with slider before the news section
       finalSectionsToRender.push({
         type: 'taxCalculatorGraph',
-        component: <InvestmentComparisonChart
-          key="investment-comparison-chart"
-          projectedIrr10yr={projectMetrics.projected_irr_10yr}
-          equityMultiple10yr={projectMetrics.equity_multiple_10yr}
-          defaultCapitalGain={projectMetrics.minimum_investment}
-        />
+        component: <Calculator key="capital-gains-calculator" />
       });
       if (listing.newsLinks && listing.newsLinks.length > 0) {
         finalSectionsToRender.push({

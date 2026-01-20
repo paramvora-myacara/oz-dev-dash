@@ -22,53 +22,53 @@ import { ViewModeToolbar } from '@/components/editor/ViewModeToolbar';
 
 const colorMap = {
     financialReturns: {
-      title: 'text-emerald-300',
-      subtitle: 'text-emerald-200',
-      icon: 'text-emerald-400',
-      backLink: 'text-emerald-300',
-      backLinkHover: 'text-emerald-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     },
     fundStructure: {
-      title: 'text-emerald-300',
-      subtitle: 'text-emerald-200',
-      icon: 'text-emerald-400',
-      backLink: 'text-emerald-300',
-      backLinkHover: 'text-emerald-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     },
     portfolioProjects: {
-      title: 'text-indigo-300',
-      subtitle: 'text-indigo-200',
-      icon: 'text-indigo-400',
-      backLink: 'text-indigo-300',
-      backLinkHover: 'text-indigo-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     },
     howInvestorsParticipate: {
-      title: 'text-purple-300',
-      subtitle: 'text-purple-200',
-      icon: 'text-purple-400',
-      backLink: 'text-purple-300',
-      backLinkHover: 'text-purple-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     },
     marketAnalysis: {
-      title: 'text-purple-300',
-      subtitle: 'text-purple-200',
-      icon: 'text-purple-400',
-      backLink: 'text-purple-300',
-      backLinkHover: 'text-purple-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     },
     propertyOverview: {
-      title: 'text-indigo-300',
-      subtitle: 'text-indigo-200',
-      icon: 'text-indigo-400',
-      backLink: 'text-indigo-300',
-      backLinkHover: 'text-indigo-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     },
     sponsorProfile: {
-      title: 'text-orange-300',
-      subtitle: 'text-orange-200',
-      icon: 'text-orange-400',
-      backLink: 'text-orange-300',
-      backLinkHover: 'text-orange-100'
+      title: 'text-blue-400',
+      subtitle: 'text-blue-300',
+      icon: 'text-blue-500',
+      backLink: 'text-blue-400',
+      backLinkHover: 'text-blue-200'
     }
   };
 

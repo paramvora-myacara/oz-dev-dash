@@ -593,6 +593,7 @@ export interface Listing {
   sections: ListingOverviewSection[];
   newsLinks?: NewsCardMetadata[];
   developer_website?: string | null;
+  is_verified_oz_project?: boolean;
   details: {
     financialReturns: FinancialReturns;
     fundStructure?: FundStructure;

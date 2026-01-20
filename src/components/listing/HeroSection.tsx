@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from "next/image";
-import { MapPin, DollarSign, Briefcase, Plus } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Plus, ShieldCheck } from "lucide-react";
 import ImageCarousel from '@/components/ImageCarousel';
 import Lightbox from '@/components/Lightbox';
 import { getRandomImages } from '@/utils/supabaseImages';
@@ -16,6 +16,7 @@ interface HeroSectionProps {
   sectionIndex: number;
   isEditMode?: boolean;
   executiveSummary?: string | null;
+  isVerifiedOzProject?: boolean;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ 
@@ -23,7 +24,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   listingSlug, 
   sectionIndex, 
   isEditMode = false,
-  executiveSummary = null
+  executiveSummary = null,
+  isVerifiedOzProject = false
 }) => {
     const projectId = getProjectIdFromSlug(listingSlug);
     const [heroImages, setHeroImages] = useState<string[]>([]);
@@ -65,6 +67,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                         </p>
                     )}
                     <div className="flex flex-wrap gap-3">
+                        {isVerifiedOzProject && (
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-700/50 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <ShieldCheck className="w-4 h-4" />
+                                Verified OZ Project
+                            </span>
+                        )}
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm">
                             <MapPin className="w-4 h-4" />
                             {data.location}
