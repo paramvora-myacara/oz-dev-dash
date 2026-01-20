@@ -27,38 +27,43 @@ import NodePalette from './node-editor/NodePalette'
 import FloatingConnectionMenu from './node-editor/FloatingConnectionMenu'
 
 interface SequenceFlowPanelProps {
-  steps: CampaignStep[] // Keep for compat, but we might ignore or map initially
+  steps: CampaignStep[]
   currentStepIndex: number
-  onStepSelect: (index: number) => void // Legacy: mapped to node selection if possible
-  onAddStep: () => void // Legacy
-  onNodeSelect?: (node: Node | null) => void // New prop for generic node selection
+  onStepSelect: (index: number) => void
+  onAddStep: () => void
+  onNodeSelect?: (node: Node | null) => void
+  campaignType: 'batch' | 'always_on' // Added prop
 }
 
-const initialNodes: Node[] = [
-  {
-    id: 'trigger-1',
-    type: 'trigger',
-    position: { x: 250, y: 50 },
-    data: { label: 'User Signup' },
-  },
+const initialNodesBatch: Node[] = [
   {
     id: 'email-1',
     type: 'action',
-    position: { x: 250, y: 200 },
-    data: { label: 'Welcome Email' },
+    position: { x: 250, y: 100 },
+    data: { label: 'Initial Blast' },
   },
 ];
 
-const initialEdges: Edge[] = [
-  { id: 'e1-2', source: 'trigger-1', target: 'email-1', type: 'delay', data: { delay: '1d' } }
+const initialNodesAlwaysOn: Node[] = [
+  {
+    id: 'event-1',
+    type: 'event', // Changed from trigger
+    position: { x: 250, y: 50 },
+    data: { label: 'User Signup', eventType: 'page_view' },
+  },
 ];
 
 function SequenceFlow({
   onNodeSelect,
-}: { onNodeSelect?: (node: Node | null) => void }) {
+  campaignType,
+}: { onNodeSelect?: (node: Node | null) => void, campaignType: 'batch' | 'always_on' }) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Initialize nodes based on campaign type
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    campaignType === 'always_on' ? initialNodesAlwaysOn : initialNodesBatch
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { project } = useReactFlow();
 
   // Floating Menu State
@@ -67,8 +72,19 @@ function SequenceFlow({
   const [connectingHandleId, setConnectingHandleId] = useState<string | null>(null);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge({ ...params, type: 'delay', data: { delay: '0m' } }, eds)),
-    [setEdges]
+    (params: Connection) => {
+      // Logic enforcement
+      if (campaignType === 'batch') {
+        const sourceNode = nodes.find(n => n.id === params.source);
+        if (sourceNode?.type === 'event' && params.sourceHandle === 'control-out') {
+          alert("Batch campaigns cannot use event triggers for control flow. Events are only for data checking in Switch nodes.");
+          return;
+        }
+      }
+
+      setEdges((eds) => addEdge({ ...params, type: 'delay', data: { delay: '0m' } }, eds));
+    },
+    [setEdges, campaignType, nodes]
   );
 
   const onConnectStart = useCallback((_: any, { nodeId, handleId }: OnConnectStartParams) => {
@@ -215,7 +231,7 @@ function SequenceFlow({
 export default function SequenceFlowPanel(props: SequenceFlowPanelProps) {
   return (
     <ReactFlowProvider>
-      <SequenceFlow {...props} />
+      <SequenceFlow {...props} campaignType={props.campaignType} />
     </ReactFlowProvider>
   );
 }

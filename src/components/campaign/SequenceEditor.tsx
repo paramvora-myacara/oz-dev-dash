@@ -23,6 +23,8 @@ interface SequenceEditorProps {
   saveButtonText?: string
   skipAutoSync?: boolean
   onSaveStateChange?: (canSave: boolean) => void
+  showContinueButton?: boolean
+  campaignType?: 'batch' | 'always_on' // Added optional prop, defaults to batch
 }
 
 export default function SequenceEditor({
@@ -35,6 +37,8 @@ export default function SequenceEditor({
   saveButtonText = 'Continue',
   skipAutoSync = false,
   onSaveStateChange,
+  showContinueButton,
+  campaignType = 'batch', // Default
 }: SequenceEditorProps) {
   const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('html')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -144,7 +148,7 @@ export default function SequenceEditor({
                 Template uses: <span className="font-mono">{validation.validationError.fields.join(', ')}</span> which are missing.
               </p>
             </div>
-            <button onClick={() => {}} className="text-orange-400 hover:text-orange-600">
+            <button onClick={() => { }} className="text-orange-400 hover:text-orange-600">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -195,6 +199,12 @@ export default function SequenceEditor({
           onOpenSubjectModal={() => subjectGenerator.openModal(currentSubject.content)}
           onSubjectChange={handleSubjectChange}
           isGeneratingSubject={subjectGenerator.isGenerating}
+
+          showContinueButton={showContinueButton}
+          onContinue={handleContinue}
+          isContinuing={isContinuing}
+          canContinue={validation.canContinue}
+          campaignType={campaignType}
         />
       </EmailEditorContext.Provider>
 

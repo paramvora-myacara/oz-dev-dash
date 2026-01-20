@@ -13,11 +13,11 @@ export default function NodePalette() {
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
         <div
           className="flex flex-col items-center justify-center p-2 bg-green-50 border border-green-200 rounded cursor-grab hover:bg-green-100 min-w-[70px]"
-          onDragStart={(event) => onDragStart(event, 'trigger')}
+          onDragStart={(event) => onDragStart(event, 'event')}
           draggable
         >
           <Zap className="w-5 h-5 text-green-600 mb-1" />
-          <span className="text-xs font-medium text-gray-700">Trigger</span>
+          <span className="text-xs font-medium text-gray-700">Event</span>
         </div>
 
         <div
@@ -36,15 +36,6 @@ export default function NodePalette() {
         >
           <GitFork className="w-5 h-5 text-purple-600 mb-1" />
           <span className="text-xs font-medium text-gray-700">Switch</span>
-        </div>
-
-        <div
-          className="flex flex-col items-center justify-center p-2 bg-orange-50 border border-orange-200 rounded cursor-grab hover:bg-orange-100 min-w-[70px]"
-          onDragStart={(event) => onDragStart(event, 'filter')}
-          draggable
-        >
-          <Filter className="w-5 h-5 text-orange-600 mb-1" />
-          <span className="text-xs font-medium text-gray-700">Data</span>
         </div>
       </div>
     </div>

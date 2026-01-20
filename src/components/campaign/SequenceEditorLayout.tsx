@@ -48,6 +48,13 @@ interface SequenceEditorLayoutProps {
   onOpenSubjectModal?: () => void
   onSubjectChange?: (subject: { mode: SectionMode; content: string; selectedFields?: string[] }) => void
   isGeneratingSubject?: boolean
+
+  // Continue Button
+  showContinueButton?: boolean
+  onContinue?: () => void
+  isContinuing?: boolean
+  canContinue?: boolean
+  campaignType: 'batch' | 'always_on'
 }
 
 export interface SequenceEditorLayoutRef {
@@ -82,6 +89,11 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
     onOpenSubjectModal,
     onSubjectChange,
     isGeneratingSubject,
+    showContinueButton,
+    onContinue,
+    isContinuing,
+    canContinue,
+    campaignType,
   }, ref) => {
     const leftPanelRef = useRef<ImperativePanelHandle>(null)
     const middlePanelRef = useRef<ImperativePanelHandle>(null)
@@ -149,6 +161,7 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
                     onStepSelect={onStepSelect}
                     onAddStep={onAddStep}
                     onNodeSelect={setSelectedNode}
+                    campaignType={campaignType}
                   />
                 </div>
               </div>
@@ -213,6 +226,11 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
                         onOpenSubjectModal={onOpenSubjectModal}
                         isGeneratingSubject={isGeneratingSubject || false}
                         onCollapse={() => middlePanelRef.current?.collapse()}
+
+                        showContinueButton={showContinueButton}
+                        onContinue={onContinue}
+                        isContinuing={isContinuing}
+                        canContinue={canContinue}
                       />
                     )}
                     <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-5">

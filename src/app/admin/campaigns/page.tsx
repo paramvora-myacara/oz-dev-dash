@@ -38,7 +38,9 @@ export default function CampaignsPage() {
   const [campaignStatus, setCampaignStatus] = useState<CampaignStatusData | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [isPaused, setIsPaused] = useState(false)
+
+  // Local state for pausing always-on campaigns (mock functionality for now)
+  const [pausedCampaigns, setPausedCampaigns] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadCampaigns()
@@ -96,6 +98,18 @@ export default function CampaignsPage() {
     }
   }
 
+  const togglePause = (id: string) => {
+    setPausedCampaigns(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
   const getCapacityColor = (used: number, capacity: number) => {
     const percentage = capacity > 0 ? (used / capacity) * 100 : 0
     if (percentage >= 90) return 'bg-red-100 border-red-300 text-red-800'
@@ -116,6 +130,10 @@ export default function CampaignsPage() {
   }
 
   const weekSchedule = campaignStatus?.weekSchedule || []
+
+  // Filter campaigns
+  const batchCampaigns = campaigns.filter(c => !c.campaignType || c.campaignType === 'batch')
+  const alwaysOnCampaigns = campaigns.filter(c => c.campaignType === 'always_on')
 
   return (
     <div className="p-8">
@@ -153,98 +171,191 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      {/* Two-column layout */}
+      {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Recent Campaigns */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Campaigns</h2>
-          </div>
-          {campaigns.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Mail size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No campaigns yet. Create your first campaign to get started.</p>
+        {/* Left Column: Tables */}
+        <div className="space-y-6">
+          {/* Batch Campaigns Table */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Batch Campaigns</h2>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Recipients
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {campaigns.slice(0, 10).map((campaign) => (
-                    <tr
-                      key={campaign.id}
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={(e) => {
-                        // Don't navigate if clicking on the delete button
-                        if ((e.target as HTMLElement).closest('button')) {
-                          return
-                        }
-                        router.push(`/admin/campaigns/${campaign.id}`)
-                      }}
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-blue-600">
-                            {campaign.name}
-                          </span>
-                          {campaign.entryStepId && (
-                            <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-purple-100 text-purple-700 rounded border border-purple-200">
-                              Sequence
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(campaign.status)}`}>
-                          {getStatusLabel(campaign.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {campaign.totalRecipients}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(campaign.id)
-                          }}
-                          className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Delete"
-                          disabled={deletingId === campaign.id}
-                          aria-label="Delete campaign"
-                        >
-                          <Trash2 size={16} className={deletingId === campaign.id ? 'animate-pulse' : ''} />
-                        </button>
-                      </td>
+            {batchCampaigns.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 min-h-[300px] flex flex-col justify-center">
+                <Mail size={48} className="mx-auto mb-4 opacity-50" />
+                <p>No batch campaigns yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto overflow-y-auto max-h-[400px] min-h-[300px]">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Recipients
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {batchCampaigns.slice(0, 10).map((campaign) => (
+                      <tr
+                        key={campaign.id}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest('button')) {
+                            return
+                          }
+                          router.push(`/admin/campaigns/${campaign.id}`)
+                        }}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-blue-600">
+                              {campaign.name}
+                            </span>
+                            {campaign.entryStepId && (
+                              <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-purple-100 text-purple-700 rounded border border-purple-200">
+                                Sequence
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(campaign.status)}`}>
+                            {getStatusLabel(campaign.status)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {campaign.totalRecipients}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(campaign.id)
+                            }}
+                            className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed p-2"
+                            title="Delete"
+                            disabled={deletingId === campaign.id}
+                            aria-label="Delete campaign"
+                          >
+                            <Trash2 size={16} className={deletingId === campaign.id ? 'animate-pulse' : ''} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Always-On Campaigns Table */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Always-On Campaigns</h2>
             </div>
-          )}
+            {alwaysOnCampaigns.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 min-h-[300px] flex flex-col justify-center">
+                <RefreshCw size={48} className="mx-auto mb-4 opacity-50" />
+                <p>No always-on campaigns yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto overflow-y-auto max-h-[400px] min-h-[300px]">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Enrolled
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {alwaysOnCampaigns.map((campaign) => (
+                      <tr
+                        key={campaign.id}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest('button')) {
+                            return
+                          }
+                          router.push(`/admin/campaigns/${campaign.id}`)
+                        }}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-green-600">
+                              {campaign.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${pausedCampaigns.has(campaign.id)
+                            ? 'bg-gray-100 text-gray-700'
+                            : getStatusColor(campaign.status)
+                            }`}>
+                            {pausedCampaigns.has(campaign.id) ? 'Paused' : getStatusLabel(campaign.status)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {campaign.activeEnrollments || 0}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              togglePause(campaign.id)
+                            }}
+                            className={`p-2 rounded-md hover:bg-gray-100 ${pausedCampaigns.has(campaign.id) ? 'text-green-600' : 'text-orange-600'
+                              }`}
+                            title={pausedCampaigns.has(campaign.id) ? 'Resume' : 'Pause'}
+                          >
+                            {pausedCampaigns.has(campaign.id) ? <Play size={16} /> : <Pause size={16} />}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(campaign.id)
+                            }}
+                            className="text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-gray-100"
+                            title="Delete"
+                            disabled={deletingId === campaign.id}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Right: Days Scheduled */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Right Column: Schedule */}
+        <div className="bg-white rounded-lg shadow overflow-hidden h-fit">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Calendar size={20} className="text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">7-Day Schedule</h2>
+              <h2 className="text-lg font-semibold text-gray-900">7-Day Schedule Summary</h2>
             </div>
             <button
               onClick={fetchCampaignStatus}
@@ -258,7 +369,7 @@ export default function CampaignsPage() {
 
           <div className="p-6">
             {weekSchedule.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {weekSchedule.map((day) => {
                   const usedCapacity = day.isToday
                     ? day.sent + day.queued + (day.projected || 0)
@@ -329,13 +440,13 @@ export default function CampaignsPage() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Calendar size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No scheduled emails. Upload a CSV in the email campaigns section to get started.</p>
+                <p>No scheduled emails. Upload a CSV to get started.</p>
               </div>
             )}
 
             {/* Summary Stats */}
             {campaignStatus && (
-              <div className="mt-6 grid grid-cols-4 gap-3">
+              <div className="mt-6 grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
                   <div className="text-xs font-medium text-gray-500 uppercase mb-1">Total</div>
                   <div className="text-lg font-bold text-gray-900">{campaignStatus.total.toLocaleString()}</div>
@@ -354,96 +465,6 @@ export default function CampaignsPage() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Always-On Campaign Card */}
-      <div className="mt-6 bg-white rounded-lg shadow border-2 border-green-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-green-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Welcome Drip - Lead Magnets
-              </h2>
-              <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
-                Always-On
-              </span>
-            </div>
-            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-              !isPaused 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-gray-100 text-gray-700'
-            }`}>
-              {!isPaused ? 'Active' : 'Paused'}
-            </span>
-          </div>
-        </div>
-        <div className="px-6 py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {/* Stats */}
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Enrolled</p>
-                <p className="text-2xl font-semibold text-gray-900">1,234</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Active</p>
-                <p className="text-2xl font-semibold text-gray-900">892</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Completed</p>
-                <p className="text-2xl font-semibold text-gray-900">342</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Last Enrollment</p>
-                <p className="text-sm font-medium text-gray-700">2 min ago</p>
-              </div>
-            </div>
-            
-            {/* Actions */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  // Find the always-on campaign ID from the campaigns list, or use the slug
-                  const runningCampaign = campaigns.find(c => 
-                    c.name?.toLowerCase().includes('welcome drip') || 
-                    (c as any)?.is_running_campaign === true
-                  )
-                  if (runningCampaign) {
-                    router.push(`/admin/campaigns/${runningCampaign.id}`)
-                  } else {
-                    // Use slug for always-on campaign (will work with placeholder data)
-                    router.push('/admin/campaigns/welcome-drip-lead-magnets')
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                View Campaign
-                <ArrowRight size={16} />
-              </button>
-              <button
-                onClick={() => setIsPaused(!isPaused)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  !isPaused
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                }`}
-              >
-                {!isPaused ? (
-                  <>
-                    <Pause size={16} />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play size={16} />
-                    Resume
-                  </>
-                )}
-              </button>
-            </div>
           </div>
         </div>
       </div>

@@ -40,10 +40,10 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
   const [isSaving, setIsSaving] = useState(false)
   const [canSave, setCanSave] = useState(false)
   const saveHandlerRef = useRef<(() => void) | null>(null)
-  
+
   // Get store methods for change detection and syncing
   const { getUnsyncedSteps, steps: storeSteps, markStepsSynced } = useCampaignStore()
-  
+
   // Get sorted steps from store for syncing
   const getSortedSteps = useCallback((): CampaignStep[] => {
     return Object.values(storeSteps)
@@ -55,16 +55,16 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
         return campaignStep as CampaignStep
       })
   }, [storeSteps, campaignId])
-  
+
   // Handle save with change detection
   const handleSave = useCallback(async () => {
     const unsyncedSteps = getUnsyncedSteps()
-    
+
     if (unsyncedSteps.length === 0) {
       // No changes to save
       return
     }
-    
+
     // Show modal to confirm
     setShowSaveModal(true)
   }, [getUnsyncedSteps])
@@ -92,10 +92,10 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
         onSaveStateChange(hasChanges)
       }
     }
-    
+
     checkUnsavedChanges()
     const interval = setInterval(checkUnsavedChanges, 1000) // Check every second
-    
+
     return () => clearInterval(interval)
   }, [getUnsyncedSteps, onSaveStateChange])
 
@@ -112,26 +112,26 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
       externalSaveHandlerRef.current = handleSave
     }
   }, [handleSave, externalSaveHandlerRef])
-  
+
   // Confirm save - actually sync to server
   const handleConfirmSave = useCallback(async () => {
     try {
       setIsSaving(true)
       const stepsToSync = getSortedSteps()
-      
+
       if (stepsToSync.length === 0) {
         setShowSaveModal(false)
         setIsSaving(false)
         return
       }
-      
+
       // Sync to server
       await replaceCampaignSteps(campaignId, stepsToSync)
-      
+
       // Mark as synced
       const stepIds = stepsToSync.map(step => step.id)
       markStepsSynced(stepIds)
-      
+
       setShowSaveModal(false)
     } catch (error) {
       console.error('Failed to save changes:', error)
@@ -228,11 +228,10 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <Icon size={16} />
                 {tab.label}
@@ -260,6 +259,7 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
                 onSaveStateChange={(canSaveState) => {
                   setCanSave(canSaveState)
                 }}
+                campaignType={campaign.campaignType || 'always_on'} // Assume always on for running tabs context usually, or fallback
               />
             </div>
           </div>
@@ -375,7 +375,7 @@ export default function RunningCampaignTabs({ campaign, campaignId, onSave, isSa
           </div>
         )}
       </div>
-      
+
       {/* Save Changes Modal */}
       <SaveChangesModal
         isOpen={showSaveModal}

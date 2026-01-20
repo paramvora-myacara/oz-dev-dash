@@ -2,23 +2,38 @@ import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Zap, Mail, GitFork, Filter } from 'lucide-react';
 
-const TriggerNode = memo(({ data, isConnectable }: NodeProps) => {
+const EventNode = memo(({ data, isConnectable }: NodeProps) => {
   return (
     <div className="px-4 py-3 bg-green-50 border-2 border-green-300 rounded-lg shadow-sm min-w-[150px]">
       <Handle
         type="source"
         position={Position.Bottom}
+        id="control-out"
         isConnectable={isConnectable}
         className="w-5 h-5 bg-green-500 border-2 border-white"
         style={{ bottom: -10 }}
       />
+
+      {/* Data output for connecting to Switch nodes */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="data-out"
+        isConnectable={isConnectable}
+        className="w-5 h-5 bg-orange-400 !rounded-sm border-2 border-white"
+        style={{ right: -10, top: '50%' }}
+      />
+
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-100">
           <Zap className="w-5 h-5 text-green-600" />
         </div>
         <div>
-          <p className="text-xs font-bold text-green-800 uppercase">Trigger</p>
+          <p className="text-xs font-bold text-green-800 uppercase">Event</p>
           <p className="text-sm font-medium text-gray-900">{data.label}</p>
+          {data.eventType && (
+            <p className="text-[10px] text-gray-500 font-mono mt-0.5">{data.eventType}</p>
+          )}
         </div>
       </div>
     </div>
@@ -112,32 +127,12 @@ const SwitchNode = memo(({ data, isConnectable, selected }: NodeProps) => {
   );
 });
 
-const FilterNode = memo(({ data, isConnectable, selected }: NodeProps) => {
-  return (
-    <div className={`px-3 py-2 bg-orange-50 border-2 rounded-lg shadow-sm min-w-[120px] ${selected ? 'border-orange-500' : 'border-orange-300'}`}>
-      <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-orange-600" />
-        <p className="text-sm font-medium text-orange-900">{data.label || 'Data Filter'}</p>
-      </div>
-      <Handle
-        type="source"
-        position={Position.Right}
-        isConnectable={isConnectable}
-        className="w-5 h-5 bg-orange-400 !rounded-sm border-2 border-white"
-        style={{ right: -10 }}
-      />
-    </div>
-  );
-});
-
-TriggerNode.displayName = 'TriggerNode';
+EventNode.displayName = 'EventNode';
 ActionNode.displayName = 'ActionNode';
 SwitchNode.displayName = 'SwitchNode';
-FilterNode.displayName = 'FilterNode';
 
 export const nodeTypes = {
-  trigger: TriggerNode,
+  event: EventNode,
   action: ActionNode,
   switch: SwitchNode,
-  filter: FilterNode,
 };

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2, ArrowRight } from 'lucide-react'
-import EmailEditor from '@/components/email-editor/EmailEditor'
+import SequenceEditor from '@/components/campaign/SequenceEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
 import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
@@ -665,8 +665,8 @@ export default function CampaignEditPage() {
             {/* Header actions */}
             <div className="flex items-center gap-3">
               <span className={`px-3 py-1 text-xs font-semibold rounded-full ${campaignData?.status === 'active' || !campaignData?.status
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-700'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-700'
                 }`}>
                 {campaignData?.status === 'paused' ? 'Paused' : 'Active'}
               </span>
@@ -676,8 +676,8 @@ export default function CampaignEditPage() {
                   disabled={!canSave || isSaving}
                   title={!canSave ? 'No changes to save' : undefined}
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${canSave && !isSaving
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                 >
                   {isSaving ? (
@@ -724,10 +724,15 @@ export default function CampaignEditPage() {
             </Link>
             <div>
               <h1 className="text-lg sm:text-xl font-bold">{campaignData?.name || 'New Campaign'}</h1>
-              <p className="text-xs sm:text-sm text-gray-500">
-                {getStatusLabel((campaignData?.status as any) || 'draft')}
-                {campaignData?.totalRecipients && campaignData.totalRecipients > 0 && ` • ${campaignData.totalRecipients} recipients`}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`px-2 py-0.5 text-xs font-medium rounded ${campaignData?.campaignType === 'always_on' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                  {campaignData?.campaignType === 'always_on' ? 'Always On' : 'Batch'}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-500">
+                  {getStatusLabel((campaignData?.status as any) || 'draft')}
+                  {campaignData?.totalRecipients && campaignData.totalRecipients > 0 && ` • ${campaignData.totalRecipients} recipients`}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -785,13 +790,15 @@ export default function CampaignEditPage() {
         )}
 
         {currentStep === 'design' && (
-          <EmailEditor
+          <SequenceEditor
             campaignId={campaignId}
             campaign={campaignData as any}
             sampleData={sampleData}
             recipientCount={campaignData?.totalRecipients || 0}
             onContinue={handleContinueToFormatSample}
             isContinuing={false}
+            showContinueButton={true}
+            campaignType={campaignData?.campaignType || 'batch'}
           />
         )}
 

@@ -11,6 +11,7 @@ export default function NewCampaignPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [sender, setSender] = useState<CampaignSender | null>(null)
+  const [campaignType, setCampaignType] = useState<'batch' | 'always_on'>('batch')
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -30,7 +31,7 @@ export default function NewCampaignPage() {
 
     try {
       setCreating(true)
-      const campaign = await createCampaign({ name, sender })
+      const campaign = await createCampaign({ name, sender, campaignType })
       router.push(`/admin/campaigns/${campaign.id}`)
     } catch (err: any) {
       alert('Failed to create campaign: ' + err.message)
@@ -78,24 +79,52 @@ export default function NewCampaignPage() {
             <button
               type="button"
               onClick={() => setSender('todd_vitzthum')}
-              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${
-                sender === 'todd_vitzthum'
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${sender === 'todd_vitzthum'
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
             >
               Todd Vitzthum
             </button>
             <button
               type="button"
               onClick={() => setSender('jeff_richmond')}
-              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${
-                sender === 'jeff_richmond'
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${sender === 'jeff_richmond'
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
             >
               Jeff Richmond
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Campaign Type
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setCampaignType('batch')}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors flex flex-col items-center gap-1 ${campaignType === 'batch'
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              <span>Batch Campaign</span>
+              <span className="text-xs opacity-70 font-normal">One-time blast to a list</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCampaignType('always_on')}
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors flex flex-col items-center gap-1 ${campaignType === 'always_on'
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              <span>Always On</span>
+              <span className="text-xs opacity-70 font-normal">Event-triggered flows</span>
             </button>
           </div>
         </div>

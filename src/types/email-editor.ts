@@ -32,6 +32,7 @@ export interface Campaign {
   id: string;
   name: string;
   emailFormat: EmailFormat;
+  campaignType: 'batch' | 'always_on';
   status: CampaignStatus;
   totalRecipients: number;
   sender: CampaignSender;

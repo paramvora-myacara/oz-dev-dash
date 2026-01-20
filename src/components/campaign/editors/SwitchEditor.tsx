@@ -28,7 +28,20 @@ export default function SwitchEditor({ data, onChange }: SwitchEditorProps) {
         onChange({ ...data, conditions: newConditions });
     };
 
-    const attributes = ['Role', 'City', 'Signed Up Date', 'Company Size', 'Lead Score'];
+    const attributes = [
+        'Role',
+        'City',
+        'Signed Up Date',
+        'Company Size',
+        'Lead Score',
+        'Website Visits',
+        'Last Email Opened',
+        'Last Email Clicked',
+        'Webinar Registered',
+        'Has Booked Call',
+        'Investment Interest',
+        'Accredited Status'
+    ];
     const operators = [
         { value: 'equals', label: 'Equals' },
         { value: 'not_equals', label: 'Does not equal' },
