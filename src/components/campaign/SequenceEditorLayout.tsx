@@ -68,6 +68,8 @@ export interface SequenceEditorLayoutRef {
   expandLeftPanel: () => void
   expandMiddlePanel: () => void
   expandRightPanel: () => void
+  getNodes: () => Node[]
+  getEdges: () => Edge[]
 }
 
 const initialNodesBatch: Node[] = [
@@ -144,19 +146,32 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
     );
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    // Load from local storage on mount
+    // Load from local storage OR prop steps on mount
     useEffect(() => {
-      const savedFlow = localStorage.getItem(`campaign-flow-${campaignId}`);
-      if (savedFlow) {
-        try {
-          const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedFlow);
-          setNodes(savedNodes || []);
-          setEdges(savedEdges || []);
-        } catch (e) {
-          console.error('Failed to parse saved flow', e);
+      // Priority: 1. DB Steps (if available and mismatching/empty local), 2. Local Storage
+      // Actually, user wants "load the latest saved campaign steps from the db".
+      // So we should prioritize DB steps if they exist.
+
+      if (steps && steps.length > 0) {
+        console.log('[DEBUG] Loading from DB steps:', steps);
+        // Convert steps to nodes/edges
+        const { nodes: newNodes, edges: newEdges } = convertStepsToNodesAndEdges(steps, campaignType);
+        setNodes(newNodes);
+        setEdges(newEdges);
+      } else {
+        // Fallback to local storage if no DB steps (e.g. brand new)
+        const savedFlow = localStorage.getItem(`campaign-flow-${campaignId}`);
+        if (savedFlow) {
+          try {
+            const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedFlow);
+            setNodes(savedNodes || []);
+            setEdges(savedEdges || []);
+          } catch (e) {
+            console.error('Failed to parse saved flow', e);
+          }
         }
       }
-    }, [campaignId, setNodes, setEdges]);
+    }, [campaignId, steps, setNodes, setEdges, campaignType]);
 
     // Save to local storage on change
     useEffect(() => {
@@ -171,6 +186,8 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
       expandLeftPanel: () => leftPanelRef.current?.expand(),
       expandMiddlePanel: () => middlePanelRef.current?.expand(),
       expandRightPanel: () => rightPanelRef.current?.expand(),
+      getNodes: () => nodes,
+      getEdges: () => edges,
     }))
 
     const fieldValues = sampleData?.rows?.[selectedSampleIndex] || {}
@@ -483,3 +500,80 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
 SequenceEditorLayout.displayName = 'SequenceEditorLayout'
 
 export default SequenceEditorLayout
+
+// Helper: Convert Steps to Flow
+function convertStepsToNodesAndEdges(steps: CampaignStep[], campaignType: 'batch' | 'always_on') {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  const ySpacing = 150;
+  const xStart = 250;
+
+  // Map to store temporary positions or use index
+  // We will simply layout them vertically for now if no stored positions (which steps don't have)
+  // TODO: Smarter layout using Dagre or ELK if complex.
+
+  steps.forEach((step, index) => {
+    // Determine Node Type
+    // If not specified, default to 'action' (Email)
+    let type = step.type || 'action';
+
+    // Position
+    const position = { x: xStart, y: 50 + (index * ySpacing) };
+
+    const node: Node = {
+      id: step.id,
+      type,
+      position,
+      data: {
+        label: step.name,
+        subject: step.subject,
+        sections: step.sections,
+        conditions: step.config?.conditions, // for switch
+        selectedTemplate: undefined, // lost in DB unless we save it in config/metadata
+      },
+    };
+    nodes.push(node);
+
+    // Create Edges
+    if (step.edges) {
+      step.edges.forEach((edge) => {
+        // Determine edge logic
+        // If switch node, handle might be specific
+        // For now, standard delay edge
+        const edgeId = `e-${step.id}-${edge.targetStepId}`;
+        const newEdge: Edge = {
+          id: edgeId,
+          source: step.id,
+          target: edge.targetStepId,
+          sourceHandle: edge.sourceHandle || null,
+          type: 'delay', // Default to delay, ideally check logic
+          data: {
+            delayData: {
+              days: edge.delayDays,
+              hours: edge.delayHours,
+              minutes: edge.delayMinutes
+            },
+            condition: edge.condition
+          }
+        };
+
+        // Refine Edge Type if Data Connection (smoothstep)
+        // If source node is switch or event, it might be different.
+        // But logic in SequenceFlowPanel uses visual handles.
+        // We will assume 'delay' unless it's a known non-delay connection.
+        // Switch nodes usually have 'smoothstep' for visually clean splits if no delay.
+        // But our system seems to put delay on edges.
+
+        edges.push(newEdge);
+      });
+    }
+  });
+
+  // If no nodes, use defaults
+  if (nodes.length === 0) {
+    if (campaignType === 'always_on') return { nodes: initialNodesAlwaysOn, edges: [] };
+    return { nodes: initialNodesBatch, edges: [] };
+  }
+
+  return { nodes, edges };
+}

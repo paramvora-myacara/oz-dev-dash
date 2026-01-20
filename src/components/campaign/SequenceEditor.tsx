@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { AlertTriangle, X, ArrowRight, Loader2 } from 'lucide-react'
 import type { Section, SectionMode, SectionType, SampleData, Campaign, CampaignStep } from '@/types/email-editor'
 import { useEmailSteps, useSubjectGeneration, useEmailValidation, useTemplateManagement } from '@/components/email-editor/hooks'
@@ -28,7 +28,7 @@ interface SequenceEditorProps {
   campaignType?: 'batch' | 'always_on' // Added optional prop, defaults to batch
 }
 
-export default function SequenceEditor({
+function SequenceEditor({
   campaignId,
   campaign,
   sampleData,
@@ -40,7 +40,7 @@ export default function SequenceEditor({
   onSaveStateChange,
   showContinueButton,
   campaignType = 'batch', // Default
-}: SequenceEditorProps) {
+}: SequenceEditorProps, ref: any) {
   const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('html')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
@@ -108,30 +108,79 @@ export default function SequenceEditor({
     onSectionsChange: handleSectionsChange
   })
 
-  const handleContinue = useCallback(async () => {
-    if (!validation.canContinue) return
+  const layoutRef = useRef<any>(null);
+
+  const handleSaveFlow = useCallback(async () => {
+    // 1. Get latest flow state from the layout component
+    const nodes = layoutRef.current?.getNodes() || [];
+    const edges = layoutRef.current?.getEdges() || [];
+
+    console.log('[DEBUG] Saving flow...', { nodes, edges });
+
+    // 2. Convert Flow Graph to Campaign Steps
+    const campaignSteps: any[] = nodes.map((node: any) => {
+      // Find all edges starting from this node
+      const nodeEdges = edges.filter((e: any) => e.source === node.id);
+
+      const stepEdges = nodeEdges.map((e: any) => ({
+        targetStepId: e.target,
+        sourceHandle: e.sourceHandle, // Important for Switch nodes
+        delayDays: e.data?.delayData?.days || 0,
+        delayHours: e.data?.delayData?.hours || 0,
+        delayMinutes: e.data?.delayData?.minutes || 0,
+        condition: e.data?.condition || null // Preserve conditions if any
+      }));
+
+      return {
+        id: node.id,
+        campaignId,
+        type: node.type || 'action',
+        name: node.data?.label || 'Untitled Step',
+        config: node.type === 'switch' ? { conditions: node.data.conditions } : undefined,
+        // Action node specific data
+        subject: node.data?.subject || { mode: 'static', content: '' },
+        sections: node.data?.sections || [],
+        edges: stepEdges
+      };
+    });
 
     try {
-      // Sync all unsaved changes before continuing (unless skipAutoSync is true)
-      if (!skipAutoSync) {
-        await stepsManager.syncUnsavedChanges()
+      // Save all steps (sync changes)
+      // First update store with all steps
+      // We can't easily bulk update store via 'updateStep' loop effectively if we want to REPLACE the structure.
+      // But updateStep modifies the existing step in the store.
+      // If we added new nodes, they won't be in the store yet unless we added them via addStep?
+      // Actually, layout changes nodes directly.
+
+      // We need to ensure logic in useEmailSteps supports comprehensive update.
+      // We will loop through and update.
+      await Promise.all(campaignSteps.map(step => stepsManager.updateStep(step.id, step)));
+
+      // Sync to DB
+      await stepsManager.syncUnsavedChanges();
+
+      if (!validation.canContinue) {
+        if (campaignType === 'batch') return { success: false };
       }
 
-      onContinue?.({
-        sections: currentSections,
-        subjectLine: currentSubject,
-        emailFormat,
-      })
+      return {
+        success: true,
+        data: {
+          sections: currentSections,
+          subjectLine: currentSubject,
+          emailFormat,
+          steps: campaignSteps
+        }
+      };
     } catch (error) {
-      console.error('Failed to sync changes:', error)
-      // Still call onContinue - let the parent handle the error
-      onContinue?.({
-        sections: currentSections,
-        subjectLine: currentSubject,
-        emailFormat,
-      })
+      console.error('Failed to save flow:', error)
+      return { success: false };
     }
-  }, [validation.canContinue, currentSections, currentSubject, emailFormat, onContinue, stepsManager, skipAutoSync])
+  }, [validation.canContinue, campaignId, stepsManager, campaignType, currentSections, currentSubject, emailFormat])
+
+  useImperativeHandle(ref, () => ({
+    save: handleSaveFlow
+  }));
 
   const handleSubjectSave = useCallback((subject: string) => {
     handleSubjectChange({ ...currentSubject, content: subject })
@@ -185,6 +234,7 @@ export default function SequenceEditor({
       {/* Main Content - 3 Panel Layout */}
       <EmailEditorContext.Provider value={{ campaignName: campaign?.name, campaignId }}>
         <SequenceEditorLayout
+          ref={layoutRef}
           campaignId={campaignId}
           sections={currentSections}
           onSectionsChange={handleSectionsChange}
@@ -228,8 +278,8 @@ export default function SequenceEditor({
           onSubjectChange={handleSubjectChange}
           isGeneratingSubject={subjectGenerator.isGenerating}
 
-          showContinueButton={showContinueButton}
-          onContinue={handleContinue}
+          showContinueButton={false}
+          // onContinue={handleContinue}
           isContinuing={isContinuing}
           canContinue={validation.canContinue}
           campaignType={campaignType}
@@ -266,3 +316,5 @@ export default function SequenceEditor({
     </div>
   )
 }
+const ForwardedSequenceEditor = forwardRef(SequenceEditor);
+export default ForwardedSequenceEditor;

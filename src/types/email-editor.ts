@@ -57,6 +57,7 @@ export interface Campaign {
 
 export interface StepEdge {
   targetStepId: string;
+  sourceHandle?: string | null; // For switch nodes to identify which case this edge belongs to
   delayDays: number;
   delayHours: number;
   delayMinutes: number;
@@ -71,6 +72,8 @@ export interface StepCondition {
 export interface CampaignStep {
   id: string;
   campaignId: string;
+  type: 'action' | 'switch' | 'event'; // Default 'action'
+  config?: Record<string, any>; // For switch node conditions
   name: string;
   subject: {
     mode: SectionMode;

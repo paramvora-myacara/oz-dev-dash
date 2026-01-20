@@ -57,6 +57,10 @@ export default function CampaignEditPage() {
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null)
 
   const [failedEmails, setFailedEmails] = useState<QueuedEmail[]>([])
+
+  const sequenceEditorRef = useRef<any>(null)
+
+
   const [campaignSummary, setCampaignSummary] = useState<{
     sent: number
     failed: number
@@ -324,6 +328,15 @@ export default function CampaignEditPage() {
       setError('Failed to save campaign: ' + err.message)
     }
   }, [campaignData, campaignId, refreshCampaignData])
+
+  const handleSequenceContinue = useCallback(async () => {
+    if (sequenceEditorRef.current) {
+      const result = await sequenceEditorRef.current.save()
+      if (result.success && result.data) {
+        handleContinueToFormatSample(result.data)
+      }
+    }
+  }, [handleContinueToFormatSample])
 
   // Generate all emails with specified format
   const handleGenerateAllWithFormat = useCallback(async (format: EmailFormat) => {
@@ -738,6 +751,15 @@ export default function CampaignEditPage() {
 
           {/* Header actions based on step */}
           <div className="flex items-center gap-2">
+            {currentStep === 'design' && (
+              <button
+                onClick={handleSequenceContinue}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Continue to Review
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -791,13 +813,14 @@ export default function CampaignEditPage() {
 
         {currentStep === 'design' && (
           <SequenceEditor
+            ref={sequenceEditorRef}
             campaignId={campaignId}
             campaign={campaignData as any}
             sampleData={sampleData}
             recipientCount={campaignData?.totalRecipients || 0}
-            onContinue={handleContinueToFormatSample}
+            onContinue={handleContinueToFormatSample} // Legacy prop, kept for type safety but unused by new button
             isContinuing={false}
-            showContinueButton={true}
+            showContinueButton={false} // Clean up
             campaignType={campaignData?.campaignType || 'batch'}
           />
         )}
