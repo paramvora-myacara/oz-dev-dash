@@ -61,6 +61,7 @@ interface SequenceEditorLayoutProps {
   canContinue?: boolean
   campaignType: 'batch' | 'always_on'
   onNodeUpdate?: (nodeId: string, data: any) => void
+  onSaveTemplate?: (sections: Section[]) => void
 }
 
 export interface SequenceEditorLayoutRef {
@@ -120,6 +121,7 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
     canContinue,
     campaignType,
     onNodeUpdate,
+    onSaveTemplate,
   }, ref) => {
     const leftPanelRef = useRef<ImperativePanelHandle>(null)
     const middlePanelRef = useRef<ImperativePanelHandle>(null)
@@ -218,7 +220,8 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
       handleNodeChange({
         sections: template.defaultSections || [],
         subject: template.subject || selectedNode.data.subject,
-        selectedTemplate: { name: template.name }
+        selectedTemplate: { name: template.name },
+        label: template.name
       });
       setShowLocalTemplateDropdown(false);
     }
@@ -383,6 +386,11 @@ const SequenceEditorLayout = forwardRef<SequenceEditorLayoutRef, SequenceEditorL
                         onToggleTemplateDropdown={() => setShowLocalTemplateDropdown(!showLocalTemplateDropdown)}
                         onSelectTemplate={handleLocalTemplateSelect}
                         availableTemplates={availableTemplates || []}
+                        onSaveTemplate={() => {
+                          if (onSaveTemplate && selectedNode?.data?.sections) {
+                            onSaveTemplate(selectedNode.data.sections)
+                          }
+                        }}
                         subjectLine={selectedNode.data.subject || { mode: 'static', content: '' }}
                         onSubjectChange={(subject) => handleNodeChange({ subject })}
                         onOpenSubjectModal={onOpenSubjectModal || (() => { })}

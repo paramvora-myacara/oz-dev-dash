@@ -10,6 +10,7 @@ interface EditorHeaderProps {
   onToggleTemplateDropdown: () => void
   onSelectTemplate: (template: any) => void
   availableTemplates: any[]
+  onSaveTemplate?: () => void
 
   // Subject management
   subjectLine: { mode: SectionMode; content: string; selectedFields?: string[] }
@@ -33,6 +34,7 @@ export default function EditorHeader({
   onToggleTemplateDropdown,
   onSelectTemplate,
   availableTemplates,
+  onSaveTemplate,
   subjectLine,
   onSubjectChange,
   onOpenSubjectModal,
@@ -59,26 +61,37 @@ export default function EditorHeader({
         </div>
       )}
       {/* Template Selector */}
-      <div className="relative">
-        <button
-          onClick={onToggleTemplateDropdown}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors w-full sm:w-auto"
-        >
-          <span className="text-sm font-medium text-gray-700">{selectedTemplate?.name || 'Select Template'}</span>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </button>
-        {showTemplateDropdown && (
-          <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
-            {availableTemplates.map(t => (
-              <button
-                key={t.id}
-                onClick={() => onSelectTemplate(t)}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm font-medium text-gray-700"
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          <button
+            onClick={onToggleTemplateDropdown}
+            className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors w-full text-left"
+          >
+            <span className="text-sm font-medium text-gray-700 truncate">{selectedTemplate?.name || 'Select Template'}</span>
+            <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          </button>
+          {showTemplateDropdown && (
+            <div className="absolute top-full left-0 mt-2 w-full sm:w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2 max-h-60 overflow-y-auto">
+              {availableTemplates.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => onSelectTemplate(t)}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm font-medium text-gray-700 truncate"
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {onSaveTemplate && (
+          <button
+            onClick={onSaveTemplate}
+            className="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors whitespace-nowrap"
+          >
+            Save as Template
+          </button>
         )}
       </div>
 
@@ -115,8 +128,8 @@ export default function EditorHeader({
             onClick={onContinue}
             disabled={!canContinue || isContinuing}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${canContinue && !isContinuing
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
           >
             {isContinuing ? (

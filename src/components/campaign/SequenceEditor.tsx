@@ -6,6 +6,7 @@ import type { Section, SectionMode, SectionType, SampleData, Campaign, CampaignS
 import { useEmailSteps, useSubjectGeneration, useEmailValidation, useTemplateManagement } from '@/components/email-editor/hooks'
 import SubjectGenerationModal from '@/components/email-editor/SubjectGenerationModal'
 import AddSectionModal from '@/components/email-editor/AddSectionModal'
+import SaveTemplateModal from '@/components/email-editor/SaveTemplateModal'
 import { EmailEditorContext } from '@/components/email-editor/EmailEditorContext'
 import SequenceEditorLayout from './SequenceEditorLayout'
 
@@ -42,6 +43,8 @@ export default function SequenceEditor({
 }: SequenceEditorProps) {
   const [emailFormat, setEmailFormat] = useState<'html' | 'text'>('html')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
+  const [sectionsToSave, setSectionsToSave] = useState<Section[]>([])
   const [selectedSampleIndex, setSelectedSampleIndex] = useState(0)
 
   // Custom hooks
@@ -147,6 +150,17 @@ export default function SequenceEditor({
     }
   }, [stepsManager]);
 
+  const handleOpenSaveModal = useCallback((sections: Section[]) => {
+    setSectionsToSave(sections)
+    setShowSaveTemplateModal(true)
+  }, [])
+
+  const handleSaveTemplate = useCallback(async (name: string) => {
+    // Save stored sections as template
+    await templateManager.saveTemplate(name, sectionsToSave)
+    setShowSaveTemplateModal(false)
+  }, [sectionsToSave, templateManager])
+
   return (
     <div className="h-full flex flex-col bg-gray-100">
 
@@ -220,6 +234,7 @@ export default function SequenceEditor({
           canContinue={validation.canContinue}
           campaignType={campaignType}
           onNodeUpdate={handleNodeUpdate}
+          onSaveTemplate={handleOpenSaveModal}
         />
       </EmailEditorContext.Provider>
 
@@ -241,6 +256,12 @@ export default function SequenceEditor({
         error={subjectGenerator.error}
         onGenerate={subjectGenerator.generateSubject}
         onSave={() => subjectGenerator.saveSubject(handleSubjectSave)}
+      />
+
+      <SaveTemplateModal
+        isOpen={showSaveTemplateModal}
+        onClose={() => setShowSaveTemplateModal(false)}
+        onSave={handleSaveTemplate}
       />
     </div>
   )
