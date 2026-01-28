@@ -286,7 +286,6 @@ export interface SponsorTeamMember {
   name: string;
   title: string;
   roleDetail?: string;
-  image: string;
 }
 
 export type SponsorProfileSection =
@@ -536,11 +535,12 @@ export interface PortfolioProjects {
 export interface PortfolioProject {
   name: string;
   location: string;
-  units: number;
   status: string;
-  rentableSqFt: string;
-  stabilizedNOI: string;
-  capRate: string;
+  units?: number;
+  rentableSqFt?: string;
+  stabilizedNOI?: string;
+  capRate?: string;
+  highlights?: string[];
 }
 
 export interface ProjectOverviewSectionData {
