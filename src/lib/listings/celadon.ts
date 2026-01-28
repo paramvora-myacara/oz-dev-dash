@@ -4,14 +4,14 @@ import { Listing } from '@/types/listing';
 // CELADON PORTFOLIO - DATA
 // =================================================================================================
 export const celadonData: Listing = {
-    listingName: "Illinois Opportunity Zone Portfolio",
+    listingName: "Celadon - Illinois OZ Portfolio",
     
    
     sections: [
         {
             type: 'hero',
             data: {
-                listingName: "Illinois Opportunity Zone Portfolio",
+                listingName: "Celadon - Illinois OZ Portfolio",
                 location: "Chicago & Evanston, IL",
                 minInvestment: 0,
                 fundName: "Celadon QOF",
