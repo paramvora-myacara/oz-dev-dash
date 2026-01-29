@@ -122,16 +122,19 @@ const LeadershipTeamSection: React.FC<LeadershipTeamSectionProps> = ({
               as="p"
               spacing="small"
             />
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 text-center">
-              <Editable 
-                dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].experience`}
-                value={member.experience}
-                className="text-sm text-gray-600 dark:text-gray-400"
-                as="span"
-                spacing="none"
-              />
-              <span> experience</span>
-            </div>
+            {(member.experience || isEditMode) && (
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 text-center">
+                <Editable 
+                  dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].experience`}
+                  value={member.experience}
+                  className="text-sm text-gray-600 dark:text-gray-400"
+                  as="span"
+                  spacing="none"
+                  placeholder="Add experience..."
+                />
+                {member.experience && <span> experience</span>}
+              </div>
+            )}
             <Editable 
               dataPath={`details.sponsorProfile.sections[${sectionIndex}].data.teamMembers[${idx}].background`}
               value={member.background}

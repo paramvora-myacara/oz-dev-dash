@@ -1,12 +1,12 @@
 import { Listing } from '@/types/listing';
 
 export const livaData: Listing = {
-  listingName: "Liva — Live Active at Travelers Rest",
+  listingName: "Liva - Live Active at Travelers Rest",
   sections: [
     {
       type: "hero",
       data: {
-        listingName: "Liva — Live Active at Travelers Rest",
+        listingName: "Liva - Live Active at Travelers Rest",
         location: "Travelers Rest, SC",
         fundName: "Clear Mountain Properties"
       }
@@ -16,9 +16,9 @@ export const livaData: Listing = {
       data: {
         metrics: [
           { label: "10-Yr Equity Multiple", value: "3.59x", change: "+259%" },
-          { label: "Preferred Return", value: "8%", change: "Priority" },
+          { label: "LP Levered IRR", value: "20.8%", change: "Priority" },
           { label: "Location", value: "Travelers Rest, SC", change: "High Growth" },
-          { label: "Hold Period", value: "10 Years", change: "OZ Qualified" },
+          { label: "LTC", value: "72.4%", change: "Senior Debt" },
           { label: "Tax Benefit", value: "100%", change: "Tax-Free Exit" }
         ]
       }
@@ -54,8 +54,11 @@ export const livaData: Listing = {
         summary: {
           quote: "Where modern living meets long-term growth in one of the Upstate's most dynamic lifestyle corridors.",
           paragraphs: [
-            "Clear Mountain Properties is developing Liva, a 152-unit Class A multifamily and townhome community on 10.5 acres in Travelers Rest, SC. The project features 120 multifamily units and 32 individually platted townhomes, providing dual exit optionality through bulk sale, individual disposition, or long-term hold.",
-            "Located within an active Opportunity Zone, Liva integrates resort-style amenities including a pool, fire pit, dog park, and bike barn. The site's strategic location adjacent to the $9M Poinsett Highway infrastructure improvements ensures sustained property value and neighborhood appeal."
+            "Clear Mountain Properties is seeking approximately $4 million in equity to capitalize the development of Liva - a 152-unit Class A multifamily and townhome community located in the rapidly growing city of Travelers Rest, South Carolina.",
+            "The 10.5-acre site, fully assembled between 2020 and 2022, sits within an active Opportunity Zone, providing potential long-term tax advantages for qualifying investors. The land is 100% owned and fully entitled, with all municipal approvals secured and Greenville County land disturbance permits being pulled in December 2025 - positioning the project for a Q1 2026 construction start.",
+            "Liva is designed to capture the unique lifestyle appeal of Travelers Rest, integrating resort-style amenities and direct trail connectivity into a cohesive master plan. The community will feature 120 multifamily units on the western portion of the site and 32 individually platted townhomes on the eastern portion - providing dual exit optionality through bulk sale, individual disposition, or long-term hold.",
+            "A multi-use path will run through the development, connecting directly to Main Street and the Swamp Rabbit Trail, one of the Upstate's most popular lifestyle corridors. The City of Travelers Rest has expressed interest in cost-sharing construction and maintenance, further enhancing the project's appeal and alignment with local growth initiatives.",
+            "Every element of the project has been curated to reflect the fabric of Travelers Rest - small-town authenticity, active living, and enduring demand. Spacious open floor plans, elevated finishes, and community features such as a pool, fire pit, dog park, and bike barn create a differentiated, lifestyle-forward product in one of the Upstate's most supply-constrained markets."
           ],
           conclusion: "With a target construction start in early 2026 and an 18-month delivery timeline, Liva is perfectly positioned to capture the intense demand for high-quality rental housing in the Greenville metro area."
         }
@@ -71,9 +74,9 @@ export const livaData: Listing = {
             keyMetrics: [
               { label: "10-Yr Equity Multiple", value: "3.59x" },
               { label: "LP Levered IRR", value: "20.8%" },
-              { label: "Preferred Return", value: "8%" }
+              { label: "Hold Period", value: "10 Years" }
             ],
-            summary: "Targeted 20.8% IRR and 3.59x MOIC over a 10-year hold period."
+            summary: "Targeted 20.8% IRR and 3.59x MOIC over a 10-year hold period with a projected Year 3 refinance."
           },
           {
             id: "property-overview",
@@ -81,7 +84,7 @@ export const livaData: Listing = {
             keyMetrics: [
               { label: "Total Units", value: "152" },
               { label: "Site Area", value: "10.5 Acres" },
-              { label: "Status", "value": "Shovel Ready" }
+              { label: "LP Equity", value: "$7.8M" }
             ],
             summary: "Class A mixed multifamily and townhome community with direct trail access."
           },
@@ -101,7 +104,7 @@ export const livaData: Listing = {
             keyMetrics: [
               { label: "Developer", value: "Clear Mountain" },
               { label: "Avg Historical IRR", value: "33.6%" },
-              { label: "Track Record", value: "7 Successful Exits" }
+              { label: "Track Record", value: "7 Years" }
             ],
             summary: "Vertically integrated platform with a proven track record in the Upstate SC region."
           }
@@ -121,13 +124,13 @@ export const livaData: Listing = {
             projections: [
               { label: "10-Yr Equity Multiple", value: "3.59x", description: "Projected gross return on initial equity over 10-year hold." },
               { label: "Target IRR", value: "20.8%", description: "LP Levered Internal Rate of Return, net of fees." },
-              { label: "Preferred Return", value: "8.0%", description: "Priority return paid to investors before sponsor participation." },
+              { label: "Year 3 Refinance", value: "73%", description: "Projected Year 3 Cash-on-Cash return from $37.19M refinance." },
               { label: "Total Project Cost", value: "$40.1M", description: "All-in development budget including reserves." },
-              { label: "Untended YOC", value: "6.80%", description: "Yield on Cost based on stabilized net operating income." },
-              { label: "Sponsor Co-Invest", value: "$2.5M", description: "Direct capital commitment from the Sponsor." },
+              { label: "Untrended YOC", value: "6.80%", description: "Yield on Cost based on stabilized net operating income." },
+              { label: "Construction LTC", value: "72.4%", description: "Loan to total cost based on senior construction debt." },
               { label: "Stabilized NOI", value: "$3.38M", description: "Projected Year 3 net operating income." },
               { label: "Rent Growth", value: "3.3%", description: "Assumed annual market rent escalation." },
-              { label: "Exit Cap Rate", value: "5.25%", description: "Assumed capitalization rate at Year 10 disposition." }
+              { label: "Sponsor Co-Invest", value: "$2.5M", description: "Direct capital commitment from the Sponsor." }
             ]
           }
         },
@@ -139,12 +142,14 @@ export const livaData: Listing = {
               { use: "Hard Costs", amount: "$30,598,150", percentage: "76.2%", description: "Construction, sitework, and municipal fees." },
               { use: "Soft Costs", amount: "$3,109,476", percentage: "7.7%", description: "Design, engineering, and development fees." },
               { use: "Financing & Reserves", amount: "$3,231,665", percentage: "8.1%", description: "Interest reserves and origination fees." },
-              { use: "Land & Closing", amount: "$2,730,000", percentage: "6.8%", description: "Site acquisition and associated closing costs." }
+              { use: "Land & Closing", amount: "$2,730,000", percentage: "6.8%", description: "Site acquisition and associated closing costs." },
+              { use: "Working Capital", amount: "$473,400", percentage: "1.2%", description: "Project contingency and operating liquidity." }
             ],
             sources: [
-              { source: "Construction Loan", amount: "$29,789,173", perUnit: "$195,981", percentage: "74.2%", description: "Senior debt at 74.2% LTC." },
-              { source: "LP Equity", amount: "$7,853,518", perUnit: "$51,668", percentage: "19.6%", description: "External investor capital." },
-              { source: "Sponsor Equity", amount: "$2,500,000", perUnit: "$16,447", percentage: "6.2%", description: "Clear Mountain Properties co-investment." }
+              { source: "Construction Loan", amount: "$29,082,990", perUnit: "$191,335", percentage: "72.4%", description: "Senior debt per cash flow projections." },
+              { source: "LP Equity", amount: "$7,800,000", perUnit: "$51,316", percentage: "19.4%", description: "External investor capital (Target raise)." },
+              { source: "Sponsor Equity", amount: "$2,500,000", perUnit: "$16,447", percentage: "6.2%", description: "Clear Mountain Properties co-investment." },
+              { source: "Pref Equity", amount: "$1,000,000", perUnit: "$6,579", percentage: "2.5%", description: "Priority capital funding." }
             ]
           }
         },
@@ -153,7 +158,7 @@ export const livaData: Listing = {
           data: {
             timeline: [
               { year: "Year 1-2", phase: "Construction", distribution: "0%", description: "18-month construction and initial lease-up." },
-              { year: "Year 3", phase: "Stabilization", distribution: "TBD", description: "Refinance and transition to stabilized cash flow." },
+              { year: "Year 3", phase: "Stabilization", distribution: "73%", description: "Projected $37.19M refinance and transition to stabilized cash flow." },
               { year: "Years 4-10", phase: "Operating", distribution: "TBD", description: "Ongoing distributions from operational NOI." },
               { year: "Year 10+", phase: "Disposition", distribution: "100%", description: "Tax-free exit of all capital and appreciation." }
             ]
@@ -192,7 +197,7 @@ export const livaData: Listing = {
             facts: [
               { label: "Unit Count", value: "152", description: "120 Apartments + 32 Townhomes." },
               { label: "Acreage", value: "10.5 Acres", description: "Fully assembled and entitled land." },
-              { label: "Status", value: "Permitted", description: "Land disturbance permits pulled Dec 2025." },
+              { label: "Status", value: "Permitted", description: "Land disturbance permits secured May 2025." },
               { label: "Project Value", value: "$40.1M", description: "Total capitalization at completion." }
             ]
           }
@@ -296,11 +301,14 @@ export const livaData: Listing = {
           data: {
             metrics: [
               { label: "TR Pop Growth", value: "3.43%", description: "Annual growth since 2020." },
-              { label: "Upstate Investment", value: "$12.4B", description: "Attracted capital in last 5 years." },
-              { label: "Median Home Price", value: "$476K", description: "High barrier to entry for buyers." },
-              { label: "Median Net Worth", value: "$1.4M", description: "Average net worth of TR residents." },
+              { label: "Greenville Proximity", value: "15 Min", description: "Drive time to downtown Greenville." },
+              { label: "Regional Projects", value: "707", description: "Announced regional projects (2015-2024)." },
+              { label: "TR Net Worth", value: "$1.4M", description: "Average net worth of Travelers Rest residents." },
+              { label: "Median Home Price", value: "$476K", description: "Up 54.7% YoY, creating a high barrier to entry for buyers." },
+              { label: "Jobs Created", value: "53,711", description: "New jobs from regional investment projects." },
               { label: "Corporate Tax", value: "5%", description: "South Carolina's pro-business rate." },
-              { label: "Submarket Delivery", value: "Zero", description: "No projected apartments in North Greenville." }
+              { label: "Submarket Delivery", value: "Zero", description: "No projected apartments in North Greenville." },
+              { label: "Upstate Investment", value: "$12.4B", description: "Announced capital investment across 10 counties (Last 5 years)." }
             ]
           }
         },
@@ -308,11 +316,11 @@ export const livaData: Listing = {
           type: "majorEmployers",
           data: {
             employers: [
-              { name: "Furman University", employees: "1,000+", industry: "Education", distance: "7 mins" },
               { name: "Prisma Health", employees: "10,000+", industry: "Healthcare", distance: "5-20 mins" },
-              { name: "Michelin North America", employees: "10,000+", industry: "Manufacturing", distance: "30 mins" },
-              { name: "BMW Greer", employees: "10,000+", industry: "Automotive", distance: "40 mins" },
-              { name: "GE Power", employees: "2,500+", industry: "Energy", distance: "30 mins" }
+              { name: "Furman University", employees: "501 - 1,000", industry: "Education", distance: "7 mins" },
+              { name: "Michelin North America", employees: "5,001 - 10,000", industry: "Manufacturing", distance: "30 mins" },
+              { name: "GE Power", employees: "1,001 - 2,500", industry: "Energy", distance: "30 mins" },
+              { name: "BMW Greer", employees: "10,000+", industry: "Automotive", distance: "40 mins" }
             ]
           }
         },
@@ -320,10 +328,10 @@ export const livaData: Listing = {
           type: "keyMarketDrivers",
           data: {
             drivers: [
-              { title: "Lifestyle Migration", description: "Recognized as one of Southern Living's Best Small Southern Towns and #1 fastest growing state.", icon: "Users" },
-              { title: "Strategic Infrastructure", description: "Direct I-85/I-26 connectivity with one-day truck access to 31% of the U.S. population.", icon: "Truck" },
-              { title: "Global Connectivity", description: "GSP International Airport named 'Best in North America' with scheduled international cargo service.", icon: "Plane" },
-              { title: "Logistical Edge", description: "Inland Port Greer provides direct rail connection to the Port of Charleston, lowering shipping costs.", icon: "Ship" }
+              { title: "Lifestyle Migration", description: "Recognized as one of Southern Living's 'Best Small Southern Towns' and #1 fastest growing state (2023).", icon: "Users" },
+              { title: "Gateway Location", description: "Just 15 minutes from downtown Greenville and 30 minutes from Asheville, TR offers small-town charm with direct regional access and a growing economic base.", icon: "Map" },
+              { title: "Swamp Rabbit Trail", description: "The 22-mile Swamp Rabbit Trail connects TR to downtown Greenville, fueling steady foot traffic and making the town a hub for food, outdoor recreation, and local entrepreneurship.", icon: "Bike" },
+              { title: "Strategic Infrastructure", description: "Direct I-85/I-26 connectivity with one-day truck access to 31% of the U.S. population. GSP International named 'Best Airport in North America' (2024).", icon: "Truck" }
             ]
           }
         },
@@ -331,6 +339,7 @@ export const livaData: Listing = {
           type: "supplyDemand",
           data: {
             analysis: [
+              { icon: "Award", title: "SC Accolades", description: "#1 State for Manufacturing and Permitting; #1 Fastest Growing State (2023); #1 Lowest Unionization Rate (1.2%); #2 for Doing Business." },
               { icon: "TrendingUp", title: "Institutional Validation", description: "Standard at Pinestone (1/2 mile away) received 23 offers from top-tier discretionary capital groups in 2024." },
               { icon: "Construction", title: "Civic Momentum", description: "$9M Poinsett Highway streetscape improvements 'extend Main Street' directly to the Liva site gateway." },
               { icon: "Lock", title: "Severe Supply Gap", description: "Zero projected multifamily deliveries in North Greenville submarket combined with restrictive city zoning." }
@@ -341,9 +350,9 @@ export const livaData: Listing = {
           type: "economicDiversification",
           data: {
             sectors: [
-              { title: "Tech Hub Designation", description: "SC NEXUS designated as one of 31 federal Tech Hubs, driving 14,000+ projected clean energy jobs by 2030." },
-              { title: "Enterprise Investment", description: "Google ($3.3B), Meta ($800M), and BMW ($1.7B) have recently announced massive regional capital commitments." },
-              { title: "Innovation Ecosystem", description: "Clemson's CU-ICAR research hub fuels the nation's only graduate Dept. of Automotive Engineering." }
+              { title: "Tech Hub & Innovation", description: "SC NEXUS designated as one of 31 federal Tech Hubs, driving 14,000+ projected jobs. Supported by $5.22M in startup grants (FY24)." },
+              { title: "Enterprise Investment", description: "Google ($3.3B in data centers), Meta ($800M data center), Tesla (regional distribution), and BMW ($1.7B EV/battery plant) have announced massive regional commitments." },
+              { title: "Research Ecosystem", description: "Clemson's CU-ICAR is a 250-acre research hub fuels the nation's only graduate Dept. of Automotive Engineering." }
             ]
           }
         },
@@ -368,15 +377,15 @@ export const livaData: Listing = {
             sponsorName: "About Clear Mountain Properties",
             content: {
               paragraphs: [
-                "Clear Mountain Properties (CMP) is a privately held real estate investment and development firm focused on opportunistic assets across Upstate South Carolina. CMP oversees the full lifecycle of each project—from entitlement through management.",
-                "With a vertically integrated platform, the team brings institutional discipline and local market expertise to deliver superior risk-adjusted returns while enhancing community value."
+                "Clear Mountain Properties ('CMP') is a privately held real estate investment and development firm focused on opportunistic assets across the Upstate South Carolina region. CMP's vertically integrated platform oversees the full lifecycle of each investment - from acquisition and entitlement through construction, stabilization, and asset management.",
+                "The team brings institutional discipline, local market knowledge, and a track record of delivering projects that enhance community value and generate risk-adjusted returns."
               ],
               highlights: {
                 type: "icons",
                 items: [
                   { text: "33.6% Historical IRR", icon: "TrendingUp" },
                   { text: "$25M Equity Deployed", icon: "DollarSign" },
-                  { text: "7 Successful Exits", icon: "Award" },
+                  { text: "7-Year Track Record", icon: "Award" },
                   { text: "In-House Management", icon: "Home" }
                 ]
               }
@@ -390,7 +399,7 @@ export const livaData: Listing = {
               { label: "Historical IRR", value: "33.6%", description: "Average across all projects." },
               { label: "Equity Multiple", value: "1.85x", description: "Average historical multiplier." },
               { label: "Current Pipeline", value: "$70M", description: "Active projects in development." },
-              { label: "Successful Exits", value: "7", description: "Fully realized investments." }
+              { label: "Successful Exits", value: "7", description: "Part of a proven 7-year track record." }
             ]
           }
         },
@@ -398,9 +407,9 @@ export const livaData: Listing = {
           type: "leadershipTeam",
           data: {
             teamMembers: [
-              { name: "Christopher Rizzo", title: "Partner", experience: "15+ Years", background: "Expert in site selection and capital markets." },
-              { name: "Zachary Schulruff", title: "Partner", experience: "15+ Years", background: "Specializes in project management and development." },
-              { name: "Mackenzie Pace", title: "Director of Asset Management", experience: "10+ Years", background: "Oversees operations and property stabilization." },
+              { name: "Christopher Rizzo", title: "Partner", experience: "", background: "" },
+              { name: "Zachary Schulruff", title: "Partner", experience: "", background: "" },
+              { name: "Mackenzie Pace", title: "Director of Asset Management", experience: "", background: "" },
               { name: "James Houston", title: "Development Manager", experience: "", background: "" },
               { name: "Mallory Long", title: "Property Manager", experience: "", background: "" }
             ]
