@@ -42,6 +42,11 @@ export const IMAGE_CATEGORIES = [
   // Nested categories for property overview
   'details/property-overview/floorplansitemapsection/floorplan',
   'details/property-overview/floorplansitemapsection/sitemap',
+  'details/property-overview/aerial-images',
+
+  // Nested categories for sponsor profile
+  'details/sponsor-profile/about',
+  'details/sponsor-profile/leadership/',
 
   // Nested categories for portfolio projects (dynamic - project-name will be appended)
   'details/portfolio-projects/',

@@ -17,6 +17,7 @@ Images are stored in the `oz-projects-images` bucket using the following pattern
 
 **Examples:**
 - **Hero Images**: `celadon-001/general/`
+- **Aerial Perspectives**: `celadon-001/details/property-overview/aerial-images/`
 - **Floor Plans**: `celadon-001/details/property-overview/floorplansitemapsection/floorplan/`
 - **Sponsor About**: `celadon-001/details/sponsor-profile/about/`
 - **Leadership Team**: `celadon-001/details/sponsor-profile/leadership/[member-name-slug]/`

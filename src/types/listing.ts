@@ -50,7 +50,7 @@ export interface InvestmentStructureItem {
 export interface FinancialReturns {
   pageTitle: string;
   pageSubtitle: string;
-  backgroundImages: string[];
+  backgroundImages?: string[];
   sections: FinancialReturnsSection[];
 }
 
@@ -85,7 +85,7 @@ export interface LocationHighlight {
 export interface PropertyOverview {
   pageTitle: string;
   pageSubtitle: string;
-  backgroundImages: string[];
+  backgroundImages?: string[];
   sections: PropertyOverviewSection[];
 }
 
@@ -117,7 +117,7 @@ export interface MarketDriver {
 export interface MarketAnalysis {
   pageTitle: string;
   pageSubtitle: string;
-  backgroundImages: string[];
+  backgroundImages?: string[];
   sections: MarketAnalysisSection[];
 }
 
@@ -163,7 +163,7 @@ export interface DeveloperInfo {
 export interface HeroSectionData {
   listingName: string;
   location: string;
-  minInvestment: number;
+  minInvestment?: number;
   fundName: string;
 }
 
@@ -483,27 +483,6 @@ export type MarketAnalysisSection =
   | { type: 'competitiveAnalysis'; data: CompetitiveAnalysisSectionData }
   | { type: 'economicDiversification'; data: EconomicDiversificationSectionData };
 
-
-export interface FinancialReturns {
-  pageTitle: string;
-  pageSubtitle: string;
-  backgroundImages: string[];
-  sections: FinancialReturnsSection[];
-}
-
-export interface PropertyOverview {
-  pageTitle: string;
-  pageSubtitle: string;
-  backgroundImages: string[];
-  sections: PropertyOverviewSection[];
-}
-
-export interface MarketAnalysis {
-  pageTitle: string;
-  pageSubtitle: string;
-  backgroundImages: string[];
-  sections: MarketAnalysisSection[];
-}
 
 export interface SponsorProfile {
   sponsorName: string;

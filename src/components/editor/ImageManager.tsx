@@ -9,6 +9,9 @@ const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   'general': 'General',
   'details/property-overview/floorplansitemapsection/floorplan': 'Floor Plans',
   'details/property-overview/floorplansitemapsection/sitemap': 'Site Maps',
+  'details/property-overview/aerial-images': 'Aerial Images',
+  'details/sponsor-profile/about': 'Sponsor Photo',
+  'details/sponsor-profile/leadership/': 'Leadership Photos',
   'details/portfolio-projects/': 'Portfolio Projects'
 };
 import { getProjectIdFromSlug } from '@/utils/listing';
