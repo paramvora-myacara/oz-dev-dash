@@ -20,13 +20,28 @@ interface SectionRendererProps {
 const SectionRenderer = ({ section, sectionIndex, developerWebsite, isEditMode, listingSlug }: SectionRendererProps) => {
   switch (section.type) {
     case 'sponsorIntro':
-      return <SponsorIntroSection data={section.data} sectionIndex={sectionIndex} developerWebsite={developerWebsite} />;
+      return (
+        <SponsorIntroSection 
+          data={section.data} 
+          sectionIndex={sectionIndex} 
+          developerWebsite={developerWebsite} 
+          isEditMode={isEditMode}
+          listingSlug={listingSlug}
+        />
+      );
     case 'partnershipOverview':
         return <PartnershipOverviewSection data={section.data} sectionIndex={sectionIndex} />
     case 'trackRecord':
       return <TrackRecordSection data={section.data} sectionIndex={sectionIndex} />;
     case 'leadershipTeam':
-      return <LeadershipTeamSection data={section.data} sectionIndex={sectionIndex} />;
+      return (
+        <LeadershipTeamSection 
+          data={section.data} 
+          sectionIndex={sectionIndex} 
+          isEditMode={isEditMode}
+          listingSlug={listingSlug}
+        />
+      );
     case 'developmentPortfolio':
       return <DevelopmentPortfolioSection data={section.data} sectionIndex={sectionIndex} />;
     case 'keyDevelopmentPartners':

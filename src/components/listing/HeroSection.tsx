@@ -77,10 +77,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                             <MapPin className="w-4 h-4" />
                             {data.location}
                         </span>
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <DollarSign className="w-4 h-4" />
-                            ${data.minInvestment / 1000}K Minimum Investment
-                        </span>
+                        {data.minInvestment && data.minInvestment > 0 && (
+                            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <DollarSign className="w-4 h-4" />
+                                {data.minInvestment / 1000}K Minimum Investment
+                            </span>
+                        )}
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-white/20 backdrop-blur-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                             <Briefcase className="w-4 h-4" />
                             {data.fundName}

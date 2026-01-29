@@ -222,52 +222,77 @@ const PortfolioProjectsSection: React.FC<PortfolioProjectsSectionProps> = ({
               />
               
               <div className="space-y-4 flex-grow mb-6">
-                <div className="flex items-center justify-between text-lg">
-                  <span className="font-semibold text-gray-600 dark:text-gray-400 flex items-center">
-                    <MapPin className="w-5 h-5 mr-2" />Location
-                  </span>
-                  <Editable 
-                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].location`}
-                    value={project.location}
-                    className="font-bold text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-lg">
-                  <span className="font-semibold text-gray-600 dark:text-gray-400 flex items-center">
-                    <Users className="w-5 h-5 mr-2" />Units
-                  </span>
-                  <Editable 
-                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].units`}
-                    value={project.units.toString()}
-                    className="font-bold text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-lg">
-                  <span className="font-semibold text-gray-600 dark:text-gray-400 flex items-center">
-                    <TrendingUp className="w-5 h-5 mr-2" />Cap Rate
-                  </span>
-                  <Editable 
-                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].capRate`}
-                    value={project.capRate}
-                    className="font-bold text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-lg">
-                  <span className="font-semibold text-gray-600 dark:text-gray-400">Rentable SF</span>
-                  <Editable 
-                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].rentableSqFt`}
-                    value={project.rentableSqFt}
-                    className="font-bold text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-lg">
-                  <span className="font-semibold text-gray-600 dark:text-gray-400">Stabilized NOI</span>
-                  <Editable 
-                    dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].stabilizedNOI`}
-                    value={project.stabilizedNOI}
-                    className="font-bold text-gray-900 dark:text-gray-100"
-                  />
-                </div>
+                {project.highlights && project.highlights.length > 0 ? (
+                  <ul className="space-y-3">
+                    {project.highlights.map((highlight, hIdx) => (
+                      <li key={hIdx} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 flex-shrink-0" />
+                        <Editable 
+                          dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].highlights[${hIdx}]`}
+                          value={highlight}
+                          className="text-base leading-relaxed"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between text-lg">
+                      <span className="font-semibold text-gray-600 dark:text-gray-400 flex items-center">
+                        <MapPin className="w-5 h-5 mr-2" />Location
+                      </span>
+                      <Editable 
+                        dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].location`}
+                        value={project.location}
+                        className="font-bold text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    {project.units !== undefined && (
+                      <div className="flex items-center justify-between text-lg">
+                        <span className="font-semibold text-gray-600 dark:text-gray-400 flex items-center">
+                          <Users className="w-5 h-5 mr-2" />Units
+                        </span>
+                        <Editable 
+                          dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].units`}
+                          value={project.units.toString()}
+                          className="font-bold text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    )}
+                    {project.capRate && (
+                      <div className="flex items-center justify-between text-lg">
+                        <span className="font-semibold text-gray-600 dark:text-gray-400 flex items-center">
+                          <TrendingUp className="w-5 h-5 mr-2" />Cap Rate
+                        </span>
+                        <Editable 
+                          dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].capRate`}
+                          value={project.capRate}
+                          className="font-bold text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    )}
+                    {project.rentableSqFt && (
+                      <div className="flex items-center justify-between text-lg">
+                        <span className="font-semibold text-gray-600 dark:text-gray-400">Rentable SF</span>
+                        <Editable 
+                          dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].rentableSqFt`}
+                          value={project.rentableSqFt}
+                          className="font-bold text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    )}
+                    {project.stabilizedNOI && (
+                      <div className="flex items-center justify-between text-lg">
+                        <span className="font-semibold text-gray-600 dark:text-gray-400">Stabilized NOI</span>
+                        <Editable 
+                          dataPath={`details.portfolioProjects.sections[${sectionIndex}].data.projects[${idx}].stabilizedNOI`}
+                          value={project.stabilizedNOI}
+                          className="font-bold text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
               
               <div className="mt-auto">

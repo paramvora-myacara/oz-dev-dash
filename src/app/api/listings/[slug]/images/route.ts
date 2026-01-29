@@ -17,12 +17,12 @@ export async function POST(
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const files = formData.getAll('file') as File[];
     const category = formData.get('category') as string;
 
-    if (!file || !category) {
+    if (!files || files.length === 0 || !category) {
       return NextResponse.json(
-        { error: 'File and category are required' },
+        { error: 'Files and category are required' },
         { status: 400 }
       );
     }
@@ -30,20 +30,25 @@ export async function POST(
     // Generate project ID from slug
     const projectId = `${slug}-001`;
 
-    // Upload image
-    const result = await uploadImage(projectId, category, file);
+    // Upload images
+    const results = await Promise.all(
+      files.map(file => uploadImage(projectId, category, file))
+    );
 
-    if (!result.success) {
+    const successfulUploads = results.filter(r => r.success);
+    const failedUploads = results.filter(r => !r.success);
+
+    if (successfulUploads.length === 0 && files.length > 0) {
       return NextResponse.json(
-        { error: result.error },
+        { error: failedUploads[0]?.error || 'Upload failed' },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      url: result.url,
-      message: 'Image uploaded successfully'
+      urls: successfulUploads.map(r => r.url),
+      message: `${successfulUploads.length} images uploaded successfully${failedUploads.length > 0 ? `, ${failedUploads.length} failed` : ''}`
     });
 
   } catch (error) {

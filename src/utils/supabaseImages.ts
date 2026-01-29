@@ -42,9 +42,18 @@ export const IMAGE_CATEGORIES = [
   // Nested categories for property overview
   'details/property-overview/floorplansitemapsection/floorplan',
   'details/property-overview/floorplansitemapsection/sitemap',
+  'details/property-overview/aerial-images',
+  'details/property-overview/property-context-images',
+
+  // Nested categories for sponsor profile
+  'details/sponsor-profile/about',
+  'details/sponsor-profile/leadership/',
 
   // Nested categories for portfolio projects (dynamic - project-name will be appended)
   'details/portfolio-projects/',
+
+  // Nested categories for market analysis
+  'details/market-analysis/market-context-images',
 ] as const;
 
 export type ImageCategory = string;
@@ -245,10 +254,11 @@ export async function uploadImage(
       return { success: false, error: `Failed to create folder: ${folderResult.error}` };
     }
 
-    // Generate unique filename with timestamp
+    // Generate unique filename with timestamp and random suffix to avoid collisions
     const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const extension = file.name.split('.').pop();
-    const filename = `${timestamp}.${extension}`;
+    const filename = `${timestamp}-${randomSuffix}.${extension}`;
     const filePath = buildImageFilePath(projectId, category, filename);
 
     // Upload file to Supabase storage
@@ -521,8 +531,9 @@ export async function uploadCampaignImage(
 
     const folderName = getCampaignFolderName(campaignName, campaignId);
     const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const extension = file.name.split('.').pop();
-    const filename = `${timestamp}.${extension}`;
+    const filename = `${timestamp}-${randomSuffix}.${extension}`;
     const filePath = `campaigns/${folderName}/${CAMPAIGN_IMAGE_CATEGORY}/${filename}`;
 
     const { data, error } = await supabase.storage

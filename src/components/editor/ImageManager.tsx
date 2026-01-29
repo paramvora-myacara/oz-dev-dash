@@ -9,7 +9,12 @@ const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   'general': 'General',
   'details/property-overview/floorplansitemapsection/floorplan': 'Floor Plans',
   'details/property-overview/floorplansitemapsection/sitemap': 'Site Maps',
-  'details/portfolio-projects/': 'Portfolio Projects'
+  'details/property-overview/aerial-images': 'Aerial Images',
+  'details/property-overview/property-context-images': 'Property Context',
+  'details/sponsor-profile/about': 'Sponsor Photo',
+  'details/sponsor-profile/leadership/': 'Leadership Photos',
+  'details/portfolio-projects/': 'Portfolio Projects',
+  'details/market-analysis/market-context-images': 'Market Context'
 };
 import { getProjectIdFromSlug } from '@/utils/listing';
 
@@ -65,8 +70,8 @@ export default function ImageManager({
   }, [isOpen, projectId, selectedCategory, loadImages]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
     setUploadError(null);
@@ -74,7 +79,9 @@ export default function ImageManager({
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      for (let i = 0; i < files.length; i++) {
+        formData.append('file', files[i]);
+      }
       formData.append('category', selectedCategory);
 
       const response = await fetch(`/api/listings/${listingSlug}/images`, {
@@ -85,12 +92,15 @@ export default function ImageManager({
       const result = await response.json();
 
       if (result.success) {
-        setSuccessMessage('Image uploaded successfully');
+        setSuccessMessage(result.message || 'Images uploaded successfully');
         // Reload images to show the new one
         await loadImages();
         // Notify parent component
         if (onImagesChange) {
-          onImagesChange([...images, result.url]);
+          // We fetch the latest images from Supabase in loadImages, 
+          // but we should pass the full list to the callback
+          const imageUrls = await getAvailableImages(projectId, selectedCategory);
+          onImagesChange(imageUrls);
         }
       } else {
         setUploadError(result.error || 'Upload failed');
@@ -204,6 +214,7 @@ export default function ImageManager({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -213,7 +224,7 @@ export default function ImageManager({
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Upload size={16} />
-                <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
+                <span>{isUploading ? 'Uploading...' : 'Upload Images'}</span>
               </button>
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 JPG, PNG, WebP, GIF up to 10MB

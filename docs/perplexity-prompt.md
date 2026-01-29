@@ -207,6 +207,21 @@ These are the mandatory, fixed-order sections for the main listing overview page
     }
     ```
 
+### 6. News Links (Optional)
+
+-   **Field**: `newsLinks` (Top-level array)
+-   **Description**: A list of external news articles or press releases validating the project or location.
+-   **Data Schema**:
+    ```typescript
+    interface NewsCardMetadata {
+      url: string;
+      title: string;
+      description: string;
+      image: string;
+      source: string;
+    }
+    ```
+
 **Example:**
 
 ```json
@@ -669,6 +684,9 @@ The Financial Returns page is composed of a fixed set of sections that must all 
     2. `distributionTimeline`
     3. `taxBenefits`
     4. `investmentStructure`
+- **Optional Sections**:
+    1. `capitalStack`
+    2. `distributionWaterfall`
 ---
 
 ## Detail Page Sections: Property Overview
@@ -905,6 +923,20 @@ The Property Overview page is composed of a flexible array of sections. The AI A
   }
 }
 ```
+
+### 8. Development Timeline
+-   **`type`**: `"developmentTimeline"`
+-   **Description**: A vertical timeline showing project milestones.
+-   **Data Schema**:
+    ```typescript
+    interface DevelopmentTimelineSectionData {
+      timeline: Array<{
+        status: 'completed' | 'in_progress';
+        title: string;
+        description: string;
+      }>;
+    }
+    ```
 
 ### Property Overview Page Composition Rules
 
