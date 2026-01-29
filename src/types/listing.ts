@@ -431,7 +431,15 @@ export interface MajorEmployersSectionData {
 }
 
 export interface DemographicsSectionData {
-  demographics: Demographic[]; // Re-uses existing Demographic
+  demographics?: Demographic[]; // Re-uses existing Demographic
+  matrix?: {
+    headers: string[];
+    rows: Array<{
+      label: string;
+      values: string[];
+    }>;
+  };
+  layout?: 'list' | 'matrix';
 }
 
 export interface KeyMarketDriversSectionData {
