@@ -107,7 +107,15 @@ const CompetitiveAnalysisSection: React.FC<{ data: any; sectionIndex: number }> 
   // Fallback to old format
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Competitive Student Housing Market</h3>
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+        <Editable 
+          dataPath={`details.marketAnalysis.sections[${sectionIndex}].data.title`}
+          value={data.title || "Comparable Properties"}
+          className="font-semibold"
+          as="span"
+          spacing="none"
+        />
+      </h3>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>

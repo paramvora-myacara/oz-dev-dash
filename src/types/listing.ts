@@ -455,6 +455,7 @@ export interface SupplyDemandSectionData {
 }
 
 export interface CompetitiveAnalysisSectionData {
+  title?: string;
   competitors?: Array<{
     name: string;
     built: string;
