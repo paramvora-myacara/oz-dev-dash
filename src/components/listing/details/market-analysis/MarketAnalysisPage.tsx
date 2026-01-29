@@ -7,6 +7,13 @@ import KeyMarketDriversSection from './KeyMarketDriversSection';
 import SupplyDemandSection from './SupplyDemandSection';
 import CompetitiveAnalysisSection from './CompetitiveAnalysisSection';
 import EconomicDiversificationSection from './EconomicDiversificationSection';
+import MarketContextImagesSection from './MarketContextImagesSection';
+
+interface MarketAnalysisPageProps {
+  data: MarketAnalysis;
+  isEditMode?: boolean;
+  listingSlug?: string;
+}
 
 const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex: number }) => {
   switch (section.type) {
@@ -29,13 +36,22 @@ const SectionRenderer = ({ section, sectionIndex }: { section: any; sectionIndex
   }
 };
 
-const MarketAnalysisPage: React.FC<{ data: MarketAnalysis }> = ({ data }) => {
+const MarketAnalysisPage: React.FC<MarketAnalysisPageProps> = ({ 
+  data,
+  isEditMode = false,
+  listingSlug = ''
+}) => {
   if (!data || !data.sections) {
     return <div>Market analysis data is loading or missing...</div>;
   }
 
   return (
     <div className="max-w-7xl mx-auto">
+      <MarketContextImagesSection 
+        isEditMode={isEditMode}
+        listingSlug={listingSlug}
+      />
+
       {data.sections.map((section, idx) => (
         <SectionRenderer key={idx} section={section} sectionIndex={idx} />
       ))}

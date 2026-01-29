@@ -10,9 +10,11 @@ const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   'details/property-overview/floorplansitemapsection/floorplan': 'Floor Plans',
   'details/property-overview/floorplansitemapsection/sitemap': 'Site Maps',
   'details/property-overview/aerial-images': 'Aerial Images',
+  'details/property-overview/property-context-images': 'Property Context',
   'details/sponsor-profile/about': 'Sponsor Photo',
   'details/sponsor-profile/leadership/': 'Leadership Photos',
-  'details/portfolio-projects/': 'Portfolio Projects'
+  'details/portfolio-projects/': 'Portfolio Projects',
+  'details/market-analysis/market-context-images': 'Market Context'
 };
 import { getProjectIdFromSlug } from '@/utils/listing';
 

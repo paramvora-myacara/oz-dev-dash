@@ -43,6 +43,7 @@ export const IMAGE_CATEGORIES = [
   'details/property-overview/floorplansitemapsection/floorplan',
   'details/property-overview/floorplansitemapsection/sitemap',
   'details/property-overview/aerial-images',
+  'details/property-overview/property-context-images',
 
   // Nested categories for sponsor profile
   'details/sponsor-profile/about',
@@ -50,6 +51,9 @@ export const IMAGE_CATEGORIES = [
 
   // Nested categories for portfolio projects (dynamic - project-name will be appended)
   'details/portfolio-projects/',
+
+  // Nested categories for market analysis
+  'details/market-analysis/market-context-images',
 ] as const;
 
 export type ImageCategory = string;

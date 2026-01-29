@@ -4,7 +4,7 @@ This document outlines the standard methodology for implementing image-enabled s
 
 ## 1. Folder-Driven Methodology
 
-The current standard is to have components automatically scan specific Supabase Storage folders rather than storing URLs in the listing JSON.
+The current standard is to have components automatically scan specific Supabase Storage folders rather than storing URLs in the listing JSON. This applies to **all** image-enabled components, whether they are hardcoded into a page or part of a dynamic list.
 
 ### Benefits
 - **Zero JSON Maintenance**: You don't need to manually update URLs in the listing data.
@@ -18,11 +18,44 @@ Images are stored in the `oz-projects-images` bucket using the following pattern
 **Examples:**
 - **Hero Images**: `celadon-001/general/`
 - **Aerial Perspectives**: `celadon-001/details/property-overview/aerial-images/`
+- **Property Context**: `celadon-001/details/property-overview/property-context-images/`
+- **Market Context**: `celadon-001/details/market-analysis/market-context-images/`
 - **Floor Plans**: `celadon-001/details/property-overview/floorplansitemapsection/floorplan/`
 - **Sponsor About**: `celadon-001/details/sponsor-profile/about/`
 - **Leadership Team**: `celadon-001/details/sponsor-profile/leadership/[member-name-slug]/`
 
-## 2. Implementation Checklist
+## 2. Implementation Standards
+
+### A. Implicit Image Fetching
+Every component that displays images must manage its own image state by fetching from its designated Supabase folder.
+
+1.  **Fetch on Load**: Use `getAvailableImages` from `@/utils/supabaseImages` inside a `useEffect`.
+2.  **State Management**: Store the result in local state (e.g., `const [images, setImages] = useState<string[]>([])`).
+3.  **Automatic Rescan**: The `onImagesChange` callback of the `ImageManager` should trigger a re-fetch of the folder content.
+
+### B. UI/UX & Placeholder Standards
+Components should gracefully handle the presence or absence of images:
+
+1.  **Conditional Rendering**: 
+    - **In View Mode**: If no images are found in the folder, the image container should be hidden entirely to maintain a clean layout.
+    - **In Edit Mode**: If no images are found, show a clear placeholder (e.g., a dashed border with a `Plus` icon) to prompt the user to upload content.
+2.  **Aspect Ratios & Containment**: 
+    - Use consistent aspect ratios (e.g., `aspect-[21/9]` for banners, `aspect-[4/3]` for profiles).
+    - Use `object-contain` for property/sponsor photos to prevent cropping of logos or specific architectural details.
+3.  **Management**: Always provide a "Manage Images" button (using the `Plus` icon) in Edit Mode.
+
+### C. Technical Example (Implicit Fetching)
+```tsx
+const loadImages = useCallback(async () => {
+  if (!listingSlug) return;
+  const images = await getAvailableImages(projectId, 'details/sponsor-profile/about');
+  setFolderImages(images);
+}, [projectId, listingSlug]);
+
+useEffect(() => { loadImages(); }, [loadImages]);
+```
+
+## 3. Image Manager Integration
 
 ### A. Component Setup
 1.  **Fetch on Load**: Use `getAvailableImages` from `@/utils/supabaseImages` inside a `useEffect`.

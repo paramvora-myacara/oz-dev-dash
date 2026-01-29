@@ -41,7 +41,13 @@ const DetailPageRenderer: React.FC<DetailPageRendererProps> = ({
   }
   
   if (pageType === 'marketAnalysis') {
-    return <MarketAnalysisPage data={pageData} />;
+    return (
+      <MarketAnalysisPage 
+        data={pageData} 
+        isEditMode={isEditMode}
+        listingSlug={listingSlug}
+      />
+    );
   }
   
   if (pageType === 'sponsorProfile') {

@@ -9,6 +9,7 @@ import DevelopmentTimelineSection from './DevelopmentTimelineSection';
 import DevelopmentPhasesSection from './DevelopmentPhasesSection';
 import FloorplanSitemapSection from '@/components/FloorplanSitemapSection';
 import AerialImagesSection from '@/components/AerialImagesSection';
+import PropertyContextImagesSection from './PropertyContextImagesSection';
 
 interface PropertyOverviewPageProps {
   data: PropertyOverview;
@@ -48,6 +49,11 @@ const PropertyOverviewPage: React.FC<PropertyOverviewPageProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto">
+      <PropertyContextImagesSection 
+        isEditMode={isEditMode}
+        listingSlug={listingSlug}
+      />
+
       {/* FloorplanSitemapSection handles its own placeholder in edit mode */}
       <FloorplanSitemapSection
         isEditMode={isEditMode}
