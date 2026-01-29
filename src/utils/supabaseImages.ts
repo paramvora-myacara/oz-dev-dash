@@ -250,10 +250,11 @@ export async function uploadImage(
       return { success: false, error: `Failed to create folder: ${folderResult.error}` };
     }
 
-    // Generate unique filename with timestamp
+    // Generate unique filename with timestamp and random suffix to avoid collisions
     const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const extension = file.name.split('.').pop();
-    const filename = `${timestamp}.${extension}`;
+    const filename = `${timestamp}-${randomSuffix}.${extension}`;
     const filePath = buildImageFilePath(projectId, category, filename);
 
     // Upload file to Supabase storage
@@ -526,8 +527,9 @@ export async function uploadCampaignImage(
 
     const folderName = getCampaignFolderName(campaignName, campaignId);
     const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const extension = file.name.split('.').pop();
-    const filename = `${timestamp}.${extension}`;
+    const filename = `${timestamp}-${randomSuffix}.${extension}`;
     const filePath = `campaigns/${folderName}/${CAMPAIGN_IMAGE_CATEGORY}/${filename}`;
 
     const { data, error } = await supabase.storage
