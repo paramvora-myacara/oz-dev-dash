@@ -145,7 +145,7 @@ export default function MarketContextImagesSection({
               src={images[currentIndex]}
               alt={`Market context view ${currentIndex + 1}`}
               fill
-              className={`object-cover transition-opacity duration-500 ${
+              className={`object-contain transition-opacity duration-500 ${
                 imageLoading ? 'opacity-0' : 'opacity-100'
               }`}
               onLoad={() => setImageLoading(false)}
