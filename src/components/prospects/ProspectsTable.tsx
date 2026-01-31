@@ -335,29 +335,49 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                     <Building className="h-4 w-4" /> Full Project Details
                                                                 </h4>
                                                                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-base">
-                                                                    {Object.entries(prospect.raw || {}).map(([key, value]) => {
-                                                                        // Filter out empty values and keys that are already shown in the phone section
-                                                                        if (!value || value.trim() === '') return null;
-
-                                                                        const hiddenKeys = [
-                                                                            'Phone Number',
-                                                                            'Owner Contact Phone Number', 'Owner Contact First Name', 'Owner Contact Last Name', 'Owner Contact Email',
-                                                                            'Manager Contact Phone Number', 'Manager Contact First Name', 'Manager Contact Last Name', 'Manager Contact Email',
-                                                                            'Trustee Contact Phone Number', 'Trustee Contact First Name', 'Trustee Contact Last Name', 'Trustee Contact Email',
-                                                                            // Entity Details moved to phone info
-                                                                            'Owner', 'Owner Address', 'Owner City', 'Owner State', 'Owner ZIP',
-                                                                            'Manager', 'Manager Address', 'Manager City', 'Manager State', 'Manager ZIP',
-                                                                            'Trustee', 'Trustee Address', 'Trustee City', 'Trustee State', 'Trustee ZIP'
+                                                                    {(() => {
+                                                                        // Whitelist of fields to show (using exact CSV column names)
+                                                                        const allowedFields = [
+                                                                            'Property Name',
+                                                                            'Market',
+                                                                            'Address',
+                                                                            'City',
+                                                                            'State',
+                                                                            'Completion Date',
+                                                                            'Impr. Rating',  // Fixed: CSV uses "Impr. Rating" not "Impra Rating"
+                                                                            'Loc. Rating',    // Fixed: CSV uses "Loc. Rating" not "Location Rating"
+                                                                            'Owner Website',
+                                                                            'Manager Website'
                                                                         ];
-                                                                        if (hiddenKeys.includes(key)) return null;
 
-                                                                        return (
-                                                                            <div key={key} className="flex flex-col border-b border-border/50 pb-1">
-                                                                                <span className="text-muted-foreground font-medium mb-0.5">{key}</span>
-                                                                                <span className="break-words">{value}</span>
-                                                                            </div>
-                                                                        );
-                                                                    })}
+                                                                        // Map of field names to display labels (if different from CSV key)
+                                                                        const fieldLabels: Record<string, string> = {
+                                                                            'Property Name': 'Property Name',
+                                                                            'Market': 'Market',
+                                                                            'Address': 'Address',
+                                                                            'City': 'City',
+                                                                            'State': 'State',
+                                                                            'Completion Date': 'Completion Date',
+                                                                            'Impr. Rating': 'Improvement Rating',      // Display as "Impra Rating"
+                                                                            'Loc. Rating': 'Location Rating',     // Display as "Location Rating"
+                                                                            'Owner Website': 'Owner Website',
+                                                                            'Manager Website': 'Manager Website'
+                                                                        };
+
+                                                                        return allowedFields.map((fieldKey) => {
+                                                                            const value = prospect.raw?.[fieldKey];
+                                                                            // Only show if value exists and is not empty
+                                                                            if (!value || value.trim() === '') return null;
+
+                                                                            const displayLabel = fieldLabels[fieldKey] || fieldKey;
+                                                                            return (
+                                                                                <div key={fieldKey} className="flex flex-col border-b border-border/50 pb-1">
+                                                                                    <span className="text-muted-foreground font-medium mb-0.5">{displayLabel}</span>
+                                                                                    <span className="break-words">{value}</span>
+                                                                                </div>
+                                                                            );
+                                                                        });
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         </div>
