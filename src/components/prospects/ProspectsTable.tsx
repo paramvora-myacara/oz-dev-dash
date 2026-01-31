@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import {
     Table,
     TableBody,
@@ -31,13 +31,27 @@ interface ProspectsTableProps {
     prospects: Prospect[];
     onSelectProspect: (prospect: Prospect) => void;
     isLoading: boolean;
+    expandedId: string | null;
+    onToggleExpand: (id: string) => void;
+    currentUser: string | null;
 }
 
-export default function ProspectsTable({ prospects, onSelectProspect, isLoading }: ProspectsTableProps) {
+export default function ProspectsTable({
+    prospects,
+    onSelectProspect,
+    isLoading,
+    expandedId,
+    onToggleExpand,
+    currentUser
+}: ProspectsTableProps) {
+    const [mounted, setMounted] = useState(false);
     const [search, setSearch] = useState('');
     const [stateFilter, setStateFilter] = useState('ALL');
     const [statusFilters, setStatusFilters] = useState<string[]>([]); // Array of 'AVAILABLE', 'LOCKED', 'FOLLOW_UP'
-    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const toggleStatusFilter = (filter: string) => {
         setStatusFilters(prev =>
@@ -49,26 +63,21 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
 
     const toggleExpand = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        const newSet = new Set(expandedIds);
-        if (newSet.has(id)) {
-            newSet.delete(id);
-        } else {
-            newSet.add(id);
-        }
-        setExpandedIds(newSet);
+        onToggleExpand(id);
     };
 
     // Helper to check lock status
     const isLocked = (prospect: Prospect) => {
-        if (!prospect.lockoutUntil) return false;
+        if (!mounted || !prospect.lockoutUntil) return false;
         return new Date(prospect.lockoutUntil) > new Date();
     };
 
     // Client-side filtering for the mock
-    const filteredProspects = prospects.filter(p => {
+    const filteredProspects = (prospects || []).filter(p => {
+        if (!p) return false;
         const matchesSearch =
-            p.ownerName.toLowerCase().includes(search.toLowerCase()) ||
-            p.propertyName.toLowerCase().includes(search.toLowerCase());
+            (p.ownerName || '').toLowerCase().includes(search.toLowerCase()) ||
+            (p.propertyName || '').toLowerCase().includes(search.toLowerCase());
         const matchesState = stateFilter === 'ALL' || p.state === stateFilter;
 
         const locked = isLocked(p);
@@ -184,9 +193,8 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                             filteredProspects.map((prospect) => {
                                 const locked = isLocked(prospect);
                                 return (
-                                    <>
+                                    <Fragment key={prospect.id}>
                                         <TableRow
-                                            key={prospect.id}
                                             className={cn(
                                                 "cursor-pointer hover:bg-muted/50 transition-colors",
                                                 locked && "bg-muted/20"
@@ -195,7 +203,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                         >
                                             <TableCell>
                                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                    {expandedIds.has(prospect.id) ?
+                                                    {expandedId === prospect.id ?
                                                         <ChevronUp className="h-4 w-4" /> :
                                                         <ChevronDown className="h-4 w-4" />
                                                     }
@@ -212,7 +220,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                             </TableCell>
                                             <TableCell className="py-4">
                                                 <div className="text-base text-muted-foreground">
-                                                    {prospect.phoneNumbers.length} numbers
+                                                    {(prospect.phoneNumbers || []).length} numbers
                                                 </div>
                                             </TableCell>
                                             <TableCell className="py-4">
@@ -221,7 +229,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                         <span className="font-medium text-lg">{prospect.lastCalledBy}</span>
                                                         <span className="text-base text-muted-foreground">
                                                             {/* Add logic to protect against invalid date strings if needed, assuming ISO from backend */}
-                                                            {prospect.lastCalledAt && formatDateToPT(prospect.lastCalledAt)}
+                                                            {prospect.lastCalledAt && mounted && formatDateToPT(prospect.lastCalledAt)}
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -230,6 +238,19 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                             </TableCell>
                                             <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex flex-col gap-1 items-start">
+                                                    {prospect.viewing_by && (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "animate-pulse mb-1",
+                                                                prospect.viewing_by === currentUser
+                                                                    ? "border-blue-500 text-blue-500"
+                                                                    : "border-yellow-500 text-yellow-500"
+                                                            )}
+                                                        >
+                                                            Viewing: {prospect.viewing_by === currentUser ? 'You' : prospect.viewing_by}
+                                                        </Badge>
+                                                    )}
                                                     <Badge
                                                         className={cn("text-sm px-3 py-1",
                                                             ['follow_up', 'pending_signup'].includes(prospect.callStatus) && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"
@@ -243,10 +264,10 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                 locked ? 'destructive' : 'destructive'
                                                         }
                                                     >
-                                                        {locked && prospect.lockoutUntil
+                                                        {locked && prospect.lockoutUntil && mounted
                                                             ? `Locked until ${formatDateToPT(prospect.lockoutUntil)}`
-                                                            : prospect.callStatus === 'follow_up' && prospect.followUpDate
-                                                                ? `Follow up ${formatDateToPT(prospect.followUpDate)}`
+                                                            : prospect.callStatus === 'follow_up' && prospect.followUpAt && mounted
+                                                                ? `Follow up ${formatDateToPT(prospect.followUpAt)}`
                                                                 : prospect.callStatus === 'pending_signup'
                                                                     ? 'Pending Signup'
                                                                     : prospect.callStatus}
@@ -256,7 +277,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                             <TableCell className="text-right py-4">
                                                 <Button
                                                     variant={locked ? "secondary" : "outline"}
-                                                    disabled={locked}
+                                                    disabled={locked || (!!prospect.viewing_by && prospect.viewing_by !== currentUser)}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         onSelectProspect(prospect);
@@ -264,13 +285,13 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                     className={cn(locked && "opacity-50 cursor-not-allowed")}
                                                 >
                                                     <Phone className="h-4 w-4 mr-2" />
-                                                    {locked ? "Locked" : "Log Call"}
+                                                    {locked ? "Locked" : (prospect.viewing_by && prospect.viewing_by !== currentUser) ? "In Use" : "Log Call"}
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
 
                                         {/* Expanded Detail Row */}
-                                        {expandedIds.has(prospect.id) && (
+                                        {expandedId === prospect.id && (
                                             <TableRow className="bg-muted/30 hover:bg-muted/30">
                                                 <TableCell colSpan={7} className="p-0">
                                                     <div className="p-4 space-y-6">
@@ -282,7 +303,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                     <Phone className="h-4 w-4" /> Phone Numbers
                                                                 </h4>
                                                                 <div className="grid gap-2">
-                                                                    {prospect.phoneNumbers.map((p, i) => (
+                                                                    {(prospect.phoneNumbers || []).map((p, i) => (
                                                                         <div key={i} className="flex flex-col bg-background p-3 rounded-md border text-lg gap-2">
                                                                             <div className="flex items-center justify-between">
                                                                                 <div className="flex items-center gap-2">
@@ -295,7 +316,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                     <div className="flex items-center gap-2 text-base text-muted-foreground">
                                                                                         <span>Called {p.callCount}x</span>
                                                                                         <Badge variant="secondary" className="text-sm">
-                                                                                            Last: {formatToPT(p.lastCalledAt)}
+                                                                                            Last: {mounted ? formatToPT(p.lastCalledAt) : ''}
                                                                                             {prospect.lastCalledBy && ` by ${prospect.lastCalledBy}`}
                                                                                         </Badge>
                                                                                     </div>
@@ -365,7 +386,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                         };
 
                                                                         return allowedFields.map((fieldKey) => {
-                                                                            const value = prospect.raw?.[fieldKey];
+                                                                            const value = prospect.raw?.[fieldKey] || (prospect as any)[fieldKey];
                                                                             // Only show if value exists and is not empty
                                                                             if (!value || value.trim() === '') return null;
 
@@ -391,15 +412,9 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                 {/* Last Call Notes */}
                                                                 <div className="md:col-span-1 space-y-4">
                                                                     <div className="bg-background p-4 rounded-lg border shadow-sm">
-                                                                        <h5 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Contact Email</h5>
-                                                                        {prospect.ownerEmail ? (
-                                                                            <p className="text-lg">{prospect.ownerEmail}</p>
-                                                                        ) : (
-                                                                            <p className="text-muted-foreground italic">No email on record.</p>
-                                                                        )}
-
-                                                                        {(prospect.extras?.webinar || prospect.extras?.consultation) && (
-                                                                            <div className="mt-4 pt-4 border-t flex flex-wrap gap-2">
+                                                                        <h5 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Extras Applied</h5>
+                                                                        {(prospect.extras?.webinar || prospect.extras?.consultation) ? (
+                                                                            <div className="flex flex-wrap gap-2">
                                                                                 {prospect.extras.webinar && (
                                                                                     <Badge className="bg-green-100 text-green-800 border-green-200">Webinar Interest</Badge>
                                                                                 )}
@@ -407,6 +422,8 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                     <Badge className="bg-blue-100 text-blue-800 border-blue-200">Consultation Booked</Badge>
                                                                                 )}
                                                                             </div>
+                                                                        ) : (
+                                                                            <p className="text-muted-foreground italic">No extras selected.</p>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -429,7 +446,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                         [...prospect.callHistory].reverse().map((call, idx) => (
                                                                                             <TableRow key={call.id || idx}>
                                                                                                 <TableCell className="text-sm font-medium">
-                                                                                                    {formatToPT(call.calledAt)}
+                                                                                                    {mounted ? formatToPT(call.calledAt) : ''}
                                                                                                 </TableCell>
                                                                                                 <TableCell className="text-sm">{call.callerName}</TableCell>
                                                                                                 <TableCell>
@@ -461,7 +478,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                 </TableCell>
                                             </TableRow>
                                         )}
-                                    </>
+                                    </Fragment>
                                 );
                             })
                         )}

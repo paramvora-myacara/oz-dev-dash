@@ -55,7 +55,7 @@ export default function ProspectDetailPanel({ prospect, isOpen, onClose, onCallC
                                     <Mail className="h-4 w-4 text-muted-foreground" />
                                     <span>{prospect.ownerEmail || 'No email provided'}</span>
                                 </div>
-                                {prospect.phoneNumbers.map((phone, i) => (
+                                {(prospect.phoneNumbers || []).map((phone, i) => (
                                     <div key={i} className="flex items-center gap-3 text-sm">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
                                         <span className="font-medium w-20">{phone.label}:</span>

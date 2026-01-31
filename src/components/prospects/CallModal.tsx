@@ -19,18 +19,18 @@ interface CallModalProps {
         phoneUsed: string;
         email?: string;
         extras: { webinar: boolean; consultation: boolean };
-        followUpDate?: string;
+        followUpAt?: string;
         lockoutUntil?: string;
     }) => void;
 }
 
 export default function CallModal({ prospect, isOpen, onClose, onLogCall }: CallModalProps) {
     const [outcome, setOutcome] = useState<CallStatus>('called');
-    const [phoneUsed, setPhoneUsed] = useState<string>(prospect.phoneNumbers[0]?.number || '');
-    const [email, setEmail] = useState(prospect.ownerEmail || '');
-    const [originalEmail, setOriginalEmail] = useState<string>(prospect.ownerEmail || '');
+    const [phoneUsed, setPhoneUsed] = useState<string>(prospect.phoneNumbers?.[0]?.number || '');
+    const [email, setEmail] = useState('');
+    const [originalEmail, setOriginalEmail] = useState('');
     const [extras, setExtras] = useState({ webinar: false, consultation: false });
-    const [followUpDate, setFollowUpDate] = useState('');
+    const [followUpAt, setFollowUpAt] = useState('');
     const [lockoutDate, setLockoutDate] = useState('');
     const [noAnswerFollowUpDays, setNoAnswerFollowUpDays] = useState<number>(1);
     const [showEmailConfirm, setShowEmailConfirm] = useState(false);
@@ -39,17 +39,19 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
     useEffect(() => {
         if (isOpen) {
             setOutcome('called');
-            setPhoneUsed(prospect.phoneNumbers[0]?.number || '');
-            const currentEmail = prospect.ownerEmail || '';
+            const initialPhone = prospect.phoneNumbers?.[0]?.number || '';
+            setPhoneUsed(initialPhone);
+            const currentPhone = (prospect.phoneNumbers || []).find(p => p.number === initialPhone);
+            const currentEmail = currentPhone?.contactEmail || '';
             setEmail(currentEmail);
             setOriginalEmail(currentEmail);
             setExtras({ webinar: false, consultation: false });
-            setFollowUpDate('');
+            setFollowUpAt('');
             setLockoutDate('');
             setNoAnswerFollowUpDays(1);
             setShowEmailConfirm(false);
         }
-    }, [isOpen, prospect.id, prospect.ownerEmail]);
+    }, [isOpen, prospect.id]);
 
     const handleSubmit = () => {
         // Validate no_answer requires follow-up days
@@ -59,7 +61,7 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
 
         const trimmedEmail = email.trim();
         const originalTrimmed = originalEmail.trim();
-        
+
         // Check if email was changed and original email existed
         if (originalTrimmed && trimmedEmail !== originalTrimmed) {
             setShowEmailConfirm(true);
@@ -67,13 +69,13 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
         }
 
         // Calculate follow-up date for no_answer
-        let calculatedFollowUpDate: string | undefined;
+        let calculatedFollowUpAt: string | undefined;
         if (outcome === 'no_answer') {
             const followUpDateObj = new Date();
             followUpDateObj.setDate(followUpDateObj.getDate() + noAnswerFollowUpDays);
-            calculatedFollowUpDate = followUpDateObj.toISOString().split('T')[0];
+            calculatedFollowUpAt = followUpDateObj.toISOString();
         } else if (outcome === 'follow_up') {
-            calculatedFollowUpDate = followUpDate;
+            calculatedFollowUpAt = followUpAt ? new Date(followUpAt).toISOString() : undefined;
         }
 
         // Proceed with submission
@@ -82,8 +84,8 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             phoneUsed,
             email: trimmedEmail ? trimmedEmail : undefined,
             extras,
-            followUpDate: calculatedFollowUpDate,
-            lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
+            followUpAt: calculatedFollowUpAt,
+            lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined
         });
         onClose();
     };
@@ -98,13 +100,13 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
         const trimmedEmail = email.trim();
 
         // Calculate follow-up date for no_answer
-        let calculatedFollowUpDate: string | undefined;
+        let calculatedFollowUpAt: string | undefined;
         if (outcome === 'no_answer') {
             const followUpDateObj = new Date();
             followUpDateObj.setDate(followUpDateObj.getDate() + noAnswerFollowUpDays);
-            calculatedFollowUpDate = followUpDateObj.toISOString().split('T')[0];
+            calculatedFollowUpAt = followUpDateObj.toISOString();
         } else if (outcome === 'follow_up') {
-            calculatedFollowUpDate = followUpDate;
+            calculatedFollowUpAt = followUpAt ? new Date(followUpAt).toISOString() : undefined;
         }
 
         onLogCall({
@@ -112,8 +114,8 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             phoneUsed,
             email: trimmedEmail ? trimmedEmail : undefined,
             extras,
-            followUpDate: calculatedFollowUpDate,
-            lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
+            followUpAt: calculatedFollowUpAt,
+            lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined
         });
         setShowEmailConfirm(false);
         onClose();
@@ -131,171 +133,180 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                         <DialogTitle>Log Call with {prospect.ownerName}</DialogTitle>
                     </DialogHeader>
 
-                <div className="grid gap-4 py-4">
-                    {/* Phone Selector */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="phone">Phone Number Used</Label>
-                        <Select value={phoneUsed} onValueChange={setPhoneUsed}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select phone number" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {prospect.phoneNumbers.map((p, idx) => (
-                                    <SelectItem key={idx} value={p.number}>
-                                        {p.contactName ? `${p.contactName} - ` : ''}{p.number} - <span className="text-muted-foreground bg-muted ml-1 rounded px-1.5 py-0.5 text-sm uppercase">{p.label}</span>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Outcome Buttons */}
-                    <div className="grid gap-2">
-                        <Label>Call Outcome</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                            <Button
-                                variant={outcome === 'answered' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('answered')}
-                                className="justify-start"
-                            >
-                                <Phone className="mr-2 h-4 w-4" /> Answered
-                            </Button>
-                            <Button
-                                variant={outcome === 'no_answer' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('no_answer')}
-                                className="justify-start"
-                            >
-                                <XCircle className="mr-2 h-4 w-4" /> No Answer
-                            </Button>
-                            <Button
-                                variant={outcome === 'invalid_number' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('invalid_number')}
-                                className="justify-start"
-                            >
-                                <PhoneOff className="mr-2 h-4 w-4" /> Invalid Number
-                            </Button>
-                            <Button
-                                variant={outcome === 'follow_up' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('follow_up')}
-                                className="justify-start"
-                            >
-                                <Calendar className="mr-2 h-4 w-4" /> Follow Up
-                            </Button>
-                            <Button
-                                variant={outcome === 'locked' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('locked')}
-                                className="justify-start"
-                            >
-                                <Clock className="mr-2 h-4 w-4" /> Lock Out
-                            </Button>
-                            <Button
-                                variant={outcome === 'rejected' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('rejected')}
-                                className="justify-start"
-                            >
-                                <XCircle className="mr-2 h-4 w-4" /> Rejected
-                            </Button>
+                    <div className="grid gap-4 py-4">
+                        {/* Phone Selector */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="phone">Phone Number Used</Label>
+                            <Select value={phoneUsed} onValueChange={(val) => {
+                                setPhoneUsed(val);
+                                // Auto-sync email if it matches original or is empty
+                                const currentPhone = (prospect.phoneNumbers || []).find(p => p.number === val);
+                                const newEmail = currentPhone?.contactEmail || '';
+                                if (email === originalEmail || !email) {
+                                    setEmail(newEmail);
+                                    setOriginalEmail(newEmail);
+                                }
+                            }}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select phone number" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(prospect.phoneNumbers || []).map((p, idx) => (
+                                        <SelectItem key={idx} value={p.number}>
+                                            {p.contactName ? `${p.contactName} - ` : ''}{p.number} - <span className="text-muted-foreground bg-muted ml-1 rounded px-1.5 py-0.5 text-sm uppercase">{p.label}</span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </div>
 
-                    {/* Conditional Follow Up / Lockout Date */}
-                    {outcome === 'follow_up' && (
-                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
-                            <Label htmlFor="followUp">Follow Up Date</Label>
-                            <input
-                                type="date"
-                                id="followUp"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background"
-                                value={followUpDate}
-                                onChange={(e) => setFollowUpDate(e.target.value)}
-                            />
-                        </div>
-                    )}
-
-                    {outcome === 'no_answer' && (
-                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
-                            <Label htmlFor="noAnswerFollowUp">Follow up on</Label>
-                            <div className="flex gap-2 items-center">
-                                <Input
-                                    id="noAnswerFollowUp"
-                                    type="number"
-                                    min="1"
-                                    value={noAnswerFollowUpDays}
-                                    onChange={(e) => {
-                                        const days = parseInt(e.target.value) || 1;
-                                        setNoAnswerFollowUpDays(Math.max(1, days));
-                                    }}
-                                    className="w-24"
-                                />
-                                <span className="text-sm text-muted-foreground">
-                                    {noAnswerFollowUpDays === 1 ? 'day' : 'days'} from now
-                                    {noAnswerFollowUpDays > 0 && (
-                                        <span className="ml-2 text-xs">
-                                            ({new Date(Date.now() + noAnswerFollowUpDays * 24 * 60 * 60 * 1000).toLocaleDateString()})
-                                        </span>
-                                    )}
-                                </span>
+                        {/* Outcome Buttons */}
+                        <div className="grid gap-2">
+                            <Label>Call Outcome</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                    variant={outcome === 'answered' ? 'default' : 'outline'}
+                                    onClick={() => setOutcome('answered')}
+                                    className="justify-start"
+                                >
+                                    <Phone className="mr-2 h-4 w-4" /> Answered
+                                </Button>
+                                <Button
+                                    variant={outcome === 'no_answer' ? 'default' : 'outline'}
+                                    onClick={() => setOutcome('no_answer')}
+                                    className="justify-start"
+                                >
+                                    <XCircle className="mr-2 h-4 w-4" /> No Answer
+                                </Button>
+                                <Button
+                                    variant={outcome === 'invalid_number' ? 'default' : 'outline'}
+                                    onClick={() => setOutcome('invalid_number')}
+                                    className="justify-start"
+                                >
+                                    <PhoneOff className="mr-2 h-4 w-4" /> Invalid Number
+                                </Button>
+                                <Button
+                                    variant={outcome === 'follow_up' ? 'default' : 'outline'}
+                                    onClick={() => setOutcome('follow_up')}
+                                    className="justify-start"
+                                >
+                                    <Calendar className="mr-2 h-4 w-4" /> Follow Up
+                                </Button>
+                                <Button
+                                    variant={outcome === 'locked' ? 'default' : 'outline'}
+                                    onClick={() => setOutcome('locked')}
+                                    className="justify-start"
+                                >
+                                    <Clock className="mr-2 h-4 w-4" /> Lock Out
+                                </Button>
+                                <Button
+                                    variant={outcome === 'rejected' ? 'default' : 'outline'}
+                                    onClick={() => setOutcome('rejected')}
+                                    className="justify-start"
+                                >
+                                    <XCircle className="mr-2 h-4 w-4" /> Rejected
+                                </Button>
                             </div>
                         </div>
-                    )}
 
-                    {outcome === 'locked' && (
-                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
-                            <Label htmlFor="lockoutUntil">Lock Out Until</Label>
-                            <div className="flex gap-2 items-center">
+                        {/* Conditional Follow Up / Lockout Date */}
+                        {outcome === 'follow_up' && (
+                            <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                                <Label htmlFor="followUp">Follow Up Date</Label>
                                 <input
                                     type="date"
-                                    id="lockoutUntil"
+                                    id="followUp"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background"
-                                    value={lockoutDate}
-                                    onChange={(e) => setLockoutDate(e.target.value)}
+                                    value={followUpAt}
+                                    onChange={(e) => setFollowUpAt(e.target.value)}
                                 />
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                                    (Prospect will be locked until this date)
-                                </span>
+                            </div>
+                        )}
+
+                        {outcome === 'no_answer' && (
+                            <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                                <Label htmlFor="noAnswerFollowUp">Follow up on</Label>
+                                <div className="flex gap-2 items-center">
+                                    <Input
+                                        id="noAnswerFollowUp"
+                                        type="number"
+                                        min="1"
+                                        value={noAnswerFollowUpDays}
+                                        onChange={(e) => {
+                                            const days = parseInt(e.target.value) || 1;
+                                            setNoAnswerFollowUpDays(Math.max(1, days));
+                                        }}
+                                        className="w-24"
+                                    />
+                                    <span className="text-sm text-muted-foreground">
+                                        {noAnswerFollowUpDays === 1 ? 'day' : 'days'} from now
+                                        {noAnswerFollowUpDays > 0 && (
+                                            <span className="ml-2 text-xs">
+                                                ({new Date(Date.now() + noAnswerFollowUpDays * 24 * 60 * 60 * 1000).toLocaleDateString()})
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {outcome === 'locked' && (
+                            <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                                <Label htmlFor="lockoutUntil">Lock Out Until</Label>
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="date"
+                                        id="lockoutUntil"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background"
+                                        value={lockoutDate}
+                                        onChange={(e) => setLockoutDate(e.target.value)}
+                                    />
+                                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                        (Prospect will be locked until this date)
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Extras */}
+                        <div className="grid gap-2">
+                            <Label>Extras Offered</Label>
+                            <div className="flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="webinar"
+                                        checked={extras.webinar}
+                                        onCheckedChange={(c) => setExtras(prev => ({ ...prev, webinar: !!c }))}
+                                    />
+                                    <Label htmlFor="webinar">Free Webinar</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="consultation"
+                                        checked={extras.consultation}
+                                        onCheckedChange={(c) => setExtras(prev => ({ ...prev, consultation: !!c }))}
+                                    />
+                                    <Label htmlFor="consultation">Post-Close Consultation</Label>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Extras */}
-                    <div className="grid gap-2">
-                        <Label>Extras Offered</Label>
-                        <div className="flex gap-4">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="webinar"
-                                    checked={extras.webinar}
-                                    onCheckedChange={(c) => setExtras(prev => ({ ...prev, webinar: !!c }))}
-                                />
-                                <Label htmlFor="webinar">Free Webinar</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="consultation"
-                                    checked={extras.consultation}
-                                    onCheckedChange={(c) => setExtras(prev => ({ ...prev, consultation: !!c }))}
-                                />
-                                <Label htmlFor="consultation">Post-Close Consultation</Label>
-                            </div>
+                        {/* Email Field - Always show, editable */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="Enter email address from call..."
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
                         </div>
                     </div>
-
-                    {/* Email Field - Always show, editable */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="Enter email address from call..."
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
-                </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={onClose}>Cancel</Button>
-                        <Button 
+                        <Button
                             onClick={handleSubmit}
                             disabled={outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1)}
                         >

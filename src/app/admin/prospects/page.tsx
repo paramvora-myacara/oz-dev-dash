@@ -1,52 +1,82 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ProspectsTable from '@/components/prospects/ProspectsTable';
 import CallModal from '@/components/prospects/CallModal';
 import { Prospect, CallStatus } from '@/types/prospect';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-
+import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { mapProspect } from '@/utils/prospect-mapping';
+import { createClient } from '@/utils/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
+
+const PAGE_SIZE = 50;
 
 export default function ProspectsPage() {
     const [prospects, setProspects] = useState<Prospect[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
 
-    const fetchProspects = async () => {
+    const fetchProspects = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Restore user from local storage
-            const savedUser = localStorage.getItem('prospect_current_user');
-            if (savedUser) setCurrentUser(savedUser);
+            const url = new URL('/api/prospects', window.location.origin);
+            url.searchParams.set('page', page.toString());
+            url.searchParams.set('limit', PAGE_SIZE.toString());
 
-            // Check local storage first for persistence during dev
-            const saved = localStorage.getItem('prospects_mock_data');
-            if (saved) {
-                setProspects(JSON.parse(saved));
-                setIsLoading(false);
-                return;
-            }
-
-            const res = await fetch('/api/mock-prospects');
+            const res = await fetch(url.toString());
             if (!res.ok) throw new Error('Failed to fetch');
-            const data = await res.json();
-            setProspects(data);
-            localStorage.setItem('prospects_mock_data', JSON.stringify(data));
+            const result = await res.json();
+            setProspects(result.data);
+            setTotalCount(result.count);
         } catch (error) {
             console.error(error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [page]);
 
+    // Restore user and setup Realtime
     useEffect(() => {
+        setMounted(true);
+        const savedUser = localStorage.getItem('prospect_current_user');
+        if (savedUser) setCurrentUser(savedUser);
+
+        const supabase = createClient();
+
+        const channel = supabase
+            .channel('prospects-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'prospects' },
+                (payload) => {
+                    const updatedProspect = mapProspect(payload.new);
+                    setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
+
+                    // Update selected prospect if it was updated by someone else
+                    setSelectedProspect(prev => {
+                        if (prev?.id === updatedProspect.id) {
+                            return { ...prev, ...updatedProspect };
+                        }
+                        return prev;
+                    });
+                }
+            )
+            .subscribe();
+
         fetchProspects();
-    }, []);
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [fetchProspects]);
 
     const handleSelectUser = (user: string) => {
         setCurrentUser(user);
@@ -58,64 +88,89 @@ export default function ProspectsPage() {
         setIsCallModalOpen(true);
     };
 
-    const handleLogCall = (data: {
+    const handleToggleExpand = async (id: string) => {
+        const isCurrentlyExpanded = expandedId === id;
+
+        if (isCurrentlyExpanded) {
+            // Unlocking
+            setExpandedId(null);
+            try {
+                await fetch(`/api/prospects/${id}/lock`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ userName: currentUser })
+                });
+            } catch (err) {
+                console.error('Failed to release lock:', err);
+            }
+        } else {
+            // Locking
+            try {
+                const res = await fetch(`/api/prospects/${id}/lock`, {
+                    method: 'POST',
+                    body: JSON.stringify({ userName: currentUser })
+                });
+
+                if (res.ok) {
+                    setExpandedId(id);
+                } else if (res.status === 409) {
+                    alert('This prospect is currently being viewed by someone else.');
+                }
+            } catch (err) {
+                console.error('Failed to acquire lock:', err);
+            }
+        }
+    };
+
+    // Cleanup lock on unmount
+    useEffect(() => {
+        return () => {
+            if (expandedId) {
+                const id = expandedId;
+                const user = localStorage.getItem('prospect_current_user');
+                if (id && user) {
+                    // Using navigator.sendBeacon or a sync request in unmount is tricky in modern browsers
+                    // but we'll try a standard fetch with keepalive: true
+                    fetch(`/api/prospects/${id}/lock`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ userName: user }),
+                        keepalive: true
+                    }).catch(() => { });
+                }
+            }
+        };
+    }, [expandedId]);
+
+    const handleLogCall = async (data: {
         outcome: CallStatus;
         phoneUsed: string;
         email?: string;
         extras: { webinar: boolean; consultation: boolean };
-        followUpDate?: string;
+        followUpAt?: string;
         lockoutUntil?: string;
     }) => {
-        if (!selectedProspect) return;
+        if (!selectedProspect || !currentUser) return;
 
-        // Optimistic update for UI mock
-        const updatedPhoneNumbers = selectedProspect.phoneNumbers.map(p => {
-            if (p.number === data.phoneUsed) {
-                return {
-                    ...p,
-                    lastCalledAt: new Date().toISOString(),
-                    callCount: (p.callCount || 0) + 1
-                };
-            }
-            return p;
-        });
+        try {
+            const res = await fetch(`/api/prospects/${selectedProspect.id}/call`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    ...data,
+                    callerName: currentUser
+                })
+            });
 
-        const newCallEntry = {
-            id: Math.random().toString(36).substring(7),
-            callerId: currentUser || 'unknown',
-            callerName: currentUser || 'Unknown',
-            outcome: data.outcome,
-            phoneUsed: data.phoneUsed,
-            email: data.email,
-            calledAt: new Date().toISOString()
-        };
+            if (!res.ok) throw new Error('Failed to log call');
 
-        // If no_answer has a follow-up date, set callStatus to follow_up
-        const finalCallStatus = data.outcome === 'no_answer' && data.followUpDate 
-            ? 'follow_up' 
-            : data.outcome;
-
-        const updatedProspect = {
-            ...selectedProspect,
-            phoneNumbers: updatedPhoneNumbers,
-            callStatus: finalCallStatus,
-            ownerEmail: data.email !== undefined ? data.email : selectedProspect.ownerEmail, // Update email if provided (including empty string)
-            lastCalledAt: new Date().toISOString(),
-            lastCalledBy: currentUser || 'Unknown',
-            lockoutUntil: data.lockoutUntil || selectedProspect.lockoutUntil, // Preserve or update lockout
-            followUpDate: data.followUpDate, // Save follow up date if provided
-            extras: data.extras, // Save checkboxes (webinar, etc)
-            callHistory: [...(selectedProspect.callHistory || []), newCallEntry] // Append to history
-        };
-
-        const newProspects = prospects.map(p => p.id === updatedProspect.id ? updatedProspect : p);
-        setProspects(newProspects);
-        localStorage.setItem('prospects_mock_data', JSON.stringify(newProspects));
-        setSelectedProspect(updatedProspect);
-
-        // Close modal
-        console.log('Call Logged:', data);
+            // The Realtime subscription will handle updating the list
+            setIsCallModalOpen(false);
+            setExpandedId(null); // Row is unlocked on call completion by backend
+        } catch (error) {
+            console.error('Error logging call:', error);
+            alert('Failed to log call. Please try again.');
+        }
     };
+
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
     return (
         <div className="h-full flex flex-col p-6 space-y-6">
@@ -131,13 +186,13 @@ export default function ProspectsPage() {
                         )}
                     </h1>
                     <p className="text-lg text-muted-foreground">
-                        Call queue for QOZB Developer Outreach
+                        Call queue for QOZB Developer Outreach ({totalCount} total)
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button onClick={fetchProspects} variant="outline">
                         <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        Refresh List
+                        Refresh
                     </Button>
                     <ThemeToggle />
                 </div>
@@ -147,8 +202,38 @@ export default function ProspectsPage() {
                 prospects={prospects}
                 isLoading={isLoading}
                 onSelectProspect={handleSelectProspect}
-
+                expandedId={expandedId}
+                onToggleExpand={handleToggleExpand}
+                currentUser={currentUser}
             />
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between py-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                        Showing {(page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={page === 1 || isLoading}
+                            onClick={() => setPage(p => p - 1)}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                        </Button>
+                        <div className="text-sm font-medium">Page {page} of {totalPages}</div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={page === totalPages || isLoading}
+                            onClick={() => setPage(p => p + 1)}
+                        >
+                            Next <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {selectedProspect && (
                 <CallModal
@@ -160,7 +245,7 @@ export default function ProspectsPage() {
             )}
 
             {/* User Selection Modal */}
-            {!currentUser && (
+            {mounted && !currentUser && (
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
                         <div className="space-y-2 text-center">

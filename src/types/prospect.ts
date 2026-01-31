@@ -45,17 +45,24 @@ export interface Prospect {
     // Aggregated Phone Numbers
     phoneNumbers: PhoneNumber[];
 
-    // App-Specific Fields (Mocked for now)
+    // App-Specific Fields
     callStatus: CallStatus;
     lockoutUntil?: string | null;
     assignedTo?: string; // User ID
     lastCalledAt?: string;
     lastCalledBy?: string;
     callNotes?: string;
-    followUpDate?: string;
+    followUpAt?: string;
     extras?: ProspectExtras;
     callHistory?: CallHistory[];
 
-    // Original CSV Row Data (for reference)
+    // Optimistic locking
+    viewing_by?: string | null;
+    viewing_since?: string | null;
+
+    created_at?: string;
+    updated_at?: string;
+
+    // Original CSV Row Data (optional for raw view)
     raw?: Record<string, string>;
 }
