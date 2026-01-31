@@ -62,20 +62,7 @@ export async function POST(
     if (followUpAt) prospectUpdate.follow_up_at = followUpAt;
     if (lockoutUntil) prospectUpdate.lockout_until = lockoutUntil;
 
-    // 4. Update prospect and insert call record in a transaction (simulated)
-    const { data: updatedProspect, error: updateError } = await supabase
-        .from('prospects')
-        .update(prospectUpdate)
-        .eq('id', id)
-        .select()
-        .single();
-
-    if (updateError) {
-        console.error('Error updating prospect:', updateError);
-        return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
-
-    // 5. Insert call log
+    // 4. Insert call log
     const { error: logError } = await supabase
         .from('prospect_calls')
         .insert({
@@ -88,7 +75,19 @@ export async function POST(
 
     if (logError) {
         console.error('Error logging call:', logError);
-        // Note: Prospect was already updated, so we might want to handle this better in a real txn
+    }
+
+    // 5. Update prospect and return fresh data with history
+    const { data: updatedProspect, error: updateError } = await supabase
+        .from('prospects')
+        .update(prospectUpdate)
+        .eq('id', id)
+        .select('*, prospect_calls(*)')
+        .single();
+
+    if (updateError) {
+        console.error('Error updating prospect:', updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data: mapProspect(updatedProspect) });

@@ -21,7 +21,7 @@ export function mapProspect(dbRow: any): Prospect {
     const derivedOwnerName = ownerEntry?.contactName || '';
     const derivedOwnerEmail = ownerEntry?.contactEmail || '';
 
-    return {
+    const result: Prospect = {
         id: dbRow.id,
         propertyName: dbRow.property_name,
         market: dbRow.market,
@@ -40,25 +40,30 @@ export function mapProspect(dbRow: any): Prospect {
         lastCalledBy: dbRow.last_called_by,
         viewing_by: dbRow.viewing_by,
         viewing_since: dbRow.viewing_since,
-        extras: dbRow.extras || {},
+        extras: extrasObj,
         created_at: dbRow.created_at,
         updated_at: dbRow.updated_at,
         raw: {
             'Property Name': dbRow.property_name,
             'Market': dbRow.market,
-            'Submarket': dbRow.submarket,
             'Address': dbRow.address,
             'City': dbRow.city,
             'State': dbRow.state,
+            'Submarket': dbRow.submarket,
             'ZIP': dbRow.zip
-        },
-        callHistory: (dbRow.prospect_calls || []).map((c: any) => ({
+        }
+    };
+
+    if (dbRow.prospect_calls) {
+        result.callHistory = dbRow.prospect_calls.map((c: any) => ({
             id: c.id,
             callerName: c.caller_name,
             outcome: c.outcome,
             phoneUsed: c.phone_used,
             email: c.email_captured,
             calledAt: c.called_at
-        }))
-    };
+        }));
+    }
+
+    return result;
 }

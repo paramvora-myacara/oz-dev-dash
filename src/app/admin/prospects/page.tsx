@@ -21,6 +21,11 @@ export default function ProspectsPage() {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
+    // Filters
+    const [search, setSearch] = useState('');
+    const [stateFilter, setStateFilter] = useState('ALL');
+    const [statusFilters, setStatusFilters] = useState<string[]>([]);
+
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
 
@@ -30,6 +35,12 @@ export default function ProspectsPage() {
             const url = new URL('/api/prospects', window.location.origin);
             url.searchParams.set('page', page.toString());
             url.searchParams.set('limit', PAGE_SIZE.toString());
+
+            if (search) url.searchParams.set('search', search);
+            if (stateFilter !== 'ALL') url.searchParams.set('state', stateFilter);
+            if (statusFilters.length > 0) {
+                url.searchParams.set('status', statusFilters.join(','));
+            }
 
             const res = await fetch(url.toString());
             if (!res.ok) throw new Error('Failed to fetch');
@@ -41,7 +52,7 @@ export default function ProspectsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page]);
+    }, [page, search, stateFilter, statusFilters]);
 
     // Restore user and setup Realtime
     useEffect(() => {
@@ -140,6 +151,11 @@ export default function ProspectsPage() {
         };
     }, [expandedId]);
 
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setPage(1);
+    }, [search, stateFilter, statusFilters]);
+
     const handleLogCall = async (data: {
         outcome: CallStatus;
         phoneUsed: string;
@@ -161,7 +177,18 @@ export default function ProspectsPage() {
 
             if (!res.ok) throw new Error('Failed to log call');
 
-            // The Realtime subscription will handle updating the list
+            const { data: updatedProspect } = await res.json();
+
+            // Update local state immediately for instant feedback
+            if (updatedProspect) {
+                setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
+
+                // If this prospect is currently selected/expanded, update it too
+                if (selectedProspect?.id === updatedProspect.id) {
+                    setSelectedProspect({ ...selectedProspect, ...updatedProspect });
+                }
+            }
+
             setIsCallModalOpen(false);
             setExpandedId(null); // Row is unlocked on call completion by backend
         } catch (error) {
@@ -205,6 +232,12 @@ export default function ProspectsPage() {
                 expandedId={expandedId}
                 onToggleExpand={handleToggleExpand}
                 currentUser={currentUser}
+                search={search}
+                onSearchChange={setSearch}
+                stateFilter={stateFilter}
+                onStateFilterChange={setStateFilter}
+                statusFilters={statusFilters}
+                onStatusFiltersChange={setStatusFilters}
             />
 
             {/* Pagination Controls */}

@@ -34,6 +34,12 @@ interface ProspectsTableProps {
     expandedId: string | null;
     onToggleExpand: (id: string) => void;
     currentUser: string | null;
+    search: string;
+    onSearchChange: (val: string) => void;
+    stateFilter: string;
+    onStateFilterChange: (val: string) => void;
+    statusFilters: string[];
+    onStatusFiltersChange: (val: string[]) => void;
 }
 
 export default function ProspectsTable({
@@ -42,23 +48,25 @@ export default function ProspectsTable({
     isLoading,
     expandedId,
     onToggleExpand,
-    currentUser
+    currentUser,
+    search,
+    onSearchChange,
+    stateFilter,
+    onStateFilterChange,
+    statusFilters,
+    onStatusFiltersChange
 }: ProspectsTableProps) {
     const [mounted, setMounted] = useState(false);
-    const [search, setSearch] = useState('');
-    const [stateFilter, setStateFilter] = useState('ALL');
-    const [statusFilters, setStatusFilters] = useState<string[]>([]); // Array of 'AVAILABLE', 'LOCKED', 'FOLLOW_UP'
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
     const toggleStatusFilter = (filter: string) => {
-        setStatusFilters(prev =>
-            prev.includes(filter)
-                ? prev.filter(f => f !== filter)
-                : [...prev, filter]
-        );
+        const next = statusFilters.includes(filter)
+            ? statusFilters.filter(f => f !== filter)
+            : [...statusFilters, filter];
+        onStatusFiltersChange(next);
     };
 
     const toggleExpand = (id: string, e: React.MouseEvent) => {
@@ -72,24 +80,7 @@ export default function ProspectsTable({
         return new Date(prospect.lockoutUntil) > new Date();
     };
 
-    // Client-side filtering for the mock
-    const filteredProspects = (prospects || []).filter(p => {
-        if (!p) return false;
-        const matchesSearch =
-            (p.ownerName || '').toLowerCase().includes(search.toLowerCase()) ||
-            (p.propertyName || '').toLowerCase().includes(search.toLowerCase());
-        const matchesState = stateFilter === 'ALL' || p.state === stateFilter;
-
-        const locked = isLocked(p);
-        const matchesStatus =
-            statusFilters.length === 0 ||
-            (statusFilters.includes('AVAILABLE') && !locked) ||
-            (statusFilters.includes('LOCKED') && locked) ||
-            (statusFilters.includes('FOLLOW_UP') && p.callStatus === 'follow_up') ||
-            (statusFilters.includes('PENDING_SIGNUP') && p.callStatus === 'pending_signup');
-
-        return matchesSearch && matchesState && matchesStatus;
-    });
+    const displayProspects = prospects || [];
 
     return (
         <div className="space-y-4">
@@ -100,11 +91,11 @@ export default function ProspectsTable({
                     <Input
                         placeholder="Search details..."
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => onSearchChange(e.target.value)}
                         className="pl-8"
                     />
                 </div>
-                <Select value={stateFilter} onValueChange={setStateFilter}>
+                <Select value={stateFilter} onValueChange={onStateFilterChange}>
                     <SelectTrigger className="w-[150px]">
                         <SelectValue placeholder="Filter by State" />
                     </SelectTrigger>
@@ -157,7 +148,7 @@ export default function ProspectsTable({
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setStatusFilters([])}
+                            onClick={() => onStatusFiltersChange([])}
                             className="h-8 text-xs text-muted-foreground underline-offset-4 hover:underline px-2"
                         >
                             Reset
@@ -185,12 +176,12 @@ export default function ProspectsTable({
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center h-24">Loading prospects...</TableCell>
                             </TableRow>
-                        ) : filteredProspects.length === 0 ? (
+                        ) : displayProspects.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center h-24">No prospects found.</TableCell>
                             </TableRow>
                         ) : (
-                            filteredProspects.map((prospect) => {
+                            displayProspects.map((prospect) => {
                                 const locked = isLocked(prospect);
                                 return (
                                     <Fragment key={prospect.id}>
@@ -486,7 +477,7 @@ export default function ProspectsTable({
                 </Table>
             </div>
             <div className="text-sm text-muted-foreground">
-                Showing {filteredProspects.length} of {prospects.length} prospects
+                Showing {displayProspects.length} of {prospects.length} prospects
             </div>
         </div>
     );
