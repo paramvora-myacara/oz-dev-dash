@@ -90,10 +90,15 @@ export default function ProspectsPage() {
             calledAt: new Date().toISOString()
         };
 
+        // If no_answer has a follow-up date, set callStatus to follow_up
+        const finalCallStatus = data.outcome === 'no_answer' && data.followUpDate 
+            ? 'follow_up' 
+            : data.outcome;
+
         const updatedProspect = {
             ...selectedProspect,
             phoneNumbers: updatedPhoneNumbers,
-            callStatus: data.outcome,
+            callStatus: finalCallStatus,
             ownerEmail: data.email !== undefined ? data.email : selectedProspect.ownerEmail, // Update email if provided (including empty string)
             lastCalledAt: new Date().toISOString(),
             lastCalledBy: currentUser || 'Unknown',

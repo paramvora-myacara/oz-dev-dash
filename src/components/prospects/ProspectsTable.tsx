@@ -358,7 +358,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                             'City': 'City',
                                                                             'State': 'State',
                                                                             'Completion Date': 'Completion Date',
-                                                                            'Impr. Rating': 'Improvement Rating',      // Display as "Impra Rating"
+                                                                            'Impr. Rating': 'Impra Rating',      // Display as "Impra Rating"
                                                                             'Loc. Rating': 'Location Rating',     // Display as "Location Rating"
                                                                             'Owner Website': 'Owner Website',
                                                                             'Manager Website': 'Manager Website'

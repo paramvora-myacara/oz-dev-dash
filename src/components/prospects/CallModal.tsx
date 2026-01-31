@@ -32,6 +32,7 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
     const [extras, setExtras] = useState({ webinar: false, consultation: false });
     const [followUpDate, setFollowUpDate] = useState('');
     const [lockoutDate, setLockoutDate] = useState('');
+    const [noAnswerFollowUpDays, setNoAnswerFollowUpDays] = useState<number>(1);
     const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
     // Reset form when modal opens or prospect changes
@@ -45,11 +46,17 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             setExtras({ webinar: false, consultation: false });
             setFollowUpDate('');
             setLockoutDate('');
+            setNoAnswerFollowUpDays(1);
             setShowEmailConfirm(false);
         }
     }, [isOpen, prospect.id, prospect.ownerEmail]);
 
     const handleSubmit = () => {
+        // Validate no_answer requires follow-up days
+        if (outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1)) {
+            return; // Don't submit if no follow-up days set
+        }
+
         const trimmedEmail = email.trim();
         const originalTrimmed = originalEmail.trim();
         
@@ -59,26 +66,53 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             return;
         }
 
+        // Calculate follow-up date for no_answer
+        let calculatedFollowUpDate: string | undefined;
+        if (outcome === 'no_answer') {
+            const followUpDateObj = new Date();
+            followUpDateObj.setDate(followUpDateObj.getDate() + noAnswerFollowUpDays);
+            calculatedFollowUpDate = followUpDateObj.toISOString().split('T')[0];
+        } else if (outcome === 'follow_up') {
+            calculatedFollowUpDate = followUpDate;
+        }
+
         // Proceed with submission
         onLogCall({
             outcome: outcome === 'answered' ? 'pending_signup' : outcome,
             phoneUsed,
             email: trimmedEmail ? trimmedEmail : undefined,
             extras,
-            followUpDate: outcome === 'follow_up' ? followUpDate : undefined,
+            followUpDate: calculatedFollowUpDate,
             lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
         });
         onClose();
     };
 
     const handleConfirmEmailUpdate = () => {
+        // Validate no_answer requires follow-up days
+        if (outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1)) {
+            setShowEmailConfirm(false);
+            return;
+        }
+
         const trimmedEmail = email.trim();
+
+        // Calculate follow-up date for no_answer
+        let calculatedFollowUpDate: string | undefined;
+        if (outcome === 'no_answer') {
+            const followUpDateObj = new Date();
+            followUpDateObj.setDate(followUpDateObj.getDate() + noAnswerFollowUpDays);
+            calculatedFollowUpDate = followUpDateObj.toISOString().split('T')[0];
+        } else if (outcome === 'follow_up') {
+            calculatedFollowUpDate = followUpDate;
+        }
+
         onLogCall({
             outcome: outcome === 'answered' ? 'pending_signup' : outcome,
             phoneUsed,
             email: trimmedEmail ? trimmedEmail : undefined,
             extras,
-            followUpDate: outcome === 'follow_up' ? followUpDate : undefined,
+            followUpDate: calculatedFollowUpDate,
             lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
         });
         setShowEmailConfirm(false);
@@ -178,6 +212,33 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                         </div>
                     )}
 
+                    {outcome === 'no_answer' && (
+                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                            <Label htmlFor="noAnswerFollowUp">Follow up on</Label>
+                            <div className="flex gap-2 items-center">
+                                <Input
+                                    id="noAnswerFollowUp"
+                                    type="number"
+                                    min="1"
+                                    value={noAnswerFollowUpDays}
+                                    onChange={(e) => {
+                                        const days = parseInt(e.target.value) || 1;
+                                        setNoAnswerFollowUpDays(Math.max(1, days));
+                                    }}
+                                    className="w-24"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                    {noAnswerFollowUpDays === 1 ? 'day' : 'days'} from now
+                                    {noAnswerFollowUpDays > 0 && (
+                                        <span className="ml-2 text-xs">
+                                            ({new Date(Date.now() + noAnswerFollowUpDays * 24 * 60 * 60 * 1000).toLocaleDateString()})
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {outcome === 'locked' && (
                         <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
                             <Label htmlFor="lockoutUntil">Lock Out Until</Label>
@@ -234,7 +295,12 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
 
                     <DialogFooter>
                         <Button variant="outline" onClick={onClose}>Cancel</Button>
-                        <Button onClick={handleSubmit}>Log Call</Button>
+                        <Button 
+                            onClick={handleSubmit}
+                            disabled={outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1)}
+                        >
+                            Log Call
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
