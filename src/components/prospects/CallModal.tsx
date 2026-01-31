@@ -20,6 +20,7 @@ interface CallModalProps {
         notes: string;
         extras: { webinar: boolean; consultation: boolean };
         followUpDate?: string;
+        lockoutUntil?: string;
     }) => void;
 }
 
@@ -29,6 +30,7 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
     const [notes, setNotes] = useState('');
     const [extras, setExtras] = useState({ webinar: false, consultation: false });
     const [followUpDate, setFollowUpDate] = useState('');
+    const [lockoutDate, setLockoutDate] = useState('');
 
     const handleSubmit = () => {
         onLogCall({
@@ -36,7 +38,8 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             phoneUsed,
             notes,
             extras,
-            followUpDate: outcome === 'follow_up' ? followUpDate : undefined
+            followUpDate: outcome === 'follow_up' ? followUpDate : undefined,
+            lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
         });
         onClose();
     };
@@ -99,23 +102,23 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                                 <Calendar className="mr-2 h-4 w-4" /> Follow Up
                             </Button>
                             <Button
-                                variant={outcome === 'closed' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('closed')}
-                                className="justify-start bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                variant={outcome === 'locked' ? 'default' : 'outline'}
+                                onClick={() => setOutcome('locked')}
+                                className="justify-start"
                             >
-                                <CheckCircle className="mr-2 h-4 w-4" /> Closed!
+                                <Clock className="mr-2 h-4 w-4" /> Lock Out
                             </Button>
                             <Button
                                 variant={outcome === 'rejected' ? 'default' : 'outline'}
                                 onClick={() => setOutcome('rejected')}
-                                className="justify-start bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                                className="justify-start"
                             >
                                 <XCircle className="mr-2 h-4 w-4" /> Rejected
                             </Button>
                         </div>
                     </div>
 
-                    {/* Conditional Follow Up Date */}
+                    {/* Conditional Follow Up / Lockout Date */}
                     {outcome === 'follow_up' && (
                         <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
                             <Label htmlFor="followUp">Follow Up Date</Label>
@@ -126,6 +129,24 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                                 value={followUpDate}
                                 onChange={(e) => setFollowUpDate(e.target.value)}
                             />
+                        </div>
+                    )}
+
+                    {outcome === 'locked' && (
+                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                            <Label htmlFor="lockoutUntil">Lock Out Until</Label>
+                            <div className="flex gap-2 items-center">
+                                <input
+                                    type="date"
+                                    id="lockoutUntil"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background"
+                                    value={lockoutDate}
+                                    onChange={(e) => setLockoutDate(e.target.value)}
+                                />
+                                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                    (Prospect will be locked until this date)
+                                </span>
+                            </div>
                         </div>
                     )}
 

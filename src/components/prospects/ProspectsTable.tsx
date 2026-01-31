@@ -35,7 +35,16 @@ interface ProspectsTableProps {
 export default function ProspectsTable({ prospects, onSelectProspect, isLoading }: ProspectsTableProps) {
     const [search, setSearch] = useState('');
     const [stateFilter, setStateFilter] = useState('ALL');
+    const [statusFilters, setStatusFilters] = useState<string[]>([]); // Array of 'AVAILABLE', 'LOCKED', 'FOLLOW_UP'
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+    const toggleStatusFilter = (filter: string) => {
+        setStatusFilters(prev =>
+            prev.includes(filter)
+                ? prev.filter(f => f !== filter)
+                : [...prev, filter]
+        );
+    };
 
     const toggleExpand = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -48,13 +57,27 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
         setExpandedIds(newSet);
     };
 
+    // Helper to check lock status
+    const isLocked = (prospect: Prospect) => {
+        if (!prospect.lockoutUntil) return false;
+        return new Date(prospect.lockoutUntil) > new Date();
+    };
+
     // Client-side filtering for the mock
     const filteredProspects = prospects.filter(p => {
         const matchesSearch =
             p.ownerName.toLowerCase().includes(search.toLowerCase()) ||
             p.propertyName.toLowerCase().includes(search.toLowerCase());
         const matchesState = stateFilter === 'ALL' || p.state === stateFilter;
-        return matchesSearch && matchesState;
+
+        const locked = isLocked(p);
+        const matchesStatus =
+            statusFilters.length === 0 ||
+            (statusFilters.includes('AVAILABLE') && !locked) ||
+            (statusFilters.includes('LOCKED') && locked) ||
+            (statusFilters.includes('FOLLOW_UP') && p.callStatus === 'follow_up');
+
+        return matchesSearch && matchesState && matchesStatus;
     });
 
     return (
@@ -71,7 +94,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                     />
                 </div>
                 <Select value={stateFilter} onValueChange={setStateFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[150px]">
                         <SelectValue placeholder="Filter by State" />
                     </SelectTrigger>
                     <SelectContent>
@@ -81,6 +104,45 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                         ))}
                     </SelectContent>
                 </Select>
+                <div className="flex items-center gap-2 ml-4">
+                    <span className="text-sm font-medium text-muted-foreground mr-1">Status:</span>
+                    <Button
+                        variant={statusFilters.includes('AVAILABLE') ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleStatusFilter('AVAILABLE')}
+                        className="h-9 px-4"
+                    >
+                        Available
+                    </Button>
+                    <Button
+                        variant={statusFilters.includes('LOCKED') ? 'destructive' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleStatusFilter('LOCKED')}
+                        className={cn("h-9 px-4", statusFilters.includes('LOCKED') && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                    >
+                        Locked
+                    </Button>
+                    <Button
+                        variant={statusFilters.includes('FOLLOW_UP') ? 'secondary' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleStatusFilter('FOLLOW_UP')}
+                        className={cn("h-9 px-4",
+                            statusFilters.includes('FOLLOW_UP') && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-800"
+                        )}
+                    >
+                        Follow Up
+                    </Button>
+                    {statusFilters.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setStatusFilters([])}
+                            className="h-8 text-xs text-muted-foreground underline-offset-4 hover:underline px-2"
+                        >
+                            Reset
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Table */}
@@ -89,9 +151,10 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[50px]"></TableHead>
-                            <TableHead className="w-[50%]">Business</TableHead>
+                            <TableHead className="w-[40%]">Business</TableHead>
                             <TableHead className="w-[100px]">State</TableHead>
                             <TableHead className="w-[100px]">Phones</TableHead>
+                            <TableHead className="w-[150px]">Last Call</TableHead>
                             <TableHead className="w-[180px]">Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -99,163 +162,198 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">Loading prospects...</TableCell>
+                                <TableCell colSpan={7} className="text-center h-24">Loading prospects...</TableCell>
                             </TableRow>
                         ) : filteredProspects.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">No prospects found.</TableCell>
+                                <TableCell colSpan={7} className="text-center h-24">No prospects found.</TableCell>
                             </TableRow>
                         ) : (
-                            filteredProspects.map((prospect) => (
-                                <>
-                                    <TableRow
-                                        key={prospect.id}
-                                        className="cursor-pointer hover:bg-muted/50"
-                                        onClick={(e) => toggleExpand(prospect.id, e)}
-                                    >
-                                        <TableCell>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                {expandedIds.has(prospect.id) ?
-                                                    <ChevronUp className="h-4 w-4" /> :
-                                                    <ChevronDown className="h-4 w-4" />
-                                                }
-                                            </Button>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            <div className="font-medium text-lg truncate" title={prospect.propertyName}>
-                                                {prospect.propertyName}
-                                            </div>
-                                            <div className="text-base text-muted-foreground truncate">{prospect.address}, {prospect.city}</div>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            <Badge variant="secondary" className="text-sm px-3 py-1">{prospect.state}</Badge>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            <div className="text-base text-muted-foreground">
-                                                {prospect.phoneNumbers.length} numbers
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
-                                            <Badge className="text-sm px-3 py-1" variant={
-                                                prospect.callStatus === 'new' ? 'outline' :
-                                                    ['called', 'answered', 'voicemail', 'follow_up'].includes(prospect.callStatus) ? 'secondary' :
-                                                        prospect.callStatus === 'closed' ? 'default' : 'destructive'
-                                            }>
-                                                {prospect.callStatus}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right py-4">
-                                            <Button
-                                                variant="outline"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onSelectProspect(prospect);
-                                                }}
-                                            >
-                                                <Phone className="h-4 w-4 mr-2" />
-                                                Log Call
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-
-                                    {/* Expanded Detail Row */}
-                                    {expandedIds.has(prospect.id) && (
-                                        <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                            <TableCell colSpan={6} className="p-0">
-                                                <div className="p-4 space-y-6">
-
-                                                    {/* Contact & Phone Stats */}
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div className="space-y-3">
-                                                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                                                <Phone className="h-4 w-4" /> Phone Numbers
-                                                            </h4>
-                                                            <div className="grid gap-2">
-                                                                {prospect.phoneNumbers.map((p, i) => (
-                                                                    <div key={i} className="flex flex-col bg-background p-3 rounded-md border text-lg gap-2">
-                                                                        <div className="flex items-center justify-between">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Badge variant="outline" className="w-16 justify-center text-sm uppercase">
-                                                                                    {p.label}
-                                                                                </Badge>
-                                                                                <span className="font-mono font-medium">{p.number}</span>
-                                                                            </div>
-                                                                            {p.lastCalledAt ? (
-                                                                                <div className="flex items-center gap-2 text-base text-muted-foreground">
-                                                                                    <span>Called {p.callCount}x</span>
-                                                                                    <Badge variant="secondary" className="text-sm">
-                                                                                        Last: {new Date(p.lastCalledAt).toLocaleDateString()}
-                                                                                    </Badge>
-                                                                                </div>
-                                                                            ) : (
-                                                                                <span className="text-base text-muted-foreground italic">Never called</span>
-                                                                            )}
-                                                                        </div>
-
-                                                                        {/* Associated Contact Details */}
-                                                                        <div className="pl-[72px] text-lg flex flex-col gap-1">
-                                                                            {(p.contactName || p.contactEmail) && (
-                                                                                <div className="text-muted-foreground font-medium">
-                                                                                    {p.contactName && <div>{p.contactName}</div>}
-                                                                                    {p.contactEmail && <div>{p.contactEmail}</div>}
-                                                                                </div>
-                                                                            )}
-
-                                                                            {/* Extra Entity Details */}
-                                                                            {p.details && Object.entries(p.details).map(([k, v]) => {
-                                                                                if (!v || v.trim() === '') return null;
-                                                                                return (
-                                                                                    <div key={k} className="text-muted-foreground">
-                                                                                        <span className="text-base uppercase tracking-wider opacity-70 mr-1">{k}:</span>
-                                                                                        <span>{v}</span>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Full CSV Data Grid */}
-                                                        <div className="space-y-3">
-                                                            <h4 className="font-semibold text-lg flex items-center gap-2">
-                                                                <Building className="h-4 w-4" /> Full Project Details
-                                                            </h4>
-                                                            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-base">
-                                                                {Object.entries(prospect.raw || {}).map(([key, value]) => {
-                                                                    // Filter out empty values and keys that are already shown in the phone section
-                                                                    if (!value || value.trim() === '') return null;
-
-                                                                    const hiddenKeys = [
-                                                                        'Phone Number',
-                                                                        'Owner Contact Phone Number', 'Owner Contact First Name', 'Owner Contact Last Name', 'Owner Contact Email',
-                                                                        'Manager Contact Phone Number', 'Manager Contact First Name', 'Manager Contact Last Name', 'Manager Contact Email',
-                                                                        'Trustee Contact Phone Number', 'Trustee Contact First Name', 'Trustee Contact Last Name', 'Trustee Contact Email',
-                                                                        // Entity Details moved to phone info
-                                                                        'Owner', 'Owner Address', 'Owner City', 'Owner State', 'Owner ZIP',
-                                                                        'Manager', 'Manager Address', 'Manager City', 'Manager State', 'Manager ZIP',
-                                                                        'Trustee', 'Trustee Address', 'Trustee City', 'Trustee State', 'Trustee ZIP'
-                                                                    ];
-                                                                    if (hiddenKeys.includes(key)) return null;
-
-                                                                    return (
-                                                                        <div key={key} className="flex flex-col border-b border-border/50 pb-1">
-                                                                            <span className="text-muted-foreground font-medium mb-0.5">{key}</span>
-                                                                            <span className="break-words">{value}</span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
+                            filteredProspects.map((prospect) => {
+                                const locked = isLocked(prospect);
+                                return (
+                                    <>
+                                        <TableRow
+                                            key={prospect.id}
+                                            className={cn(
+                                                "cursor-pointer hover:bg-muted/50 transition-colors",
+                                                locked && "bg-muted/20"
+                                            )}
+                                            onClick={(e) => toggleExpand(prospect.id, e)}
+                                        >
+                                            <TableCell>
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                    {expandedIds.has(prospect.id) ?
+                                                        <ChevronUp className="h-4 w-4" /> :
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    }
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                <div className="font-medium text-lg truncate" title={prospect.propertyName}>
+                                                    {prospect.propertyName}
+                                                </div>
+                                                <div className="text-base text-muted-foreground truncate">{prospect.address}, {prospect.city}</div>
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                <Badge variant="secondary" className="text-sm px-3 py-1">{prospect.state}</Badge>
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                <div className="text-base text-muted-foreground">
+                                                    {prospect.phoneNumbers.length} numbers
                                                 </div>
                                             </TableCell>
+                                            <TableCell className="py-4">
+                                                {prospect.lastCalledBy ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-lg">{prospect.lastCalledBy}</span>
+                                                        <span className="text-base text-muted-foreground">
+                                                            {/* Add logic to protect against invalid date strings if needed, assuming ISO from backend */}
+                                                            {prospect.lastCalledAt && new Date(prospect.lastCalledAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground text-lg">-</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    <Badge
+                                                        className={cn("text-sm px-3 py-1",
+                                                            prospect.callStatus === 'follow_up' && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"
+                                                        )}
+                                                        variant={
+                                                            prospect.callStatus === 'new' ? 'outline' :
+                                                                prospect.callStatus === 'follow_up' ? 'outline' : // Use outline + custom class
+                                                                    ['called', 'answered', 'voicemail'].includes(prospect.callStatus) ? 'secondary' :
+                                                                        prospect.callStatus === 'closed' ? 'default' :
+                                                                            locked ? 'destructive' : 'destructive'
+                                                        }
+                                                    >
+                                                        {locked && prospect.lockoutUntil
+                                                            ? `Locked until ${new Date(prospect.lockoutUntil).toLocaleDateString()}`
+                                                            : prospect.callStatus === 'follow_up' && prospect.followUpDate
+                                                                ? `Follow up ${new Date(prospect.followUpDate).toLocaleDateString()}`
+                                                                : prospect.callStatus}
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right py-4">
+                                                <Button
+                                                    variant={locked ? "secondary" : "outline"}
+                                                    disabled={locked}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onSelectProspect(prospect);
+                                                    }}
+                                                    className={cn(locked && "opacity-50 cursor-not-allowed")}
+                                                >
+                                                    <Phone className="h-4 w-4 mr-2" />
+                                                    {locked ? "Locked" : "Log Call"}
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
-                                    )}
-                                </>
-                            ))
+
+                                        {/* Expanded Detail Row */}
+                                        {expandedIds.has(prospect.id) && (
+                                            <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                                <TableCell colSpan={7} className="p-0">
+                                                    <div className="p-4 space-y-6">
+
+                                                        {/* Contact & Phone Stats */}
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <div className="space-y-3">
+                                                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                                                    <Phone className="h-4 w-4" /> Phone Numbers
+                                                                </h4>
+                                                                <div className="grid gap-2">
+                                                                    {prospect.phoneNumbers.map((p, i) => (
+                                                                        <div key={i} className="flex flex-col bg-background p-3 rounded-md border text-lg gap-2">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Badge variant="outline" className="w-16 justify-center text-sm uppercase">
+                                                                                        {p.label}
+                                                                                    </Badge>
+                                                                                    <span className="font-mono font-medium">{p.number}</span>
+                                                                                </div>
+                                                                                {p.lastCalledAt ? (
+                                                                                    <div className="flex items-center gap-2 text-base text-muted-foreground">
+                                                                                        <span>Called {p.callCount}x</span>
+                                                                                        <Badge variant="secondary" className="text-sm">
+                                                                                            Last: {new Date(p.lastCalledAt).toLocaleDateString()}
+                                                                                            {prospect.lastCalledBy && ` by ${prospect.lastCalledBy}`}
+                                                                                        </Badge>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <span className="text-base text-muted-foreground italic">Never called</span>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Associated Contact Details */}
+                                                                            <div className="pl-[72px] text-lg flex flex-col gap-1">
+                                                                                {(p.contactName || p.contactEmail) && (
+                                                                                    <div className="text-muted-foreground font-medium">
+                                                                                        {p.contactName && <div>{p.contactName}</div>}
+                                                                                        {p.contactEmail && <div>{p.contactEmail}</div>}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Extra Entity Details */}
+                                                                                {p.details && Object.entries(p.details).map(([k, v]) => {
+                                                                                    if (!v || v.trim() === '') return null;
+                                                                                    return (
+                                                                                        <div key={k} className="text-muted-foreground">
+                                                                                            <span className="text-base uppercase tracking-wider opacity-70 mr-1">{k}:</span>
+                                                                                            <span>{v}</span>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Full CSV Data Grid */}
+                                                            <div className="space-y-3">
+                                                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                                                    <Building className="h-4 w-4" /> Full Project Details
+                                                                </h4>
+                                                                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-base">
+                                                                    {Object.entries(prospect.raw || {}).map(([key, value]) => {
+                                                                        // Filter out empty values and keys that are already shown in the phone section
+                                                                        if (!value || value.trim() === '') return null;
+
+                                                                        const hiddenKeys = [
+                                                                            'Phone Number',
+                                                                            'Owner Contact Phone Number', 'Owner Contact First Name', 'Owner Contact Last Name', 'Owner Contact Email',
+                                                                            'Manager Contact Phone Number', 'Manager Contact First Name', 'Manager Contact Last Name', 'Manager Contact Email',
+                                                                            'Trustee Contact Phone Number', 'Trustee Contact First Name', 'Trustee Contact Last Name', 'Trustee Contact Email',
+                                                                            // Entity Details moved to phone info
+                                                                            'Owner', 'Owner Address', 'Owner City', 'Owner State', 'Owner ZIP',
+                                                                            'Manager', 'Manager Address', 'Manager City', 'Manager State', 'Manager ZIP',
+                                                                            'Trustee', 'Trustee Address', 'Trustee City', 'Trustee State', 'Trustee ZIP'
+                                                                        ];
+                                                                        if (hiddenKeys.includes(key)) return null;
+
+                                                                        return (
+                                                                            <div key={key} className="flex flex-col border-b border-border/50 pb-1">
+                                                                                <span className="text-muted-foreground font-medium mb-0.5">{key}</span>
+                                                                                <span className="break-words">{value}</span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>

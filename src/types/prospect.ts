@@ -1,4 +1,4 @@
-export type CallStatus = 'new' | 'called' | 'answered' | 'voicemail' | 'follow_up' | 'closed' | 'no_answer' | 'rejected' | 'do_not_call';
+export type CallStatus = 'new' | 'called' | 'answered' | 'voicemail' | 'follow_up' | 'closed' | 'no_answer' | 'rejected' | 'do_not_call' | 'locked';
 
 export interface PhoneNumber {
     label: string;
@@ -50,6 +50,7 @@ export interface Prospect {
     lockoutUntil?: string | null;
     assignedTo?: string; // User ID
     lastCalledAt?: string;
+    lastCalledBy?: string;
     callNotes?: string;
     followUpDate?: string;
     extras?: ProspectExtras;
