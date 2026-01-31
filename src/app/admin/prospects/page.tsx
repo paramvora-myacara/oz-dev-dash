@@ -61,7 +61,7 @@ export default function ProspectsPage() {
     const handleLogCall = (data: {
         outcome: CallStatus;
         phoneUsed: string;
-        notes: string;
+        email?: string;
         extras: { webinar: boolean; consultation: boolean };
         followUpDate?: string;
         lockoutUntil?: string;
@@ -86,7 +86,7 @@ export default function ProspectsPage() {
             callerName: currentUser || 'Unknown',
             outcome: data.outcome,
             phoneUsed: data.phoneUsed,
-            notes: data.notes,
+            email: data.email,
             calledAt: new Date().toISOString()
         };
 
@@ -94,7 +94,7 @@ export default function ProspectsPage() {
             ...selectedProspect,
             phoneNumbers: updatedPhoneNumbers,
             callStatus: data.outcome,
-            callNotes: data.notes,
+            ownerEmail: data.email !== undefined ? data.email : selectedProspect.ownerEmail, // Update email if provided (including empty string)
             lastCalledAt: new Date().toISOString(),
             lastCalledBy: currentUser || 'Unknown',
             lockoutUntil: data.lockoutUntil || selectedProspect.lockoutUntil, // Preserve or update lockout

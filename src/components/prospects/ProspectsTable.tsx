@@ -238,7 +238,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                             prospect.callStatus === 'new' ? 'outline' :
                                                                 prospect.callStatus === 'follow_up' ? 'outline' : // Use outline + custom class
                                                                     prospect.callStatus === 'pending_signup' ? 'default' :
-                                                                        ['called', 'answered', 'voicemail'].includes(prospect.callStatus) ? 'secondary' :
+                                                                        ['called', 'answered', 'invalid_number'].includes(prospect.callStatus) ? 'secondary' :
                                                                             prospect.callStatus === 'closed' ? 'default' :
                                                                                 locked ? 'destructive' : 'destructive'
                                                         }
@@ -371,11 +371,11 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                 {/* Last Call Notes */}
                                                                 <div className="md:col-span-1 space-y-4">
                                                                     <div className="bg-background p-4 rounded-lg border shadow-sm">
-                                                                        <h5 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Latest Notes</h5>
-                                                                        {prospect.callNotes ? (
-                                                                            <p className="text-lg whitespace-pre-wrap">{prospect.callNotes}</p>
+                                                                        <h5 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Contact Email</h5>
+                                                                        {prospect.ownerEmail ? (
+                                                                            <p className="text-lg">{prospect.ownerEmail}</p>
                                                                         ) : (
-                                                                            <p className="text-muted-foreground italic">No notes recorded from last call.</p>
+                                                                            <p className="text-muted-foreground italic">No email on record.</p>
                                                                         )}
 
                                                                         {(prospect.extras?.webinar || prospect.extras?.consultation) && (
@@ -401,7 +401,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                         <TableHead className="w-[120px]">Date</TableHead>
                                                                                         <TableHead className="w-[100px]">Caller</TableHead>
                                                                                         <TableHead className="w-[120px]">Outcome</TableHead>
-                                                                                        <TableHead>Notes</TableHead>
+                                                                                        <TableHead>Email</TableHead>
                                                                                     </TableRow>
                                                                                 </TableHeader>
                                                                                 <TableBody>
@@ -417,8 +417,8 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                                         {call.outcome?.replace('_', ' ')}
                                                                                                     </Badge>
                                                                                                 </TableCell>
-                                                                                                <TableCell className="text-sm truncate max-w-[200px]" title={call.notes}>
-                                                                                                    {call.notes}
+                                                                                                <TableCell className="text-sm truncate max-w-[200px]" title={call.email}>
+                                                                                                    {call.email || '-'}
                                                                                                 </TableCell>
                                                                                             </TableRow>
                                                                                         ))

@@ -1,4 +1,4 @@
-export type CallStatus = 'new' | 'called' | 'answered' | 'voicemail' | 'follow_up' | 'closed' | 'no_answer' | 'rejected' | 'do_not_call' | 'locked' | 'pending_signup';
+export type CallStatus = 'new' | 'called' | 'answered' | 'invalid_number' | 'follow_up' | 'closed' | 'no_answer' | 'rejected' | 'do_not_call' | 'locked' | 'pending_signup';
 
 export interface PhoneNumber {
     label: string;
@@ -22,7 +22,7 @@ export interface CallHistory {
     callerName: string;
     outcome: CallStatus;
     phoneUsed: string;
-    notes: string;
+    email?: string;
     calledAt: string;
 }
 

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Prospect, CallStatus } from '@/types/prospect';
-import { Phone, Calendar, Clock, CheckCircle, XCircle, Voicemail } from 'lucide-react';
+import { Phone, Calendar, Clock, CheckCircle, XCircle, PhoneOff } from 'lucide-react';
 
 interface CallModalProps {
     prospect: Prospect;
@@ -17,7 +17,7 @@ interface CallModalProps {
     onLogCall: (data: {
         outcome: CallStatus;
         phoneUsed: string;
-        notes: string;
+        email?: string;
         extras: { webinar: boolean; consultation: boolean };
         followUpDate?: string;
         lockoutUntil?: string;
@@ -27,16 +27,43 @@ interface CallModalProps {
 export default function CallModal({ prospect, isOpen, onClose, onLogCall }: CallModalProps) {
     const [outcome, setOutcome] = useState<CallStatus>('called');
     const [phoneUsed, setPhoneUsed] = useState<string>(prospect.phoneNumbers[0]?.number || '');
-    const [notes, setNotes] = useState('');
+    const [email, setEmail] = useState(prospect.ownerEmail || '');
+    const [originalEmail, setOriginalEmail] = useState<string>(prospect.ownerEmail || '');
     const [extras, setExtras] = useState({ webinar: false, consultation: false });
     const [followUpDate, setFollowUpDate] = useState('');
     const [lockoutDate, setLockoutDate] = useState('');
+    const [showEmailConfirm, setShowEmailConfirm] = useState(false);
+
+    // Reset form when modal opens or prospect changes
+    useEffect(() => {
+        if (isOpen) {
+            setOutcome('called');
+            setPhoneUsed(prospect.phoneNumbers[0]?.number || '');
+            const currentEmail = prospect.ownerEmail || '';
+            setEmail(currentEmail);
+            setOriginalEmail(currentEmail);
+            setExtras({ webinar: false, consultation: false });
+            setFollowUpDate('');
+            setLockoutDate('');
+            setShowEmailConfirm(false);
+        }
+    }, [isOpen, prospect.id, prospect.ownerEmail]);
 
     const handleSubmit = () => {
+        const trimmedEmail = email.trim();
+        const originalTrimmed = originalEmail.trim();
+        
+        // Check if email was changed and original email existed
+        if (originalTrimmed && trimmedEmail !== originalTrimmed) {
+            setShowEmailConfirm(true);
+            return;
+        }
+
+        // Proceed with submission
         onLogCall({
             outcome: outcome === 'answered' ? 'pending_signup' : outcome,
             phoneUsed,
-            notes,
+            email: trimmedEmail ? trimmedEmail : undefined,
             extras,
             followUpDate: outcome === 'follow_up' ? followUpDate : undefined,
             lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
@@ -44,12 +71,31 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
         onClose();
     };
 
+    const handleConfirmEmailUpdate = () => {
+        const trimmedEmail = email.trim();
+        onLogCall({
+            outcome: outcome === 'answered' ? 'pending_signup' : outcome,
+            phoneUsed,
+            email: trimmedEmail ? trimmedEmail : undefined,
+            extras,
+            followUpDate: outcome === 'follow_up' ? followUpDate : undefined,
+            lockoutUntil: outcome === 'locked' ? lockoutDate : undefined
+        });
+        setShowEmailConfirm(false);
+        onClose();
+    };
+
+    const handleCancelEmailUpdate = () => {
+        setShowEmailConfirm(false);
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                    <DialogTitle>Log Call with {prospect.ownerName}</DialogTitle>
-                </DialogHeader>
+        <>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Log Call with {prospect.ownerName}</DialogTitle>
+                    </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                     {/* Phone Selector */}
@@ -88,11 +134,11 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                                 <XCircle className="mr-2 h-4 w-4" /> No Answer
                             </Button>
                             <Button
-                                variant={outcome === 'voicemail' ? 'default' : 'outline'}
-                                onClick={() => setOutcome('voicemail')}
+                                variant={outcome === 'invalid_number' ? 'default' : 'outline'}
+                                onClick={() => setOutcome('invalid_number')}
                                 className="justify-start"
                             >
-                                <Voicemail className="mr-2 h-4 w-4" /> Voicemail
+                                <PhoneOff className="mr-2 h-4 w-4" /> Invalid Number
                             </Button>
                             <Button
                                 variant={outcome === 'follow_up' ? 'default' : 'outline'}
@@ -173,24 +219,57 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                         </div>
                     </div>
 
-                    {/* Notes */}
+                    {/* Email Field - Always show, editable */}
                     <div className="grid gap-2">
-                        <Label htmlFor="notes">Call Notes</Label>
-                        <Textarea
-                            id="notes"
-                            placeholder="What did they say?..."
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            className="h-24"
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder="Enter email address from call..."
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit}>Log Call</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={onClose}>Cancel</Button>
+                        <Button onClick={handleSubmit}>Log Call</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Email Update Confirmation Dialog */}
+            <Dialog open={showEmailConfirm} onOpenChange={setShowEmailConfirm}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Update Email Address?</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            The email address for this prospect will be updated.
+                        </p>
+                        <div className="space-y-2">
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Current Email:</Label>
+                                <p className="text-sm font-medium">{originalEmail || '(none)'}</p>
+                            </div>
+                            <div>
+                                <Label className="text-xs text-muted-foreground">New Email:</Label>
+                                <p className="text-sm font-medium">{email.trim() || '(none)'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleCancelEmailUpdate}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleConfirmEmailUpdate}>
+                            Update Email & Log Call
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
