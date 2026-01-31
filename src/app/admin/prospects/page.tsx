@@ -23,6 +23,7 @@ export default function ProspectsPage() {
 
     // Filters
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [stateFilter, setStateFilter] = useState('ALL');
     const [statusFilters, setStatusFilters] = useState<string[]>([]);
 
@@ -36,7 +37,7 @@ export default function ProspectsPage() {
             url.searchParams.set('page', page.toString());
             url.searchParams.set('limit', PAGE_SIZE.toString());
 
-            if (search) url.searchParams.set('search', search);
+            if (debouncedSearch) url.searchParams.set('search', debouncedSearch);
             if (stateFilter !== 'ALL') url.searchParams.set('state', stateFilter);
             if (statusFilters.length > 0) {
                 url.searchParams.set('status', statusFilters.join(','));
@@ -52,7 +53,16 @@ export default function ProspectsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page, search, stateFilter, statusFilters]);
+    }, [page, debouncedSearch, stateFilter, statusFilters]);
+
+    // Handle search debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
     // Restore user and setup Realtime
     useEffect(() => {
@@ -154,7 +164,7 @@ export default function ProspectsPage() {
     // Reset to page 1 when filters change
     useEffect(() => {
         setPage(1);
-    }, [search, stateFilter, statusFilters]);
+    }, [debouncedSearch, stateFilter, statusFilters]);
 
     const handleLogCall = async (data: {
         outcome: CallStatus;
