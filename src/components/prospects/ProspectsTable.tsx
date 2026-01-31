@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Prospect } from '@/types/prospect';
-import { ChevronDown, ChevronUp, Phone, Mail, Building, MapPin, User, History, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Phone, Mail, Building, MapPin, User, History, Search, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatToPT, formatDateToPT } from '@/lib/date-utils';
 
 const US_STATES = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -75,7 +76,8 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
             statusFilters.length === 0 ||
             (statusFilters.includes('AVAILABLE') && !locked) ||
             (statusFilters.includes('LOCKED') && locked) ||
-            (statusFilters.includes('FOLLOW_UP') && p.callStatus === 'follow_up');
+            (statusFilters.includes('FOLLOW_UP') && p.callStatus === 'follow_up') ||
+            (statusFilters.includes('PENDING_SIGNUP') && p.callStatus === 'pending_signup');
 
         return matchesSearch && matchesState && matchesStatus;
     });
@@ -131,6 +133,16 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                         )}
                     >
                         Follow Up
+                    </Button>
+                    <Button
+                        variant={statusFilters.includes('PENDING_SIGNUP') ? 'secondary' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleStatusFilter('PENDING_SIGNUP')}
+                        className={cn("h-9 px-4",
+                            statusFilters.includes('PENDING_SIGNUP') && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-800"
+                        )}
+                    >
+                        Pending Signup
                     </Button>
                     {statusFilters.length > 0 && (
                         <Button
@@ -209,7 +221,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                         <span className="font-medium text-lg">{prospect.lastCalledBy}</span>
                                                         <span className="text-base text-muted-foreground">
                                                             {/* Add logic to protect against invalid date strings if needed, assuming ISO from backend */}
-                                                            {prospect.lastCalledAt && new Date(prospect.lastCalledAt).toLocaleDateString()}
+                                                            {prospect.lastCalledAt && formatDateToPT(prospect.lastCalledAt)}
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -220,21 +232,24 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                 <div className="flex flex-col gap-1 items-start">
                                                     <Badge
                                                         className={cn("text-sm px-3 py-1",
-                                                            prospect.callStatus === 'follow_up' && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"
+                                                            ['follow_up', 'pending_signup'].includes(prospect.callStatus) && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"
                                                         )}
                                                         variant={
                                                             prospect.callStatus === 'new' ? 'outline' :
                                                                 prospect.callStatus === 'follow_up' ? 'outline' : // Use outline + custom class
-                                                                    ['called', 'answered', 'voicemail'].includes(prospect.callStatus) ? 'secondary' :
-                                                                        prospect.callStatus === 'closed' ? 'default' :
-                                                                            locked ? 'destructive' : 'destructive'
+                                                                    prospect.callStatus === 'pending_signup' ? 'default' :
+                                                                        ['called', 'answered', 'voicemail'].includes(prospect.callStatus) ? 'secondary' :
+                                                                            prospect.callStatus === 'closed' ? 'default' :
+                                                                                locked ? 'destructive' : 'destructive'
                                                         }
                                                     >
                                                         {locked && prospect.lockoutUntil
-                                                            ? `Locked until ${new Date(prospect.lockoutUntil).toLocaleDateString()}`
+                                                            ? `Locked until ${formatDateToPT(prospect.lockoutUntil)}`
                                                             : prospect.callStatus === 'follow_up' && prospect.followUpDate
-                                                                ? `Follow up ${new Date(prospect.followUpDate).toLocaleDateString()}`
-                                                                : prospect.callStatus}
+                                                                ? `Follow up ${formatDateToPT(prospect.followUpDate)}`
+                                                                : prospect.callStatus === 'pending_signup'
+                                                                    ? 'Pending Signup'
+                                                                    : prospect.callStatus}
                                                     </Badge>
                                                 </div>
                                             </TableCell>
@@ -280,7 +295,7 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                                     <div className="flex items-center gap-2 text-base text-muted-foreground">
                                                                                         <span>Called {p.callCount}x</span>
                                                                                         <Badge variant="secondary" className="text-sm">
-                                                                                            Last: {new Date(p.lastCalledAt).toLocaleDateString()}
+                                                                                            Last: {formatToPT(p.lastCalledAt)}
                                                                                             {prospect.lastCalledBy && ` by ${prospect.lastCalledBy}`}
                                                                                         </Badge>
                                                                                     </div>
@@ -343,6 +358,81 @@ export default function ProspectsTable({ prospects, onSelectProspect, isLoading 
                                                                             </div>
                                                                         );
                                                                     })}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Call Activity Section */}
+                                                        <div className="pt-6 border-t border-border/50">
+                                                            <h4 className="font-semibold text-xl mb-4 flex items-center gap-2">
+                                                                <History className="h-5 w-5" /> Call Activity
+                                                            </h4>
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                {/* Last Call Notes */}
+                                                                <div className="md:col-span-1 space-y-4">
+                                                                    <div className="bg-background p-4 rounded-lg border shadow-sm">
+                                                                        <h5 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Latest Notes</h5>
+                                                                        {prospect.callNotes ? (
+                                                                            <p className="text-lg whitespace-pre-wrap">{prospect.callNotes}</p>
+                                                                        ) : (
+                                                                            <p className="text-muted-foreground italic">No notes recorded from last call.</p>
+                                                                        )}
+
+                                                                        {(prospect.extras?.webinar || prospect.extras?.consultation) && (
+                                                                            <div className="mt-4 pt-4 border-t flex flex-wrap gap-2">
+                                                                                {prospect.extras.webinar && (
+                                                                                    <Badge className="bg-green-100 text-green-800 border-green-200">Webinar Interest</Badge>
+                                                                                )}
+                                                                                {prospect.extras.consultation && (
+                                                                                    <Badge className="bg-blue-100 text-blue-800 border-blue-200">Consultation Booked</Badge>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Call History Timeline */}
+                                                                <div className="md:col-span-2 space-y-4">
+                                                                    <div className="bg-background rounded-lg border shadow-sm overflow-hidden">
+                                                                        <div className="max-h-[300px] overflow-y-auto">
+                                                                            <Table>
+                                                                                <TableHeader className="bg-muted/50 sticky top-0">
+                                                                                    <TableRow>
+                                                                                        <TableHead className="w-[120px]">Date</TableHead>
+                                                                                        <TableHead className="w-[100px]">Caller</TableHead>
+                                                                                        <TableHead className="w-[120px]">Outcome</TableHead>
+                                                                                        <TableHead>Notes</TableHead>
+                                                                                    </TableRow>
+                                                                                </TableHeader>
+                                                                                <TableBody>
+                                                                                    {prospect.callHistory && prospect.callHistory.length > 0 ? (
+                                                                                        [...prospect.callHistory].reverse().map((call, idx) => (
+                                                                                            <TableRow key={call.id || idx}>
+                                                                                                <TableCell className="text-sm font-medium">
+                                                                                                    {formatToPT(call.calledAt)}
+                                                                                                </TableCell>
+                                                                                                <TableCell className="text-sm">{call.callerName}</TableCell>
+                                                                                                <TableCell>
+                                                                                                    <Badge variant="outline" className="text-[10px] uppercase px-1 py-0 h-4">
+                                                                                                        {call.outcome?.replace('_', ' ')}
+                                                                                                    </Badge>
+                                                                                                </TableCell>
+                                                                                                <TableCell className="text-sm truncate max-w-[200px]" title={call.notes}>
+                                                                                                    {call.notes}
+                                                                                                </TableCell>
+                                                                                            </TableRow>
+                                                                                        ))
+                                                                                    ) : (
+                                                                                        <TableRow>
+                                                                                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic">
+                                                                                                No previous history recorded.
+                                                                                            </TableCell>
+                                                                                        </TableRow>
+                                                                                    )}
+                                                                                </TableBody>
+                                                                            </Table>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>

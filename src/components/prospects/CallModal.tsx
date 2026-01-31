@@ -34,7 +34,7 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
 
     const handleSubmit = () => {
         onLogCall({
-            outcome,
+            outcome: outcome === 'answered' ? 'pending_signup' : outcome,
             phoneUsed,
             notes,
             extras,

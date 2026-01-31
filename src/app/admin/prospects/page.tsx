@@ -80,6 +80,16 @@ export default function ProspectsPage() {
             return p;
         });
 
+        const newCallEntry = {
+            id: Math.random().toString(36).substring(7),
+            callerId: currentUser || 'unknown',
+            callerName: currentUser || 'Unknown',
+            outcome: data.outcome,
+            phoneUsed: data.phoneUsed,
+            notes: data.notes,
+            calledAt: new Date().toISOString()
+        };
+
         const updatedProspect = {
             ...selectedProspect,
             phoneNumbers: updatedPhoneNumbers,
@@ -88,7 +98,9 @@ export default function ProspectsPage() {
             lastCalledAt: new Date().toISOString(),
             lastCalledBy: currentUser || 'Unknown',
             lockoutUntil: data.lockoutUntil || selectedProspect.lockoutUntil, // Preserve or update lockout
-            followUpDate: data.followUpDate // Save follow up date if provided
+            followUpDate: data.followUpDate, // Save follow up date if provided
+            extras: data.extras, // Save checkboxes (webinar, etc)
+            callHistory: [...(selectedProspect.callHistory || []), newCallEntry] // Append to history
         };
 
         const newProspects = prospects.map(p => p.id === updatedProspect.id ? updatedProspect : p);

@@ -1,4 +1,4 @@
-export type CallStatus = 'new' | 'called' | 'answered' | 'voicemail' | 'follow_up' | 'closed' | 'no_answer' | 'rejected' | 'do_not_call' | 'locked';
+export type CallStatus = 'new' | 'called' | 'answered' | 'voicemail' | 'follow_up' | 'closed' | 'no_answer' | 'rejected' | 'do_not_call' | 'locked' | 'pending_signup';
 
 export interface PhoneNumber {
     label: string;
@@ -54,6 +54,7 @@ export interface Prospect {
     callNotes?: string;
     followUpDate?: string;
     extras?: ProspectExtras;
+    callHistory?: CallHistory[];
 
     // Original CSV Row Data (for reference)
     raw?: Record<string, string>;
