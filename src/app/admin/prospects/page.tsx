@@ -200,7 +200,7 @@ export default function ProspectsPage() {
             }
 
             setIsCallModalOpen(false);
-            setExpandedId(null); // Row is unlocked on call completion by backend
+            // We NO LONGER setExpandedId(null) here so the row stays open for context
         } catch (error) {
             console.error('Error logging call:', error);
             alert('Failed to log call. Please try again.');

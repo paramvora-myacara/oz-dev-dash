@@ -24,19 +24,19 @@ export async function POST(
 
     const supabase = await createClient();
 
-    // 1. Get current phone numbers to update the specific one
-    const { data: prospect, error: fetchError } = await supabase
+    // 1. Get current data to merge updates
+    const { data: currentProspect, error: fetchError } = await supabase
         .from('prospects')
-        .select('phone_numbers')
+        .select('phone_numbers, extras')
         .eq('id', id)
         .single();
 
-    if (fetchError || !prospect) {
+    if (fetchError || !currentProspect) {
         return NextResponse.json({ error: 'Prospect not found' }, { status: 404 });
     }
 
     // 2. Update the phone number entry
-    const updatedPhoneNumbers = prospect.phone_numbers.map((p: any) => {
+    const updatedPhoneNumbers = (currentProspect.phone_numbers || []).map((p: any) => {
         if (p.number === phoneUsed) {
             return {
                 ...p,
@@ -54,7 +54,7 @@ export async function POST(
         call_status: outcome,
         last_called_at: new Date().toISOString(),
         last_called_by: callerName,
-        extras: extras || {},
+        extras: { ...(currentProspect.extras || {}), ...(extras || {}) },
         viewing_by: null, // Release lock after call
         viewing_since: null
     };

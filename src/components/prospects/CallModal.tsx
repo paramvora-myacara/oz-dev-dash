@@ -29,7 +29,10 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
     const [phoneUsed, setPhoneUsed] = useState<string>(prospect.phoneNumbers?.[0]?.number || '');
     const [email, setEmail] = useState('');
     const [originalEmail, setOriginalEmail] = useState('');
-    const [extras, setExtras] = useState({ webinar: false, consultation: false });
+    const [extras, setExtras] = useState({
+        webinar: prospect.extras?.webinar || false,
+        consultation: prospect.extras?.consultation || false
+    });
     const [followUpAt, setFollowUpAt] = useState('');
     const [lockoutDate, setLockoutDate] = useState('');
     const [noAnswerFollowUpDays, setNoAnswerFollowUpDays] = useState<number>(1);
@@ -45,7 +48,10 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             const currentEmail = currentPhone?.contactEmail || '';
             setEmail(currentEmail);
             setOriginalEmail(currentEmail);
-            setExtras({ webinar: false, consultation: false });
+            setExtras({
+                webinar: prospect.extras?.webinar || false,
+                consultation: prospect.extras?.consultation || false
+            });
             setFollowUpAt('');
             setLockoutDate('');
             setNoAnswerFollowUpDays(1);

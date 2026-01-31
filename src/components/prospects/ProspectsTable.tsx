@@ -74,6 +74,14 @@ export default function ProspectsTable({
         onToggleExpand(id);
     };
 
+    // Helper to format status text
+    const formatStatusText = (status: string): string => {
+        return status
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    };
+
     // Helper to check lock status
     const isLocked = (prospect: Prospect) => {
         if (!mounted || !prospect.lockoutUntil) return false;
@@ -117,12 +125,14 @@ export default function ProspectsTable({
                         Available
                     </Button>
                     <Button
-                        variant={statusFilters.includes('LOCKED') ? 'destructive' : 'outline'}
+                        variant={statusFilters.includes('PENDING_SIGNUP') ? 'secondary' : 'outline'}
                         size="sm"
-                        onClick={() => toggleStatusFilter('LOCKED')}
-                        className={cn("h-9 px-4", statusFilters.includes('LOCKED') && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                        onClick={() => toggleStatusFilter('PENDING_SIGNUP')}
+                        className={cn("h-9 px-4",
+                            statusFilters.includes('PENDING_SIGNUP') && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-800"
+                        )}
                     >
-                        Locked
+                        Pending Signup
                     </Button>
                     <Button
                         variant={statusFilters.includes('FOLLOW_UP') ? 'secondary' : 'outline'}
@@ -135,16 +145,24 @@ export default function ProspectsTable({
                         Follow Up
                     </Button>
                     <Button
-                        variant={statusFilters.includes('PENDING_SIGNUP') ? 'secondary' : 'outline'}
+                        variant={statusFilters.includes('LOCKED') ? 'destructive' : 'outline'}
                         size="sm"
-                        onClick={() => toggleStatusFilter('PENDING_SIGNUP')}
+                        onClick={() => toggleStatusFilter('LOCKED')}
+                        className={cn("h-9 px-4", statusFilters.includes('LOCKED') && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                    >
+                        Locked
+                    </Button>
+                    <Button
+                        variant={statusFilters.includes('INVALID_NUMBER') ? 'destructive' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleStatusFilter('INVALID_NUMBER')}
                         className={cn("h-9 px-4",
-                            statusFilters.includes('PENDING_SIGNUP') && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-800"
+                            statusFilters.includes('INVALID_NUMBER') && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         )}
                     >
-                        Pending Signup
+                        Invalid Number
                     </Button>
-                    {statusFilters.length > 0 && (
+                                                    {statusFilters.length > 0 && (
                         <Button
                             variant="ghost"
                             size="sm"
@@ -244,15 +262,17 @@ export default function ProspectsTable({
                                                     )}
                                                     <Badge
                                                         className={cn("text-sm px-3 py-1",
-                                                            ['follow_up', 'pending_signup'].includes(prospect.callStatus) && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"
+                                                            ['follow_up', 'pending_signup'].includes(prospect.callStatus) && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100",
+                                                            prospect.callStatus === 'invalid_number' && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                         )}
                                                         variant={
                                                             prospect.callStatus === 'new' ? 'outline' :
                                                                 prospect.callStatus === 'follow_up' ? 'outline' : // Use outline + custom class
                                                                     prospect.callStatus === 'pending_signup' ? 'default' :
-                                                                        ['called', 'answered', 'invalid_number'].includes(prospect.callStatus) ? 'secondary' :
-                                                                            prospect.callStatus === 'closed' ? 'default' :
-                                                                                locked ? 'destructive' : 'destructive'
+                                                                        prospect.callStatus === 'invalid_number' ? 'destructive' :
+                                                                            ['called', 'answered'].includes(prospect.callStatus) ? 'secondary' :
+                                                                                prospect.callStatus === 'closed' ? 'default' :
+                                                                                    locked ? 'destructive' : 'destructive'
                                                         }
                                                     >
                                                         {locked && prospect.lockoutUntil && mounted
@@ -261,7 +281,7 @@ export default function ProspectsTable({
                                                                 ? `Follow up ${formatDateToPT(prospect.followUpAt)}`
                                                                 : prospect.callStatus === 'pending_signup'
                                                                     ? 'Pending Signup'
-                                                                    : prospect.callStatus}
+                                                                    : formatStatusText(prospect.callStatus)}
                                                     </Badge>
                                                 </div>
                                             </TableCell>
@@ -273,7 +293,10 @@ export default function ProspectsTable({
                                                         e.stopPropagation();
                                                         onSelectProspect(prospect);
                                                     }}
-                                                    className={cn(locked && "opacity-50 cursor-not-allowed")}
+                                                    className={cn(
+                                                        locked && "opacity-50 cursor-not-allowed",
+                                                        !locked && !(prospect.viewing_by && prospect.viewing_by !== currentUser) && "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 border-black dark:border-white"
+                                                    )}
                                                 >
                                                     <Phone className="h-4 w-4 mr-2" />
                                                     {locked ? "Locked" : (prospect.viewing_by && prospect.viewing_by !== currentUser) ? "In Use" : "Log Call"}
@@ -403,18 +426,18 @@ export default function ProspectsTable({
                                                                 {/* Last Call Notes */}
                                                                 <div className="md:col-span-1 space-y-4">
                                                                     <div className="bg-background p-4 rounded-lg border shadow-sm">
-                                                                        <h5 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Extras Applied</h5>
+                                                                        <h5 className="text-base font-semibold uppercase tracking-wider text-muted-foreground mb-3">Extras Applied</h5>
                                                                         {(prospect.extras?.webinar || prospect.extras?.consultation) ? (
                                                                             <div className="flex flex-wrap gap-2">
                                                                                 {prospect.extras.webinar && (
-                                                                                    <Badge className="bg-green-100 text-green-800 border-green-200">Webinar Interest</Badge>
+                                                                                    <Badge className="bg-green-100 text-green-800 border-green-200 text-base">Webinar Interest</Badge>
                                                                                 )}
                                                                                 {prospect.extras.consultation && (
-                                                                                    <Badge className="bg-blue-100 text-blue-800 border-blue-200">Consultation Booked</Badge>
+                                                                                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-base">Consultation Booked</Badge>
                                                                                 )}
                                                                             </div>
                                                                         ) : (
-                                                                            <p className="text-muted-foreground italic">No extras selected.</p>
+                                                                            <p className="text-base text-muted-foreground italic">No extras selected.</p>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -428,7 +451,7 @@ export default function ProspectsTable({
                                                                                     <TableRow>
                                                                                         <TableHead className="w-[120px]">Date</TableHead>
                                                                                         <TableHead className="w-[100px]">Caller</TableHead>
-                                                                                        <TableHead className="w-[120px]">Outcome</TableHead>
+                                                                                        <TableHead className="w-[200px]">Outcome</TableHead>
                                                                                         <TableHead>Email</TableHead>
                                                                                     </TableRow>
                                                                                 </TableHeader>
@@ -436,23 +459,29 @@ export default function ProspectsTable({
                                                                                     {prospect.callHistory && prospect.callHistory.length > 0 ? (
                                                                                         [...prospect.callHistory].reverse().map((call, idx) => (
                                                                                             <TableRow key={call.id || idx}>
-                                                                                                <TableCell className="text-sm font-medium">
+                                                                                                <TableCell className="text-base font-medium">
                                                                                                     {mounted ? formatToPT(call.calledAt) : ''}
                                                                                                 </TableCell>
-                                                                                                <TableCell className="text-sm">{call.callerName}</TableCell>
+                                                                                                <TableCell className="text-base">{call.callerName}</TableCell>
                                                                                                 <TableCell>
-                                                                                                    <Badge variant="outline" className="text-[10px] uppercase px-1 py-0 h-4">
-                                                                                                        {call.outcome?.replace('_', ' ')}
+                                                                                                    <Badge 
+                                                                                                        variant={call.outcome === 'invalid_number' ? 'destructive' : 'outline'} 
+                                                                                                        className={cn(
+                                                                                                            "text-base uppercase px-2 py-1",
+                                                                                                            call.outcome === 'invalid_number' && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                                                        )}
+                                                                                                    >
+                                                                                                        {call.outcome ? formatStatusText(call.outcome) : ''}
                                                                                                     </Badge>
                                                                                                 </TableCell>
-                                                                                                <TableCell className="text-sm truncate max-w-[200px]" title={call.email}>
+                                                                                                <TableCell className="text-base truncate max-w-[200px]" title={call.email}>
                                                                                                     {call.email || '-'}
                                                                                                 </TableCell>
                                                                                             </TableRow>
                                                                                         ))
                                                                                     ) : (
                                                                                         <TableRow>
-                                                                                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic">
+                                                                                            <TableCell colSpan={4} className="text-center py-8 text-base text-muted-foreground italic">
                                                                                                 No previous history recorded.
                                                                                             </TableCell>
                                                                                         </TableRow>

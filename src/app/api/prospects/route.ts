@@ -29,36 +29,43 @@ export async function GET(request: Request) {
 
     // Status Filter (Custom Logic)
     if (status) {
-        const statusFilters = status.split(',');
+        const statusFilters = status.split(',').map(s => s.trim());
 
-        const conditions = [];
-
-        if (statusFilters.includes('AVAILABLE')) {
-            conditions.push('lockout_until.is.null', 'lockout_until.lt.now()');
-        }
-
-        if (statusFilters.includes('LOCKED')) {
-            conditions.push('lockout_until.gt.now()');
-        }
+        // Separate filters by type
+        const callStatusFilters: string[] = [];
+        const hasAvailable = statusFilters.includes('AVAILABLE');
+        const hasLocked = statusFilters.includes('LOCKED');
 
         if (statusFilters.includes('FOLLOW_UP')) {
-            conditions.push('call_status.eq.follow_up');
+            callStatusFilters.push('follow_up');
         }
-
         if (statusFilters.includes('PENDING_SIGNUP')) {
-            conditions.push('call_status.eq.pending_signup');
+            callStatusFilters.push('pending_signup');
+        }
+        if (statusFilters.includes('INVALID_NUMBER')) {
+            callStatusFilters.push('invalid_number');
         }
 
-        if (conditions.length > 0) {
-            // This is a bit tricky with Supabase's chained or(...) if we want cross-column OR
-            // For now, let's keep it simple or use a single filter if only one provided
-            if (statusFilters.length === 1) {
-                if (statusFilters[0] === 'AVAILABLE') query = query.or('lockout_until.is.null,lockout_until.lt.now()');
-                else if (statusFilters[0] === 'LOCKED') query = query.gt('lockout_until', new Date().toISOString());
-                else if (statusFilters[0] === 'FOLLOW_UP') query = query.eq('call_status', 'follow_up');
-                else if (statusFilters[0] === 'PENDING_SIGNUP') query = query.eq('call_status', 'pending_signup');
+        // Apply call_status filters using .in() for multiple values
+        if (callStatusFilters.length > 0) {
+            if (callStatusFilters.length === 1) {
+                query = query.eq('call_status', callStatusFilters[0]);
+            } else {
+                query = query.in('call_status', callStatusFilters);
             }
-            // If multiple, would need complex .or(...)
+        }
+
+        // Apply lockout_until filters (only if no call_status filters are selected)
+        // If both types are selected, we apply call_status filters and ignore lockout filters
+        // This means selecting INVALID_NUMBER will only show invalid_number, not available/locked ones
+        if (callStatusFilters.length === 0) {
+            if (hasAvailable && hasLocked) {
+                // If both selected, show all (no filter needed)
+            } else if (hasAvailable) {
+                query = query.or('lockout_until.is.null,lockout_until.lt.now()');
+            } else if (hasLocked) {
+                query = query.gt('lockout_until', new Date().toISOString());
+            }
         }
     }
 
