@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { mapProspect } from '@/utils/prospect-mapping';
+import { getTemplate } from '@/lib/email/templates';
+import { sendGmailEmail } from '@/lib/email/gmail-sender';
 
 export async function POST(
     request: Request,
@@ -88,6 +90,57 @@ export async function POST(
     if (updateError) {
         console.error('Error updating prospect:', updateError);
         return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    // 6. Trigger follow-up email (Async)
+    const eligibleOutcomes = ['pending_signup', 'no_answer', 'invalid_number'];
+    const finalOutcome = outcome === 'answered' ? 'pending_signup' : outcome;
+
+    if (email && eligibleOutcomes.includes(finalOutcome)) {
+        console.log(`[CallRoute] Triggering background follow-up for ${finalOutcome} (Recipient: ${email})`);
+        // Find the newly created call log ID
+        const callLogId = updatedProspect.prospect_calls?.find((c: any) =>
+            c.caller_name === callerName && c.outcome === finalOutcome
+        )?.id;
+
+        const CALLER_EMAILS: Record<string, string> = {
+            'Jeff': 'jeff@ozlistings.com',
+            'Todd': 'todd@ozlistings.com',
+            'Michael': 'michael@ozlistings.com',
+            'Param': 'param@ozlistings.com'
+        };
+
+        // Fire and forget (don't await) or handle errors silently
+        (async () => {
+            try {
+                const { subject, html } = getTemplate(finalOutcome, {
+                    prospectName: updatedProspect.owner_name,
+                    propertyName: updatedProspect.property_name,
+                    callerName: callerName,
+                    extras: extras
+                });
+
+                const callerEmail = 'aryan@ozlistings.com'; // TEST OVERRIDE
+                const testRecipientEmail = 'aryan.jain@capmatch.com'; // TEST OVERRIDE
+
+                console.log(`[CallRoute] Background sending ${finalOutcome} email via Gmail. (Overridden to: ${testRecipientEmail})`);
+
+                const result = await sendGmailEmail({
+                    to: testRecipientEmail,
+                    cc: callerEmail,
+                    subject,
+                    html,
+                    prospectId: id,
+                    callLogId,
+                    outcome: finalOutcome,
+                    templateUsed: finalOutcome
+                });
+
+                console.log(`[CallRoute] Background send task result:`, result);
+            } catch (error) {
+                console.error('Follow-up email background error:', error);
+            }
+        })();
     }
 
     return NextResponse.json({ success: true, data: mapProspect(updatedProspect) });
