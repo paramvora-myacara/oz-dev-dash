@@ -24,6 +24,13 @@ interface CallModalProps {
     }) => void;
 }
 
+interface GroupedPhone {
+    number: string;
+    roles: string[];
+    contactName?: string;
+    contactEmail?: string;
+}
+
 export default function CallModal({ prospect, isOpen, onClose, onLogCall }: CallModalProps) {
     const [outcome, setOutcome] = useState<CallStatus>('called');
     const [phoneUsed, setPhoneUsed] = useState<string>(prospect.phoneNumbers?.[0]?.number || '');
@@ -38,13 +45,47 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
     const [noAnswerFollowUpDays, setNoAnswerFollowUpDays] = useState<number>(1);
     const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
+    // Deduplicate phone numbers by grouping them
+    const getGroupedPhones = (): GroupedPhone[] => {
+        if (!prospect?.phoneNumbers) return [];
+
+        const grouped = new Map<string, GroupedPhone>();
+
+        prospect.phoneNumbers.forEach((p) => {
+            const key = p.number;
+            if (grouped.has(key)) {
+                const existing = grouped.get(key)!;
+                if (!existing.roles.includes(p.label)) {
+                    existing.roles.push(p.label);
+                }
+                // Use the first contact name/email we find
+                if (!existing.contactName && p.contactName) {
+                    existing.contactName = p.contactName;
+                }
+                if (!existing.contactEmail && p.contactEmail) {
+                    existing.contactEmail = p.contactEmail;
+                }
+            } else {
+                grouped.set(key, {
+                    number: p.number,
+                    roles: [p.label],
+                    contactName: p.contactName,
+                    contactEmail: p.contactEmail,
+                });
+            }
+        });
+
+        return Array.from(grouped.values());
+    };
+
     // Reset form when modal opens or prospect changes
     useEffect(() => {
         if (isOpen) {
             setOutcome('called');
-            const initialPhone = prospect.phoneNumbers?.[0]?.number || '';
+            const groupedPhones = getGroupedPhones();
+            const initialPhone = groupedPhones[0]?.number || '';
             setPhoneUsed(initialPhone);
-            const currentPhone = (prospect.phoneNumbers || []).find(p => p.number === initialPhone);
+            const currentPhone = groupedPhones.find(p => p.number === initialPhone);
             const currentEmail = currentPhone?.contactEmail || '';
             setEmail(currentEmail);
             setOriginalEmail(currentEmail);
@@ -146,7 +187,8 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                             <Select value={phoneUsed} onValueChange={(val) => {
                                 setPhoneUsed(val);
                                 // Auto-sync email if it matches original or is empty
-                                const currentPhone = (prospect.phoneNumbers || []).find(p => p.number === val);
+                                const groupedPhones = getGroupedPhones();
+                                const currentPhone = groupedPhones.find(p => p.number === val);
                                 const newEmail = currentPhone?.contactEmail || '';
                                 if (email === originalEmail || !email) {
                                     setEmail(newEmail);
@@ -157,9 +199,15 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                                     <SelectValue placeholder="Select phone number" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {(prospect.phoneNumbers || []).map((p, idx) => (
-                                        <SelectItem key={idx} value={p.number}>
-                                            {p.contactName ? `${p.contactName} - ` : ''}{p.number} - <span className="text-muted-foreground bg-muted ml-1 rounded px-1.5 py-0.5 text-sm uppercase">{p.label}</span>
+                                    {getGroupedPhones().map((phone, idx) => (
+                                        <SelectItem key={`${phone.number}-${idx}`} value={phone.number}>
+                                            {phone.contactName ? `${phone.contactName} - ` : ''}
+                                            {phone.number}
+                                            {phone.roles.length > 0 && (
+                                                <span className="text-muted-foreground ml-1">
+                                                    ({phone.roles.join(', ')})
+                                                </span>
+                                            )}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -314,7 +362,10 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                         <Button variant="outline" onClick={onClose}>Cancel</Button>
                         <Button
                             onClick={handleSubmit}
-                            disabled={outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1)}
+                            disabled={
+                                outcome === 'called' || 
+                                (outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1))
+                            }
                         >
                             Log Call
                         </Button>

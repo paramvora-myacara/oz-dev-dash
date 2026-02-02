@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import ProspectsTable from '@/components/prospects/ProspectsTable';
+import ProspectDetailSheet from '@/components/prospects/ProspectDetailSheet';
 import CallModal from '@/components/prospects/CallModal';
 import { Prospect, CallStatus } from '@/types/prospect';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,8 @@ export default function ProspectsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
-    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [selectedProspectForSheet, setSelectedProspectForSheet] = useState<Prospect | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
@@ -81,8 +83,14 @@ export default function ProspectsPage() {
                     const updatedProspect = mapProspect(payload.new);
                     setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
 
-                    // Update selected prospect if it was updated by someone else
+                    // Update selected prospects if they were updated by someone else
                     setSelectedProspect(prev => {
+                        if (prev?.id === updatedProspect.id) {
+                            return { ...prev, ...updatedProspect };
+                        }
+                        return prev;
+                    });
+                    setSelectedProspectForSheet(prev => {
                         if (prev?.id === updatedProspect.id) {
                             return { ...prev, ...updatedProspect };
                         }
@@ -104,62 +112,106 @@ export default function ProspectsPage() {
         localStorage.setItem('prospect_current_user', user);
     };
 
-    const handleSelectProspect = (prospect: Prospect) => {
-        setSelectedProspect(prospect);
-        setIsCallModalOpen(true);
+    const handleSelectProspect = async (prospect: Prospect) => {
+        // Locking
+        try {
+            const res = await fetch(`/api/prospects/${prospect.id}/lock`, {
+                method: 'POST',
+                body: JSON.stringify({ userName: currentUser })
+            });
+
+            if (res.ok) {
+                setSelectedProspect(prospect);
+                setIsCallModalOpen(true);
+            } else if (res.status === 409) {
+                alert('This prospect is currently being viewed by someone else.');
+            }
+        } catch (err) {
+            console.error('Failed to acquire lock:', err);
+        }
     };
 
-    const handleToggleExpand = async (id: string) => {
-        const isCurrentlyExpanded = expandedId === id;
-
-        if (isCurrentlyExpanded) {
+    const handleCloseCallModal = async () => {
+        if (selectedProspect) {
             // Unlocking
-            setExpandedId(null);
             try {
-                await fetch(`/api/prospects/${id}/lock`, {
+                await fetch(`/api/prospects/${selectedProspect.id}/lock`, {
                     method: 'DELETE',
                     body: JSON.stringify({ userName: currentUser })
                 });
             } catch (err) {
                 console.error('Failed to release lock:', err);
             }
-        } else {
-            // Locking
-            try {
-                const res = await fetch(`/api/prospects/${id}/lock`, {
-                    method: 'POST',
-                    body: JSON.stringify({ userName: currentUser })
-                });
+        }
+        setIsCallModalOpen(false);
+        setSelectedProspect(null);
+    };
 
-                if (res.ok) {
-                    setExpandedId(id);
-                } else if (res.status === 409) {
-                    alert('This prospect is currently being viewed by someone else.');
-                }
-            } catch (err) {
-                console.error('Failed to acquire lock:', err);
+    const handleOpenSheet = async (prospect: Prospect) => {
+        // Locking
+        try {
+            const res = await fetch(`/api/prospects/${prospect.id}/lock`, {
+                method: 'POST',
+                body: JSON.stringify({ userName: currentUser })
+            });
+
+            if (res.ok) {
+                setSelectedProspectForSheet(prospect);
+                setIsSheetOpen(true);
+            } else if (res.status === 409) {
+                alert('This prospect is currently being viewed by someone else.');
             }
+        } catch (err) {
+            console.error('Failed to acquire lock:', err);
         }
     };
 
-    // Cleanup lock on unmount
+    const handleCloseSheet = async () => {
+        if (selectedProspectForSheet) {
+            // Unlocking
+            try {
+                await fetch(`/api/prospects/${selectedProspectForSheet.id}/lock`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ userName: currentUser })
+                });
+            } catch (err) {
+                console.error('Failed to release lock:', err);
+            }
+        }
+        setIsSheetOpen(false);
+        setSelectedProspectForSheet(null);
+    };
+
+    // Cleanup locks on unmount
     useEffect(() => {
         return () => {
-            if (expandedId) {
-                const id = expandedId;
-                const user = localStorage.getItem('prospect_current_user');
-                if (id && user) {
-                    // Using navigator.sendBeacon or a sync request in unmount is tricky in modern browsers
-                    // but we'll try a standard fetch with keepalive: true
-                    fetch(`/api/prospects/${id}/lock`, {
-                        method: 'DELETE',
-                        body: JSON.stringify({ userName: user }),
-                        keepalive: true
-                    }).catch(() => { });
+            const user = localStorage.getItem('prospect_current_user');
+            if (user) {
+                // Cleanup detail sheet lock
+                if (selectedProspectForSheet) {
+                    const id = selectedProspectForSheet.id;
+                    if (id) {
+                        fetch(`/api/prospects/${id}/lock`, {
+                            method: 'DELETE',
+                            body: JSON.stringify({ userName: user }),
+                            keepalive: true
+                        }).catch(() => { });
+                    }
+                }
+                // Cleanup call modal lock
+                if (selectedProspect) {
+                    const id = selectedProspect.id;
+                    if (id) {
+                        fetch(`/api/prospects/${id}/lock`, {
+                            method: 'DELETE',
+                            body: JSON.stringify({ userName: user }),
+                            keepalive: true
+                        }).catch(() => { });
+                    }
                 }
             }
         };
-    }, [expandedId]);
+    }, [selectedProspectForSheet, selectedProspect]);
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -174,10 +226,11 @@ export default function ProspectsPage() {
         followUpAt?: string;
         lockoutUntil?: string;
     }) => {
-        if (!selectedProspect || !currentUser) return;
+        const prospectToUse = selectedProspect || selectedProspectForSheet;
+        if (!prospectToUse || !currentUser) return;
 
         try {
-            const res = await fetch(`/api/prospects/${selectedProspect.id}/call`, {
+            const res = await fetch(`/api/prospects/${prospectToUse.id}/call`, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...data,
@@ -193,14 +246,17 @@ export default function ProspectsPage() {
             if (updatedProspect) {
                 setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
 
-                // If this prospect is currently selected/expanded, update it too
+                // If this prospect is currently selected, update it too
                 if (selectedProspect?.id === updatedProspect.id) {
                     setSelectedProspect({ ...selectedProspect, ...updatedProspect });
+                }
+                if (selectedProspectForSheet?.id === updatedProspect.id) {
+                    setSelectedProspectForSheet({ ...selectedProspectForSheet, ...updatedProspect });
                 }
             }
 
             setIsCallModalOpen(false);
-            // We NO LONGER setExpandedId(null) here so the row stays open for context
+            // Don't close the sheet automatically - let user continue working
         } catch (error) {
             console.error('Error logging call:', error);
             alert('Failed to log call. Please try again.');
@@ -239,8 +295,7 @@ export default function ProspectsPage() {
                 prospects={prospects}
                 isLoading={isLoading}
                 onSelectProspect={handleSelectProspect}
-                expandedId={expandedId}
-                onToggleExpand={handleToggleExpand}
+                onOpenSheet={handleOpenSheet}
                 currentUser={currentUser}
                 search={search}
                 onSearchChange={setSearch}
@@ -282,10 +337,19 @@ export default function ProspectsPage() {
                 <CallModal
                     prospect={selectedProspect}
                     isOpen={isCallModalOpen}
-                    onClose={() => setIsCallModalOpen(false)}
+                    onClose={handleCloseCallModal}
                     onLogCall={handleLogCall}
                 />
             )}
+
+            <ProspectDetailSheet
+                prospect={selectedProspectForSheet}
+                isOpen={isSheetOpen}
+                onClose={handleCloseSheet}
+                currentUser={currentUser}
+                onLogCall={handleLogCall}
+                onOpenCallModal={handleSelectProspect}
+            />
 
             {/* User Selection Modal */}
             {mounted && !currentUser && (

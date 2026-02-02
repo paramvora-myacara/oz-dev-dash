@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Table,
     TableBody,
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Prospect } from '@/types/prospect';
-import { ChevronDown, ChevronUp, Phone, Mail, Building, MapPin, User, History, Search, Clock } from 'lucide-react';
+import { ChevronRight, Phone, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatToPT, formatDateToPT } from '@/lib/date-utils';
 
@@ -31,8 +31,7 @@ interface ProspectsTableProps {
     prospects: Prospect[];
     onSelectProspect: (prospect: Prospect) => void;
     isLoading: boolean;
-    expandedId: string | null;
-    onToggleExpand: (id: string) => void;
+    onOpenSheet: (prospect: Prospect) => void;
     currentUser: string | null;
     search: string;
     onSearchChange: (val: string) => void;
@@ -46,8 +45,7 @@ export default function ProspectsTable({
     prospects,
     onSelectProspect,
     isLoading,
-    expandedId,
-    onToggleExpand,
+    onOpenSheet,
     currentUser,
     search,
     onSearchChange,
@@ -69,9 +67,9 @@ export default function ProspectsTable({
         onStatusFiltersChange(next);
     };
 
-    const toggleExpand = (id: string, e: React.MouseEvent) => {
+    const handleRowClick = (prospect: Prospect, e: React.MouseEvent) => {
         e.stopPropagation();
-        onToggleExpand(id);
+        onOpenSheet(prospect);
     };
 
     // Helper to format status text
@@ -202,22 +200,17 @@ export default function ProspectsTable({
                             displayProspects.map((prospect) => {
                                 const locked = isLocked(prospect);
                                 return (
-                                    <Fragment key={prospect.id}>
-                                        <TableRow
-                                            className={cn(
-                                                "cursor-pointer hover:bg-muted/50 transition-colors",
-                                                locked && "bg-muted/20"
-                                            )}
-                                            onClick={(e) => toggleExpand(prospect.id, e)}
-                                        >
-                                            <TableCell>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                    {expandedId === prospect.id ?
-                                                        <ChevronUp className="h-4 w-4" /> :
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    }
-                                                </Button>
-                                            </TableCell>
+                                    <TableRow
+                                        key={prospect.id}
+                                        className={cn(
+                                            "cursor-pointer hover:bg-muted/50 transition-colors",
+                                            locked && "bg-muted/20"
+                                        )}
+                                        onClick={(e) => handleRowClick(prospect, e)}
+                                    >
+                                        <TableCell>
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                        </TableCell>
                                             <TableCell className="py-4">
                                                 <div className="font-medium text-lg truncate" title={prospect.propertyName}>
                                                     {prospect.propertyName}
@@ -303,202 +296,6 @@ export default function ProspectsTable({
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
-
-                                        {/* Expanded Detail Row */}
-                                        {expandedId === prospect.id && (
-                                            <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                                <TableCell colSpan={7} className="p-0">
-                                                    <div className="p-4 space-y-6">
-
-                                                        {/* Contact & Phone Stats */}
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <div className="space-y-3">
-                                                                <h4 className="font-semibold text-lg flex items-center gap-2">
-                                                                    <Phone className="h-4 w-4" /> Phone Numbers
-                                                                </h4>
-                                                                <div className="grid gap-2">
-                                                                    {(prospect.phoneNumbers || []).map((p, i) => (
-                                                                        <div key={i} className="flex flex-col bg-background p-3 rounded-md border text-lg gap-2">
-                                                                            <div className="flex items-center justify-between">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <Badge variant="outline" className="w-16 justify-center text-sm uppercase">
-                                                                                        {p.label}
-                                                                                    </Badge>
-                                                                                    <span className="font-mono font-medium">{p.number}</span>
-                                                                                </div>
-                                                                                {p.lastCalledAt ? (
-                                                                                    <div className="flex items-center gap-2 text-base text-muted-foreground">
-                                                                                        <span>Called {p.callCount}x</span>
-                                                                                        <Badge variant="secondary" className="text-sm">
-                                                                                            Last: {mounted ? formatToPT(p.lastCalledAt) : ''}
-                                                                                            {prospect.lastCalledBy && ` by ${prospect.lastCalledBy}`}
-                                                                                        </Badge>
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <span className="text-base text-muted-foreground italic">Never called</span>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Associated Contact Details */}
-                                                                            <div className="pl-[72px] text-lg flex flex-col gap-1">
-                                                                                {(p.contactName || p.contactEmail) && (
-                                                                                    <div className="text-muted-foreground font-medium">
-                                                                                        {p.contactName && <div>{p.contactName}</div>}
-                                                                                        {p.contactEmail && <div>{p.contactEmail}</div>}
-                                                                                    </div>
-                                                                                )}
-
-                                                                                {/* Extra Entity Details */}
-                                                                                {p.details && Object.entries(p.details).map(([k, v]) => {
-                                                                                    if (!v || v.trim() === '') return null;
-                                                                                    return (
-                                                                                        <div key={k} className="text-muted-foreground">
-                                                                                            <span className="text-base uppercase tracking-wider opacity-70 mr-1">{k}:</span>
-                                                                                            <span>{v}</span>
-                                                                                        </div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Full CSV Data Grid */}
-                                                            <div className="space-y-3">
-                                                                <h4 className="font-semibold text-lg flex items-center gap-2">
-                                                                    <Building className="h-4 w-4" /> Full Project Details
-                                                                </h4>
-                                                                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-base">
-                                                                    {(() => {
-                                                                        // Whitelist of fields to show (using exact CSV column names)
-                                                                        const allowedFields = [
-                                                                            'Property Name',
-                                                                            'Market',
-                                                                            'Address',
-                                                                            'City',
-                                                                            'State',
-                                                                            'Completion Date',
-                                                                            'Impr. Rating',  // Fixed: CSV uses "Impr. Rating" not "Impra Rating"
-                                                                            'Loc. Rating',    // Fixed: CSV uses "Loc. Rating" not "Location Rating"
-                                                                            'Owner Website',
-                                                                            'Manager Website'
-                                                                        ];
-
-                                                                        // Map of field names to display labels (if different from CSV key)
-                                                                        const fieldLabels: Record<string, string> = {
-                                                                            'Property Name': 'Property Name',
-                                                                            'Market': 'Market',
-                                                                            'Address': 'Address',
-                                                                            'City': 'City',
-                                                                            'State': 'State',
-                                                                            'Completion Date': 'Completion Date',
-                                                                            'Impr. Rating': 'Impra Rating',      // Display as "Impra Rating"
-                                                                            'Loc. Rating': 'Location Rating',     // Display as "Location Rating"
-                                                                            'Owner Website': 'Owner Website',
-                                                                            'Manager Website': 'Manager Website'
-                                                                        };
-
-                                                                        return allowedFields.map((fieldKey) => {
-                                                                            const value = prospect.raw?.[fieldKey] || (prospect as any)[fieldKey];
-                                                                            // Only show if value exists and is not empty
-                                                                            if (!value || value.trim() === '') return null;
-
-                                                                            const displayLabel = fieldLabels[fieldKey] || fieldKey;
-                                                                            return (
-                                                                                <div key={fieldKey} className="flex flex-col border-b border-border/50 pb-1">
-                                                                                    <span className="text-muted-foreground font-medium mb-0.5">{displayLabel}</span>
-                                                                                    <span className="break-words">{value}</span>
-                                                                                </div>
-                                                                            );
-                                                                        });
-                                                                    })()}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Call Activity Section */}
-                                                        <div className="pt-6 border-t border-border/50">
-                                                            <h4 className="font-semibold text-xl mb-4 flex items-center gap-2">
-                                                                <History className="h-5 w-5" /> Call Activity
-                                                            </h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                                {/* Last Call Notes */}
-                                                                <div className="md:col-span-1 space-y-4">
-                                                                    <div className="bg-background p-4 rounded-lg border shadow-sm">
-                                                                        <h5 className="text-base font-semibold uppercase tracking-wider text-muted-foreground mb-3">Extras Applied</h5>
-                                                                        {(prospect.extras?.webinar || prospect.extras?.consultation) ? (
-                                                                            <div className="flex flex-wrap gap-2">
-                                                                                {prospect.extras.webinar && (
-                                                                                    <Badge className="bg-green-100 text-green-800 border-green-200 text-base">Webinar Interest</Badge>
-                                                                                )}
-                                                                                {prospect.extras.consultation && (
-                                                                                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-base">Consultation Booked</Badge>
-                                                                                )}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-base text-muted-foreground italic">No extras selected.</p>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Call History Timeline */}
-                                                                <div className="md:col-span-2 space-y-4">
-                                                                    <div className="bg-background rounded-lg border shadow-sm overflow-hidden">
-                                                                        <div className="max-h-[300px] overflow-y-auto">
-                                                                            <Table>
-                                                                                <TableHeader className="bg-muted/50 sticky top-0">
-                                                                                    <TableRow>
-                                                                                        <TableHead className="w-[120px]">Date</TableHead>
-                                                                                        <TableHead className="w-[100px]">Caller</TableHead>
-                                                                                        <TableHead className="w-[200px]">Outcome</TableHead>
-                                                                                        <TableHead>Email</TableHead>
-                                                                                    </TableRow>
-                                                                                </TableHeader>
-                                                                                <TableBody>
-                                                                                    {prospect.callHistory && prospect.callHistory.length > 0 ? (
-                                                                                        [...prospect.callHistory].reverse().map((call, idx) => (
-                                                                                            <TableRow key={call.id || idx}>
-                                                                                                <TableCell className="text-base font-medium">
-                                                                                                    {mounted ? formatToPT(call.calledAt) : ''}
-                                                                                                </TableCell>
-                                                                                                <TableCell className="text-base">{call.callerName}</TableCell>
-                                                                                                <TableCell>
-                                                                                                    <Badge 
-                                                                                                        variant={call.outcome === 'invalid_number' ? 'destructive' : 'outline'} 
-                                                                                                        className={cn(
-                                                                                                            "text-base uppercase px-2 py-1",
-                                                                                                            call.outcome === 'invalid_number' && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                                                                        )}
-                                                                                                    >
-                                                                                                        {call.outcome ? formatStatusText(call.outcome) : ''}
-                                                                                                    </Badge>
-                                                                                                </TableCell>
-                                                                                                <TableCell className="text-base truncate max-w-[200px]" title={call.email}>
-                                                                                                    {call.email || '-'}
-                                                                                                </TableCell>
-                                                                                            </TableRow>
-                                                                                        ))
-                                                                                    ) : (
-                                                                                        <TableRow>
-                                                                                            <TableCell colSpan={4} className="text-center py-8 text-base text-muted-foreground italic">
-                                                                                                No previous history recorded.
-                                                                                            </TableCell>
-                                                                                        </TableRow>
-                                                                                    )}
-                                                                                </TableBody>
-                                                                            </Table>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </Fragment>
                                 );
                             })
                         )}
