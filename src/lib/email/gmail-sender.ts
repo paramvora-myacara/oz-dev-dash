@@ -76,34 +76,29 @@ export async function sendGmailEmail({
             },
         });
 
-        // Log to audit table
-        await supabase.from('prospect_follow_up_emails').insert({
-            prospect_id: prospectId,
-            call_log_id: callLogId,
-            caller_name: cc ? cc.split('@')[0] : 'System',
-            to_email: to,
-            outcome: outcome,
-            template_used: templateUsed,
-            gmail_message_id: res.data.id,
-            status: 'sent'
-        });
+        // Log success to calls table
+        if (callLogId) {
+            await supabase.from('prospect_calls').update({
+                email_status: 'sent',
+                email_template: templateUsed,
+                email_message_id: res.data.id,
+                email_error: null
+            }).eq('id', callLogId);
+        }
 
         return { success: true, messageId: res.data.id };
 
     } catch (error: any) {
         console.error('Failed to send Gmail email:', error);
 
-        // Log failure to audit table
-        await supabase.from('prospect_follow_up_emails').insert({
-            prospect_id: prospectId,
-            call_log_id: callLogId,
-            caller_name: cc ? cc.split('@')[0] : 'System',
-            to_email: to,
-            outcome: outcome,
-            template_used: templateUsed,
-            status: 'failed',
-            error: error.message || String(error)
-        });
+        // Log failure to calls table
+        if (callLogId) {
+            await supabase.from('prospect_calls').update({
+                email_status: 'failed',
+                email_error: error.message || String(error),
+                email_template: templateUsed
+            }).eq('id', callLogId);
+        }
 
         return { success: false, error: error.message };
     }

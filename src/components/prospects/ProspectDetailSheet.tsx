@@ -139,10 +139,10 @@ export default function ProspectDetailSheet({
                                 )}
                                 variant={
                                     prospect.callStatus === 'new' ? 'outline' :
-                                    prospect.callStatus === 'pending_signup' ? 'default' :
-                                    prospect.callStatus === 'invalid_number' ? 'destructive' :
-                                    ['called', 'answered'].includes(prospect.callStatus) ? 'secondary' :
-                                    'outline'
+                                        prospect.callStatus === 'pending_signup' ? 'default' :
+                                            prospect.callStatus === 'invalid_number' ? 'destructive' :
+                                                ['called', 'answered'].includes(prospect.callStatus) ? 'secondary' :
+                                                    'outline'
                                 }
                             >
                                 {isLocked && prospect.lockoutUntil && mounted
@@ -319,7 +319,7 @@ export default function ProspectDetailSheet({
 
                                             const displayLabel = fieldLabels[fieldKey] || fieldKey;
                                             const isUrl = fieldKey.includes('Website') && (value.startsWith('http') || value.includes('.'));
-                                            
+
                                             return (
                                                 <div key={fieldKey} className="flex flex-col border-b border-border/50 pb-2">
                                                     <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">
@@ -381,6 +381,7 @@ export default function ProspectDetailSheet({
                                                 <TableHead className="w-[100px]">Caller</TableHead>
                                                 <TableHead className="w-[180px]">Outcome</TableHead>
                                                 <TableHead>Email</TableHead>
+                                                <TableHead className="w-[120px]">Email Status</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -403,13 +404,39 @@ export default function ProspectDetailSheet({
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell className="text-sm truncate max-w-[200px]" title={call.email}>
-                                                            {call.email || '-'}
+                                                            {call.email || <span className="text-muted-foreground italic">No email captured</span>}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {call.email ? (
+                                                                <div className="flex flex-col gap-1">
+                                                                    {call.emailStatus === 'sent' && (
+                                                                        <Badge variant="outline" className="w-fit bg-green-900/20 text-green-400 border-green-800/50 text-[10px] py-0 px-2 font-medium">
+                                                                            Email Sent
+                                                                        </Badge>
+                                                                    )}
+                                                                    {call.emailStatus === 'failed' && (
+                                                                        <Badge variant="outline" className="w-fit bg-red-900/20 text-red-400 border-red-800/50 text-[10px] py-0 px-2 font-medium" title={call.emailError || 'Unknown error'}>
+                                                                            Email Failed
+                                                                        </Badge>
+                                                                    )}
+                                                                    {call.emailStatus === 'pending' && (
+                                                                        <Badge variant="outline" className="w-fit bg-blue-900/20 text-blue-400 border-blue-800/50 text-[10px] py-0 px-2 font-medium animate-pulse">
+                                                                            Sending...
+                                                                        </Badge>
+                                                                    )}
+                                                                    {!call.emailStatus && (
+                                                                        <span className="text-muted-foreground text-[10px] italic">Queued</span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-muted-foreground text-[10px]">-</span>
+                                                            )}
                                                         </TableCell>
                                                     </TableRow>
                                                 ))
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={4} className="text-center py-8 text-sm text-muted-foreground italic">
+                                                    <TableCell colSpan={5} className="text-center py-8 text-sm text-muted-foreground italic">
                                                         No previous history recorded.
                                                     </TableCell>
                                                 </TableRow>

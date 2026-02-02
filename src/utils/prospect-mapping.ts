@@ -61,7 +61,9 @@ export function mapProspect(dbRow: any): Prospect {
             outcome: c.outcome,
             phoneUsed: c.phone_used,
             email: c.email_captured,
-            calledAt: c.called_at
+            calledAt: c.called_at,
+            emailStatus: c.email_status,
+            emailError: c.email_error
         }));
     }
 

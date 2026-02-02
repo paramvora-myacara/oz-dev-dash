@@ -84,7 +84,12 @@ export async function POST(
         .from('prospects')
         .update(prospectUpdate)
         .eq('id', id)
-        .select('*, prospect_calls(*)')
+        .select(`
+            *,
+            prospect_calls (
+                *
+            )
+        `)
         .single();
 
     if (updateError) {
@@ -95,12 +100,25 @@ export async function POST(
     // 6. Trigger follow-up email (Async)
     const eligibleOutcomes = ['pending_signup', 'no_answer', 'invalid_number'];
     const finalOutcome = outcome === 'answered' ? 'pending_signup' : outcome;
+    const isEmailTriggered = email && eligibleOutcomes.includes(finalOutcome);
 
-    if (email && eligibleOutcomes.includes(finalOutcome)) {
+    // Map before any background tasks
+    const mappedResult = mapProspect(updatedProspect);
+
+    // If we're about to send an email, update the status in the UI return object locally
+    if (isEmailTriggered && mappedResult.callHistory) {
+        const latestCall = mappedResult.callHistory.find(c => c.callerName === callerName && c.outcome === outcome);
+        if (latestCall) {
+            latestCall.emailStatus = 'pending';
+        }
+    }
+
+    if (isEmailTriggered) {
         console.log(`[CallRoute] Triggering background follow-up for ${finalOutcome} (Recipient: ${email})`);
-        // Find the newly created call log ID
+
+        // Find the newly created call log ID from the DB result
         const callLogId = updatedProspect.prospect_calls?.find((c: any) =>
-            c.caller_name === callerName && c.outcome === finalOutcome
+            c.caller_name === callerName && c.outcome === outcome
         )?.id;
 
         const CALLER_EMAILS: Record<string, string> = {
@@ -123,12 +141,11 @@ export async function POST(
                 });
 
                 const callerEmail = CALLER_EMAILS[callerName] || `${callerName.toLowerCase()}@ozlistings.com`;
-                const testRecipientEmail = 'aryan.jain@capmatch.com'; // TEST RECIPIENT
 
-                console.log(`[CallRoute] Background sending ${finalOutcome} email via Gmail to ${testRecipientEmail} (CC: ${callerEmail}, From: ${callerName})`);
+                console.log(`[CallRoute] Background sending ${finalOutcome} email via Gmail to ${email} (CC: ${callerEmail}, From: ${callerName})`);
 
                 const result = await sendGmailEmail({
-                    to: testRecipientEmail,
+                    to: email, // Use the actual captured email
                     cc: callerEmail,
                     fromName: callerName,
                     subject,
@@ -146,5 +163,5 @@ export async function POST(
         })();
     }
 
-    return NextResponse.json({ success: true, data: mapProspect(updatedProspect) });
+    return NextResponse.json({ success: true, data: mappedResult });
 }

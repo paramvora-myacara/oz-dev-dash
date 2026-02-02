@@ -100,6 +100,26 @@ export default function ProspectsPage() {
                     });
                 }
             )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'prospect_calls' },
+                (payload) => {
+                    const updatedCall = payload.new;
+                    const status = updatedCall.email_status;
+                    const error = updatedCall.email_error;
+
+                    const updateCallInHistory = (p: Prospect) => {
+                        if (p.id !== updatedCall.prospect_id) return p;
+                        const newHistory = p.callHistory?.map(c =>
+                            c.id === updatedCall.id ? { ...c, emailStatus: status, emailError: error } : c
+                        );
+                        return { ...p, callHistory: newHistory };
+                    };
+
+                    setProspects(prev => prev.map(updateCallInHistory));
+                    setSelectedProspectForSheet(prev => prev ? updateCallInHistory(prev) : null);
+                }
+            )
             .subscribe();
 
         fetchProspects();

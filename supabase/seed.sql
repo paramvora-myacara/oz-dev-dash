@@ -14,6 +14,11 @@ INSERT INTO contacts (email, name, company, details) VALUES
   ('aryan.jain@ozlistings.com', 'Aryan Bounce', 'OZL bounce', '{"email_status":"Valid"}'::jsonb)
 ON CONFLICT (email) DO NOTHING;
 
+-- Seed prospects
+INSERT INTO prospects (property_name, address, state, phone_numbers, call_status) VALUES
+  ('AryanTest Project', '123 CapMatch Way', 'CA', '[{"label": "Owner", "number": "1234567890", "contactName": "AryanTest Lastname", "contactEmail": "aryan.jain@capmatch.com"}]'::jsonb, 'new')
+ON CONFLICT (property_name, address) DO NOTHING;
+
 --
 -- PostgreSQL database dump
 --

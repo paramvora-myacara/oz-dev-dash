@@ -24,6 +24,8 @@ export interface CallHistory {
     phoneUsed: string;
     email?: string;
     calledAt: string;
+    emailStatus?: 'sent' | 'failed' | 'pending';
+    emailError?: string;
 }
 
 export interface Prospect {
