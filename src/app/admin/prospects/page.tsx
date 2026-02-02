@@ -338,7 +338,7 @@ export default function ProspectsPage() {
                                     <p className="text-muted-foreground">Select your name to start making calls.</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {['Jeff', 'Todd', 'Michael', 'Param'].map(name => (
+                                    {['Jeff', 'Todd', 'Michael', 'Param', 'Aryan'].map(name => (
                                         <Button key={name} variant="outline" size="lg" className="h-20 text-xl" onClick={() => handleSelectUser(name)}>
                                             {name}
                                         </Button>

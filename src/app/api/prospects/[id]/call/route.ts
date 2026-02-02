@@ -107,7 +107,8 @@ export async function POST(
             'Jeff': 'jeff@ozlistings.com',
             'Todd': 'todd@ozlistings.com',
             'Michael': 'michael@ozlistings.com',
-            'Param': 'param@ozlistings.com'
+            'Param': 'param@ozlistings.com',
+            'Aryan': 'aryan@ozlistings.com'
         };
 
         // Fire and forget (don't await) or handle errors silently
@@ -122,7 +123,7 @@ export async function POST(
                 });
 
                 const callerEmail = CALLER_EMAILS[callerName] || `${callerName.toLowerCase()}@ozlistings.com`;
-                const testRecipientEmail = 'aryan@ozlistings.com'; // TEST RECIPIENT
+                const testRecipientEmail = 'aryan.jain@capmatch.com'; // TEST RECIPIENT
 
                 console.log(`[CallRoute] Background sending ${finalOutcome} email via Gmail to ${testRecipientEmail} (CC: ${callerEmail}, From: ${callerName})`);
 

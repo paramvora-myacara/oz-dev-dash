@@ -8,7 +8,8 @@ const CALLER_EMAILS: Record<string, string> = {
     'Jeff': 'jeff@ozlistings.com',
     'Todd': 'todd@ozlistings.com',
     'Michael': 'michael@ozlistings.com',
-    'Param': 'param@ozlistings.com'
+    'Param': 'param@ozlistings.com',
+    'Aryan': 'aryan@ozlistings.com'
 };
 
 export async function POST(request: Request) {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
             });
 
             const callerEmail = CALLER_EMAILS[callerName] || `${callerName.toLowerCase()}@ozlistings.com`;
-            const testRecipientEmail = 'aryan@ozlistings.com'; // TEST RECIPIENT
+            const testRecipientEmail = 'aryan.jain@capmatch.com'; // TEST RECIPIENT
 
             console.log(`[FollowUpAPI] Sending ${outcome} email. Recipient: ${testRecipientEmail}, CC: ${callerEmail}, From: ${callerName}`);
 
