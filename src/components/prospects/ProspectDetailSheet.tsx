@@ -166,37 +166,37 @@ export default function ProspectDetailSheet({
                         <button
                             onClick={() => setActiveTab('dialer')}
                             className={cn(
-                                "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                                "px-4 py-2 text-base font-medium border-b-2 transition-colors",
                                 activeTab === 'dialer'
                                     ? "border-primary text-primary"
                                     : "border-transparent text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <Phone className="h-4 w-4 inline mr-2" />
+                            <Phone className="h-5 w-5 inline mr-2" />
                             Dialer
                         </button>
                         <button
                             onClick={() => setActiveTab('research')}
                             className={cn(
-                                "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                                "px-4 py-2 text-base font-medium border-b-2 transition-colors",
                                 activeTab === 'research'
                                     ? "border-primary text-primary"
                                     : "border-transparent text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <Building className="h-4 w-4 inline mr-2" />
+                            <Building className="h-5 w-5 inline mr-2" />
                             Research
                         </button>
                         <button
                             onClick={() => setActiveTab('timeline')}
                             className={cn(
-                                "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                                "px-4 py-2 text-base font-medium border-b-2 transition-colors",
                                 activeTab === 'timeline'
                                     ? "border-primary text-primary"
                                     : "border-transparent text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <History className="h-4 w-4 inline mr-2" />
+                            <History className="h-5 w-5 inline mr-2" />
                             Timeline
                         </button>
                     </div>
@@ -232,19 +232,19 @@ export default function ProspectDetailSheet({
                                                             </span>
                                                         </div>
                                                         {contact.contactName && (
-                                                            <div className="text-sm font-medium text-foreground">
+                                                            <div className="text-base font-medium text-foreground">
                                                                 {contact.contactName}
                                                             </div>
                                                         )}
                                                         {contact.contactEmail && (
-                                                            <div className="text-sm text-muted-foreground">
+                                                            <div className="text-base text-muted-foreground">
                                                                 {contact.contactEmail}
                                                             </div>
                                                         )}
                                                         {contact.details && Object.entries(contact.details).map(([k, v]) => {
                                                             if (!v || v.trim() === '') return null;
                                                             return (
-                                                                <div key={k} className="text-xs text-muted-foreground mt-1">
+                                                                <div key={k} className="text-sm text-muted-foreground mt-1">
                                                                     <span className="uppercase tracking-wider opacity-70">{k}:</span> {v}
                                                                 </div>
                                                             );
@@ -330,12 +330,12 @@ export default function ProspectDetailSheet({
                                                             href={value.startsWith('http') ? value : `https://${value}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-sm text-primary hover:underline break-words"
+                                                            className="text-base text-primary hover:underline break-words"
                                                         >
                                                             {value}
                                                         </a>
                                                     ) : (
-                                                        <span className="text-sm break-words">{value}</span>
+                                                        <span className="text-base break-words">{value}</span>
                                                     )}
                                                 </div>
                                             );

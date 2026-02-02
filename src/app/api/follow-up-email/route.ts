@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { sendGmailEmail } from '@/lib/email/gmail-sender';
 import { getTemplate } from '@/lib/email/templates';
+import { mapProspect } from '@/utils/prospect-mapping';
 
 const CALLER_EMAILS: Record<string, string> = {
     'Jeff': 'jeff@ozlistings.com',
@@ -25,21 +26,22 @@ export async function POST(request: Request) {
         const supabase = await createClient();
 
         // Fetch prospect details for template
-        const { data: prospect, error: fetchError } = await supabase
+        const { data: prospectRow, error: fetchError } = await supabase
             .from('prospects')
-            .select('owner_name, property_name')
+            .select('*')
             .eq('id', prospectId)
             .single();
 
-        if (fetchError || !prospect) {
+        if (fetchError || !prospectRow) {
             return NextResponse.json({ error: 'Prospect not found' }, { status: 404 });
         }
 
         // Get template
         try {
+            const mappedProspect = mapProspect(prospectRow);
             const { subject, html } = getTemplate(outcome, {
-                prospectName: prospect.owner_name,
-                propertyName: prospect.property_name,
+                prospectName: mappedProspect.ownerName || 'Developer',
+                propertyName: mappedProspect.propertyName,
                 callerName: callerName,
                 extras: extras
             });

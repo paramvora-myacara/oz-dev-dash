@@ -113,9 +113,10 @@ export async function POST(
         // Fire and forget (don't await) or handle errors silently
         (async () => {
             try {
+                const mappedProspect = mapProspect(updatedProspect);
                 const { subject, html } = getTemplate(finalOutcome, {
-                    prospectName: updatedProspect.owner_name,
-                    propertyName: updatedProspect.property_name,
+                    prospectName: mappedProspect.ownerName || 'Developer',
+                    propertyName: mappedProspect.propertyName,
                     callerName: callerName,
                     extras: extras
                 });
