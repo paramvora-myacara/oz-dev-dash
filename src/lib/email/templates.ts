@@ -124,12 +124,12 @@ export function getTemplate(outcome: string, data: TemplateData): { subject: str
                     ${greeting}
                     <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#111827;">It was amazing to have this conversation with you today.</p>
                     
-                    <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#4b5563;">I wanted to follow up and let you know that onboarding your listing onto OZListings is now easier than it has ever been. We've simplified the process to be completely seamless for you—and for a limited time, it's <strong>fully free until June 1st, with no fees (onboarding or otherwise).</strong></p>
+                    <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#4b5563;">I wanted to follow up and let you know that onboarding your listing onto OZListings is now easier than it has ever been. We've simplified the process to be completely seamless for you - and for a limited time, it's <strong>fully free until June 1st, with no fees (onboarding or otherwise).</strong></p>
                     
                     <p style="font-size:15px;line-height:24px;margin:0 0 8px 0;color:#111827;font-weight:600;">Your onboarding is as simple as:</p>
                     <ol style="font-size:15px;line-height:24px;margin:0 0 16px 0;padding-left:20px;color:#4b5563;">
                       <li style="margin-bottom:8px;">Pick a pricing plan (we won't be charging for this until June 1).</li>
-                      <li style="margin-bottom:8px;">Upload your docs — flyers, OMs, financial models, etc. Our AI will use these to build out a listing website, and keep confidential docs behind a CA in our due diligence vault.</li>
+                      <li style="margin-bottom:8px;">Upload your docs - flyers, OMs, financial models, etc. Our AI will use these to build out a listing website, and keep confidential docs behind a CA in our due diligence vault.</li>
                       <li style="margin-bottom:8px;">Our team will get your listing live in 24-48 hours.</li>
                     </ol>
 
@@ -168,7 +168,7 @@ export function getTemplate(outcome: string, data: TemplateData): { subject: str
                 
                 <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#4b5563;">We're currently running a special promotion at OZListings and I wanted to make sure you didn't miss out. It is now easier than ever to get your project on our platform.</p>
                 
-                <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#4b5563;">Onboarding takes literally no time—it’s <strong>fully free until June 1st, with no fees (onboarding or otherwise)</strong>. We can have your listing live and in front of the <strong>largest Opportunity Zone investor network</strong> in the country within <strong>24 to 48 hours</strong>.</p>
+                <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#4b5563;">Onboarding takes literally no time-it’s <strong>fully free until June 1st, with no fees (onboarding or otherwise)</strong>. We can have your listing live and in front of the <strong>largest Opportunity Zone investor network</strong> in the country within <strong>24 to 48 hours</strong>.</p>
                 
                 <p style="font-size:15px;line-height:24px;margin:0 0 16px 0;color:#4b5563;">Please let me know if you have a few minutes to chat tomorrow or if I can send over more details on how to get started.</p>
 

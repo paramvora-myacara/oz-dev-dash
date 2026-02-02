@@ -331,6 +331,7 @@ export default function ProspectsPage() {
                     }}
                     onLogCall={handleLogCall}
                     preselectedPhone={preselectedPhoneForCall}
+                    callerName={currentUser || undefined}
                 />
             )}
 

@@ -48,7 +48,7 @@ export async function sendGmailEmail({
 
         // Build the email message
         const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-        const fromHeader = fromName ? `${fromName} <${GMAIL_USER}>` : `OZListings <${GMAIL_USER}>`;
+        const fromHeader = fromName ? `${fromName} | OZ Listings <${GMAIL_USER}>` : `OZListings <${GMAIL_USER}>`;
         const messageParts = [
             `From: ${fromHeader}`,
             `To: ${to}`,
