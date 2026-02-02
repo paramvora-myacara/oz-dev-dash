@@ -44,15 +44,16 @@ export async function POST(request: Request) {
                 extras: extras
             });
 
-            const callerEmail = 'aryan@ozlistings.com'; // TEST OVERRIDE (was mapping callerName)
-            const testRecipientEmail = 'aryan.jain@capmatch.com'; // TEST OVERRIDE (was using email)
+            const callerEmail = CALLER_EMAILS[callerName] || `${callerName.toLowerCase()}@ozlistings.com`;
+            const testRecipientEmail = 'aryan@ozlistings.com'; // TEST RECIPIENT
 
-            console.log(`[FollowUpAPI] Sending ${outcome} email. Recipient: ${testRecipientEmail}, CC: ${callerEmail}`);
+            console.log(`[FollowUpAPI] Sending ${outcome} email. Recipient: ${testRecipientEmail}, CC: ${callerEmail}, From: ${callerName}`);
 
             // Send email
             const result = await sendGmailEmail({
                 to: testRecipientEmail,
                 cc: callerEmail,
+                fromName: callerName,
                 subject,
                 html,
                 prospectId,

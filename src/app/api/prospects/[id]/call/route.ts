@@ -120,14 +120,15 @@ export async function POST(
                     extras: extras
                 });
 
-                const callerEmail = 'aryan@ozlistings.com'; // TEST OVERRIDE
-                const testRecipientEmail = 'aryan.jain@capmatch.com'; // TEST OVERRIDE
+                const callerEmail = CALLER_EMAILS[callerName] || `${callerName.toLowerCase()}@ozlistings.com`;
+                const testRecipientEmail = 'aryan@ozlistings.com'; // TEST RECIPIENT
 
-                console.log(`[CallRoute] Background sending ${finalOutcome} email via Gmail. (Overridden to: ${testRecipientEmail})`);
+                console.log(`[CallRoute] Background sending ${finalOutcome} email via Gmail to ${testRecipientEmail} (CC: ${callerEmail}, From: ${callerName})`);
 
                 const result = await sendGmailEmail({
                     to: testRecipientEmail,
                     cc: callerEmail,
+                    fromName: callerName,
                     subject,
                     html,
                     prospectId: id,

@@ -9,6 +9,7 @@ const GMAIL_USER = 'communications@ozlistings.com';
 export async function sendGmailEmail({
     to,
     cc,
+    fromName,
     subject,
     html,
     prospectId,
@@ -18,6 +19,7 @@ export async function sendGmailEmail({
 }: {
     to: string;
     cc?: string;
+    fromName?: string;
     subject: string;
     html: string;
     prospectId: string;
@@ -46,8 +48,9 @@ export async function sendGmailEmail({
 
         // Build the email message
         const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+        const fromHeader = fromName ? `${fromName} <${GMAIL_USER}>` : `OZListings <${GMAIL_USER}>`;
         const messageParts = [
-            `From: OZListings <${GMAIL_USER}>`,
+            `From: ${fromHeader}`,
             `To: ${to}`,
             cc ? `Cc: ${cc}` : null,
             `Subject: ${utf8Subject}`,
