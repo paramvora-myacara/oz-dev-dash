@@ -16,10 +16,10 @@ const PAGE_SIZE = 50;
 export default function ProspectsPage() {
     const [prospects, setProspects] = useState<Prospect[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
-    const [isCallModalOpen, setIsCallModalOpen] = useState(false);
     const [selectedProspectForSheet, setSelectedProspectForSheet] = useState<Prospect | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [selectedProspectForCall, setSelectedProspectForCall] = useState<Prospect | null>(null);
+    const [isCallModalOpen, setIsCallModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
@@ -83,13 +83,7 @@ export default function ProspectsPage() {
                     const updatedProspect = mapProspect(payload.new);
                     setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
 
-                    // Update selected prospects if they were updated by someone else
-                    setSelectedProspect(prev => {
-                        if (prev?.id === updatedProspect.id) {
-                            return { ...prev, ...updatedProspect };
-                        }
-                        return prev;
-                    });
+                    // Update selected prospect if it was updated by someone else
                     setSelectedProspectForSheet(prev => {
                         if (prev?.id === updatedProspect.id) {
                             return { ...prev, ...updatedProspect };
@@ -112,40 +106,6 @@ export default function ProspectsPage() {
         localStorage.setItem('prospect_current_user', user);
     };
 
-    const handleSelectProspect = async (prospect: Prospect) => {
-        // Locking
-        try {
-            const res = await fetch(`/api/prospects/${prospect.id}/lock`, {
-                method: 'POST',
-                body: JSON.stringify({ userName: currentUser })
-            });
-
-            if (res.ok) {
-                setSelectedProspect(prospect);
-                setIsCallModalOpen(true);
-            } else if (res.status === 409) {
-                alert('This prospect is currently being viewed by someone else.');
-            }
-        } catch (err) {
-            console.error('Failed to acquire lock:', err);
-        }
-    };
-
-    const handleCloseCallModal = async () => {
-        if (selectedProspect) {
-            // Unlocking
-            try {
-                await fetch(`/api/prospects/${selectedProspect.id}/lock`, {
-                    method: 'DELETE',
-                    body: JSON.stringify({ userName: currentUser })
-                });
-            } catch (err) {
-                console.error('Failed to release lock:', err);
-            }
-        }
-        setIsCallModalOpen(false);
-        setSelectedProspect(null);
-    };
 
     const handleOpenSheet = async (prospect: Prospect) => {
         // Locking
@@ -182,36 +142,22 @@ export default function ProspectsPage() {
         setSelectedProspectForSheet(null);
     };
 
-    // Cleanup locks on unmount
+    // Cleanup lock on unmount
     useEffect(() => {
         return () => {
-            const user = localStorage.getItem('prospect_current_user');
-            if (user) {
-                // Cleanup detail sheet lock
-                if (selectedProspectForSheet) {
-                    const id = selectedProspectForSheet.id;
-                    if (id) {
-                        fetch(`/api/prospects/${id}/lock`, {
-                            method: 'DELETE',
-                            body: JSON.stringify({ userName: user }),
-                            keepalive: true
-                        }).catch(() => { });
-                    }
-                }
-                // Cleanup call modal lock
-                if (selectedProspect) {
-                    const id = selectedProspect.id;
-                    if (id) {
-                        fetch(`/api/prospects/${id}/lock`, {
-                            method: 'DELETE',
-                            body: JSON.stringify({ userName: user }),
-                            keepalive: true
-                        }).catch(() => { });
-                    }
+            if (selectedProspectForSheet) {
+                const id = selectedProspectForSheet.id;
+                const user = localStorage.getItem('prospect_current_user');
+                if (id && user) {
+                    fetch(`/api/prospects/${id}/lock`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ userName: user }),
+                        keepalive: true
+                    }).catch(() => { });
                 }
             }
         };
-    }, [selectedProspectForSheet, selectedProspect]);
+    }, [selectedProspectForSheet]);
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -226,11 +172,10 @@ export default function ProspectsPage() {
         followUpAt?: string;
         lockoutUntil?: string;
     }) => {
-        const prospectToUse = selectedProspect || selectedProspectForSheet;
-        if (!prospectToUse || !currentUser) return;
+        if (!selectedProspectForSheet || !currentUser) return;
 
         try {
-            const res = await fetch(`/api/prospects/${prospectToUse.id}/call`, {
+            const res = await fetch(`/api/prospects/${selectedProspectForSheet.id}/call`, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...data,
@@ -247,15 +192,11 @@ export default function ProspectsPage() {
                 setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
 
                 // If this prospect is currently selected, update it too
-                if (selectedProspect?.id === updatedProspect.id) {
-                    setSelectedProspect({ ...selectedProspect, ...updatedProspect });
-                }
                 if (selectedProspectForSheet?.id === updatedProspect.id) {
                     setSelectedProspectForSheet({ ...selectedProspectForSheet, ...updatedProspect });
                 }
             }
 
-            setIsCallModalOpen(false);
             // Don't close the sheet automatically - let user continue working
         } catch (error) {
             console.error('Error logging call:', error);
@@ -294,7 +235,6 @@ export default function ProspectsPage() {
             <ProspectsTable
                 prospects={prospects}
                 isLoading={isLoading}
-                onSelectProspect={handleSelectProspect}
                 onOpenSheet={handleOpenSheet}
                 currentUser={currentUser}
                 search={search}
@@ -333,11 +273,14 @@ export default function ProspectsPage() {
                 </div>
             )}
 
-            {selectedProspect && (
+            {selectedProspectForCall && (
                 <CallModal
-                    prospect={selectedProspect}
+                    prospect={selectedProspectForCall}
                     isOpen={isCallModalOpen}
-                    onClose={handleCloseCallModal}
+                    onClose={() => {
+                        setIsCallModalOpen(false);
+                        setSelectedProspectForCall(null);
+                    }}
                     onLogCall={handleLogCall}
                 />
             )}
@@ -348,7 +291,10 @@ export default function ProspectsPage() {
                 onClose={handleCloseSheet}
                 currentUser={currentUser}
                 onLogCall={handleLogCall}
-                onOpenCallModal={handleSelectProspect}
+                onOpenCallModal={(prospect) => {
+                    setSelectedProspectForCall(prospect);
+                    setIsCallModalOpen(true);
+                }}
             />
 
             {/* User Selection Modal */}

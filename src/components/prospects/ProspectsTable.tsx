@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Prospect } from '@/types/prospect';
-import { ChevronRight, Phone, Search } from 'lucide-react';
+import { ChevronsRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatToPT, formatDateToPT } from '@/lib/date-utils';
 
@@ -29,7 +29,6 @@ const US_STATES = [
 
 interface ProspectsTableProps {
     prospects: Prospect[];
-    onSelectProspect: (prospect: Prospect) => void;
     isLoading: boolean;
     onOpenSheet: (prospect: Prospect) => void;
     currentUser: string | null;
@@ -43,7 +42,6 @@ interface ProspectsTableProps {
 
 export default function ProspectsTable({
     prospects,
-    onSelectProspect,
     isLoading,
     onOpenSheet,
     currentUser,
@@ -115,12 +113,12 @@ export default function ProspectsTable({
                 <div className="flex items-center gap-2 ml-4">
                     <span className="text-sm font-medium text-muted-foreground mr-1">Status:</span>
                     <Button
-                        variant={statusFilters.includes('AVAILABLE') ? 'default' : 'outline'}
+                        variant={statusFilters.includes('NEVER_CONTACTED') ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => toggleStatusFilter('AVAILABLE')}
+                        onClick={() => toggleStatusFilter('NEVER_CONTACTED')}
                         className="h-9 px-4"
                     >
-                        Available
+                        Never Contacted
                     </Button>
                     <Button
                         variant={statusFilters.includes('PENDING_SIGNUP') ? 'secondary' : 'outline'}
@@ -181,20 +179,18 @@ export default function ProspectsTable({
                             <TableHead className="w-[50px]"></TableHead>
                             <TableHead className="w-[40%]">Business</TableHead>
                             <TableHead className="w-[100px]">State</TableHead>
-                            <TableHead className="w-[100px]">Phones</TableHead>
                             <TableHead className="w-[150px]">Last Call</TableHead>
                             <TableHead className="w-[180px]">Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">Loading prospects...</TableCell>
+                                <TableCell colSpan={5} className="text-center h-24">Loading prospects...</TableCell>
                             </TableRow>
                         ) : displayProspects.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">No prospects found.</TableCell>
+                                <TableCell colSpan={5} className="text-center h-24">No prospects found.</TableCell>
                             </TableRow>
                         ) : (
                             displayProspects.map((prospect) => {
@@ -209,7 +205,7 @@ export default function ProspectsTable({
                                         onClick={(e) => handleRowClick(prospect, e)}
                                     >
                                         <TableCell>
-                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                            <ChevronsRight className="h-4 w-4 text-muted-foreground" />
                                         </TableCell>
                                             <TableCell className="py-4">
                                                 <div className="font-medium text-lg truncate" title={prospect.propertyName}>
@@ -219,11 +215,6 @@ export default function ProspectsTable({
                                             </TableCell>
                                             <TableCell className="py-4">
                                                 <Badge variant="secondary" className="text-sm px-3 py-1">{prospect.state}</Badge>
-                                            </TableCell>
-                                            <TableCell className="py-4">
-                                                <div className="text-base text-muted-foreground">
-                                                    {(prospect.phoneNumbers || []).length} numbers
-                                                </div>
                                             </TableCell>
                                             <TableCell className="py-4">
                                                 {prospect.lastCalledBy ? (
@@ -277,23 +268,6 @@ export default function ProspectsTable({
                                                                     : formatStatusText(prospect.callStatus)}
                                                     </Badge>
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="text-right py-4">
-                                                <Button
-                                                    variant={locked ? "secondary" : "outline"}
-                                                    disabled={locked || (!!prospect.viewing_by && prospect.viewing_by !== currentUser)}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onSelectProspect(prospect);
-                                                    }}
-                                                    className={cn(
-                                                        locked && "opacity-50 cursor-not-allowed",
-                                                        !locked && !(prospect.viewing_by && prospect.viewing_by !== currentUser) && "bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 border-black dark:border-white"
-                                                    )}
-                                                >
-                                                    <Phone className="h-4 w-4 mr-2" />
-                                                    {locked ? "Locked" : (prospect.viewing_by && prospect.viewing_by !== currentUser) ? "In Use" : "Log Call"}
-                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                 );
