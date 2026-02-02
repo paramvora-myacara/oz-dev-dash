@@ -31,6 +31,10 @@ export default function ProspectsPage() {
     const [statusFilters, setStatusFilters] = useState<string[]>([]);
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+    const [tempSelectedUser, setTempSelectedUser] = useState<string | null>(null);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [passwordError, setPasswordError] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     const fetchProspects = useCallback(async () => {
@@ -71,7 +75,10 @@ export default function ProspectsPage() {
     useEffect(() => {
         setMounted(true);
         const savedUser = localStorage.getItem('prospect_current_user');
-        if (savedUser) setCurrentUser(savedUser);
+        if (savedUser) {
+            setCurrentUser(savedUser);
+            setIsPasswordVerified(true);
+        }
 
         const supabase = createClient();
 
@@ -103,8 +110,26 @@ export default function ProspectsPage() {
     }, [fetchProspects]);
 
     const handleSelectUser = (user: string) => {
-        setCurrentUser(user);
-        localStorage.setItem('prospect_current_user', user);
+        setTempSelectedUser(user);
+        setPasswordInput('');
+        setPasswordError(false);
+    };
+
+    const handleVerifyPassword = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!tempSelectedUser) return;
+
+        const expectedPassword = tempSelectedUser.toLowerCase();
+        if (passwordInput === expectedPassword) {
+            setCurrentUser(tempSelectedUser);
+            setIsPasswordVerified(true);
+            localStorage.setItem('prospect_current_user', tempSelectedUser);
+            setTempSelectedUser(null);
+            setPasswordInput('');
+            setPasswordError(false);
+        } else {
+            setPasswordError(true);
+        }
     };
 
 
@@ -212,10 +237,11 @@ export default function ProspectsPage() {
             <div className="flex justify-between items-center">
                 <div className="flex flex-col gap-1">
                     <h1 className="text-4xl font-bold tracking-tight flex items-end gap-3">
-                        {currentUser ? `Calling as ${currentUser}` : 'Prospecting'}
-                        {currentUser && (
+                        {currentUser && isPasswordVerified ? `Calling as ${currentUser}` : 'Prospecting'}
+                        {currentUser && isPasswordVerified && (
                             <Button variant="link" size="sm" className="text-blue-600 h-auto p-0 text-lg font-normal pb-1" onClick={() => {
                                 setCurrentUser(null);
+                                setIsPasswordVerified(false);
                                 localStorage.removeItem('prospect_current_user');
                             }}>(Change)</Button>
                         )}
@@ -302,20 +328,60 @@ export default function ProspectsPage() {
             />
 
             {/* User Selection Modal */}
-            {mounted && !currentUser && (
+            {mounted && (!currentUser || !isPasswordVerified) && (
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
-                        <div className="space-y-2 text-center">
-                            <h2 className="text-2xl font-bold">Who are you?</h2>
-                            <p className="text-muted-foreground">Select your name to start making calls.</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            {['Jeff', 'Todd', 'Michael', 'Param'].map(name => (
-                                <Button key={name} variant="outline" size="lg" className="h-20 text-xl" onClick={() => handleSelectUser(name)}>
-                                    {name}
-                                </Button>
-                            ))}
-                        </div>
+                        {!tempSelectedUser ? (
+                            <>
+                                <div className="space-y-2 text-center">
+                                    <h2 className="text-2xl font-bold">Who are you?</h2>
+                                    <p className="text-muted-foreground">Select your name to start making calls.</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {['Jeff', 'Todd', 'Michael', 'Param'].map(name => (
+                                        <Button key={name} variant="outline" size="lg" className="h-20 text-xl" onClick={() => handleSelectUser(name)}>
+                                            {name}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="space-y-2 text-center">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="float-left -ml-2 h-8"
+                                        onClick={() => setTempSelectedUser(null)}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" /> Back
+                                    </Button>
+                                    <div className="clear-both pt-2">
+                                        <h2 className="text-2xl font-bold">Hello {tempSelectedUser}</h2>
+                                        <p className="text-muted-foreground">Please enter your password to continue.</p>
+                                    </div>
+                                </div>
+                                <form onSubmit={handleVerifyPassword} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <input
+                                            type="password"
+                                            className={`w-full p-3 bg-background border rounded-md focus:outline-none focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                                                }`}
+                                            placeholder="Enter password"
+                                            value={passwordInput}
+                                            onChange={(e) => setPasswordInput(e.target.value)}
+                                            autoFocus
+                                        />
+                                        {passwordError && (
+                                            <p className="text-red-500 text-sm">Incorrect password. Please try again.</p>
+                                        )}
+                                    </div>
+                                    <Button type="submit" className="w-full py-6 text-lg">
+                                        Verify & Start
+                                    </Button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
