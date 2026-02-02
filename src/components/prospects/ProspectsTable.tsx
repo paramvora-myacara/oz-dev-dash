@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Prospect } from '@/types/prospect';
 import { ChevronsRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -58,12 +59,6 @@ export default function ProspectsTable({
         setMounted(true);
     }, []);
 
-    const toggleStatusFilter = (filter: string) => {
-        const next = statusFilters.includes(filter)
-            ? statusFilters.filter(f => f !== filter)
-            : [...statusFilters, filter];
-        onStatusFiltersChange(next);
-    };
 
     const handleRowClick = (prospect: Prospect, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -111,63 +106,20 @@ export default function ProspectsTable({
                     </SelectContent>
                 </Select>
                 <div className="flex items-center gap-2 ml-4">
-                    <span className="text-sm font-medium text-muted-foreground mr-1">Status:</span>
-                    <Button
-                        variant={statusFilters.includes('NEVER_CONTACTED') ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleStatusFilter('NEVER_CONTACTED')}
-                        className="h-9 px-4"
-                    >
-                        Never Contacted
-                    </Button>
-                    <Button
-                        variant={statusFilters.includes('PENDING_SIGNUP') ? 'secondary' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleStatusFilter('PENDING_SIGNUP')}
-                        className={cn("h-9 px-4",
-                            statusFilters.includes('PENDING_SIGNUP') && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-800"
-                        )}
-                    >
-                        Pending Signup
-                    </Button>
-                    <Button
-                        variant={statusFilters.includes('FOLLOW_UP') ? 'secondary' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleStatusFilter('FOLLOW_UP')}
-                        className={cn("h-9 px-4",
-                            statusFilters.includes('FOLLOW_UP') && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-800"
-                        )}
-                    >
-                        Follow Up
-                    </Button>
-                    <Button
-                        variant={statusFilters.includes('LOCKED') ? 'destructive' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleStatusFilter('LOCKED')}
-                        className={cn("h-9 px-4", statusFilters.includes('LOCKED') && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
-                    >
-                        Locked
-                    </Button>
-                    <Button
-                        variant={statusFilters.includes('INVALID_NUMBER') ? 'destructive' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleStatusFilter('INVALID_NUMBER')}
-                        className={cn("h-9 px-4",
-                            statusFilters.includes('INVALID_NUMBER') && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        )}
-                    >
-                        Invalid Number
-                    </Button>
-                                                    {statusFilters.length > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onStatusFiltersChange([])}
-                            className="h-8 text-xs text-muted-foreground underline-offset-4 hover:underline px-2"
-                        >
-                            Reset
-                        </Button>
-                    )}
+                    <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Status:</span>
+                    <MultiSelect
+                        options={[
+                            { value: 'NEVER_CONTACTED', label: 'Never Contacted' },
+                            { value: 'PENDING_SIGNUP', label: 'Pending Signup' },
+                            { value: 'FOLLOW_UP', label: 'Follow Up' },
+                            { value: 'LOCKED', label: 'Locked' },
+                            { value: 'INVALID_NUMBER', label: 'Invalid Number' },
+                        ]}
+                        selected={statusFilters}
+                        onSelectionChange={onStatusFiltersChange}
+                        placeholder="Filter by status..."
+                        className="w-[200px]"
+                    />
                 </div>
             </div>
 

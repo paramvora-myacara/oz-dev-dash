@@ -29,7 +29,7 @@ interface ProspectDetailSheetProps {
         followUpAt?: string;
         lockoutUntil?: string;
     }) => void;
-    onOpenCallModal?: (prospect: Prospect) => void;
+    onOpenCallModal?: (prospect: Prospect, phoneNumber?: string) => void;
 }
 
 type TabType = 'dialer' | 'research' | 'timeline';
@@ -264,7 +264,7 @@ export default function ProspectDetailSheet({
                                                             size="lg"
                                                             onClick={() => {
                                                                 if (onOpenCallModal && prospect) {
-                                                                    onOpenCallModal(prospect);
+                                                                    onOpenCallModal(prospect, contact.number);
                                                                 }
                                                             }}
                                                             className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 text-base font-semibold px-6 py-3"

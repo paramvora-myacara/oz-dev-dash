@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Prospect, CallStatus } from '@/types/prospect';
-import { Phone, Calendar, Clock, CheckCircle, XCircle, PhoneOff } from 'lucide-react';
+import { Phone, Calendar, Clock, CheckCircle, XCircle, PhoneOff, AlertTriangle } from 'lucide-react';
+import { Tooltip } from '@/components/Tooltip';
+import { cn } from '@/lib/utils';
 
 interface CallModalProps {
     prospect: Prospect;
@@ -22,6 +24,7 @@ interface CallModalProps {
         followUpAt?: string;
         lockoutUntil?: string;
     }) => void;
+    preselectedPhone?: string;
 }
 
 interface GroupedPhone {
@@ -31,7 +34,7 @@ interface GroupedPhone {
     contactEmail?: string;
 }
 
-export default function CallModal({ prospect, isOpen, onClose, onLogCall }: CallModalProps) {
+export default function CallModal({ prospect, isOpen, onClose, onLogCall, preselectedPhone }: CallModalProps) {
     const [outcome, setOutcome] = useState<CallStatus>('called');
     const [phoneUsed, setPhoneUsed] = useState<string>(prospect.phoneNumbers?.[0]?.number || '');
     const [email, setEmail] = useState('');
@@ -83,7 +86,8 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
         if (isOpen) {
             setOutcome('called');
             const groupedPhones = getGroupedPhones();
-            const initialPhone = groupedPhones[0]?.number || '';
+            // Use preselected phone if provided, otherwise use first phone
+            const initialPhone = preselectedPhone || groupedPhones[0]?.number || '';
             setPhoneUsed(initialPhone);
             const currentPhone = groupedPhones.find(p => p.number === initialPhone);
             const currentEmail = currentPhone?.contactEmail || '';
@@ -98,7 +102,7 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
             setNoAnswerFollowUpDays(1);
             setShowEmailConfirm(false);
         }
-    }, [isOpen, prospect.id]);
+    }, [isOpen, prospect.id, preselectedPhone]);
 
     const handleSubmit = () => {
         // Validate no_answer requires follow-up days
@@ -183,35 +187,76 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
                     <div className="grid gap-4 py-4">
                         {/* Phone Selector */}
                         <div className="grid gap-2">
-                            <Label htmlFor="phone">Phone Number Used</Label>
-                            <Select value={phoneUsed} onValueChange={(val) => {
-                                setPhoneUsed(val);
-                                // Auto-sync email if it matches original or is empty
-                                const groupedPhones = getGroupedPhones();
-                                const currentPhone = groupedPhones.find(p => p.number === val);
-                                const newEmail = currentPhone?.contactEmail || '';
-                                if (email === originalEmail || !email) {
-                                    setEmail(newEmail);
-                                    setOriginalEmail(newEmail);
-                                }
-                            }}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select phone number" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {getGroupedPhones().map((phone, idx) => (
-                                        <SelectItem key={`${phone.number}-${idx}`} value={phone.number}>
-                                            {phone.contactName ? `${phone.contactName} - ` : ''}
-                                            {phone.number}
-                                            {phone.roles.length > 0 && (
-                                                <span className="text-muted-foreground ml-1">
-                                                    ({phone.roles.join(', ')})
-                                                </span>
-                                            )}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="phone">Phone Number Used</Label>
+                                {(() => {
+                                    const currentPhone = getGroupedPhones().find(p => p.number === phoneUsed);
+                                    const hasEmail = currentPhone?.contactEmail && currentPhone.contactEmail.trim() !== '';
+                                    if (!hasEmail) {
+                                        return (
+                                            <Tooltip content="We can't send a follow-up email without an email address. Please add an email address below." position="top">
+                                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                            </Tooltip>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </div>
+                            {preselectedPhone ? (
+                                // Display read-only phone number when preselected
+                                <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                                    {(() => {
+                                        const currentPhone = getGroupedPhones().find(p => p.number === phoneUsed);
+                                        return (
+                                            <>
+                                                {currentPhone?.contactName && (
+                                                    <span className="font-medium mr-2">{currentPhone.contactName} - </span>
+                                                )}
+                                                <span className="font-mono">{phoneUsed}</span>
+                                                {currentPhone?.roles && currentPhone.roles.length > 0 && (
+                                                    <span className="text-muted-foreground ml-2">
+                                                        ({currentPhone.roles.join(', ')})
+                                                    </span>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            ) : (
+                                <Select value={phoneUsed} onValueChange={(val) => {
+                                    setPhoneUsed(val);
+                                    // Auto-sync email if it matches original or is empty
+                                    const groupedPhones = getGroupedPhones();
+                                    const currentPhone = groupedPhones.find(p => p.number === val);
+                                    const newEmail = currentPhone?.contactEmail || '';
+                                    if (email === originalEmail || !email) {
+                                        setEmail(newEmail);
+                                        setOriginalEmail(newEmail);
+                                    }
+                                }}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select phone number" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {getGroupedPhones().map((phone, idx) => (
+                                            <SelectItem key={`${phone.number}-${idx}`} value={phone.number}>
+                                                <div className="flex items-center gap-2">
+                                                    {phone.contactName ? `${phone.contactName} - ` : ''}
+                                                    {phone.number}
+                                                    {phone.roles.length > 0 && (
+                                                        <span className="text-muted-foreground ml-1">
+                                                            ({phone.roles.join(', ')})
+                                                        </span>
+                                                    )}
+                                                    {(!phone.contactEmail || phone.contactEmail.trim() === '') && (
+                                                        <AlertTriangle className="h-3 w-3 text-amber-500 ml-auto" />
+                                                    )}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
 
                         {/* Outcome Buttons */}
@@ -347,14 +392,49 @@ export default function CallModal({ prospect, isOpen, onClose, onLogCall }: Call
 
                         {/* Email Field - Always show, editable */}
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email Address</Label>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="email" className="text-base font-semibold">Email Address</Label>
+                                {(() => {
+                                    const currentPhone = getGroupedPhones().find(p => p.number === phoneUsed);
+                                    const hasEmail = currentPhone?.contactEmail && currentPhone.contactEmail.trim() !== '';
+                                    if (!hasEmail) {
+                                        return (
+                                            <Tooltip content="We can't send a follow-up email without an email address." position="top">
+                                                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                                            </Tooltip>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </div>
                             <Input
                                 id="email"
                                 type="email"
                                 placeholder="Enter email address from call..."
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                className={cn(
+                                    "h-12 text-base border-2",
+                                    (() => {
+                                        const currentPhone = getGroupedPhones().find(p => p.number === phoneUsed);
+                                        const hasEmail = currentPhone?.contactEmail && currentPhone.contactEmail.trim() !== '';
+                                        return !hasEmail ? "border-amber-500 focus:border-amber-600 focus:ring-amber-500" : "";
+                                    })()
+                                )}
                             />
+                            {(() => {
+                                const currentPhone = getGroupedPhones().find(p => p.number === phoneUsed);
+                                const hasEmail = currentPhone?.contactEmail && currentPhone.contactEmail.trim() !== '';
+                                if (!hasEmail) {
+                                    return (
+                                        <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            Email address required for follow-up emails
+                                        </p>
+                                    );
+                                }
+                                return null;
+                            })()}
                         </div>
                     </div>
 

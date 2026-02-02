@@ -19,6 +19,7 @@ export default function ProspectsPage() {
     const [selectedProspectForSheet, setSelectedProspectForSheet] = useState<Prospect | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [selectedProspectForCall, setSelectedProspectForCall] = useState<Prospect | null>(null);
+    const [preselectedPhoneForCall, setPreselectedPhoneForCall] = useState<string | undefined>(undefined);
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -280,8 +281,10 @@ export default function ProspectsPage() {
                     onClose={() => {
                         setIsCallModalOpen(false);
                         setSelectedProspectForCall(null);
+                        setPreselectedPhoneForCall(undefined);
                     }}
                     onLogCall={handleLogCall}
+                    preselectedPhone={preselectedPhoneForCall}
                 />
             )}
 
@@ -291,8 +294,9 @@ export default function ProspectsPage() {
                 onClose={handleCloseSheet}
                 currentUser={currentUser}
                 onLogCall={handleLogCall}
-                onOpenCallModal={(prospect) => {
+                onOpenCallModal={(prospect, phoneNumber) => {
                     setSelectedProspectForCall(prospect);
+                    setPreselectedPhoneForCall(phoneNumber);
                     setIsCallModalOpen(true);
                 }}
             />
