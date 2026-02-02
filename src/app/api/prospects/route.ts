@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
         // Separate filters by type
         const callStatusFilters: string[] = [];
-        const hasAvailable = statusFilters.includes('AVAILABLE');
+        const hasNeverContacted = statusFilters.includes('NEVER_CONTACTED');
         const hasLocked = statusFilters.includes('LOCKED');
 
         if (statusFilters.includes('FOLLOW_UP')) {
@@ -44,6 +44,10 @@ export async function GET(request: Request) {
         }
         if (statusFilters.includes('INVALID_NUMBER')) {
             callStatusFilters.push('invalid_number');
+        }
+        if (hasNeverContacted) {
+            // Filter for prospects that have never been contacted (call_status = 'new')
+            callStatusFilters.push('new');
         }
 
         // Apply call_status filters using .in() for multiple values
@@ -56,14 +60,8 @@ export async function GET(request: Request) {
         }
 
         // Apply lockout_until filters (only if no call_status filters are selected)
-        // If both types are selected, we apply call_status filters and ignore lockout filters
-        // This means selecting INVALID_NUMBER will only show invalid_number, not available/locked ones
         if (callStatusFilters.length === 0) {
-            if (hasAvailable && hasLocked) {
-                // If both selected, show all (no filter needed)
-            } else if (hasAvailable) {
-                query = query.or('lockout_until.is.null,lockout_until.lt.now()');
-            } else if (hasLocked) {
+            if (hasLocked) {
                 query = query.gt('lockout_until', new Date().toISOString());
             }
         }

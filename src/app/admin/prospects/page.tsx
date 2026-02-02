@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import ProspectsTable from '@/components/prospects/ProspectsTable';
+import ProspectDetailSheet from '@/components/prospects/ProspectDetailSheet';
 import CallModal from '@/components/prospects/CallModal';
 import { Prospect, CallStatus } from '@/types/prospect';
 import { Button } from '@/components/ui/button';
@@ -15,9 +16,11 @@ const PAGE_SIZE = 50;
 export default function ProspectsPage() {
     const [prospects, setProspects] = useState<Prospect[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
+    const [selectedProspectForSheet, setSelectedProspectForSheet] = useState<Prospect | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [selectedProspectForCall, setSelectedProspectForCall] = useState<Prospect | null>(null);
+    const [preselectedPhoneForCall, setPreselectedPhoneForCall] = useState<string | undefined>(undefined);
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
-    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
@@ -28,6 +31,10 @@ export default function ProspectsPage() {
     const [statusFilters, setStatusFilters] = useState<string[]>([]);
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+    const [tempSelectedUser, setTempSelectedUser] = useState<string | null>(null);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [passwordError, setPasswordError] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     const fetchProspects = useCallback(async () => {
@@ -68,7 +75,10 @@ export default function ProspectsPage() {
     useEffect(() => {
         setMounted(true);
         const savedUser = localStorage.getItem('prospect_current_user');
-        if (savedUser) setCurrentUser(savedUser);
+        if (savedUser) {
+            setCurrentUser(savedUser);
+            setIsPasswordVerified(true);
+        }
 
         const supabase = createClient();
 
@@ -82,12 +92,32 @@ export default function ProspectsPage() {
                     setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
 
                     // Update selected prospect if it was updated by someone else
-                    setSelectedProspect(prev => {
+                    setSelectedProspectForSheet(prev => {
                         if (prev?.id === updatedProspect.id) {
                             return { ...prev, ...updatedProspect };
                         }
                         return prev;
                     });
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'prospect_calls' },
+                (payload) => {
+                    const updatedCall = payload.new;
+                    const status = updatedCall.email_status;
+                    const error = updatedCall.email_error;
+
+                    const updateCallInHistory = (p: Prospect) => {
+                        if (p.id !== updatedCall.prospect_id) return p;
+                        const newHistory = p.callHistory?.map(c =>
+                            c.id === updatedCall.id ? { ...c, emailStatus: status, emailError: error } : c
+                        );
+                        return { ...p, callHistory: newHistory };
+                    };
+
+                    setProspects(prev => prev.map(updateCallInHistory));
+                    setSelectedProspectForSheet(prev => prev ? updateCallInHistory(prev) : null);
                 }
             )
             .subscribe();
@@ -100,57 +130,71 @@ export default function ProspectsPage() {
     }, [fetchProspects]);
 
     const handleSelectUser = (user: string) => {
-        setCurrentUser(user);
-        localStorage.setItem('prospect_current_user', user);
+        setTempSelectedUser(user);
+        setPasswordInput('');
+        setPasswordError(false);
     };
 
-    const handleSelectProspect = (prospect: Prospect) => {
-        setSelectedProspect(prospect);
-        setIsCallModalOpen(true);
+    const handleVerifyPassword = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!tempSelectedUser) return;
+
+        const expectedPassword = tempSelectedUser.toLowerCase();
+        if (passwordInput === expectedPassword) {
+            setCurrentUser(tempSelectedUser);
+            setIsPasswordVerified(true);
+            localStorage.setItem('prospect_current_user', tempSelectedUser);
+            setTempSelectedUser(null);
+            setPasswordInput('');
+            setPasswordError(false);
+        } else {
+            setPasswordError(true);
+        }
     };
 
-    const handleToggleExpand = async (id: string) => {
-        const isCurrentlyExpanded = expandedId === id;
 
-        if (isCurrentlyExpanded) {
+    const handleOpenSheet = async (prospect: Prospect) => {
+        // Locking
+        try {
+            const res = await fetch(`/api/prospects/${prospect.id}/lock`, {
+                method: 'POST',
+                body: JSON.stringify({ userName: currentUser })
+            });
+
+            if (res.ok) {
+                setSelectedProspectForSheet(prospect);
+                setIsSheetOpen(true);
+            } else if (res.status === 409) {
+                alert('This prospect is currently being viewed by someone else.');
+            }
+        } catch (err) {
+            console.error('Failed to acquire lock:', err);
+        }
+    };
+
+    const handleCloseSheet = async () => {
+        if (selectedProspectForSheet) {
             // Unlocking
-            setExpandedId(null);
             try {
-                await fetch(`/api/prospects/${id}/lock`, {
+                await fetch(`/api/prospects/${selectedProspectForSheet.id}/lock`, {
                     method: 'DELETE',
                     body: JSON.stringify({ userName: currentUser })
                 });
             } catch (err) {
                 console.error('Failed to release lock:', err);
             }
-        } else {
-            // Locking
-            try {
-                const res = await fetch(`/api/prospects/${id}/lock`, {
-                    method: 'POST',
-                    body: JSON.stringify({ userName: currentUser })
-                });
-
-                if (res.ok) {
-                    setExpandedId(id);
-                } else if (res.status === 409) {
-                    alert('This prospect is currently being viewed by someone else.');
-                }
-            } catch (err) {
-                console.error('Failed to acquire lock:', err);
-            }
         }
+        setIsSheetOpen(false);
+        setSelectedProspectForSheet(null);
     };
 
     // Cleanup lock on unmount
     useEffect(() => {
         return () => {
-            if (expandedId) {
-                const id = expandedId;
+            if (selectedProspectForSheet) {
+                const id = selectedProspectForSheet.id;
                 const user = localStorage.getItem('prospect_current_user');
                 if (id && user) {
-                    // Using navigator.sendBeacon or a sync request in unmount is tricky in modern browsers
-                    // but we'll try a standard fetch with keepalive: true
                     fetch(`/api/prospects/${id}/lock`, {
                         method: 'DELETE',
                         body: JSON.stringify({ userName: user }),
@@ -159,7 +203,7 @@ export default function ProspectsPage() {
                 }
             }
         };
-    }, [expandedId]);
+    }, [selectedProspectForSheet]);
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -174,10 +218,10 @@ export default function ProspectsPage() {
         followUpAt?: string;
         lockoutUntil?: string;
     }) => {
-        if (!selectedProspect || !currentUser) return;
+        if (!selectedProspectForSheet || !currentUser) return;
 
         try {
-            const res = await fetch(`/api/prospects/${selectedProspect.id}/call`, {
+            const res = await fetch(`/api/prospects/${selectedProspectForSheet.id}/call`, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...data,
@@ -193,14 +237,13 @@ export default function ProspectsPage() {
             if (updatedProspect) {
                 setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
 
-                // If this prospect is currently selected/expanded, update it too
-                if (selectedProspect?.id === updatedProspect.id) {
-                    setSelectedProspect({ ...selectedProspect, ...updatedProspect });
+                // If this prospect is currently selected, update it too
+                if (selectedProspectForSheet?.id === updatedProspect.id) {
+                    setSelectedProspectForSheet({ ...selectedProspectForSheet, ...updatedProspect });
                 }
             }
 
-            setIsCallModalOpen(false);
-            // We NO LONGER setExpandedId(null) here so the row stays open for context
+            // Don't close the sheet automatically - let user continue working
         } catch (error) {
             console.error('Error logging call:', error);
             alert('Failed to log call. Please try again.');
@@ -214,10 +257,11 @@ export default function ProspectsPage() {
             <div className="flex justify-between items-center">
                 <div className="flex flex-col gap-1">
                     <h1 className="text-4xl font-bold tracking-tight flex items-end gap-3">
-                        {currentUser ? `Calling as ${currentUser}` : 'Prospecting'}
-                        {currentUser && (
+                        {currentUser && isPasswordVerified ? `Calling as ${currentUser}` : 'Prospecting'}
+                        {currentUser && isPasswordVerified && (
                             <Button variant="link" size="sm" className="text-blue-600 h-auto p-0 text-lg font-normal pb-1" onClick={() => {
                                 setCurrentUser(null);
+                                setIsPasswordVerified(false);
                                 localStorage.removeItem('prospect_current_user');
                             }}>(Change)</Button>
                         )}
@@ -238,9 +282,7 @@ export default function ProspectsPage() {
             <ProspectsTable
                 prospects={prospects}
                 isLoading={isLoading}
-                onSelectProspect={handleSelectProspect}
-                expandedId={expandedId}
-                onToggleExpand={handleToggleExpand}
+                onOpenSheet={handleOpenSheet}
                 currentUser={currentUser}
                 search={search}
                 onSearchChange={setSearch}
@@ -278,30 +320,89 @@ export default function ProspectsPage() {
                 </div>
             )}
 
-            {selectedProspect && (
+            {selectedProspectForCall && (
                 <CallModal
-                    prospect={selectedProspect}
+                    prospect={selectedProspectForCall}
                     isOpen={isCallModalOpen}
-                    onClose={() => setIsCallModalOpen(false)}
+                    onClose={() => {
+                        setIsCallModalOpen(false);
+                        setSelectedProspectForCall(null);
+                        setPreselectedPhoneForCall(undefined);
+                    }}
                     onLogCall={handleLogCall}
+                    preselectedPhone={preselectedPhoneForCall}
+                    callerName={currentUser || undefined}
                 />
             )}
 
+            <ProspectDetailSheet
+                prospect={selectedProspectForSheet}
+                isOpen={isSheetOpen}
+                onClose={handleCloseSheet}
+                currentUser={currentUser}
+                onLogCall={handleLogCall}
+                onOpenCallModal={(prospect, phoneNumber) => {
+                    setSelectedProspectForCall(prospect);
+                    setPreselectedPhoneForCall(phoneNumber);
+                    setIsCallModalOpen(true);
+                }}
+            />
+
             {/* User Selection Modal */}
-            {mounted && !currentUser && (
+            {mounted && (!currentUser || !isPasswordVerified) && (
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
-                        <div className="space-y-2 text-center">
-                            <h2 className="text-2xl font-bold">Who are you?</h2>
-                            <p className="text-muted-foreground">Select your name to start making calls.</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            {['Jeff', 'Todd', 'Michael', 'Param'].map(name => (
-                                <Button key={name} variant="outline" size="lg" className="h-20 text-xl" onClick={() => handleSelectUser(name)}>
-                                    {name}
-                                </Button>
-                            ))}
-                        </div>
+                        {!tempSelectedUser ? (
+                            <>
+                                <div className="space-y-2 text-center">
+                                    <h2 className="text-2xl font-bold">Who are you?</h2>
+                                    <p className="text-muted-foreground">Select your name to start making calls.</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {['Jeff', 'Todd', 'Michael', 'Param', 'Aryan'].map(name => (
+                                        <Button key={name} variant="outline" size="lg" className="h-20 text-xl" onClick={() => handleSelectUser(name)}>
+                                            {name}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="space-y-2 text-center">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="float-left -ml-2 h-8"
+                                        onClick={() => setTempSelectedUser(null)}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" /> Back
+                                    </Button>
+                                    <div className="clear-both pt-2">
+                                        <h2 className="text-2xl font-bold">Hello {tempSelectedUser}</h2>
+                                        <p className="text-muted-foreground">Please enter your password to continue.</p>
+                                    </div>
+                                </div>
+                                <form onSubmit={handleVerifyPassword} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <input
+                                            type="password"
+                                            className={`w-full p-3 bg-background border rounded-md focus:outline-none focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                                                }`}
+                                            placeholder="Enter password"
+                                            value={passwordInput}
+                                            onChange={(e) => setPasswordInput(e.target.value)}
+                                            autoFocus
+                                        />
+                                        {passwordError && (
+                                            <p className="text-red-500 text-sm">Incorrect password. Please try again.</p>
+                                        )}
+                                    </div>
+                                    <Button type="submit" className="w-full py-6 text-lg">
+                                        Verify & Start
+                                    </Button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
