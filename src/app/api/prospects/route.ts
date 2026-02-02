@@ -68,7 +68,9 @@ export async function GET(request: Request) {
     }
 
     // Pagination
+    // Sort by created_at descending (most recently added first), then alphabetically by property_name for tiebreaking
     query = query
+        .order('created_at', { ascending: false, nullsFirst: false })
         .order('property_name', { ascending: true })
         .range(offset, offset + limit - 1);
 
