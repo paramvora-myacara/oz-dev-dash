@@ -179,7 +179,13 @@ async function migrate() {
             ignoreDuplicates: false
         });
         if (error) {
-            console.error('Insert error:', error);
+            console.error('\n--- INSERT ERROR ---');
+            console.error('Message:', error.message);
+            console.error('Details:', error.details);
+            console.error('Hint:', error.hint);
+            console.error('Code:', error.code);
+            console.error('Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+            console.error('Sample Data:', JSON.stringify(batch[0], null, 2));
             process.exit(1);
         }
         process.stdout.write(`\rInserted ${Math.min(i + BATCH, prospectPhonesToInsert.length)}/${prospectPhonesToInsert.length}...`);
