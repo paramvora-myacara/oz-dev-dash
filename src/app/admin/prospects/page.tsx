@@ -28,7 +28,7 @@ export default function ProspectsPage() {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [stateFilter, setStateFilter] = useState('ALL');
-    const [statusFilters, setStatusFilters] = useState<string[]>([]);
+    const [statusFilters, setStatusFilters] = useState<string[]>(['FOLLOW_UP', 'NEVER_CONTACTED']);
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [isPasswordVerified, setIsPasswordVerified] = useState(false);
