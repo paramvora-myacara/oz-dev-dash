@@ -13,11 +13,13 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
+    const hasStateFilter = state && state !== 'ALL';
+
     let query = supabase
         .from('prospect_phones')
         .select(`
             *,
-            prospects (
+            prospects${hasStateFilter ? '!inner' : ''} (
                 id,
                 property_name,
                 address,
@@ -36,15 +38,9 @@ export async function GET(request: Request) {
         query = query.textSearch('search_vector', search);
     }
 
-    // State filter via prospect_id: get matching prospect ids
-    if (state && state !== 'ALL') {
-        const { data: prospectsInState } = await supabase.from('prospects').select('id').eq('state', state);
-        const prospectIds = (prospectsInState || []).map((p: { id: string }) => p.id);
-        if (prospectIds.length > 0) {
-            query = query.in('prospect_id', prospectIds);
-        } else {
-            query = query.eq('prospect_id', '00000000-0000-0000-0000-000000000000');
-        }
+    // State filter via prospect_id join
+    if (hasStateFilter) {
+        query = query.eq('prospects.state', state);
     }
 
     // Status filter
