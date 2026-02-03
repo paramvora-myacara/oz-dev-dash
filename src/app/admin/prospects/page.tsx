@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import ProspectsTable from '@/components/prospects/ProspectsTable';
 import ProspectDetailSheet from '@/components/prospects/ProspectDetailSheet';
 import CallModal from '@/components/prospects/CallModal';
+import AddContactModal from '@/components/prospects/AddContactModal';
 import { ProspectPhone, CallStatus, CallHistory } from '@/types/prospect';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -22,6 +23,7 @@ export default function ProspectsPage() {
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -297,6 +299,9 @@ export default function ProspectsPage() {
                         <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
+                    <Button onClick={() => setIsAddModalOpen(true)}>
+                        Add Contact
+                    </Button>
                     <ThemeToggle />
                 </div>
             </div>
@@ -364,6 +369,16 @@ export default function ProspectsPage() {
                     setSelectedPhoneForCall(phone);
                     setIsCallModalOpen(true);
                 }}
+            />
+
+            <AddContactModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSuccess={() => {
+                    fetchProspectPhones();
+                    setIsAddModalOpen(false);
+                }}
+                onSelectMatch={handleOpenSheet}
             />
 
             {mounted && (!currentUser || !isPasswordVerified) && (

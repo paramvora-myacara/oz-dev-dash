@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { mapProspect } from '@/utils/prospect-mapping';
+import { mapProspectPhone } from '@/utils/prospect-phone-mapping';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -87,4 +88,122 @@ export async function GET(request: Request) {
         page,
         totalPages: Math.ceil((count || 0) / limit)
     });
+}
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        const {
+            // Property details
+            prospectId, // If editing or adding to existing
+            propertyName,
+            address,
+            city,
+            state,
+            zip,
+            market,
+            submarket,
+
+            // Contact details
+            phoneNumber,
+            labels = [],
+            contactName,
+            contactEmail,
+            entityNames,
+            entityAddresses
+        } = body;
+
+        if (!phoneNumber) {
+            return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+        }
+
+        const supabase = await createClient();
+        let targetProspectId = prospectId;
+
+        // 1. If no prospectId provided, try to find or create prospect
+        if (!targetProspectId) {
+            if (!propertyName) {
+                return NextResponse.json({ error: 'Property name is required for new prospects' }, { status: 400 });
+            }
+
+            // Simple search by name and address to avoid duplicates
+            const { data: existingProspect } = await supabase
+                .from('prospects')
+                .select('id')
+                .eq('property_name', propertyName)
+                .eq('address', address || '')
+                .maybeSingle();
+
+            if (existingProspect) {
+                targetProspectId = existingProspect.id;
+            } else {
+                const { data: newProspect, error: prospectError } = await supabase
+                    .from('prospects')
+                    .insert({
+                        property_name: propertyName,
+                        address: address || '',
+                        city: city || '',
+                        state: state || '',
+                        zip: zip || '',
+                        market: market || '',
+                        submarket: submarket || ''
+                    })
+                    .select()
+                    .single();
+
+                if (prospectError) throw prospectError;
+                targetProspectId = newProspect.id;
+            }
+        }
+
+        // 2. Check if this phone number already exists for this prospect
+        const normalized = phoneNumber.replace(/\D/g, '');
+        const { data: existingPhone, error: checkError } = await supabase
+            .from('prospect_phones')
+            .select('*')
+            .eq('prospect_id', targetProspectId)
+            // Use ilike for partial or exact match, but database has phone_number as TEXT
+            .filter('phone_number', 'ilike', `%${normalized}%`)
+            .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingPhone) {
+            // Check for exact normalized match
+            const foundNormalized = existingPhone.phone_number.replace(/\D/g, '');
+            if (foundNormalized === normalized) {
+                return NextResponse.json({
+                    error: 'This phone number already exists for this property',
+                    existingRecord: existingPhone
+                }, { status: 409 });
+            }
+        }
+
+        // 3. Create the prospect_phone record
+        const { data: newPhone, error: phoneError } = await supabase
+            .from('prospect_phones')
+            .insert({
+                prospect_id: targetProspectId,
+                phone_number: phoneNumber,
+                labels: labels,
+                contact_name: contactName || null,
+                contact_email: contactEmail || null,
+                entity_names: entityNames || null,
+                entity_addresses: entityAddresses || null,
+                call_status: 'new'
+            })
+            .select(`
+                *,
+                prospects (*)
+            `)
+            .single();
+
+        if (phoneError) throw phoneError;
+
+        return NextResponse.json({ data: mapProspectPhone(newPhone) });
+
+    } catch (error: any) {
+        console.error('Error in POST /api/prospects:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }
