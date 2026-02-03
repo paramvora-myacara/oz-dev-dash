@@ -69,6 +69,7 @@ export async function GET(request: Request) {
     }
 
     query = query
+        .order('follow_up_at', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false, nullsFirst: false })
         .order('phone_number', { ascending: true })
         .range(offset, offset + limit - 1);
