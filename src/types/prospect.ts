@@ -18,7 +18,7 @@ export interface ProspectExtras {
 
 export interface CallHistory {
     id: string;
-    callerId: string;
+    callerId?: string;
     callerName: string;
     outcome: CallStatus;
     phoneUsed: string;
@@ -67,4 +67,38 @@ export interface Prospect {
 
     // Original CSV Row Data (optional for raw view)
     raw?: Record<string, string>;
+}
+
+/** Phone-first model: one row per (property, phone) with status on the phone */
+export interface ProspectPhone {
+    id: string;
+    prospectId: string;
+    phoneNumber: string;
+    labels: string[];
+    contactName?: string | null;
+    contactEmail?: string | null;
+    entityNames?: string | null;
+    entityAddresses?: string | null;
+    callStatus: CallStatus;
+    lockoutUntil?: string | null;
+    followUpAt?: string | null;
+    lastCalledAt?: string | null;
+    lastCalledBy?: string | null;
+    callCount: number;
+    viewing_by?: string | null;
+    viewing_since?: string | null;
+    extras?: ProspectExtras;
+    callHistory?: CallHistory[];
+    /** Nested prospect (property) */
+    prospect?: {
+        id: string;
+        propertyName: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        market?: string;
+        submarket?: string;
+        zip?: string;
+        raw?: Record<string, string>;
+    };
 }

@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "migrate": "tsx scripts/migrate-to-supabase.ts",
-    "test-migration": "tsx scripts/test-migration.ts"
+    "test-migration": "tsx scripts/test-migration.ts",
+    "migrate-prospects-to-phones": "tsx scripts/migrate_prospects_to_phones.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.45",

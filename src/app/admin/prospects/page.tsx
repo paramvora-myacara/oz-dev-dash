@@ -4,27 +4,25 @@ import { useState, useEffect, useCallback } from 'react';
 import ProspectsTable from '@/components/prospects/ProspectsTable';
 import ProspectDetailSheet from '@/components/prospects/ProspectDetailSheet';
 import CallModal from '@/components/prospects/CallModal';
-import { Prospect, CallStatus } from '@/types/prospect';
+import { ProspectPhone, CallStatus, CallHistory } from '@/types/prospect';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mapProspect } from '@/utils/prospect-mapping';
+import { mapProspectPhone } from '@/utils/prospect-phone-mapping';
 import { createClient } from '@/utils/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const PAGE_SIZE = 50;
 
 export default function ProspectsPage() {
-    const [prospects, setProspects] = useState<Prospect[]>([]);
+    const [prospectPhones, setProspectPhones] = useState<ProspectPhone[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedProspectForSheet, setSelectedProspectForSheet] = useState<Prospect | null>(null);
+    const [selectedPhoneForSheet, setSelectedPhoneForSheet] = useState<ProspectPhone | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    const [selectedProspectForCall, setSelectedProspectForCall] = useState<Prospect | null>(null);
-    const [preselectedPhoneForCall, setPreselectedPhoneForCall] = useState<string | undefined>(undefined);
+    const [selectedPhoneForCall, setSelectedPhoneForCall] = useState<ProspectPhone | null>(null);
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
 
-    // Filters
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [stateFilter, setStateFilter] = useState('ALL');
@@ -37,10 +35,10 @@ export default function ProspectsPage() {
     const [passwordError, setPasswordError] = useState(false);
     const [mounted, setMounted] = useState(false);
 
-    const fetchProspects = useCallback(async () => {
+    const fetchProspectPhones = useCallback(async () => {
         setIsLoading(true);
         try {
-            const url = new URL('/api/prospects', window.location.origin);
+            const url = new URL('/api/prospect-phones', window.location.origin);
             url.searchParams.set('page', page.toString());
             url.searchParams.set('limit', PAGE_SIZE.toString());
 
@@ -53,7 +51,7 @@ export default function ProspectsPage() {
             const res = await fetch(url.toString());
             if (!res.ok) throw new Error('Failed to fetch');
             const result = await res.json();
-            setProspects(result.data);
+            setProspectPhones(result.data);
             setTotalCount(result.count);
         } catch (error) {
             console.error(error);
@@ -62,16 +60,11 @@ export default function ProspectsPage() {
         }
     }, [page, debouncedSearch, stateFilter, statusFilters]);
 
-    // Handle search debounce
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-        }, 500);
-
+        const timer = setTimeout(() => setDebouncedSearch(search), 500);
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Restore user and setup Realtime
     useEffect(() => {
         setMounted(true);
         const savedUser = localStorage.getItem('prospect_current_user');
@@ -83,51 +76,88 @@ export default function ProspectsPage() {
         const supabase = createClient();
 
         const channel = supabase
-            .channel('prospects-realtime')
+            .channel('prospect-phones-realtime')
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'prospects' },
+                { event: '*', schema: 'public', table: 'prospect_phones' },
                 (payload) => {
-                    const updatedProspect = mapProspect(payload.new);
-                    setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
+                    const dbRow = payload.new as any;
+                    if (!dbRow) return;
 
-                    // Update selected prospect if it was updated by someone else
-                    setSelectedProspectForSheet(prev => {
-                        if (prev?.id === updatedProspect.id) {
-                            return { ...prev, ...updatedProspect };
-                        }
-                        return prev;
-                    });
+                    const updated = mapProspectPhone(dbRow);
+
+                    const mergeUpdate = (p: ProspectPhone) => {
+                        if (p.id !== updated.id) return p;
+                        // Preserve joined data (prospect, callHistory) that isn't in the realtime payload
+                        return {
+                            ...p,
+                            ...updated,
+                            prospect: p.prospect,
+                            callHistory: p.callHistory
+                        };
+                    };
+
+                    setProspectPhones(prev => prev.map(mergeUpdate));
+                    setSelectedPhoneForSheet(prev => prev ? mergeUpdate(prev) : null);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'prospect_calls' },
+                (payload) => {
+                    const newCall = payload.new as any;
+                    const mappedCall: CallHistory = {
+                        id: newCall.id,
+                        callerName: newCall.caller_name,
+                        outcome: newCall.outcome,
+                        phoneUsed: newCall.phone_used,
+                        email: newCall.email_captured,
+                        calledAt: newCall.called_at,
+                        emailStatus: newCall.email_status,
+                        emailError: newCall.email_error
+                    };
+
+                    const addCallToHistory = (p: ProspectPhone) => {
+                        if (p.id !== newCall.prospect_phone_id) return p;
+                        // Avoid duplicates if already added via API response
+                        if (p.callHistory?.some(c => c.id === mappedCall.id)) return p;
+
+                        const newHistory = [mappedCall, ...(p.callHistory || [])];
+                        return { ...p, callHistory: newHistory };
+                    };
+
+                    setProspectPhones(prev => prev.map(addCallToHistory));
+                    setSelectedPhoneForSheet(prev => prev ? addCallToHistory(prev) : null);
                 }
             )
             .on(
                 'postgres_changes',
                 { event: 'UPDATE', schema: 'public', table: 'prospect_calls' },
                 (payload) => {
-                    const updatedCall = payload.new;
+                    const updatedCall = payload.new as any;
                     const status = updatedCall.email_status;
                     const error = updatedCall.email_error;
 
-                    const updateCallInHistory = (p: Prospect) => {
-                        if (p.id !== updatedCall.prospect_id) return p;
+                    const updateCallInHistory = (p: ProspectPhone) => {
+                        if (p.id !== updatedCall.prospect_phone_id) return p;
                         const newHistory = p.callHistory?.map(c =>
                             c.id === updatedCall.id ? { ...c, emailStatus: status, emailError: error } : c
                         );
                         return { ...p, callHistory: newHistory };
                     };
 
-                    setProspects(prev => prev.map(updateCallInHistory));
-                    setSelectedProspectForSheet(prev => prev ? updateCallInHistory(prev) : null);
+                    setProspectPhones(prev => prev.map(updateCallInHistory));
+                    setSelectedPhoneForSheet(prev => prev ? updateCallInHistory(prev) : null);
                 }
             )
             .subscribe();
 
-        fetchProspects();
+        fetchProspectPhones();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchProspects]);
+    }, [fetchProspectPhones]);
 
     const handleSelectUser = (user: string) => {
         setTempSelectedUser(user);
@@ -152,20 +182,19 @@ export default function ProspectsPage() {
         }
     };
 
-
-    const handleOpenSheet = async (prospect: Prospect) => {
-        // Locking
+    const handleOpenSheet = async (phone: ProspectPhone) => {
         try {
-            const res = await fetch(`/api/prospects/${prospect.id}/lock`, {
+            const res = await fetch(`/api/prospect-phones/${phone.id}/lock`, {
                 method: 'POST',
                 body: JSON.stringify({ userName: currentUser })
             });
 
             if (res.ok) {
-                setSelectedProspectForSheet(prospect);
+                const { data } = await res.json();
+                setSelectedPhoneForSheet(data);
                 setIsSheetOpen(true);
             } else if (res.status === 409) {
-                alert('This prospect is currently being viewed by someone else.');
+                alert('This contact is currently being viewed by someone else.');
             }
         } catch (err) {
             console.error('Failed to acquire lock:', err);
@@ -173,10 +202,9 @@ export default function ProspectsPage() {
     };
 
     const handleCloseSheet = async () => {
-        if (selectedProspectForSheet) {
-            // Unlocking
+        if (selectedPhoneForSheet) {
             try {
-                await fetch(`/api/prospects/${selectedProspectForSheet.id}/lock`, {
+                await fetch(`/api/prospect-phones/${selectedPhoneForSheet.id}/lock`, {
                     method: 'DELETE',
                     body: JSON.stringify({ userName: currentUser })
                 });
@@ -185,17 +213,16 @@ export default function ProspectsPage() {
             }
         }
         setIsSheetOpen(false);
-        setSelectedProspectForSheet(null);
+        setSelectedPhoneForSheet(null);
     };
 
-    // Cleanup lock on unmount
     useEffect(() => {
         return () => {
-            if (selectedProspectForSheet) {
-                const id = selectedProspectForSheet.id;
+            if (selectedPhoneForSheet) {
+                const id = selectedPhoneForSheet.id;
                 const user = localStorage.getItem('prospect_current_user');
                 if (id && user) {
-                    fetch(`/api/prospects/${id}/lock`, {
+                    fetch(`/api/prospect-phones/${id}/lock`, {
                         method: 'DELETE',
                         body: JSON.stringify({ userName: user }),
                         keepalive: true
@@ -203,9 +230,8 @@ export default function ProspectsPage() {
                 }
             }
         };
-    }, [selectedProspectForSheet]);
+    }, [selectedPhoneForSheet]);
 
-    // Reset to page 1 when filters change
     useEffect(() => {
         setPage(1);
     }, [debouncedSearch, stateFilter, statusFilters]);
@@ -218,10 +244,10 @@ export default function ProspectsPage() {
         followUpAt?: string;
         lockoutUntil?: string;
     }) => {
-        if (!selectedProspectForSheet || !currentUser) return;
+        if (!selectedPhoneForSheet || !currentUser) return;
 
         try {
-            const res = await fetch(`/api/prospects/${selectedProspectForSheet.id}/call`, {
+            const res = await fetch(`/api/prospect-phones/${selectedPhoneForSheet.id}/call`, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...data,
@@ -231,19 +257,15 @@ export default function ProspectsPage() {
 
             if (!res.ok) throw new Error('Failed to log call');
 
-            const { data: updatedProspect } = await res.json();
+            const { data: updatedPhone } = await res.json();
 
-            // Update local state immediately for instant feedback
-            if (updatedProspect) {
-                setProspects(prev => prev.map(p => p.id === updatedProspect.id ? { ...p, ...updatedProspect } : p));
+            if (updatedPhone) {
+                setProspectPhones(prev => prev.map(p => p.id === updatedPhone.id ? { ...p, ...updatedPhone } : p));
 
-                // If this prospect is currently selected, update it too
-                if (selectedProspectForSheet?.id === updatedProspect.id) {
-                    setSelectedProspectForSheet({ ...selectedProspectForSheet, ...updatedProspect });
+                if (selectedPhoneForSheet?.id === updatedPhone.id) {
+                    setSelectedPhoneForSheet({ ...selectedPhoneForSheet, ...updatedPhone });
                 }
             }
-
-            // Don't close the sheet automatically - let user continue working
         } catch (error) {
             console.error('Error logging call:', error);
             alert('Failed to log call. Please try again.');
@@ -271,7 +293,7 @@ export default function ProspectsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button onClick={fetchProspects} variant="outline">
+                    <Button onClick={fetchProspectPhones} variant="outline">
                         <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
@@ -280,7 +302,7 @@ export default function ProspectsPage() {
             </div>
 
             <ProspectsTable
-                prospects={prospects}
+                prospectPhones={prospectPhones}
                 isLoading={isLoading}
                 onOpenSheet={handleOpenSheet}
                 currentUser={currentUser}
@@ -292,9 +314,8 @@ export default function ProspectsPage() {
                 onStatusFiltersChange={setStatusFilters}
             />
 
-            {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between py-4 border-t">
+                <div className="flex justify-between py-4 border-t">
                     <div className="text-sm text-muted-foreground">
                         Showing {(page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount}
                     </div>
@@ -320,35 +341,31 @@ export default function ProspectsPage() {
                 </div>
             )}
 
-            {selectedProspectForCall && (
+            {selectedPhoneForCall && (
                 <CallModal
-                    prospect={selectedProspectForCall}
+                    prospectPhone={selectedPhoneForCall}
                     isOpen={isCallModalOpen}
                     onClose={() => {
                         setIsCallModalOpen(false);
-                        setSelectedProspectForCall(null);
-                        setPreselectedPhoneForCall(undefined);
+                        setSelectedPhoneForCall(null);
                     }}
                     onLogCall={handleLogCall}
-                    preselectedPhone={preselectedPhoneForCall}
                     callerName={currentUser || undefined}
                 />
             )}
 
             <ProspectDetailSheet
-                prospect={selectedProspectForSheet}
+                prospectPhone={selectedPhoneForSheet}
                 isOpen={isSheetOpen}
                 onClose={handleCloseSheet}
                 currentUser={currentUser}
                 onLogCall={handleLogCall}
-                onOpenCallModal={(prospect, phoneNumber) => {
-                    setSelectedProspectForCall(prospect);
-                    setPreselectedPhoneForCall(phoneNumber);
+                onOpenCallModal={(phone) => {
+                    setSelectedPhoneForCall(phone);
                     setIsCallModalOpen(true);
                 }}
             />
 
-            {/* User Selection Modal */}
             {mounted && (!currentUser || !isPasswordVerified) && (
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
@@ -386,8 +403,7 @@ export default function ProspectsPage() {
                                     <div className="space-y-2">
                                         <input
                                             type="password"
-                                            className={`w-full p-3 bg-background border rounded-md focus:outline-none focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
-                                                }`}
+                                            className={`w-full p-3 bg-background border rounded-md focus:outline-none focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
                                             placeholder="Enter password"
                                             value={passwordInput}
                                             onChange={(e) => setPasswordInput(e.target.value)}

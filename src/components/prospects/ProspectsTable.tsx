@@ -14,10 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Prospect } from '@/types/prospect';
+import { ProspectPhone } from '@/types/prospect';
 import { ChevronsRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatToPT, formatDateToPT } from '@/lib/date-utils';
+import { formatDateToPT } from '@/lib/date-utils';
 
 const US_STATES = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -29,9 +29,9 @@ const US_STATES = [
 ];
 
 interface ProspectsTableProps {
-    prospects: Prospect[];
+    prospectPhones: ProspectPhone[];
     isLoading: boolean;
-    onOpenSheet: (prospect: Prospect) => void;
+    onOpenSheet: (phone: ProspectPhone) => void;
     currentUser: string | null;
     search: string;
     onSearchChange: (val: string) => void;
@@ -42,7 +42,7 @@ interface ProspectsTableProps {
 }
 
 export default function ProspectsTable({
-    prospects,
+    prospectPhones,
     isLoading,
     onOpenSheet,
     currentUser,
@@ -59,13 +59,11 @@ export default function ProspectsTable({
         setMounted(true);
     }, []);
 
-
-    const handleRowClick = (prospect: Prospect, e: React.MouseEvent) => {
+    const handleRowClick = (phone: ProspectPhone, e: React.MouseEvent) => {
         e.stopPropagation();
-        onOpenSheet(prospect);
+        onOpenSheet(phone);
     };
 
-    // Helper to format status text
     const formatStatusText = (status: string): string => {
         return status
             .split('_')
@@ -73,22 +71,20 @@ export default function ProspectsTable({
             .join(' ');
     };
 
-    // Helper to check lock status
-    const isLocked = (prospect: Prospect) => {
-        if (!mounted || !prospect.lockoutUntil) return false;
-        return new Date(prospect.lockoutUntil) > new Date();
+    const isLocked = (phone: ProspectPhone) => {
+        if (!mounted || !phone.lockoutUntil) return false;
+        return new Date(phone.lockoutUntil) > new Date();
     };
 
-    const displayProspects = prospects || [];
+    const displayPhones = prospectPhones || [];
 
     return (
         <div className="space-y-4">
-            {/* Filters */}
             <div className="flex items-center gap-4">
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search details..."
+                        placeholder="Search phone, property, entity..."
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
                         className="pl-8"
@@ -112,6 +108,7 @@ export default function ProspectsTable({
                             { value: 'NEVER_CONTACTED', label: 'Never Contacted' },
                             { value: 'PENDING_SIGNUP', label: 'Pending Signup' },
                             { value: 'FOLLOW_UP', label: 'Follow Up' },
+                            { value: 'NO_ANSWER', label: 'No Answer' },
                             { value: 'LOCKED', label: 'Locked' },
                             { value: 'INVALID_NUMBER', label: 'Invalid Number' },
                         ]}
@@ -123,105 +120,128 @@ export default function ProspectsTable({
                 </div>
             </div>
 
-            {/* Table */}
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[50px]"></TableHead>
-                            <TableHead className="w-[40%]">Business</TableHead>
-                            <TableHead className="w-[100px]">State</TableHead>
-                            <TableHead className="w-[150px]">Last Call</TableHead>
+                            <TableHead className="w-[20%]">Phone</TableHead>
+                            <TableHead className="w-[15%]">Role</TableHead>
+                            <TableHead className="w-[30%]">Property</TableHead>
+                            <TableHead className="w-[80px]">State</TableHead>
+                            <TableHead className="w-[140px]">Last Call</TableHead>
                             <TableHead className="w-[180px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">Loading prospects...</TableCell>
+                                <TableCell colSpan={6} className="text-center h-24">Loading prospects...</TableCell>
                             </TableRow>
-                        ) : displayProspects.length === 0 ? (
+                        ) : displayPhones.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">No prospects found.</TableCell>
+                                <TableCell colSpan={6} className="text-center h-24">No prospects found.</TableCell>
                             </TableRow>
                         ) : (
-                            displayProspects.map((prospect) => {
-                                const locked = isLocked(prospect);
+                            displayPhones.map((phone) => {
+                                const locked = isLocked(phone);
+                                const property = phone.prospect;
                                 return (
                                     <TableRow
-                                        key={prospect.id}
+                                        key={phone.id}
                                         className={cn(
                                             "cursor-pointer hover:bg-muted/50 transition-colors",
                                             locked && "bg-muted/20"
                                         )}
-                                        onClick={(e) => handleRowClick(prospect, e)}
+                                        onClick={(e) => handleRowClick(phone, e)}
                                     >
                                         <TableCell>
                                             <ChevronsRight className="h-4 w-4 text-muted-foreground" />
                                         </TableCell>
-                                            <TableCell className="py-4">
-                                                <div className="font-medium text-lg truncate" title={prospect.propertyName}>
-                                                    {prospect.propertyName}
-                                                </div>
-                                                <div className="text-base text-muted-foreground truncate">{prospect.address}, {prospect.city}</div>
-                                            </TableCell>
-                                            <TableCell className="py-4">
-                                                <Badge variant="secondary" className="text-sm px-3 py-1">{prospect.state}</Badge>
-                                            </TableCell>
-                                            <TableCell className="py-4">
-                                                {prospect.lastCalledBy ? (
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-lg">{prospect.lastCalledBy}</span>
-                                                        <span className="text-base text-muted-foreground">
-                                                            {/* Add logic to protect against invalid date strings if needed, assuming ISO from backend */}
-                                                            {prospect.lastCalledAt && mounted && formatDateToPT(prospect.lastCalledAt)}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted-foreground text-lg">-</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex flex-col gap-1 items-start">
-                                                    {prospect.viewing_by && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "animate-pulse mb-1",
-                                                                prospect.viewing_by === currentUser
-                                                                    ? "border-blue-500 text-blue-500"
-                                                                    : "border-yellow-500 text-yellow-500"
-                                                            )}
-                                                        >
-                                                            Viewing: {prospect.viewing_by === currentUser ? 'You' : prospect.viewing_by}
-                                                        </Badge>
-                                                    )}
-                                                    <Badge
-                                                        className={cn("text-sm px-3 py-1",
-                                                            ['follow_up', 'pending_signup'].includes(prospect.callStatus) && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100",
-                                                            prospect.callStatus === 'invalid_number' && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                        )}
-                                                        variant={
-                                                            prospect.callStatus === 'new' ? 'outline' :
-                                                                prospect.callStatus === 'follow_up' ? 'outline' : // Use outline + custom class
-                                                                    prospect.callStatus === 'pending_signup' ? 'default' :
-                                                                        prospect.callStatus === 'invalid_number' ? 'destructive' :
-                                                                            ['called', 'answered'].includes(prospect.callStatus) ? 'secondary' :
-                                                                                prospect.callStatus === 'closed' ? 'default' :
-                                                                                    locked ? 'destructive' : 'destructive'
-                                                        }
-                                                    >
-                                                        {locked && prospect.lockoutUntil && mounted
-                                                            ? `Locked until ${formatDateToPT(prospect.lockoutUntil)}`
-                                                            : prospect.callStatus === 'follow_up' && prospect.followUpAt && mounted
-                                                                ? `Follow up ${formatDateToPT(prospect.followUpAt)}`
-                                                                : prospect.callStatus === 'pending_signup'
-                                                                    ? 'Pending Signup'
-                                                                    : formatStatusText(prospect.callStatus)}
+                                        <TableCell className="py-4">
+                                            <div className="font-mono font-medium text-lg truncate" title={phone.phoneNumber}>
+                                                {phone.phoneNumber}
+                                            </div>
+                                            <div className="text-base text-muted-foreground truncate">
+                                                {phone.contactName || phone.entityNames || '-'}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4">
+                                            <div className="flex flex-wrap gap-1">
+                                                {phone.labels.map(label => (
+                                                    <Badge key={label} variant="outline" className="text-xs uppercase tracking-wider font-semibold">
+                                                        {label}
                                                     </Badge>
+                                                ))}
+                                                {phone.labels.length === 0 && <span className="text-muted-foreground">-</span>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4">
+                                            <div className="font-medium text-lg truncate" title={property?.propertyName}>
+                                                {property?.propertyName || '-'}
+                                            </div>
+                                            <div className="text-base text-muted-foreground truncate">
+                                                {property?.address ? `${property.address}, ${property.city}` : '-'}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4">
+                                            <Badge variant="secondary" className="text-sm px-3 py-1">
+                                                {property?.state || '-'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="py-4">
+                                            {phone.lastCalledBy ? (
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-lg">{phone.lastCalledBy}</span>
+                                                    <span className="text-base text-muted-foreground">
+                                                        {phone.lastCalledAt && mounted && formatDateToPT(phone.lastCalledAt)}
+                                                    </span>
                                                 </div>
-                                            </TableCell>
-                                        </TableRow>
+                                            ) : (
+                                                <span className="text-muted-foreground text-lg">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex flex-col gap-1 items-start">
+                                                {phone.viewing_by && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "animate-pulse mb-1",
+                                                            phone.viewing_by === currentUser
+                                                                ? "border-blue-500 text-blue-500"
+                                                                : "border-yellow-500 text-yellow-500"
+                                                        )}
+                                                    >
+                                                        Viewing: {phone.viewing_by === currentUser ? 'You' : phone.viewing_by}
+                                                    </Badge>
+                                                )}
+                                                <Badge
+                                                    className={cn("text-sm px-3 py-1",
+                                                        ['follow_up', 'pending_signup'].includes(phone.callStatus) && "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100",
+                                                        phone.callStatus === 'invalid_number' && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                    )}
+                                                    variant={
+                                                        phone.callStatus === 'new' ? 'outline' :
+                                                            phone.callStatus === 'follow_up' ? 'outline' :
+                                                                phone.callStatus === 'pending_signup' ? 'default' :
+                                                                    phone.callStatus === 'invalid_number' ? 'destructive' :
+                                                                        ['called', 'answered'].includes(phone.callStatus) ? 'secondary' :
+                                                                            phone.callStatus === 'closed' ? 'default' :
+                                                                                locked ? 'destructive' : 'destructive'
+                                                    }
+                                                >
+                                                    {locked && phone.lockoutUntil && mounted
+                                                        ? `Locked until ${formatDateToPT(phone.lockoutUntil)}`
+                                                        : phone.callStatus === 'follow_up' && phone.followUpAt && mounted
+                                                            ? `Follow up ${formatDateToPT(phone.followUpAt)}`
+                                                            : phone.callStatus === 'pending_signup'
+                                                                ? 'Pending Signup'
+                                                                : formatStatusText(phone.callStatus)}
+                                                </Badge>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
                                 );
                             })
                         )}
@@ -229,7 +249,7 @@ export default function ProspectsTable({
                 </Table>
             </div>
             <div className="text-sm text-muted-foreground">
-                Showing {displayProspects.length} of {prospects.length} prospects
+                Showing {displayPhones.length} of {prospectPhones.length} contacts
             </div>
         </div>
     );
