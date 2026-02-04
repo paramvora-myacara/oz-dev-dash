@@ -11,18 +11,19 @@ CREATE OR REPLACE FUNCTION get_unique_prospect_phones(
     p_role_filters text[] DEFAULT NULL,
     p_min_properties int DEFAULT 1,
     p_max_properties int DEFAULT NULL,
-    p_sort_by text DEFAULT 'follow_up',
-    p_sort_dir text DEFAULT 'ASC'
+    p_sort_by text DEFAULT 'property_count',
+    p_sort_dir text DEFAULT 'DESC'
 )
 RETURNS TABLE (
     id uuid,
     phone_number text,
     property_count bigint,
-    call_status text, -- Changed from public.call_status to text to avoid dependency issues
+    call_status text,
     lockout_until timestamptz,
     created_at timestamptz,
     follow_up_at timestamptz,
-    full_count bigint -- Window function total count for pagination
+    entity_names text,
+    full_count bigint
 )
 LANGUAGE plpgsql
 AS $$
@@ -31,9 +32,9 @@ DECLARE
 BEGIN
     v_offset := (p_page - 1) * p_limit;
 
+    -- Return Query
     RETURN QUERY
     WITH PhoneStats AS (
-        -- First, get all phones and their aggregated filterable attributes
         SELECT
             pp.phone_number,
             bool_or(
@@ -47,7 +48,6 @@ BEGIN
             bool_or(p_state_filter IS NULL OR p_state_filter = 'ALL' OR p.state = p_state_filter) as state_match,
             bool_or(p_role_filters IS NULL OR Cardinality(p_role_filters) = 0 OR pp.labels && p_role_filters) as role_match,
             COUNT(*) as total_p_count,
-            -- Pick the representative 'best_id' using priority logic
             (ARRAY_AGG(pp.id ORDER BY
                 CASE
                     WHEN pp.call_status IN ('do_not_call', 'rejected') THEN 100
@@ -90,19 +90,17 @@ BEGIN
              pp.call_status,
              pp.lockout_until,
              pp.created_at,
-             pp.follow_up_at
+             pp.follow_up_at,
+             pp.entity_names
         FROM Grouped g
         JOIN prospect_phones pp ON g.best_id = pp.id
         WHERE
             (p_status_filters IS NULL OR Cardinality(p_status_filters) = 0 OR
-             -- Logic to match UI filters to actual row status
              EXISTS (
                 SELECT 1
                 WHERE
-                    -- 'LOCKED' handled specifically by checking lockout date
                     ( 'LOCKED' = ANY(p_status_filters) AND pp.lockout_until > NOW() )
                     OR
-                    -- Map other statuses
                     ( 'NEVER_CONTACTED' = ANY(p_status_filters) AND pp.call_status = 'new' )
                     OR
                     ( 'PENDING_SIGNUP' = ANY(p_status_filters) AND pp.call_status = 'pending_signup' )
@@ -123,19 +121,30 @@ BEGIN
         f.lockout_until,
         f.created_at,
         f.follow_up_at,
-        COUNT(*) OVER() as full_count -- Total count after all filters but before limit
+        f.entity_names,
+        COUNT(*) OVER() as full_count
     FROM Filtered f
     ORDER BY
-        -- Priority 1: Active Follow-ups always at the top
+        -- Priority 1: Active Follow-ups
         (f.call_status = 'follow_up' AND f.follow_up_at <= NOW()) DESC,
         f.follow_up_at ASC NULLS LAST,
-        -- Priority 2: Dynamic Sort (Default: Property Count)
+        
+        -- Priority 2: Dynamic Sort
         CASE WHEN p_sort_by = 'property_count' AND p_sort_dir = 'DESC' THEN f.p_count END DESC,
         CASE WHEN p_sort_by = 'property_count' AND p_sort_dir = 'ASC' THEN f.p_count END ASC,
+        
         CASE WHEN p_sort_by = 'created_at' AND p_sort_dir = 'DESC' THEN f.created_at END DESC,
         CASE WHEN p_sort_by = 'created_at' AND p_sort_dir = 'ASC' THEN f.created_at END ASC,
-        -- Fallback
-        f.created_at DESC
+
+        CASE WHEN (p_sort_by = 'entity' OR p_sort_by = 'entity_names') AND p_sort_dir = 'DESC' THEN f.entity_names END DESC,
+        CASE WHEN (p_sort_by = 'entity' OR p_sort_by = 'entity_names') AND p_sort_dir = 'ASC' THEN f.entity_names END ASC,
+        
+        -- Priority 3: Tie-breaker - Group by Entity Name
+        COALESCE(f.entity_names, '') ASC,
+        
+        -- Priority 4: Final tie-breaker
+        f.created_at DESC,
+        f.phone_number ASC
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;

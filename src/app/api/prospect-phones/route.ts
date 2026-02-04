@@ -103,7 +103,7 @@ export async function GET(request: Request) {
             labels: [],
             contactName: null,
             contactEmail: null,
-            entityNames: null,
+            entityNames: row.entity_names,
             lastCalledAt: null,
             lastCalledBy: null,
             callCount: 0,
@@ -147,7 +147,8 @@ export async function GET(request: Request) {
                 submarket: item.prospects.submarket,
                 zip: item.prospects.zip,
                 callStatus: item.call_status,
-                labels: item.labels || []
+                labels: item.labels || [],
+                entityNames: item.entity_names || null
             });
         }
 

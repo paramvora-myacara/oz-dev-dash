@@ -24,6 +24,9 @@ interface AddContactModalProps {
     onSelectMatch?: (phone: AggregatedProspectPhone) => void;
 }
 
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Building2 } from 'lucide-react';
+
 export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMatch }: AddContactModalProps) {
     const [step, setStep] = useState<'phone' | 'details'>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -31,9 +34,15 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
     const [phoneMatches, setPhoneMatches] = useState<AggregatedProspectPhone[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Flow state
+    const [searchMode, setSearchMode] = useState<'company' | 'property'>('company');
+
     // Form state
     const [selectedProspectId, setSelectedProspectId] = useState<string | null>(null);
+    const [selectedEntityName, setSelectedEntityName] = useState<string | null>(null);
     const [isNewProperty, setIsNewProperty] = useState(false);
+    const [isNewCompany, setIsNewCompany] = useState(false);
+
     const [propertyName, setPropertyName] = useState('');
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
@@ -43,7 +52,11 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
     const [contactEmail, setContactEmail] = useState('');
     const [labels, setLabels] = useState<string[]>([]);
 
-    // Property Search
+    // Search state
+    const [entitySearch, setEntitySearch] = useState('');
+    const [entityResults, setEntityResults] = useState<any[]>([]);
+    const [isSearchingEntities, setIsSearchingEntities] = useState(false);
+
     const [propertySearch, setPropertySearch] = useState('');
     const [propertyResults, setPropertyResults] = useState<any[]>([]);
     const [isSearchingProperties, setIsSearchingProperties] = useState(false);
@@ -53,9 +66,14 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
             setStep('phone');
             setPhoneNumber('');
             setPhoneMatches([]);
+            setSearchMode('company');
             setSelectedProspectId(null);
+            setSelectedEntityName(null);
             setIsNewProperty(false);
+            setIsNewCompany(false);
             setPropertyName('');
+            setEntitySearch('');
+            setPropertySearch('');
             setAddress('');
             setCity('');
             setState('');
@@ -100,6 +118,25 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
         }
     };
 
+    const handleSearchEntities = async (val: string) => {
+        setEntitySearch(val);
+        if (val.length < 2) {
+            setEntityResults([]);
+            return;
+        }
+
+        setIsSearchingEntities(true);
+        try {
+            const res = await fetch(`/api/entities?search=${encodeURIComponent(val)}`);
+            const { data } = await res.json();
+            setEntityResults(data || []);
+        } catch (err) {
+            console.error('Error searching entities:', err);
+        } finally {
+            setIsSearchingEntities(false);
+        }
+    };
+
     const handleSearchProperties = async (val: string) => {
         setPropertySearch(val);
         if (val.length < 3) {
@@ -122,18 +159,32 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
-            const payload = {
-                prospectId: isNewProperty ? null : selectedProspectId,
-                propertyName: isNewProperty ? propertyName : undefined,
-                address,
-                city,
-                state,
-                zip,
+            let payload: any = {
                 phoneNumber,
                 contactName,
                 contactEmail,
                 labels
             };
+
+            if (searchMode === 'company') {
+                payload.mode = 'entity';
+                payload.entityName = isNewCompany ? entitySearch.trim() : selectedEntityName;
+
+                if (!payload.entityName) {
+                    throw new Error('Please select or enter a company name');
+                }
+            } else {
+                payload.prospectId = isNewProperty ? null : selectedProspectId;
+                payload.propertyName = isNewProperty ? propertyName : undefined;
+                payload.address = address;
+                payload.city = city;
+                payload.state = state;
+                payload.zip = zip;
+
+                if (!payload.prospectId && !payload.propertyName) {
+                    throw new Error('Please select or enter a property');
+                }
+            }
 
             const res = await fetch('/api/prospects', {
                 method: 'POST',
@@ -160,11 +211,11 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Add New Contact</DialogTitle>
                     <DialogDescription className="text-base text-muted-foreground">
-                        Search for a phone number or property to add to your call list.
+                        Search for a {searchMode === 'company' ? 'company' : 'property'} to add this contact to.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-6 space-y-8">
+                <div className="py-2 space-y-6">
                     {step === 'phone' && (
                         <div className="space-y-6">
                             <div className="grid gap-3">
@@ -186,9 +237,6 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
                                         </div>
                                     )}
                                 </div>
-                                {phoneNumber.length > 0 && phoneNumber.length < 10 && !exactMatch && (
-                                    <p className="text-sm text-muted-foreground">Enter at least 10 digits to continue.</p>
-                                )}
                             </div>
 
                             {phoneMatches.length > 0 && (
@@ -235,15 +283,12 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
                                             );
                                         })}
                                     </div>
-
-                                    {
-                                        exactMatch && (
-                                            <p className="text-sm text-destructive font-bold flex items-center gap-2 mt-1">
-                                                <AlertCircle className="h-4 w-4" />
-                                                Exact numeric match found. Cannot proceed.
-                                            </p>
-                                        )
-                                    }
+                                    {exactMatch && (
+                                        <p className="text-sm text-destructive font-bold flex items-center gap-2 mt-1">
+                                            <AlertCircle className="h-4 w-4" />
+                                            Exact numeric match found. Cannot proceed.
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
@@ -258,134 +303,207 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
                         </div>
                     )}
 
-                    {
-                        step === 'details' && (
-                            <div className="space-y-8 max-h-[60vh] overflow-y-auto px-1">
-                                {/* Property Section */}
-                                <div className="grid gap-4">
-                                    <Label className="text-sm uppercase tracking-wider text-muted-foreground font-bold">Property Information</Label>
-                                    {!isNewProperty ? (
-                                        <div className="space-y-3">
-                                            <div className="relative">
-                                                <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                                                <Input
-                                                    placeholder="Search existing property..."
-                                                    className="pl-10 h-12 text-base border-2"
-                                                    value={propertySearch}
-                                                    onChange={(e) => handleSearchProperties(e.target.value)}
-                                                />
-                                                {isSearchingProperties && (
-                                                    <div className="absolute right-3 top-3">
-                                                        <Loader2 className="animate-spin h-5 w-5 text-muted-foreground" />
-                                                    </div>
-                                                )}
-                                            </div>
+                    {step === 'details' && (
+                        <div className="space-y-6">
+                            <Tabs value={searchMode} onValueChange={(v: any) => setSearchMode(v)} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 h-12">
+                                    <TabsTrigger value="company" className="text-base">Company (Entity)</TabsTrigger>
+                                    <TabsTrigger value="property" className="text-base">Property</TabsTrigger>
+                                </TabsList>
 
-                                            {propertyResults.length > 0 && (
-                                                <div className="border-2 rounded-lg shadow-sm divide-y overflow-hidden">
-                                                    {propertyResults.map(p => (
-                                                        <div
-                                                            key={p.id}
-                                                            className={cn(
-                                                                "p-3 text-base cursor-pointer hover:bg-muted transition-colors flex justify-between items-center",
-                                                                selectedProspectId === p.id && "bg-primary/10"
-                                                            )}
-                                                            onClick={() => {
-                                                                setSelectedProspectId(p.id);
-                                                                setPropertySearch(p.propertyName);
-                                                                setPropertyResults([]);
-                                                            }}
-                                                        >
-                                                            <div>
-                                                                <div className="font-bold">{p.propertyName}</div>
-                                                                <div className="text-sm text-muted-foreground">{p.address}, {p.city}</div>
-                                                            </div>
-                                                            {selectedProspectId === p.id && <Check className="h-5 w-5 text-primary" />}
+                                <TabsContent value="company" className="space-y-4 py-4">
+                                    <div className="grid gap-4">
+                                        {!isNewCompany ? (
+                                            <div className="space-y-3">
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                                    <Input
+                                                        placeholder="Search existing company/entity..."
+                                                        className="pl-10 h-12 text-base border-2"
+                                                        value={entitySearch}
+                                                        onChange={(e) => handleSearchEntities(e.target.value)}
+                                                    />
+                                                    {isSearchingEntities && (
+                                                        <div className="absolute right-3 top-3">
+                                                            <Loader2 className="animate-spin h-5 w-5 text-muted-foreground" />
                                                         </div>
-                                                    ))}
+                                                    )}
                                                 </div>
-                                            )}
 
-                                            <Button variant="link" size="sm" className="h-8 p-0 text-base" onClick={() => setIsNewProperty(true)}>
-                                                <Plus className="h-4 w-4 mr-2" /> Create new property instead
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-2 gap-6 border-2 p-6 rounded-xl bg-muted/20">
-                                            <div className="col-span-2 grid gap-2">
-                                                <Label htmlFor="propertyName" className="text-sm font-semibold">Property Name</Label>
-                                                <Input id="propertyName" className="h-11 text-base" value={propertyName} onChange={e => setPropertyName(e.target.value)} />
-                                            </div>
-                                            <div className="col-span-2 grid gap-2">
-                                                <Label htmlFor="address" className="text-sm font-semibold">Address</Label>
-                                                <Input id="address" className="h-11 text-base" value={address} onChange={e => setAddress(e.target.value)} />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="city" className="text-sm font-semibold">City</Label>
-                                                <Input id="city" className="h-11 text-base" value={city} onChange={e => setCity(e.target.value)} />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="state" className="text-sm font-semibold">State</Label>
-                                                <Input id="state" className="h-11 text-base" value={state} onChange={e => setState(e.target.value)} />
-                                            </div>
-                                            <Button variant="link" size="sm" className="h-8 p-0 text-base col-span-2 justify-start" onClick={() => setIsNewProperty(false)}>
-                                                Back to search
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Contact Section */}
-                                <div className="grid gap-4 pt-6 border-t-2">
-                                    <Label className="text-sm uppercase tracking-wider text-muted-foreground font-bold">Contact Information</Label>
-                                    <div className="grid gap-6">
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="contactName" className="text-sm font-semibold">Full Name</Label>
-                                                <Input id="contactName" className="h-11 text-base" value={contactName} onChange={e => setContactName(e.target.value)} />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="contactEmail" className="text-sm font-semibold">Email Address</Label>
-                                                <Input id="contactEmail" type="email" className="h-11 text-base" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid gap-3">
-                                            <div className="grid gap-3">
-                                                <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Role / Label</Label>
-                                                <div className="flex flex-wrap gap-3">
-                                                    {['Owner', 'Property', 'Manager'].map((l) => {
-                                                        const isSelected = labels.includes(l);
-                                                        return (
-                                                            <Button
-                                                                key={l}
-                                                                type="button"
-                                                                variant={isSelected ? "default" : "outline"}
+                                                {entityResults.length > 0 && (
+                                                    <div className="border-2 rounded-lg shadow-sm divide-y overflow-hidden max-h-[200px] overflow-y-auto bg-card">
+                                                        {entityResults.map(e => (
+                                                            <div
+                                                                key={e.name}
                                                                 className={cn(
-                                                                    "h-12 px-6 text-base font-semibold transition-all",
-                                                                    isSelected ? "bg-primary text-primary-foreground shadow-md" : "hover:bg-muted"
+                                                                    "p-3 text-base cursor-pointer hover:bg-muted transition-colors flex justify-between items-center",
+                                                                    selectedEntityName === e.name && "bg-primary/10"
                                                                 )}
                                                                 onClick={() => {
-                                                                    if (isSelected) {
-                                                                        setLabels(labels.filter(i => i !== l));
-                                                                    } else {
-                                                                        setLabels([...labels, l]);
-                                                                    }
+                                                                    setSelectedEntityName(e.name);
+                                                                    setEntitySearch(e.name);
+                                                                    setEntityResults([]);
                                                                 }}
                                                             >
-                                                                {l}
-                                                            </Button>
-                                                        );
-                                                    })}
-                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                                                                    <span className="font-bold">{e.name}</span>
+                                                                </div>
+                                                                <Badge variant="secondary">{e.propertyCount} propert{e.propertyCount === 1 ? 'y' : 'ies'}</Badge>
+                                                                {selectedEntityName === e.name && <Check className="h-5 w-5 text-primary" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                <Button variant="link" size="sm" className="h-8 p-0 text-base" onClick={() => setIsNewCompany(true)}>
+                                                    <Plus className="h-4 w-4 mr-2" /> Create new company Instead
+                                                </Button>
                                             </div>
+                                        ) : (
+                                            <div className="grid gap-4 border-2 p-6 rounded-xl bg-muted/20">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="entityName" className="text-sm font-semibold">Company Name</Label>
+                                                    <Input
+                                                        id="entityName"
+                                                        className="h-11 text-base"
+                                                        placeholder="e.g. Blackstone"
+                                                        value={entitySearch}
+                                                        onChange={e => setEntitySearch(e.target.value)}
+                                                    />
+                                                    <p className="text-xs text-muted-foreground mt-1">A portfolio will be created for this company name.</p>
+                                                </div>
+                                                <Button variant="link" size="sm" className="h-8 p-0 text-base justify-start" onClick={() => setIsNewCompany(false)}>
+                                                    Back to search
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="property" className="space-y-4 py-4">
+                                    <div className="grid gap-4">
+                                        {!isNewProperty ? (
+                                            <div className="space-y-3">
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                                    <Input
+                                                        placeholder="Search existing property..."
+                                                        className="pl-10 h-12 text-base border-2"
+                                                        value={propertySearch}
+                                                        onChange={(e) => handleSearchProperties(e.target.value)}
+                                                    />
+                                                    {isSearchingProperties && (
+                                                        <div className="absolute right-3 top-3">
+                                                            <Loader2 className="animate-spin h-5 w-5 text-muted-foreground" />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {propertyResults.length > 0 && (
+                                                    <div className="border-2 rounded-lg shadow-sm divide-y overflow-hidden max-h-[200px] overflow-y-auto bg-card">
+                                                        {propertyResults.map(p => (
+                                                            <div
+                                                                key={p.id}
+                                                                className={cn(
+                                                                    "p-3 text-base cursor-pointer hover:bg-muted transition-colors flex justify-between items-center",
+                                                                    selectedProspectId === p.id && "bg-primary/10"
+                                                                )}
+                                                                onClick={() => {
+                                                                    setSelectedProspectId(p.id);
+                                                                    setPropertySearch(p.propertyName);
+                                                                    setPropertyResults([]);
+                                                                }}
+                                                            >
+                                                                <div>
+                                                                    <div className="font-bold">{p.propertyName}</div>
+                                                                    <div className="text-sm text-muted-foreground">{p.address}, {p.city}</div>
+                                                                </div>
+                                                                {selectedProspectId === p.id && <Check className="h-5 w-5 text-primary" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                <Button variant="link" size="sm" className="h-8 p-0 text-base" onClick={() => setIsNewProperty(true)}>
+                                                    <Plus className="h-4 w-4 mr-2" /> Create new property instead
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-6 border-2 p-6 rounded-xl bg-muted/20">
+                                                <div className="col-span-2 grid gap-2">
+                                                    <Label htmlFor="propertyName" className="text-sm font-semibold">Property Name</Label>
+                                                    <Input id="propertyName" className="h-11 text-base" value={propertyName} onChange={e => setPropertyName(e.target.value)} />
+                                                </div>
+                                                <div className="col-span-2 grid gap-2">
+                                                    <Label htmlFor="address" className="text-sm font-semibold">Address</Label>
+                                                    <Input id="address" className="h-11 text-base" value={address} onChange={e => setAddress(e.target.value)} />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="city" className="text-sm font-semibold">City</Label>
+                                                    <Input id="city" className="h-11 text-base" value={city} onChange={e => setCity(e.target.value)} />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="state" className="text-sm font-semibold">State</Label>
+                                                    <Input id="state" className="h-11 text-base" value={state} onChange={e => setState(e.target.value)} />
+                                                </div>
+                                                <Button variant="link" size="sm" className="h-8 p-0 text-base col-span-2 justify-start" onClick={() => setIsNewProperty(false)}>
+                                                    Back to search
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+
+                            {/* Contact Section */}
+                            <div className="grid gap-4 pt-6 border-t-2">
+                                <Label className="text-sm uppercase tracking-wider text-muted-foreground font-bold">Contact Details</Label>
+                                <div className="grid gap-6">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="contactName" className="text-sm font-semibold">Full Name</Label>
+                                            <Input id="contactName" className="h-11 text-base" placeholder="John Doe" value={contactName} onChange={e => setContactName(e.target.value)} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="contactEmail" className="text-sm font-semibold">Email Address</Label>
+                                            <Input id="contactEmail" type="email" className="h-11 text-base" placeholder="john@example.com" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-3">
+                                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Role / Label</Label>
+                                        <div className="flex flex-wrap gap-3">
+                                            {['Owner', 'Property', 'Manager'].map((l) => {
+                                                const isSelected = labels.includes(l);
+                                                return (
+                                                    <Button
+                                                        key={l}
+                                                        type="button"
+                                                        variant={isSelected ? "default" : "outline"}
+                                                        className={cn(
+                                                            "h-12 px-6 text-base font-semibold transition-all",
+                                                            isSelected ? "bg-primary text-primary-foreground shadow-md" : "hover:bg-muted"
+                                                        )}
+                                                        onClick={() => {
+                                                            if (isSelected) {
+                                                                setLabels(labels.filter(i => i !== l));
+                                                            } else {
+                                                                setLabels([...labels, l]);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {l}
+                                                    </Button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        )
-                    }
-                </div >
+                        </div>
+                    )}
+                </div>
 
                 <DialogFooter className="border-t-2 pt-6 gap-3">
                     <Button variant="ghost" className="h-12 px-6 text-base font-medium" onClick={onClose}>Cancel</Button>
@@ -394,14 +512,14 @@ export default function AddContactModal({ isOpen, onClose, onSuccess, onSelectMa
                             size="lg"
                             className="h-12 px-8 text-base font-bold"
                             onClick={handleSubmit}
-                            disabled={isSubmitting || (!selectedProspectId && !propertyName)}
+                            disabled={isSubmitting || (searchMode === 'property' && !selectedProspectId && !propertyName) || (searchMode === 'company' && !selectedEntityName && !isNewCompany)}
                         >
                             {isSubmitting && <Loader2 className="animate-spin h-5 w-5 mr-3" />}
                             Create Contact
                         </Button>
                     )}
                 </DialogFooter>
-            </DialogContent >
-        </Dialog >
+            </DialogContent>
+        </Dialog>
     );
 }
