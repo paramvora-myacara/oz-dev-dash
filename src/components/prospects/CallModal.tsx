@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ProspectPhone, CallStatus } from '@/types/prospect';
+import { AggregatedProspectPhone, CallStatus } from '@/types/prospect';
 import { Phone, Calendar, Clock, XCircle, PhoneOff, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Tooltip } from '@/components/Tooltip';
 import { cn } from '@/lib/utils';
 import { getTemplate } from '@/lib/email/templates';
 
 interface CallModalProps {
-    prospectPhone: ProspectPhone;
+    prospectPhone: AggregatedProspectPhone;
     isOpen: boolean;
     onClose: () => void;
     onLogCall: (data: {
@@ -134,10 +134,14 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
         if (!eligibleOutcomes.includes(outcome)) return null;
 
         const finalOutcome = outcome === 'answered' ? 'pending_signup' : outcome;
+
+        // Use first property or fallback
+        const displayedProperty = prospectPhone.properties[0]?.propertyName || 'Your Property';
+
         try {
             const { subject, html } = getTemplate(finalOutcome, {
                 prospectName: prospectPhone.contactName || 'Developer',
-                propertyName: prospectPhone.prospect?.propertyName || 'Your Property',
+                propertyName: displayedProperty,
                 callerName,
                 extras
             });

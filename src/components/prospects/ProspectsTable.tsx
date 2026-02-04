@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { ProspectPhone } from '@/types/prospect';
-import { ChevronsRight, Search } from 'lucide-react';
+import { AggregatedProspectPhone } from '@/types/prospect';
+import { ChevronsRight, Search, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDateToPT } from '@/lib/date-utils';
 
@@ -29,9 +29,9 @@ const US_STATES = [
 ];
 
 interface ProspectsTableProps {
-    prospectPhones: ProspectPhone[];
+    prospectPhones: AggregatedProspectPhone[];
     isLoading: boolean;
-    onOpenSheet: (phone: ProspectPhone) => void;
+    onOpenSheet: (phone: AggregatedProspectPhone) => void;
     currentUser: string | null;
     search: string;
     onSearchChange: (val: string) => void;
@@ -39,6 +39,10 @@ interface ProspectsTableProps {
     onStateFilterChange: (val: string) => void;
     statusFilters: string[];
     onStatusFiltersChange: (val: string[]) => void;
+    roleFilters: string[];
+    onRoleFiltersChange: (val: string[]) => void;
+    minProperties: number;
+    onMinPropertiesChange: (val: number) => void;
 }
 
 export default function ProspectsTable({
@@ -51,7 +55,11 @@ export default function ProspectsTable({
     stateFilter,
     onStateFilterChange,
     statusFilters,
-    onStatusFiltersChange
+    onStatusFiltersChange,
+    roleFilters,
+    onRoleFiltersChange,
+    minProperties,
+    onMinPropertiesChange
 }: ProspectsTableProps) {
     const [mounted, setMounted] = useState(false);
 
@@ -59,7 +67,7 @@ export default function ProspectsTable({
         setMounted(true);
     }, []);
 
-    const handleRowClick = (phone: ProspectPhone, e: React.MouseEvent) => {
+    const handleRowClick = (phone: AggregatedProspectPhone, e: React.MouseEvent) => {
         e.stopPropagation();
         onOpenSheet(phone);
     };
@@ -71,12 +79,17 @@ export default function ProspectsTable({
             .join(' ');
     };
 
-    const isLocked = (phone: ProspectPhone) => {
+    const isLocked = (phone: AggregatedProspectPhone) => {
         if (!mounted || !phone.lockoutUntil) return false;
         return new Date(phone.lockoutUntil) > new Date();
     };
 
     const displayPhones = prospectPhones || [];
+
+    // Derive aggregated state/market from properties if needed
+    // The current AggregatedProspectPhone doesn't have a top-level state/market, 
+    // but the API query filters by state so usually they match.
+    // If mixed, we can show "Mixed" or checks.
 
     return (
         <div className="space-y-4">
@@ -90,6 +103,7 @@ export default function ProspectsTable({
                         className="pl-8"
                     />
                 </div>
+
                 <Select value={stateFilter} onValueChange={onStateFilterChange}>
                     <SelectTrigger className="w-[150px]">
                         <SelectValue placeholder="Filter by State" />
@@ -101,7 +115,38 @@ export default function ProspectsTable({
                         ))}
                     </SelectContent>
                 </Select>
-                <div className="flex items-center gap-2 ml-4">
+
+                <Select value={minProperties.toString()} onValueChange={(val) => onMinPropertiesChange(parseInt(val))}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Property Count" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="1">All Properties</SelectItem>
+                        <SelectItem value="2">At least 2</SelectItem>
+                        <SelectItem value="5">At least 5</SelectItem>
+                        <SelectItem value="10">At least 10</SelectItem>
+                        <SelectItem value="20">At least 20</SelectItem>
+                        <SelectItem value="50">At least 50</SelectItem>
+                        <SelectItem value="100">At least 100</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Role:</span>
+                    <MultiSelect
+                        options={[
+                            { value: 'Owner', label: 'Owner' },
+                            { value: 'Manager', label: 'Manager' },
+                            { value: 'Property', label: 'Property' },
+                        ]}
+                        selected={roleFilters}
+                        onSelectionChange={onRoleFiltersChange}
+                        placeholder="Filter by role..."
+                        className="w-[180px]"
+                    />
+                </div>
+
+                <div className="flex items-center gap-2 ml-auto">
                     <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Status:</span>
                     <MultiSelect
                         options={[
@@ -126,26 +171,31 @@ export default function ProspectsTable({
                         <TableRow>
                             <TableHead className="w-[50px]"></TableHead>
                             <TableHead className="w-[20%]">Phone</TableHead>
-                            <TableHead className="w-[15%]">Role</TableHead>
-                            <TableHead className="w-[30%]">Property</TableHead>
-                            <TableHead className="w-[80px]">State</TableHead>
+                            <TableHead className="w-[10%]">Count</TableHead>
+                            <TableHead className="w-[120px]">Role</TableHead>
+                            <TableHead className="w-[100px]">State</TableHead>
                             <TableHead className="w-[140px]">Last Call</TableHead>
-                            <TableHead className="w-[180px]">Status</TableHead>
+                            <TableHead className="w-[150px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">Loading prospects...</TableCell>
+                                <TableCell colSpan={7} className="text-center h-24">Loading prospects...</TableCell>
                             </TableRow>
                         ) : displayPhones.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">No prospects found.</TableCell>
+                                <TableCell colSpan={7} className="text-center h-24">No prospects found.</TableCell>
                             </TableRow>
                         ) : (
                             displayPhones.map((phone) => {
                                 const locked = isLocked(phone);
-                                const property = phone.prospect;
+                                // The firstProp variable is no longer needed after removing the Entity / Property column.
+
+                                // Determine State display
+                                const uniqueStates = Array.from(new Set(phone.properties.map(p => p.state).filter(Boolean)));
+                                const displayState = uniqueStates.length > 1 ? 'Mixed' : uniqueStates[0] || '-';
+
                                 return (
                                     <TableRow
                                         key={phone.id}
@@ -163,13 +213,19 @@ export default function ProspectsTable({
                                                 {phone.phoneNumber}
                                             </div>
                                             <div className="text-base text-muted-foreground truncate">
-                                                {phone.contactName || phone.entityNames || '-'}
+                                                {phone.contactName || '-'}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <div className="flex flex-wrap gap-1">
+                                            <Badge variant="outline" className="text-base px-3 py-1 font-semibold bg-background border-2">
+                                                <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                {phone.propertyCount}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="py-4">
+                                            <div className="flex flex-col gap-1.5 items-start">
                                                 {phone.labels.map(label => (
-                                                    <Badge key={label} variant="outline" className="text-xs uppercase tracking-wider font-semibold">
+                                                    <Badge key={label} variant="outline" className="text-xs uppercase tracking-wider font-bold h-6 px-2">
                                                         {label}
                                                     </Badge>
                                                 ))}
@@ -177,16 +233,8 @@ export default function ProspectsTable({
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <div className="font-medium text-lg truncate" title={property?.propertyName}>
-                                                {property?.propertyName || '-'}
-                                            </div>
-                                            <div className="text-base text-muted-foreground truncate">
-                                                {property?.address ? `${property.address}, ${property.city}` : '-'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-4">
                                             <Badge variant="secondary" className="text-sm px-3 py-1">
-                                                {property?.state || '-'}
+                                                {displayState}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="py-4">

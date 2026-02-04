@@ -41,5 +41,37 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data || []).map(mapProspectPhone) });
+    const rawPhones = (data || []).map(mapProspectPhone);
+    const aggregated = new Map<string, any>();
+
+    for (const phone of rawPhones) {
+        if (!aggregated.has(phone.phoneNumber)) {
+            aggregated.set(phone.phoneNumber, {
+                ...phone,
+                prospect: undefined, // Remove single prospect link
+                propertyCount: 0,
+                properties: []
+            });
+        }
+
+        const agg = aggregated.get(phone.phoneNumber);
+        agg.propertyCount++;
+
+        if (phone.prospect) {
+            agg.properties.push({
+                id: phone.id,
+                prospectId: phone.prospect.id,
+                propertyName: phone.prospect.propertyName,
+                address: phone.prospect.address,
+                city: phone.prospect.city,
+                state: phone.prospect.state,
+                market: phone.prospect.market,
+                submarket: phone.prospect.submarket,
+                zip: phone.prospect.zip,
+                callStatus: phone.callStatus
+            });
+        }
+    }
+
+    return NextResponse.json({ data: Array.from(aggregated.values()) });
 }

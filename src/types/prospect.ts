@@ -102,3 +102,22 @@ export interface ProspectPhone {
         raw?: Record<string, string>;
     };
 }
+
+export interface AggregatedProspectPhone extends Omit<ProspectPhone, 'prospect'> {
+    propertyCount: number;
+    properties: Array<{
+        id: string; // prospect_phone_id (the specific record for this property)
+        prospectId: string;
+        propertyName: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        market?: string;
+        submarket?: string;
+        zip?: string;
+        callStatus: CallStatus;
+        labels: string[];
+        entityNames: string | null;
+    }>;
+}
+
