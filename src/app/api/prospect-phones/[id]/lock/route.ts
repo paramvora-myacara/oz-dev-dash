@@ -15,19 +15,47 @@ export async function POST(
 
     const supabase = await createClient();
 
+    // 1. Get the phone number for this ID
+    const { data: phoneRow, error: phoneError } = await supabase
+        .from('prospect_phones')
+        .select('phone_number')
+        .eq('id', id)
+        .single();
+
+    if (phoneError || !phoneRow) {
+        return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+    }
+
+    const phoneNumber = phoneRow.phone_number;
+
+    // 2. Clear any existing locks held by this user elsewhere
     await supabase
         .from('prospect_phones')
         .update({ viewing_by: null, viewing_since: null })
         .eq('viewing_by', userName);
 
+    // 3. Check if any row with this phone number is locked by someone else
+    const { data: existingLocks } = await supabase
+        .from('prospect_phones')
+        .select('viewing_by')
+        .eq('phone_number', phoneNumber)
+        .not('viewing_by', 'is', null)
+        .neq('viewing_by', userName);
+
+    if (existingLocks && existingLocks.length > 0) {
+        return NextResponse.json({
+            error: `This contact is currently being viewed by ${existingLocks[0].viewing_by}.`
+        }, { status: 409 });
+    }
+
+    // 4. Acquire lock on all rows with this phone number
     const { data, error } = await supabase
         .from('prospect_phones')
         .update({
             viewing_by: userName,
             viewing_since: new Date().toISOString()
         })
-        .eq('id', id)
-        .is('viewing_by', null)
+        .eq('phone_number', phoneNumber)
         .select(`
             *,
             prospects (
@@ -41,15 +69,16 @@ export async function POST(
                 zip
             ),
             prospect_calls (*)
-        `)
-        .single();
+        `);
 
-    if (error) {
+    if (error || !data || data.length === 0) {
         console.error('Error acquiring lock:', error);
-        return NextResponse.json({ error: 'Could not acquire lock. It may be locked by someone else.' }, { status: 409 });
+        return NextResponse.json({ error: 'Could not acquire lock.' }, { status: 409 });
     }
 
-    return NextResponse.json({ success: true, data: mapProspectPhone(data) });
+    // Return the specific ID requested (it will be one of the locked rows)
+    const requestedRow = data.find(r => r.id === id) || data[0];
+    return NextResponse.json({ success: true, data: mapProspectPhone(requestedRow) });
 }
 
 export async function DELETE(
@@ -61,10 +90,22 @@ export async function DELETE(
 
     const supabase = await createClient();
 
+    // 1. Get the phone number for this ID
+    const { data: phoneRow } = await supabase
+        .from('prospect_phones')
+        .select('phone_number')
+        .eq('id', id)
+        .single();
+
+    if (!phoneRow) {
+        return NextResponse.json({ success: true }); // Already gone or never existed
+    }
+
+    // 2. Release lock on all rows with this phone number held by this user
     const { error } = await supabase
         .from('prospect_phones')
         .update({ viewing_by: null, viewing_since: null })
-        .eq('id', id)
+        .eq('phone_number', phoneRow.phone_number)
         .eq('viewing_by', userName);
 
     if (error) {

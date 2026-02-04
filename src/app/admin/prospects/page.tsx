@@ -5,7 +5,7 @@ import ProspectsTable from '@/components/prospects/ProspectsTable';
 import ProspectDetailSheet from '@/components/prospects/ProspectDetailSheet';
 import CallModal from '@/components/prospects/CallModal';
 import AddContactModal from '@/components/prospects/AddContactModal';
-import { ProspectPhone, CallStatus, CallHistory } from '@/types/prospect';
+import { AggregatedProspectPhone, CallStatus, CallHistory } from '@/types/prospect';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mapProspectPhone } from '@/utils/prospect-phone-mapping';
@@ -17,11 +17,11 @@ import LeaderboardTab from '@/components/prospects/LeaderboardTab';
 const PAGE_SIZE = 50;
 
 export default function ProspectsPage() {
-    const [prospectPhones, setProspectPhones] = useState<ProspectPhone[]>([]);
+    const [prospectPhones, setProspectPhones] = useState<AggregatedProspectPhone[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedPhoneForSheet, setSelectedPhoneForSheet] = useState<ProspectPhone | null>(null);
+    const [selectedPhoneForSheet, setSelectedPhoneForSheet] = useState<AggregatedProspectPhone | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    const [selectedPhoneForCall, setSelectedPhoneForCall] = useState<ProspectPhone | null>(null);
+    const [selectedPhoneForCall, setSelectedPhoneForCall] = useState<AggregatedProspectPhone | null>(null);
     const [isCallModalOpen, setIsCallModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -31,6 +31,8 @@ export default function ProspectsPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [stateFilter, setStateFilter] = useState('ALL');
     const [statusFilters, setStatusFilters] = useState<string[]>(['FOLLOW_UP', 'NEVER_CONTACTED']);
+    const [roleFilters, setRoleFilters] = useState<string[]>(['Owner']);
+    const [minProperties, setMinProperties] = useState(1);
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
     const [isPasswordVerified, setIsPasswordVerified] = useState(false);
@@ -45,11 +47,15 @@ export default function ProspectsPage() {
             const url = new URL('/api/prospect-phones', window.location.origin);
             url.searchParams.set('page', page.toString());
             url.searchParams.set('limit', PAGE_SIZE.toString());
+            url.searchParams.set('minProperties', minProperties.toString());
 
             if (debouncedSearch) url.searchParams.set('search', debouncedSearch);
             if (stateFilter !== 'ALL') url.searchParams.set('state', stateFilter);
             if (statusFilters.length > 0) {
                 url.searchParams.set('status', statusFilters.join(','));
+            }
+            if (roleFilters.length > 0) {
+                url.searchParams.set('roles', roleFilters.join(','));
             }
 
             const res = await fetch(url.toString());
@@ -62,7 +68,7 @@ export default function ProspectsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page, debouncedSearch, stateFilter, statusFilters]);
+    }, [page, debouncedSearch, stateFilter, statusFilters, roleFilters, minProperties]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(search), 500);
@@ -88,16 +94,30 @@ export default function ProspectsPage() {
                     const dbRow = payload.new as any;
                     if (!dbRow) return;
 
+                    // This returns a ProspectPhone (single row)
                     const updated = mapProspectPhone(dbRow);
 
-                    const mergeUpdate = (p: ProspectPhone) => {
-                        if (p.id !== updated.id) return p;
-                        // Preserve joined data (prospect, callHistory) that isn't in the realtime payload
+                    // We need to merge this into the AggregatedProspectPhone list
+                    const mergeUpdate = (p: AggregatedProspectPhone): AggregatedProspectPhone => {
+                        if (p.phoneNumber !== updated.phoneNumber) return p;
+
+                        // Update the specific property in the list if it exists
+                        const updatedProperties = p.properties.map(prop =>
+                            prop.id === updated.id
+                                ? { ...prop, callStatus: updated.callStatus } // Minimal update for property list
+                                : prop
+                        );
+
+                        // If the updated row IS the main row (id matches), update top-level stats
+                        // Or if we just want to update display status broadly:
                         return {
                             ...p,
-                            ...updated,
-                            prospect: p.prospect,
-                            callHistory: p.callHistory
+                            callStatus: updated.callStatus, // Simplified: assume latest update dictates status
+                            lockoutUntil: updated.lockoutUntil,
+                            lastCalledAt: updated.lastCalledAt,
+                            lastCalledBy: updated.lastCalledBy,
+                            viewing_by: updated.viewing_by,
+                            properties: updatedProperties
                         };
                     };
 
@@ -121,12 +141,21 @@ export default function ProspectsPage() {
                         emailError: newCall.email_error
                     };
 
-                    const addCallToHistory = (p: ProspectPhone) => {
-                        if (p.id !== newCall.prospect_phone_id) return p;
-                        // Avoid duplicates if already added via API response
+                    const addCallToHistory = (p: AggregatedProspectPhone) => {
+                        // Check if this call belongs to this phone contact
+                        // We can check phone number match or ID match if we knew which ID was used
+                        // The call record has prospect_phone_id.
+                        const belongs = p.properties.some(prop => prop.id === newCall.prospect_phone_id) || p.id === newCall.prospect_phone_id;
+
+                        if (!belongs) return p;
+
+                        // Avoid duplicates
                         if (p.callHistory?.some(c => c.id === mappedCall.id)) return p;
 
                         const newHistory = [mappedCall, ...(p.callHistory || [])];
+                        // Sort again to be safe
+                        newHistory.sort((a, b) => new Date(b.calledAt).getTime() - new Date(a.calledAt).getTime());
+
                         return { ...p, callHistory: newHistory };
                     };
 
@@ -142,8 +171,11 @@ export default function ProspectsPage() {
                     const status = updatedCall.email_status;
                     const error = updatedCall.email_error;
 
-                    const updateCallInHistory = (p: ProspectPhone) => {
-                        if (p.id !== updatedCall.prospect_phone_id) return p;
+                    const updateCallInHistory = (p: AggregatedProspectPhone) => {
+                        // Check belongs
+                        const belongs = p.properties.some(prop => prop.id === updatedCall.prospect_phone_id) || p.id === updatedCall.prospect_phone_id;
+                        if (!belongs) return p;
+
                         const newHistory = p.callHistory?.map(c =>
                             c.id === updatedCall.id ? { ...c, emailStatus: status, emailError: error } : c
                         );
@@ -186,22 +218,39 @@ export default function ProspectsPage() {
         }
     };
 
-    const handleOpenSheet = async (phone: ProspectPhone) => {
+    const handleOpenSheet = async (phone: AggregatedProspectPhone) => {
         try {
-            const res = await fetch(`/api/prospect-phones/${phone.id}/lock`, {
+            // 1. Acquire lock
+            const lockRes = await fetch(`/api/prospect-phones/${phone.id}/lock`, {
                 method: 'POST',
                 body: JSON.stringify({ userName: currentUser })
             });
 
-            if (res.ok) {
-                const { data } = await res.json();
-                setSelectedPhoneForSheet(data);
-                setIsSheetOpen(true);
-            } else if (res.status === 409) {
+            if (!lockRes.ok && lockRes.status === 409) {
                 alert('This contact is currently being viewed by someone else.');
+                return;
+            }
+
+            // 2. Fetch fresh, complete aggregated data for this contact
+            const detailRes = await fetch(`/api/prospect-phones/${phone.id}`);
+            if (detailRes.ok) {
+                const { data: fullData } = await detailRes.json();
+
+                // Merge lock status if lock was successful
+                if (lockRes.ok) {
+                    const { data: lockData } = await lockRes.json();
+                    setSelectedPhoneForSheet({
+                        ...fullData,
+                        lockoutUntil: lockData.lockoutUntil,
+                        viewing_by: lockData.viewing_by
+                    });
+                } else {
+                    setSelectedPhoneForSheet(fullData);
+                }
+                setIsSheetOpen(true);
             }
         } catch (err) {
-            console.error('Failed to acquire lock:', err);
+            console.error('Failed to open detail sheet:', err);
         }
     };
 
@@ -238,7 +287,7 @@ export default function ProspectsPage() {
 
     useEffect(() => {
         setPage(1);
-    }, [debouncedSearch, stateFilter, statusFilters]);
+    }, [debouncedSearch, stateFilter, statusFilters, roleFilters, minProperties]);
 
     const handleLogCall = async (data: {
         outcome: CallStatus;
@@ -265,10 +314,34 @@ export default function ProspectsPage() {
             const { data: updatedPhone } = await res.json();
 
             if (updatedPhone) {
-                setProspectPhones(prev => prev.map(p => p.id === updatedPhone.id ? { ...p, ...updatedPhone } : p));
+                // updatedPhone is a single ProspectPhone
+                // We merge it into our aggregated list
+                const mergeUpdate = (p: AggregatedProspectPhone): AggregatedProspectPhone => {
+                    if (p.phoneNumber !== updatedPhone.phoneNumber) return p;
 
-                if (selectedPhoneForSheet?.id === updatedPhone.id) {
-                    setSelectedPhoneForSheet({ ...selectedPhoneForSheet, ...updatedPhone });
+                    const updatedProperties = p.properties.map(prop =>
+                        prop.id === updatedPhone.id
+                            ? { ...prop, callStatus: updatedPhone.callStatus }
+                            : prop
+                    );
+
+                    return {
+                        ...p,
+                        callStatus: updatedPhone.callStatus,
+                        lockoutUntil: updatedPhone.lockoutUntil,
+                        lastCalledAt: updatedPhone.lastCalledAt,
+                        lastCalledBy: updatedPhone.lastCalledBy,
+                        viewing_by: updatedPhone.viewing_by,
+                        properties: updatedProperties,
+                        // Ideally merge call history too but realtime might handle it or we can re-fetch
+                    };
+                };
+
+                setProspectPhones(prev => prev.map(mergeUpdate));
+
+                if (selectedPhoneForSheet?.id === updatedPhone.id || selectedPhoneForSheet.phoneNumber === updatedPhone.phoneNumber) {
+                    // Re-merge with current sheet object
+                    setSelectedPhoneForSheet(prev => prev ? mergeUpdate(prev) : null);
                 }
             }
         } catch (error) {
@@ -294,7 +367,7 @@ export default function ProspectsPage() {
                         )}
                     </h1>
                     <p className="text-lg text-muted-foreground">
-                        Call queue for QOZB Developer Outreach ({totalCount} total)
+                        Call queue for QOZB Developer Outreach
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -327,6 +400,10 @@ export default function ProspectsPage() {
                         onStateFilterChange={setStateFilter}
                         statusFilters={statusFilters}
                         onStatusFiltersChange={setStatusFilters}
+                        roleFilters={roleFilters}
+                        onRoleFiltersChange={setRoleFilters}
+                        minProperties={minProperties}
+                        onMinPropertiesChange={setMinProperties}
                     />
 
                     {totalPages > 1 && (

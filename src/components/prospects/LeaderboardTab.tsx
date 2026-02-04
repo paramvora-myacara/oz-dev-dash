@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import {
     Table,
     TableBody,
@@ -21,7 +21,7 @@ interface CallerStats {
     caller: string;
     totalCalls: number;
     connected: number;
-    emailsSent: number;
+    pendingSignups: number;
     lastCall: string | null;
     outcomes: Record<string, number>;
 }
@@ -82,7 +82,7 @@ export default function LeaderboardTab() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Calls (30d)</CardTitle>
+                        <CardTitle className="text-md font-medium">Total Calls (30d)</CardTitle>
                         <PhoneIncoming className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -93,26 +93,24 @@ export default function LeaderboardTab() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Connects</CardTitle>
+                        <CardTitle className="text-md font-medium">Closes</CardTitle>
                         <BarChart3 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
                             {stats.reduce((acc, curr) => acc + curr.connected, 0)}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Answered calls
-                        </p>
+
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Emails Sent</CardTitle>
+                        <CardTitle className="text-md font-medium">Pending signup</CardTitle>
                         <Mail className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {stats.reduce((acc, curr) => acc + curr.emailsSent, 0)}
+                            {stats.reduce((acc, curr) => acc + curr.pendingSignups, 0)}
                         </div>
                     </CardContent>
                 </Card>
@@ -130,26 +128,24 @@ export default function LeaderboardTab() {
                                 <TableHead className="w-[50px]"></TableHead>
                                 <TableHead>Caller</TableHead>
                                 <TableHead className="text-right">Total Calls</TableHead>
-                                <TableHead className="text-right">Connected</TableHead>
-                                <TableHead className="text-right">Connection Rate</TableHead>
-                                <TableHead className="text-right">Emails Sent</TableHead>
+                                <TableHead className="text-right">Closes</TableHead>
+                                <TableHead className="text-right">Pending signup</TableHead>
                                 <TableHead className="text-right">Last Active</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">Loading stats...</TableCell>
+                                    <TableCell colSpan={6} className="text-center h-24">Loading stats...</TableCell>
                                 </TableRow>
                             ) : stats.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">No data found.</TableCell>
+                                    <TableCell colSpan={6} className="text-center h-24">No data found.</TableCell>
                                 </TableRow>
                             ) : (
                                 stats.map((stat) => (
-                                    <>
+                                    <Fragment key={stat.caller}>
                                         <TableRow
-                                            key={stat.caller}
                                             className={cn(
                                                 "cursor-pointer hover:bg-muted/50 transition-colors",
                                                 expandedCaller === stat.caller && "bg-muted/50 border-b-0"
@@ -166,14 +162,7 @@ export default function LeaderboardTab() {
                                             <TableCell className="font-medium text-lg">{stat.caller}</TableCell>
                                             <TableCell className="text-right text-lg">{stat.totalCalls}</TableCell>
                                             <TableCell className="text-right text-lg text-green-600 font-semibold">{stat.connected}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Badge variant="secondary">
-                                                    {stat.totalCalls > 0
-                                                        ? `${Math.round((stat.connected / stat.totalCalls) * 100)}%`
-                                                        : '0%'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right text-lg">{stat.emailsSent}</TableCell>
+                                            <TableCell className="text-right text-lg">{stat.pendingSignups}</TableCell>
                                             <TableCell className="text-right text-sm text-muted-foreground">
                                                 {stat.lastCall ? (
                                                     <div className="flex items-center justify-end gap-1">
@@ -185,7 +174,7 @@ export default function LeaderboardTab() {
                                         </TableRow>
                                         {expandedCaller === stat.caller && (
                                             <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                                <TableCell colSpan={7} className="p-4">
+                                                <TableCell colSpan={6} className="p-4">
                                                     <div className="space-y-4">
                                                         <div className="flex justify-between items-center">
                                                             <h4 className="font-semibold text-sm text-muted-foreground">
@@ -207,7 +196,7 @@ export default function LeaderboardTab() {
                                                 </TableCell>
                                             </TableRow>
                                         )}
-                                    </>
+                                    </Fragment>
                                 ))
                             )}
                         </TableBody>

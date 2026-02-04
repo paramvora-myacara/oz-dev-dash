@@ -1,6 +1,5 @@
-'use client';
-
 import { useState, useEffect } from 'react';
+import { STATE_MAPPING } from '@/lib/api/contacts/utils';
 import {
     Dialog,
     DialogContent,
@@ -11,13 +10,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ProspectPhone, CallStatus } from '@/types/prospect';
-import { Phone, Building, History } from 'lucide-react';
+import { AggregatedProspectPhone, CallStatus } from '@/types/prospect';
+import { Phone, Building, History, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatToPT, formatDateToPT } from '@/lib/date-utils';
 
 interface ProspectDetailSheetProps {
-    prospectPhone: ProspectPhone | null;
+    prospectPhone: AggregatedProspectPhone | null;
     isOpen: boolean;
     onClose: () => void;
     currentUser: string | null;
@@ -30,10 +29,10 @@ interface ProspectDetailSheetProps {
         lockoutUntil?: string;
         skipEmail?: boolean;
     }) => void;
-    onOpenCallModal?: (phone: ProspectPhone) => void;
+    onOpenCallModal?: (phone: AggregatedProspectPhone) => void;
 }
 
-type TabType = 'dialer' | 'research' | 'timeline';
+type TabType = 'properties' | 'timeline';
 
 export default function ProspectDetailSheet({
     prospectPhone,
@@ -43,8 +42,9 @@ export default function ProspectDetailSheet({
     onLogCall,
     onOpenCallModal,
 }: ProspectDetailSheetProps) {
-    const [activeTab, setActiveTab] = useState<TabType>('dialer');
+    const [activeTab, setActiveTab] = useState<TabType>('properties');
     const [mounted, setMounted] = useState(false);
+    const [isPropertiesExpanded, setIsPropertiesExpanded] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -52,7 +52,7 @@ export default function ProspectDetailSheet({
 
     useEffect(() => {
         if (prospectPhone && isOpen) {
-            setActiveTab('dialer');
+            setActiveTab('properties');
         }
     }, [prospectPhone?.id, isOpen]);
 
@@ -65,18 +65,35 @@ export default function ProspectDetailSheet({
 
     if (!prospectPhone) return null;
 
-    const property = prospectPhone.prospect;
+    // Use the first property as a fallback for the header if needed, or show count
+    const primaryProperty = prospectPhone.properties[0];
     const isLocked = mounted && prospectPhone.lockoutUntil && new Date(prospectPhone.lockoutUntil) > new Date();
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader className="pb-4 border-b">
-                    <DialogTitle className="text-2xl font-mono">{prospectPhone.phoneNumber}</DialogTitle>
-                    <DialogDescription className="text-base">
-                        {prospectPhone.contactName || prospectPhone.entityNames || 'Contact'}
-                        {property && ` · ${property.propertyName}`}
-                    </DialogDescription>
+                    <div className="flex items-center gap-4">
+                        <DialogTitle className="text-2xl font-mono">{prospectPhone.phoneNumber}</DialogTitle>
+                        <Button
+                            size="sm"
+                            onClick={() => onOpenCallModal?.(prospectPhone)}
+                            className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 text-sm font-semibold h-8 px-4"
+                        >
+                            <Phone className="h-4 w-4 mr-2" />
+                            Log Call
+                        </Button>
+                    </div>
+                    <div className="mt-2">
+                        <div className="text-3xl font-bold text-muted-foreground">
+                            {prospectPhone.contactName || prospectPhone.entityNames || 'Contact'}
+                        </div>
+                        <DialogDescription className="text-lg mt-1">
+                            {prospectPhone.propertyCount > 1
+                                ? `${prospectPhone.propertyCount} Properties`
+                                : primaryProperty ? `${primaryProperty.propertyName}` : ''}
+                        </DialogDescription>
+                    </div>
                     <div className="flex items-center gap-2 pt-2 flex-wrap">
                         {prospectPhone.labels.map(l => (
                             <Badge key={l} variant="outline" className="text-xs uppercase">
@@ -115,28 +132,16 @@ export default function ProspectDetailSheet({
 
                 <div className="flex border-b mt-4">
                     <button
-                        onClick={() => setActiveTab('dialer')}
+                        onClick={() => setActiveTab('properties')}
                         className={cn(
                             "px-4 py-2 text-base font-medium border-b-2 transition-colors",
-                            activeTab === 'dialer'
-                                ? "border-primary text-primary"
-                                : "border-transparent text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        <Phone className="h-5 w-5 inline mr-2" />
-                        Dialer
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('research')}
-                        className={cn(
-                            "px-4 py-2 text-base font-medium border-b-2 transition-colors",
-                            activeTab === 'research'
+                            activeTab === 'properties'
                                 ? "border-primary text-primary"
                                 : "border-transparent text-muted-foreground hover:text-foreground"
                         )}
                     >
                         <Building className="h-5 w-5 inline mr-2" />
-                        Research
+                        Properties ({prospectPhone.properties.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('timeline')}
@@ -153,70 +158,110 @@ export default function ProspectDetailSheet({
                 </div>
 
                 <div className="mt-6">
-                    {activeTab === 'dialer' && (
+
+                    {activeTab === 'properties' && (
                         <div className="space-y-6">
-                            <h3 className="text-lg font-semibold">Contact</h3>
-                            <div className="bg-muted/30 p-4 rounded-lg border space-y-2">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {prospectPhone.labels.map(role => (
-                                                <Badge key={role} variant="outline" className="text-xs uppercase">
-                                                    {role}
-                                                </Badge>
-                                            ))}
-                                            <span className="font-mono font-semibold text-lg">{prospectPhone.phoneNumber}</span>
-                                        </div>
-                                        {prospectPhone.contactName && (
-                                            <div className="text-base font-medium text-foreground">{prospectPhone.contactName}</div>
-                                        )}
-                                        {prospectPhone.contactEmail && (
-                                            <div className="text-base text-muted-foreground">{prospectPhone.contactEmail}</div>
-                                        )}
-                                        {prospectPhone.entityNames && (
-                                            <div className="text-sm text-muted-foreground mt-1">
-                                                <span className="uppercase tracking-wider opacity-70">Entity:</span> {prospectPhone.entityNames}
+                            {/* Market Presence Section */}
+                            <div>
+                                <h3 className="text-lg font-semibold mb-4">Market Presence</h3>
+                                <div className="grid grid-cols-3 gap-4">
+                                    {Object.entries(
+                                        prospectPhone.properties.reduce((acc, p) => {
+                                            const s = p.state || 'Unknown';
+                                            acc[s] = (acc[s] || 0) + 1;
+                                            return acc;
+                                        }, {} as Record<string, number>)
+                                    )
+                                        .sort(([, a], [, b]) => b - a)
+                                        .slice(0, 3)
+                                        .map(([stateCode, count]) => (
+                                            <div key={stateCode} className="bg-muted/30 border rounded-xl p-4 flex flex-col items-center text-center">
+                                                <span className="text-xl font-bold">
+                                                    {STATE_MAPPING[stateCode.toUpperCase()] || stateCode}
+                                                </span>
+                                                <span className="text-lg font-medium text-muted-foreground">
+                                                    {count} {count === 1 ? 'Property' : 'Properties'}
+                                                </span>
                                             </div>
-                                        )}
-                                        {prospectPhone.entityAddresses && (
-                                            <div className="text-sm text-muted-foreground mt-1">
-                                                <span className="uppercase tracking-wider opacity-70">Address:</span> {prospectPhone.entityAddresses}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <Button
-                                        size="lg"
-                                        onClick={() => onOpenCallModal?.(prospectPhone)}
-                                        className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 text-base font-semibold px-6 py-3"
-                                    >
-                                        <Phone className="h-5 w-5 mr-2" />
-                                        Log Call
-                                    </Button>
+                                        ))}
                                 </div>
                             </div>
-                        </div>
-                    )}
 
-                    {activeTab === 'research' && property && (
-                        <div className="space-y-6">
-                            <h3 className="text-lg font-semibold">Property Details</h3>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                                {[
-                                    { key: 'Property Name', label: 'Property Name', value: property.propertyName },
-                                    { key: 'Market', label: 'Market', value: property.market },
-                                    { key: 'Address', label: 'Address', value: property.address },
-                                    { key: 'City', label: 'City', value: property.city },
-                                    { key: 'State', label: 'State', value: property.state },
-                                    { key: 'Submarket', label: 'Submarket', value: property.submarket },
-                                    { key: 'ZIP', label: 'ZIP', value: property.zip },
-                                ].filter(f => f.value).map(({ key, label, value }) => (
-                                    <div key={key} className="flex flex-col border-b border-border/50 pb-2">
-                                        <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">
-                                            {label}
-                                        </span>
-                                        <span className="text-base break-words">{value}</span>
+                            {/* Key Entities Section */}
+                            <div className="pt-2">
+                                {Object.entries(
+                                    prospectPhone.properties.reduce((acc, p) => {
+                                        if (p.entityNames) {
+                                            acc[p.entityNames] = (acc[p.entityNames] || 0) + 1;
+                                        }
+                                        return acc;
+                                    }, {} as Record<string, number>)
+                                )
+                                    .sort(([, a], [, b]) => b - a)
+                                    .slice(0, 1)
+                                    .map(([entity, count]) => (
+                                        <div key={entity} className="text-xl font-semibold">
+                                            <span className="text-muted-foreground">Key Entity —</span>{' '}
+                                            <span className="text-foreground font-bold">{entity}</span>{' '}
+                                            <span className="text-muted-foreground">— {count} {count === 1 ? 'Property' : 'Properties'}</span>
+                                        </div>
+                                    ))}
+                            </div>
+
+                            {/* Collapsible Associated Properties */}
+                            <div className="space-y-4">
+                                <button
+                                    onClick={() => setIsPropertiesExpanded(!isPropertiesExpanded)}
+                                    className="flex items-center gap-2 group py-2"
+                                >
+                                    <h3 className="text-lg font-semibold">Associated Properties ({prospectPhone.properties.length})</h3>
+                                    <div className="bg-muted group-hover:bg-muted-foreground/10 p-1 rounded-full transition-colors">
+                                        {isPropertiesExpanded ? (
+                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                        ) : (
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                        )}
                                     </div>
-                                ))}
+                                </button>
+
+                                {isPropertiesExpanded && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        {prospectPhone.properties.map((prop, idx) => (
+                                            <div key={idx} className="bg-muted/10 border rounded-lg p-4">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <h4 className="text-lg font-bold">{prop.propertyName}</h4>
+                                                    <div className="flex items-center gap-2">
+                                                        {prop.labels?.map(label => (
+                                                            <Badge key={label} variant="outline" className="text-sm uppercase font-bold px-2 h-7">
+                                                                {label}
+                                                            </Badge>
+                                                        ))}
+                                                        <Badge variant="secondary" className="text-sm px-2 h-7">{formatStatusText(prop.callStatus)}</Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-base">
+                                                    <div className="flex items-start gap-2">
+                                                        <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                                                        <span>
+                                                            {prop.address}<br />
+                                                            {prop.city}, {prop.state ? (STATE_MAPPING[prop.state.toUpperCase()] || prop.state) : ''} {prop.zip}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">State:</span>
+                                                            <span>{prop.state ? (STATE_MAPPING[prop.state.toUpperCase()] || prop.state) : '-'}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground underline decoration-dotted cursor-help" title="The company or entity associated with this specific property record">Entity:</span>
+                                                            <span className="font-medium text-right">{prop.entityNames || '-'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -319,6 +364,7 @@ export default function ProspectDetailSheet({
                     )}
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }
+
