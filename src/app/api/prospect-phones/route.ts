@@ -103,7 +103,7 @@ export async function GET(request: Request) {
             labels: [],
             contactName: null,
             contactEmail: null,
-            entityNames: null,
+            entityNames: row.entity_names,
             lastCalledAt: null,
             lastCalledBy: null,
             callCount: 0,

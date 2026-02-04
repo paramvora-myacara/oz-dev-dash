@@ -233,7 +233,7 @@ export default function ProspectsTable({
                                         </TableCell>
                                         <TableCell className="py-4">
                                             <div className="text-base font-medium text-foreground whitespace-normal break-words w-full">
-                                                {getKeyEntity(phone) || '-'}
+                                                {phone.entityNames || getKeyEntity(phone) || '-'}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
