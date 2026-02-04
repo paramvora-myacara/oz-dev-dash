@@ -245,6 +245,7 @@ export default function ProspectsPage() {
         extras: { webinar: boolean; consultation: boolean };
         followUpAt?: string;
         lockoutUntil?: string;
+        skipEmail?: boolean;
     }) => {
         if (!selectedPhoneForSheet || !currentUser) return;
 

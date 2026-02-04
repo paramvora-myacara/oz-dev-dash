@@ -28,6 +28,7 @@ interface ProspectDetailSheetProps {
         extras: { webinar: boolean; consultation: boolean };
         followUpAt?: string;
         lockoutUntil?: string;
+        skipEmail?: boolean;
     }) => void;
     onOpenCallModal?: (phone: ProspectPhone) => void;
 }

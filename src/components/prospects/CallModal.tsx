@@ -23,6 +23,7 @@ interface CallModalProps {
         extras: { webinar: boolean; consultation: boolean };
         followUpAt?: string;
         lockoutUntil?: string;
+        skipEmail?: boolean;
     }) => void;
     callerName?: string;
 }
@@ -40,6 +41,7 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
     const [noAnswerFollowUpDays, setNoAnswerFollowUpDays] = useState<number>(1);
     const [showEmailConfirm, setShowEmailConfirm] = useState(false);
     const [isEmailPreviewOpen, setIsEmailPreviewOpen] = useState(false);
+    const [skipEmail, setSkipEmail] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -56,6 +58,7 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
             setNoAnswerFollowUpDays(1);
             setShowEmailConfirm(false);
             setIsEmailPreviewOpen(false);
+            setSkipEmail(false);
         }
     }, [isOpen, prospectPhone.id]);
 
@@ -85,7 +88,8 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
             email: trimmedEmail ? trimmedEmail : undefined,
             extras,
             followUpAt: calculatedFollowUpAt,
-            lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined
+            lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined,
+            skipEmail
         });
         onClose();
     };
@@ -112,7 +116,9 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
             email: trimmedEmail ? trimmedEmail : undefined,
             extras,
             followUpAt: calculatedFollowUpAt,
-            lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined
+
+            lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined,
+            skipEmail
         });
         setShowEmailConfirm(false);
         onClose();
@@ -123,6 +129,7 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
     };
 
     const getEmailPreview = () => {
+        if (skipEmail) return null;
         const eligibleOutcomes = ['answered', 'no_answer', 'invalid_number'];
         if (!eligibleOutcomes.includes(outcome)) return null;
 
@@ -323,6 +330,20 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
                                     <AlertTriangle className="h-5 w-5" />
                                     Email address required for follow-up emails
                                 </p>
+                            )}
+
+                            {hasEmail && ['answered', 'no_answer', 'invalid_number'].includes(outcome) && (
+                                <div className="flex items-center space-x-2 pt-2">
+                                    <Checkbox
+                                        id="skipEmail"
+                                        checked={skipEmail}
+                                        onCheckedChange={(c) => setSkipEmail(!!c)}
+                                        className="h-5 w-5"
+                                    />
+                                    <Label htmlFor="skipEmail" className="text-base cursor-pointer font-medium">
+                                        Skip follow-up email
+                                    </Label>
+                                </div>
                             )}
                         </div>
 
