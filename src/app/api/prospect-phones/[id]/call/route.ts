@@ -17,7 +17,8 @@ export async function POST(
         email,
         extras,
         followUpAt,
-        lockoutUntil
+        lockoutUntil,
+        skipEmail
     } = body;
 
     if (!callerName || !outcome) {
@@ -99,7 +100,7 @@ export async function POST(
 
     const eligibleOutcomes = ['pending_signup', 'no_answer', 'invalid_number'];
     const finalOutcome = outcome === 'answered' ? 'pending_signup' : outcome;
-    const isEmailTriggered = email && eligibleOutcomes.includes(finalOutcome);
+    const isEmailTriggered = !skipEmail && email && eligibleOutcomes.includes(finalOutcome);
 
     if (isEmailTriggered && mappedResult.callHistory) {
         const latestCall = mappedResult.callHistory.find(c => c.callerName === callerName && c.outcome === outcome);

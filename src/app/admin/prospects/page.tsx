@@ -11,6 +11,8 @@ import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mapProspectPhone } from '@/utils/prospect-phone-mapping';
 import { createClient } from '@/utils/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import LeaderboardTab from '@/components/prospects/LeaderboardTab';
 
 const PAGE_SIZE = 50;
 
@@ -245,6 +247,7 @@ export default function ProspectsPage() {
         extras: { webinar: boolean; consultation: boolean };
         followUpAt?: string;
         lockoutUntil?: string;
+        skipEmail?: boolean;
     }) => {
         if (!selectedPhoneForSheet || !currentUser) return;
 
@@ -306,45 +309,58 @@ export default function ProspectsPage() {
                 </div>
             </div>
 
-            <ProspectsTable
-                prospectPhones={prospectPhones}
-                isLoading={isLoading}
-                onOpenSheet={handleOpenSheet}
-                currentUser={currentUser}
-                search={search}
-                onSearchChange={setSearch}
-                stateFilter={stateFilter}
-                onStateFilterChange={setStateFilter}
-                statusFilters={statusFilters}
-                onStatusFiltersChange={setStatusFilters}
-            />
+            <Tabs defaultValue="prospects" className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="prospects">Prospects</TabsTrigger>
+                    <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+                </TabsList>
 
-            {totalPages > 1 && (
-                <div className="flex justify-between py-4 border-t">
-                    <div className="text-sm text-muted-foreground">
-                        Showing {(page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={page === 1 || isLoading}
-                            onClick={() => setPage(p => p - 1)}
-                        >
-                            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-                        </Button>
-                        <div className="text-sm font-medium">Page {page} of {totalPages}</div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={page === totalPages || isLoading}
-                            onClick={() => setPage(p => p + 1)}
-                        >
-                            Next <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                    </div>
-                </div>
-            )}
+                <TabsContent value="prospects" className="space-y-4">
+                    <ProspectsTable
+                        prospectPhones={prospectPhones}
+                        isLoading={isLoading}
+                        onOpenSheet={handleOpenSheet}
+                        currentUser={currentUser}
+                        search={search}
+                        onSearchChange={setSearch}
+                        stateFilter={stateFilter}
+                        onStateFilterChange={setStateFilter}
+                        statusFilters={statusFilters}
+                        onStatusFiltersChange={setStatusFilters}
+                    />
+
+                    {totalPages > 1 && (
+                        <div className="flex justify-between py-4 border-t">
+                            <div className="text-sm text-muted-foreground">
+                                Showing {(page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalCount)} of {totalCount}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page === 1 || isLoading}
+                                    onClick={() => setPage(p => p - 1)}
+                                >
+                                    <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                                </Button>
+                                <div className="text-sm font-medium">Page {page} of {totalPages}</div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page === totalPages || isLoading}
+                                    onClick={() => setPage(p => p + 1)}
+                                >
+                                    Next <ChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="leaderboard">
+                    <LeaderboardTab />
+                </TabsContent>
+            </Tabs>
 
             {selectedPhoneForCall && (
                 <CallModal
