@@ -79,6 +79,20 @@ export default function ProspectsTable({
             .join(' ');
     };
 
+    const getKeyEntity = (phone: AggregatedProspectPhone): string | null => {
+        if (!phone.properties || phone.properties.length === 0) return null;
+
+        const counts = phone.properties.reduce((acc, p) => {
+            if (p.entityNames) {
+                acc[p.entityNames] = (acc[p.entityNames] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+
+        const sorted = Object.entries(counts).sort(([, a], [, b]) => b - a);
+        return sorted.length > 0 ? sorted[0][0] : null;
+    };
+
     const isLocked = (phone: AggregatedProspectPhone) => {
         if (!mounted || !phone.lockoutUntil) return false;
         return new Date(phone.lockoutUntil) > new Date();
@@ -171,6 +185,7 @@ export default function ProspectsTable({
                         <TableRow>
                             <TableHead className="w-[50px]"></TableHead>
                             <TableHead className="w-[20%]">Phone</TableHead>
+                            <TableHead className="w-[200px]">Entity</TableHead>
                             <TableHead className="w-[10%]">Count</TableHead>
                             <TableHead className="w-[120px]">Role</TableHead>
                             <TableHead className="w-[100px]">State</TableHead>
@@ -214,6 +229,11 @@ export default function ProspectsTable({
                                             </div>
                                             <div className="text-base text-muted-foreground truncate">
                                                 {phone.contactName || '-'}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4">
+                                            <div className="text-base font-medium text-foreground whitespace-normal break-words w-full">
+                                                {getKeyEntity(phone) || '-'}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">

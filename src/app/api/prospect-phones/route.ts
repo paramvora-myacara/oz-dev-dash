@@ -147,7 +147,8 @@ export async function GET(request: Request) {
                 submarket: item.prospects.submarket,
                 zip: item.prospects.zip,
                 callStatus: item.call_status,
-                labels: item.labels || []
+                labels: item.labels || [],
+                entityNames: item.entity_names || null
             });
         }
 
