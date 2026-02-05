@@ -297,11 +297,13 @@ export default function ProspectsPage() {
         followUpAt?: string;
         lockoutUntil?: string;
         skipEmail?: boolean;
+        prospectPhoneId?: string;
     }) => {
         if (!selectedPhoneForSheet || !currentUser) return;
+        const targetId = data.prospectPhoneId || selectedPhoneForSheet.id;
 
         try {
-            const res = await fetch(`/api/prospect-phones/${selectedPhoneForSheet.id}/call`, {
+            const res = await fetch(`/api/prospect-phones/${targetId}/call`, {
                 method: 'POST',
                 body: JSON.stringify({
                     ...data,
@@ -321,7 +323,11 @@ export default function ProspectsPage() {
 
                     const updatedProperties = p.properties.map(prop =>
                         prop.id === updatedPhone.id
-                            ? { ...prop, callStatus: updatedPhone.callStatus }
+                            ? {
+                                ...prop,
+                                callStatus: updatedPhone.callStatus,
+                                contactEmail: updatedPhone.contactEmail
+                            }
                             : prop
                     );
 

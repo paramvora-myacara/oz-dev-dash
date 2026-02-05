@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ interface CallModalProps {
         followUpAt?: string;
         lockoutUntil?: string;
         skipEmail?: boolean;
+        prospectPhoneId?: string;
     }) => void;
     callerName?: string;
 }
@@ -42,13 +43,37 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
     const [showEmailConfirm, setShowEmailConfirm] = useState(false);
     const [isEmailPreviewOpen, setIsEmailPreviewOpen] = useState(false);
     const [skipEmail, setSkipEmail] = useState(false);
+    const [selectedContactId, setSelectedContactId] = useState(prospectPhone.id);
+
+    // Get unique list of people (some might have multiple properties, we group by name)
+    const uniqueContacts = useMemo(() => {
+        return prospectPhone.properties.reduce((acc, p) => {
+            const key = p.contactName || 'Unknown';
+            if (!acc.find(c => (c.contactName || 'Unknown') === key)) {
+                acc.push({
+                    id: p.id,
+                    contactName: p.contactName,
+                    contactEmail: p.contactEmail,
+                    labels: p.labels
+                });
+            }
+            return acc;
+        }, [] as Array<{ id: string; contactName: string | null; contactEmail: string | null; labels: string[] }>);
+    }, [prospectPhone.properties]);
 
     useEffect(() => {
         if (isOpen) {
             setOutcome('called');
-            const currentEmail = prospectPhone.contactEmail || '';
+
+            // Auto-select the first unique contact
+            const firstContact = uniqueContacts[0];
+            const contactId = firstContact?.id || prospectPhone.id;
+            const currentEmail = firstContact?.contactEmail || prospectPhone.contactEmail || (prospectPhone.allContactEmails?.[0] || '');
+
+            setSelectedContactId(contactId);
             setEmail(currentEmail);
             setOriginalEmail(currentEmail);
+
             setExtras({
                 webinar: prospectPhone.extras?.webinar || false,
                 consultation: prospectPhone.extras?.consultation || false
@@ -60,7 +85,15 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
             setIsEmailPreviewOpen(false);
             setSkipEmail(false);
         }
-    }, [isOpen, prospectPhone.id]);
+    }, [isOpen, prospectPhone.id, uniqueContacts]);
+
+    const handleContactSelect = (contactId: string) => {
+        setSelectedContactId(contactId);
+        const contact = uniqueContacts.find(c => c.id === contactId);
+        const newEmail = contact?.contactEmail || '';
+        setEmail(newEmail);
+        setOriginalEmail(newEmail);
+    };
 
     const handleSubmit = () => {
         if (outcome === 'no_answer' && (!noAnswerFollowUpDays || noAnswerFollowUpDays < 1)) return;
@@ -89,7 +122,8 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
             extras,
             followUpAt: calculatedFollowUpAt,
             lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined,
-            skipEmail
+            skipEmail,
+            prospectPhoneId: selectedContactId
         });
         onClose();
     };
@@ -118,7 +152,8 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
             followUpAt: calculatedFollowUpAt,
 
             lockoutUntil: outcome === 'locked' && lockoutDate ? new Date(lockoutDate).toISOString() : undefined,
-            skipEmail
+            skipEmail,
+            prospectPhoneId: selectedContactId
         });
         setShowEmailConfirm(false);
         onClose();
@@ -152,7 +187,7 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
     };
 
     const emailPreview = getEmailPreview();
-    const hasEmail = prospectPhone.contactEmail && prospectPhone.contactEmail.trim() !== '';
+    const hasEmail = email && email.trim() !== '';
 
     return (
         <>
@@ -160,25 +195,41 @@ export default function CallModal({ prospectPhone, isOpen, onClose, onLogCall, c
                 <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="text-2xl">
-                            Log Call with {prospectPhone.contactName || prospectPhone.entityNames || 'Contact'}
+                            Log Call with {prospectPhone.allContactNames?.length > 0
+                                ? prospectPhone.allContactNames.join(' / ')
+                                : 'Contact'}
                         </DialogTitle>
+                        <div className="text-lg font-semibold text-muted-foreground">
+                            {prospectPhone.allEntityNames?.length > 0
+                                ? prospectPhone.allEntityNames.join(' / ')
+                                : '-'}
+                        </div>
                     </DialogHeader>
 
                     <div className="grid gap-6 py-6">
+
                         <div className="grid gap-3">
-                            <div className="flex items-center gap-2">
-                                <Label className="text-base font-semibold">Phone Number</Label>
-                                {!hasEmail && (
-                                    <Tooltip content="We can't send a follow-up email without an email address. Please add an email address below." position="top">
-                                        <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                    </Tooltip>
-                                )}
-                            </div>
-                            <div className="flex h-12 w-full items-center rounded-md border border-input bg-muted px-4 py-3 text-base font-mono">
-                                {prospectPhone.phoneNumber}
-                                {prospectPhone.labels.length > 0 && (
-                                    <span className="text-muted-foreground ml-2">({prospectPhone.labels.join(', ')})</span>
-                                )}
+                            <Label className="text-base font-semibold">Speaking With</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {uniqueContacts.map((contact) => (
+                                    <Button
+                                        key={contact.id}
+                                        type="button"
+                                        variant={selectedContactId === contact.id ? 'default' : 'outline'}
+                                        onClick={() => handleContactSelect(contact.id)}
+                                        className={cn(
+                                            "h-16 text-lg px-6 min-w-[180px]",
+                                            selectedContactId === contact.id && "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
+                                        )}
+                                    >
+                                        <div className="flex flex-col items-start leading-tight">
+                                            <span className="font-bold">{contact.contactName || 'Unknown'}</span>
+                                            {contact.labels.length > 0 && (
+                                                <span className="text-sm opacity-80 mt-0.5">{contact.labels.join(', ')}</span>
+                                            )}
+                                        </div>
+                                    </Button>
+                                ))}
                             </div>
                         </div>
 

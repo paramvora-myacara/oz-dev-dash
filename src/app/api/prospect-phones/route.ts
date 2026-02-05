@@ -104,6 +104,9 @@ export async function GET(request: Request) {
             contactName: null,
             contactEmail: null,
             entityNames: row.entity_names,
+            allContactNames: [],
+            allContactEmails: [],
+            allEntityNames: [],
             lastCalledAt: null,
             lastCalledBy: null,
             callCount: 0,
@@ -120,6 +123,22 @@ export async function GET(request: Request) {
         if (item.labels && Array.isArray(item.labels)) {
             item.labels.forEach((l: string) => {
                 if (!agg.labels.includes(l)) agg.labels.push(l);
+            });
+        }
+
+        // Aggregate unique names and entities
+        if (item.contact_name && !agg.allContactNames.includes(item.contact_name)) {
+            agg.allContactNames.push(item.contact_name);
+        }
+        if (item.contact_email && !agg.allContactEmails.includes(item.contact_email)) {
+            agg.allContactEmails.push(item.contact_email);
+        }
+        if (item.entity_names) {
+            item.entity_names.split(',').forEach((name: string) => {
+                const trimmed = name.trim();
+                if (trimmed && !agg.allEntityNames.includes(trimmed)) {
+                    agg.allEntityNames.push(trimmed);
+                }
             });
         }
 
@@ -148,7 +167,9 @@ export async function GET(request: Request) {
                 zip: item.prospects.zip,
                 callStatus: item.call_status,
                 labels: item.labels || [],
-                entityNames: item.entity_names || null
+                entityNames: item.entity_names || null,
+                contactName: item.contact_name || null,
+                contactEmail: item.contact_email || null
             });
         }
 
@@ -171,9 +192,10 @@ export async function GET(request: Request) {
     const results = Array.from(aggregatedMap.values()).map(agg => {
         agg.callHistory.sort((a: any, b: any) => new Date(b.calledAt).getTime() - new Date(a.calledAt).getTime());
 
-        if (!agg.entityNames && agg.properties.length > 0) {
-            agg.entityNames = agg.properties[0].propertyName;
-        }
+        // Sort names for consistent UI
+        agg.allContactNames.sort();
+        agg.allContactEmails.sort();
+        agg.allEntityNames.sort();
 
         return agg;
     });

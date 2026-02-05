@@ -105,6 +105,9 @@ export interface ProspectPhone {
 
 export interface AggregatedProspectPhone extends Omit<ProspectPhone, 'prospect'> {
     propertyCount: number;
+    allContactNames: string[];
+    allContactEmails: string[];
+    allEntityNames: string[];
     properties: Array<{
         id: string; // prospect_phone_id (the specific record for this property)
         prospectId: string;
@@ -118,6 +121,8 @@ export interface AggregatedProspectPhone extends Omit<ProspectPhone, 'prospect'>
         callStatus: CallStatus;
         labels: string[];
         entityNames: string | null;
+        contactName: string | null;
+        contactEmail: string | null;
     }>;
 }
 
