@@ -57,6 +57,9 @@ export async function GET(
         followUpAt: first.follow_up_at,
         createdAt: first.created_at,
         labels: [],
+        allContactNames: [],
+        allContactEmails: [],
+        allEntityNames: [],
         contactName: null,
         contactEmail: null,
         entityNames: null,
@@ -73,6 +76,23 @@ export async function GET(
                 if (!aggregated.labels.includes(l)) aggregated.labels.push(l);
             });
         }
+
+        // Aggregate unique names and entities
+        if (item.contact_name && !aggregated.allContactNames.includes(item.contact_name)) {
+            aggregated.allContactNames.push(item.contact_name);
+        }
+        if (item.contact_email && !aggregated.allContactEmails.includes(item.contact_email)) {
+            aggregated.allContactEmails.push(item.contact_email);
+        }
+        if (item.entity_names) {
+            item.entity_names.split(',').forEach((name: string) => {
+                const trimmed = name.trim();
+                if (trimmed && !aggregated.allEntityNames.includes(trimmed)) {
+                    aggregated.allEntityNames.push(trimmed);
+                }
+            });
+        }
+
         if (!aggregated.contactName && item.contact_name) aggregated.contactName = item.contact_name;
         if (!aggregated.contactEmail && item.contact_email) aggregated.contactEmail = item.contact_email;
 
@@ -99,7 +119,9 @@ export async function GET(
                 zip: item.prospects.zip,
                 callStatus: item.call_status,
                 labels: item.labels || [],
-                entityNames: item.entity_names
+                entityNames: item.entity_names,
+                contactName: item.contact_name || null,
+                contactEmail: item.contact_email || null
             });
         }
 
@@ -118,10 +140,10 @@ export async function GET(
         }
     });
 
-    // Ensure entityNames exists
-    if (!aggregated.entityNames && aggregated.properties.length > 0) {
-        aggregated.entityNames = aggregated.properties[0].propertyName;
-    }
+    // Sort names
+    aggregated.allContactNames.sort();
+    aggregated.allContactEmails.sort();
+    aggregated.allEntityNames.sort();
 
     // Sort history
     aggregated.callHistory.sort((a: any, b: any) => new Date(b.calledAt).getTime() - new Date(a.calledAt).getTime());

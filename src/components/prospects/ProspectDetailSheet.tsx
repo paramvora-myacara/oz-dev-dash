@@ -84,17 +84,27 @@ export default function ProspectDetailSheet({
                             Log Call
                         </Button>
                     </div>
-                    <div className="mt-2">
-                        <div className="text-3xl font-bold text-muted-foreground">
-                            {prospectPhone.contactName || prospectPhone.entityNames || 'Contact'}
+                    <div className="mt-2 text-foreground">
+                        <div className="text-3xl font-bold">
+                            {prospectPhone.allContactNames?.length > 0
+                                ? prospectPhone.allContactNames.join(' / ')
+                                : 'Contact'}
                         </div>
-                        <DialogDescription className="text-lg mt-1">
-                            {prospectPhone.propertyCount > 1
-                                ? `${prospectPhone.propertyCount} Properties`
-                                : primaryProperty ? `${primaryProperty.propertyName}` : ''}
+                        <div className="text-xl font-semibold text-muted-foreground mt-1">
+                            {prospectPhone.allEntityNames?.length > 0
+                                ? prospectPhone.allEntityNames.join(' / ')
+                                : '-'}
+                        </div>
+                        <DialogDescription className="text-lg mt-2">
+                            {prospectPhone.propertyCount} {prospectPhone.propertyCount === 1 ? 'Property' : 'Properties'}
                         </DialogDescription>
                     </div>
                     <div className="flex items-center gap-2 pt-2 flex-wrap">
+                        {prospectPhone.allContactEmails?.map(email => (
+                            <div key={email} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                                {email}
+                            </div>
+                        ))}
                         {prospectPhone.labels.map(l => (
                             <Badge key={l} variant="outline" className="text-xs uppercase">
                                 {l}
@@ -295,6 +305,7 @@ export default function ProspectDetailSheet({
                                         <TableRow>
                                             <TableHead className="w-[140px]">Date</TableHead>
                                             <TableHead className="w-[100px]">Caller</TableHead>
+                                            <TableHead className="w-[140px]">Contact</TableHead>
                                             <TableHead className="w-[180px]">Outcome</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead className="w-[120px]">Email Status</TableHead>
@@ -308,6 +319,15 @@ export default function ProspectDetailSheet({
                                                         {mounted ? formatToPT(call.calledAt) : ''}
                                                     </TableCell>
                                                     <TableCell className="text-sm">{call.callerName}</TableCell>
+                                                    <TableCell className="text-sm font-medium">
+                                                        {call.email ? (
+                                                            prospectPhone.properties.find(p => p.contactEmail === call.email)?.contactName ||
+                                                            prospectPhone.allContactNames.find(n => n.toLowerCase().includes((call.email || '').split('@')[0].toLowerCase())) ||
+                                                            call.email
+                                                        ) : (
+                                                            prospectPhone.contactName || 'Unknown'
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell>
                                                         <Badge
                                                             variant={call.outcome === 'invalid_number' ? 'destructive' : 'outline'}

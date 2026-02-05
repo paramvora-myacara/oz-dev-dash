@@ -227,13 +227,13 @@ export default function ProspectsTable({
                                             <div className="font-mono font-medium text-lg truncate" title={phone.phoneNumber}>
                                                 {phone.phoneNumber}
                                             </div>
-                                            <div className="text-base text-muted-foreground truncate">
-                                                {phone.contactName || '-'}
+                                            <div className="text-base text-muted-foreground truncate" title={phone.allContactNames.join(', ')}>
+                                                {phone.allContactNames.length > 0 ? phone.allContactNames.join(' / ') : '-'}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <div className="text-base font-medium text-foreground whitespace-normal break-words w-full">
-                                                {phone.entityNames || getKeyEntity(phone) || '-'}
+                                            <div className="text-base font-medium text-foreground whitespace-normal break-words w-full" title={phone.allEntityNames.join(', ')}>
+                                                {phone.allEntityNames.length > 0 ? phone.allEntityNames.join(' / ') : (getKeyEntity(phone) || '-')}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
