@@ -42,7 +42,7 @@ export interface Contact {
 }
 
 /**
- * Shared logic to apply filters using the FilterBuilder.
+ * Shared logic to apply synchronous filters using the FilterBuilder.
  */
 function applyFilters(builder: ContactFilterBuilder, filters: ContactFilters) {
     return builder
@@ -54,9 +54,60 @@ function applyFilters(builder: ContactFilterBuilder, filters: ContactFilters) {
         .withLeadStatus(filters.leadStatus)
         .withEmailStatus(filters.emailStatus)
         .withTags(filters.tags)
-        .withWebsiteEvent(filters.websiteEvents?.eventTypes, { operator: filters.websiteEvents?.operator })
-        .withCampaignResponse(filters.campaignResponse?.campaignId!, filters.campaignResponse?.response!)
-        .withExcludeCampaigns(filters.excludeCampaigns);
+        .withWebsiteEvent(filters.websiteEvents?.eventTypes, { operator: filters.websiteEvents?.operator });
+}
+
+/**
+ * Handles filters that require async pre-fetching (excludeCampaigns, campaignResponse).
+ * PostgREST doesn't support SQL subqueries in filter(), so we fetch IDs first,
+ * then filter with literal values.
+ * Returns the modified baseQuery and whether the result should be empty.
+ */
+async function applyAsyncFilters(baseQuery: any, filters: ContactFilters): Promise<{ query: any; empty: boolean }> {
+    const supabase = createClient();
+
+    // Handle excludeCampaigns: contacts NOT in these campaigns
+    if (filters.excludeCampaigns && filters.excludeCampaigns.length > 0) {
+        const { data: excludedRecipients } = await supabase
+            .from('campaign_recipients')
+            .select('contact_id')
+            .in('campaign_id', filters.excludeCampaigns);
+
+        const excludedContactIds = [...new Set((excludedRecipients || []).map((r: any) => r.contact_id))];
+        if (excludedContactIds.length > 0) {
+            baseQuery = baseQuery.not('id', 'in', `(${excludedContactIds.join(',')})`);
+        }
+    }
+
+    // Handle campaignResponse: contacts who replied/bounced/etc in a specific campaign
+    if (filters.campaignResponse?.campaignId && filters.campaignResponse?.response) {
+        let recipientQuery = supabase
+            .from('campaign_recipients')
+            .select('contact_id')
+            .eq('campaign_id', filters.campaignResponse.campaignId);
+
+        const response = filters.campaignResponse.response;
+        if (response === 'replied') {
+            recipientQuery = recipientQuery.not('replied_at', 'is', null);
+        } else if (response === 'no_reply') {
+            recipientQuery = recipientQuery.is('replied_at', null);
+        } else if (response === 'bounced') {
+            recipientQuery = recipientQuery.not('bounced_at', 'is', null);
+        } else if (response === 'completed_sequence') {
+            recipientQuery = recipientQuery.eq('status', 'completed');
+        }
+
+        const { data: matchingRecipients } = await recipientQuery;
+        const matchingContactIds = [...new Set((matchingRecipients || []).map((r: any) => r.contact_id))];
+
+        if (matchingContactIds.length > 0) {
+            baseQuery = baseQuery.in('id', matchingContactIds);
+        } else {
+            return { query: baseQuery, empty: true };
+        }
+    }
+
+    return { query: baseQuery, empty: false };
 }
 
 // Helper function for "never contacted" filter
@@ -160,8 +211,12 @@ export async function searchContactsForCampaign(filters: ContactFilters, page = 
             `, { count: 'exact' });
     }
 
-    // 2. Apply filters using the common builder
-    const builder = new ContactFilterBuilder(baseQuery).excludeSuppressed();
+    // 2. Apply async filters (excludeCampaigns, campaignResponse) first
+    const { query: filteredQuery, empty } = await applyAsyncFilters(baseQuery, filters);
+    if (empty) return { data: [], count: 0 };
+
+    // 3. Apply synchronous filters using the common builder
+    const builder = new ContactFilterBuilder(filteredQuery).excludeSuppressed();
 
     // Default email status for campaigns if not provided
     const emailStatus = filters.emailStatus || ['Valid', 'Catch-all'];
@@ -246,7 +301,11 @@ export async function searchContacts(filters: ContactFilters, page = 0, pageSize
             `, { count: 'exact' });
     }
 
-    const builder = new ContactFilterBuilder(baseQuery);
+    // Apply async filters first
+    const { query: filteredQuery, empty } = await applyAsyncFilters(baseQuery, filters);
+    if (empty) return { data: [], count: 0 };
+
+    const builder = new ContactFilterBuilder(filteredQuery);
     applyFilters(builder, filters);
 
     const from = page * pageSize;
@@ -293,7 +352,11 @@ export async function getAllContactIds(filters: ContactFilters) {
         baseQuery = supabase.from('contacts').select('id');
     }
 
-    const builder = new ContactFilterBuilder(baseQuery);
+    // Apply async filters first
+    const { query: filteredQuery, empty } = await applyAsyncFilters(baseQuery, filters);
+    if (empty) return [];
+
+    const builder = new ContactFilterBuilder(filteredQuery);
     applyFilters(builder, filters);
 
     const { data, error } = await builder.build().query
