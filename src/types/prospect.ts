@@ -26,6 +26,9 @@ export interface CallHistory {
     calledAt: string;
     emailStatus?: 'sent' | 'failed' | 'pending';
     emailError?: string;
+    linkedInStatus?: string;
+    linkedInUrl?: string;
+    linkedInError?: string;
 }
 
 export interface Prospect {

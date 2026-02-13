@@ -46,27 +46,6 @@ CREATE INDEX IF NOT EXISTS idx_linkedin_search_results_selected
   ON linkedin_search_results(call_log_id, selected) 
   WHERE selected = TRUE;
 
--- Add RLS policies
-ALTER TABLE linkedin_search_results ENABLE ROW LEVEL SECURITY;
-
--- Allow service role to do everything
-CREATE POLICY "Service role has full access" ON linkedin_search_results
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Allow authenticated users to read their own results
--- (We'll need to join through prospect_calls to check ownership)
-CREATE POLICY "Users can read their own search results" ON linkedin_search_results
-  FOR SELECT
-  TO authenticated
-  USING (
-    prospect_phone_id IN (
-      SELECT id FROM prospect_phones 
-      WHERE user_id = auth.uid()
-    )
-  );
 
 COMMENT ON TABLE linkedin_search_results IS 'LinkedIn profile search results for each prospect call';
 COMMENT ON COLUMN linkedin_search_results.rank IS 'Search result position (1-based)';

@@ -55,7 +55,8 @@ export async function POST(
         phoneUpdate.extras = { ...(currentPhone.extras || {}), ...extras };
     }
 
-    const { error: logError } = await supabase
+    // Log call to prospect_calls table
+    const { data: callLog, error: logError } = await supabase
         .from('prospect_calls')
         .insert({
             prospect_id: prospectId,
@@ -63,11 +64,17 @@ export async function POST(
             caller_name: callerName,
             outcome,
             phone_used: phoneUsed || currentPhone.phone_number,
-            email_captured: email
-        });
+            email_captured: email,
+            // Initialize LinkedIn automation
+            linkedin_status: 'search_pending' // Will be processed by batch job at 6pm
+        })
+        .select()
+        .single();
 
     if (logError) {
         console.error('Error logging call:', logError);
+    } else {
+        console.log(`[LinkedIn] Search scheduled for call ${callLog?.id} - will run at 6pm`);
     }
 
     const { data: updatedPhone, error: updateError } = await supabase

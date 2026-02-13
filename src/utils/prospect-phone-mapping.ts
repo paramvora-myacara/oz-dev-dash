@@ -35,7 +35,10 @@ export function mapProspectPhone(dbRow: any): ProspectPhone {
             email: c.email_captured,
             calledAt: c.called_at,
             emailStatus: c.email_status,
-            emailError: c.email_error
+            emailError: c.email_error,
+            linkedInStatus: c.linkedin_status,
+            linkedInUrl: c.linkedin_url,
+            linkedInError: c.linkedin_error
         } as CallHistory))
     };
 
