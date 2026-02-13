@@ -38,6 +38,7 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     websiteEventTypes: string[];
     websiteOperator: 'any' | 'all';
     campaignResponse?: { campaignId: string, response: 'replied' | 'no_reply' | 'bounced' | 'all' };
+    excludeCampaigns: string[];
   }>({
     locationFilter: '',
     source: 'all',
@@ -47,7 +48,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
     leadStatus: 'all',
     tags: [],
     websiteEventTypes: [],
-    websiteOperator: 'any'
+    websiteOperator: 'any',
+    excludeCampaigns: []
   })
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -93,7 +95,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
           websiteEvents: advancedFilters.websiteEventTypes.length > 0 ? { eventTypes: advancedFilters.websiteEventTypes, operator: advancedFilters.websiteOperator } : undefined,
           campaignResponse: (advancedFilters.campaignResponse && advancedFilters.campaignResponse.response !== 'all')
             ? { ...advancedFilters.campaignResponse, response: advancedFilters.campaignResponse.response as any }
-            : undefined
+            : undefined,
+          excludeCampaigns: advancedFilters.excludeCampaigns.length > 0 ? advancedFilters.excludeCampaigns : undefined
         }
 
         const { data, count } = await searchContactsForCampaign(filters, page, pageSize)
@@ -272,7 +275,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
             tags: advancedFilters.tags.length > 0 ? advancedFilters.tags : undefined,
             contactType: advancedFilters.contactTypes.length > 0 ? advancedFilters.contactTypes : undefined,
             websiteEvents: advancedFilters.websiteEventTypes.length > 0 ? { eventTypes: advancedFilters.websiteEventTypes, operator: advancedFilters.websiteOperator } : undefined,
-            campaignResponse: advancedFilters.campaignResponse
+            campaignResponse: advancedFilters.campaignResponse,
+            excludeCampaigns: advancedFilters.excludeCampaigns.length > 0 ? advancedFilters.excludeCampaigns : undefined
           },
           exclusions: Array.from(excludedIds),
           explicitSelections: selectedEmails
@@ -305,7 +309,8 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
       leadStatus: 'all',
       tags: [],
       websiteEventTypes: [],
-      websiteOperator: 'any'
+      websiteOperator: 'any',
+      excludeCampaigns: []
     })
     setIsSelectAllGlobal(false)
   }
@@ -508,6 +513,33 @@ export default function ContactSelectionStep({ campaignId, onContinue, onBack }:
                   <option value="any">Previously Contacted</option>
                   {campaigns.filter(c => c.id !== campaignId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Not Contacted In</label>
+                <p className="text-xs text-gray-400 mb-2">Exclude contacts who were recipients of these campaigns</p>
+                <div className="flex flex-col gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                  {campaigns.filter(c => c.id !== campaignId).length === 0 ? (
+                    <p className="text-xs text-gray-400 italic py-2 text-center">No other campaigns available</p>
+                  ) : (
+                    campaigns.filter(c => c.id !== campaignId).map(c => (
+                      <label key={c.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white cursor-pointer text-sm font-medium transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={advancedFilters.excludeCampaigns.includes(c.id)}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...advancedFilters.excludeCampaigns, c.id]
+                              : advancedFilters.excludeCampaigns.filter(id => id !== c.id);
+                            setAdvancedFilters(prev => ({ ...prev, excludeCampaigns: next }));
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="truncate">{c.name}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 

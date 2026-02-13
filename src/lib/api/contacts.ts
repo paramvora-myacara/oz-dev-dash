@@ -14,6 +14,7 @@ export interface ContactFilters {
     tags?: string | string[];
     websiteEvents?: { eventTypes: string[], operator?: 'any' | 'all' };
     campaignResponse?: { campaignId: string, response: 'replied' | 'no_reply' | 'bounced' | 'completed_sequence' };
+    excludeCampaigns?: string[]; // Campaign IDs to exclude — contacts NOT in these campaigns
 }
 
 export interface Contact {
@@ -54,7 +55,8 @@ function applyFilters(builder: ContactFilterBuilder, filters: ContactFilters) {
         .withEmailStatus(filters.emailStatus)
         .withTags(filters.tags)
         .withWebsiteEvent(filters.websiteEvents?.eventTypes, { operator: filters.websiteEvents?.operator })
-        .withCampaignResponse(filters.campaignResponse?.campaignId!, filters.campaignResponse?.response!);
+        .withCampaignResponse(filters.campaignResponse?.campaignId!, filters.campaignResponse?.response!)
+        .withExcludeCampaigns(filters.excludeCampaigns);
 }
 
 // Helper function for "never contacted" filter
