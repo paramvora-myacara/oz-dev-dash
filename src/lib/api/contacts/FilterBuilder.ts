@@ -3,7 +3,7 @@ import { getExpandedSearchTerms } from './utils';
 export interface FilterCondition {
     type: 'text_search' | 'location' | 'contact_type' | 'lead_status' |
     'tags' | 'email_status' | 'campaign_history' | 'website_event' |
-    'campaign_response';
+    'campaign_response' | 'exclude_campaigns';
     operator: 'equals' | 'contains' | 'in' | 'not_in' | 'exists' | 'not_exists' | 'ilike' | 'eq' | 'is' | 'fts';
     value: any;
 }
@@ -192,20 +192,37 @@ export class ContactFilterBuilder {
     withCampaignResponse(campaignId: string, response: 'replied' | 'no_reply' | 'bounced' | 'completed_sequence'): this {
         if (!campaignId || !response) return this;
 
-        let condition = `campaign_id.eq.${campaignId}`;
+        let condition = `campaign_id = '${campaignId}'`;
 
         if (response === 'replied') {
-            condition += ',replied_at.not.is.null';
+            condition += ' AND replied_at IS NOT NULL';
         } else if (response === 'no_reply') {
-            condition += ',replied_at.is.null';
+            condition += ' AND replied_at IS NULL';
         } else if (response === 'bounced') {
-            condition += ',bounced_at.not.is.null';
+            condition += ' AND bounced_at IS NOT NULL';
         } else if (response === 'completed_sequence') {
-            condition += ',status.eq.completed';
+            condition += " AND status = 'completed'";
         }
 
         this.query = this.query.filter('id', 'in', `(select contact_id from campaign_recipients where ${condition})`);
         this.conditions.push({ type: 'campaign_response', operator: 'eq', value: { campaignId, response } });
+        return this;
+    }
+
+    /**
+     * Excludes contacts who are recipients of the specified campaigns.
+     * Returns contacts NOT in any of the given campaign IDs.
+     */
+    withExcludeCampaigns(campaignIds?: string[]): this {
+        if (!campaignIds || campaignIds.length === 0) return this;
+
+        const idsList = campaignIds.map(id => `'${id}'`).join(',');
+        this.query = this.query.filter(
+            'id',
+            'not.in',
+            `(select contact_id from campaign_recipients where campaign_id in (${idsList}))`
+        );
+        this.conditions.push({ type: 'exclude_campaigns', operator: 'not_in', value: campaignIds });
         return this;
     }
 
