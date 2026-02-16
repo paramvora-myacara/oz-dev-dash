@@ -20,6 +20,7 @@ interface LinkedInQueueItem {
     prospect_phones: {
         phone_number: string;
         contact_name: string;
+        entity_names?: string;
         prospects: {
             property_name: string;
         } | null;
@@ -96,7 +97,7 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
 
     const renderItem = (item: LinkedInQueueItem, type: 'action' | 'queued' | 'history') => {
         const contactName = item.prospect_phones.contact_name || 'Unknown Contact';
-        const propertyName = item.prospect_phones.prospects?.property_name || 'Unknown Property';
+        const companyName = item.prospect_phones.entity_names?.split(',')[0]?.trim();
 
         return (
             <div key={item.id} className="border rounded-lg p-4 bg-card hover:bg-accent/5 transition-colors">
@@ -104,9 +105,9 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
                     <div>
                         <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-lg">{contactName}</h4>
-                            <Badge variant="outline">{propertyName}</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
+                            {companyName && <span className="font-medium text-foreground mr-1.5">{companyName} ·</span>}
                             {item.prospect_phones.phone_number} · Logged by {item.caller_name} · {formatToPT(item.created_at)}
                         </p>
 

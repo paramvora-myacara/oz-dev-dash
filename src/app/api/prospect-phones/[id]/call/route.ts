@@ -155,5 +155,60 @@ export async function POST(
         })();
     }
 
+    // ... existing email logic ...
+
+    // --- LinkedIn Automation Trigger ---
+    // Trigger for all outcomes
+    // Run in background (fire and forget)
+    (async () => {
+        try {
+            // Determine context (Company Name or Entity Name)
+            // Priority: Entity Name -> Property Name
+            const entityName = updatedPhone.entity_names?.split(',')[0]?.trim();
+            const propertyName = updatedPhone.prospects?.property_name;
+            const context = entityName || propertyName || '';
+
+            if (!context) {
+                console.log('[LinkedIn Trigger] Skipping: No context (Company/Property) available');
+                return;
+            }
+
+            // First, update status to pending
+            const { error: pendingError } = await supabase
+                .from('prospect_calls')
+                .update({ linkedin_status: 'search_pending' })
+                .eq('id', logError ? '' : (updatedPhone.prospect_calls?.find((c: any) =>
+                    c.caller_name === callerName && c.outcome === outcome && c.id // simplistic match, ideally we use the returned ID if we had it
+                    // Better: we need the ID of the inserted call.
+                    // Since we didn't return it from the insert above (createClient bug with insert vs select), 
+                    // we rely on the select in updatedPhone.
+                )?.id));
+
+            // RE-FETCH the specific call ID we just created to be safe
+            // The insert above didn't return data. The update below fetched updatedPhone.
+            // We need to find the specific call log ID.
+            const latestCallLog = updatedPhone.prospect_calls?.sort((a: any, b: any) =>
+                new Date(b.called_at).getTime() - new Date(a.called_at).getTime()
+            )[0];
+
+            if (latestCallLog) {
+                // Set pending
+                await supabase.from('prospect_calls').update({ linkedin_status: 'search_pending' }).eq('id', latestCallLog.id);
+
+                // Trigger Search
+                const { processLinkedInSearchForCall } = await import('@/lib/services/tavily');
+                await processLinkedInSearchForCall(
+                    latestCallLog.id,
+                    prospectPhoneId,
+                    updatedPhone.phone_number,
+                    context
+                );
+            }
+
+        } catch (err) {
+            console.error('[LinkedIn Trigger] Failed to trigger search:', err);
+        }
+    })();
+
     return NextResponse.json({ success: true, data: mappedResult });
 }
