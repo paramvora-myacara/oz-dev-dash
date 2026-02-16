@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Clock, Check, AlertCircle } from 'lucide-react';
+import { LinkedInProfileSelector } from './LinkedInProfileSelector';
 import type { ProspectPhone } from '@/types/prospect';
 
 interface LinkedInSearchResult {
@@ -27,6 +28,16 @@ interface LinkedInTabProps {
 
 export function LinkedInTab({ prospectPhone }: LinkedInTabProps) {
     const [expandedCalls, setExpandedCalls] = useState<Set<string>>(new Set());
+
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const onSelectionComplete = () => {
+        setRefreshTrigger(prev => prev + 1);
+        // Ideally trigger a parent re-fetch here if possible
+        // For now, we manually update the expanded state or show a success message?
+        // We can't easily update props.prospectPhone without a callback.
+        // We'll show a "Success" state in the selector.
+    };
 
     // Filter calls with LinkedIn statuses
     const linkedInCalls = prospectPhone.callHistory?.filter(call =>
@@ -106,34 +117,36 @@ export function LinkedInTab({ prospectPhone }: LinkedInTabProps) {
                     </h3>
                     <div className="space-y-2">
                         {pendingSelection.map(call => (
-                            <div key={call.id} className="border rounded-lg p-3 bg-blue-50">
+                            <div key={call.id} className="border rounded-lg p-3 bg-blue-50 transition-all">
                                 <div
                                     className="flex items-center justify-between cursor-pointer"
                                     onClick={() => toggleExpanded(call.id)}
                                 >
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="bg-green-100">
+                                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
                                                 ✅ Search Complete
                                             </Badge>
                                             <span className="text-sm text-gray-600">
                                                 {call.callerName} · {formatTime(call.calledAt)}
                                             </span>
                                         </div>
-                                        <p className="text-sm mt-1">Found profiles · Select one to connect</p>
+                                        <p className="text-sm mt-1 font-medium">Found profiles · Select one to connect</p>
                                     </div>
                                     {expandedCalls.has(call.id) ? (
-                                        <ChevronUp className="h-4 w-4" />
+                                        <ChevronUp className="h-4 w-4 text-gray-500" />
                                     ) : (
-                                        <ChevronDown className="h-4 w-4" />
+                                        <ChevronDown className="h-4 w-4 text-gray-500" />
                                     )}
                                 </div>
 
                                 {expandedCalls.has(call.id) && (
-                                    <div className="mt-4 pt-4 border-t">
-                                        <p className="text-sm text-gray-600 mb-3">Select LinkedIn profile:</p>
-                                        {/* TODO: Load and display search results */}
-                                        <p className="text-sm text-gray-500">Profile selector coming soon...</p>
+                                    <div className="mt-4 pt-4 border-t border-blue-100">
+                                        <p className="text-sm text-gray-600 mb-3 font-medium">Select correct LinkedIn profile:</p>
+                                        <LinkedInProfileSelector
+                                            callId={call.id}
+                                            onSelect={onSelectionComplete}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -154,8 +167,11 @@ export function LinkedInTab({ prospectPhone }: LinkedInTabProps) {
                                 <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-gray-400" />
                                     <div>
-                                        <p className="text-sm font-medium">Search at 6:00 PM (in {getNextBatchTime()})</p>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm font-medium">Search Pending</p>
+                                        <p className="text-xs text-gray-500">
+                                            Waiting for search results... (Usually instantaneous)
+                                        </p>
+                                        <p className="text-sm text-gray-600 mt-1">
                                             Call by {call.callerName} · {formatTime(call.calledAt)}
                                         </p>
                                     </div>
@@ -179,7 +195,7 @@ export function LinkedInTab({ prospectPhone }: LinkedInTabProps) {
                                         <p className="text-sm font-medium">
                                             {call.linkedInStatus === 'searching' && 'Searching...'}
                                             {call.linkedInStatus === 'connecting' && 'Sending connection...'}
-                                            {call.linkedInStatus === 'connection_pending' && 'Connection scheduled for 6:30 PM'}
+                                            {call.linkedInStatus === 'connection_pending' && 'Queued for Connection (Daily Limit)'}
                                         </p>
                                         <p className="text-sm text-gray-600">
                                             {call.callerName} · {formatTime(call.calledAt)}
@@ -197,18 +213,21 @@ export function LinkedInTab({ prospectPhone }: LinkedInTabProps) {
                 <h3 className="font-semibold mb-3">LinkedIn History</h3>
                 <div className="space-y-3">
                     {completed.map(call => (
-                        <div key={call.id} className="flex items-start gap-3">
+                        <div key={call.id} className="flex items-start gap-3 bg-gray-50 p-2 rounded">
                             <Check className="h-4 w-4 text-green-500 mt-1" />
                             <div>
-                                <p className="text-sm font-medium">Connected · {formatTime(call.calledAt)}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium">Invitation Sent</p>
+                                    <span className="text-xs text-gray-500">· {formatTime(call.calledAt)}</span>
+                                </div>
                                 {call.linkedInUrl && (
                                     <a
                                         href={call.linkedInUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-blue-600 hover:underline"
+                                        className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
                                     >
-                                        {call.linkedInUrl}
+                                        View Profile ↗
                                     </a>
                                 )}
                             </div>
@@ -216,18 +235,27 @@ export function LinkedInTab({ prospectPhone }: LinkedInTabProps) {
                     ))}
 
                     {failed.map(call => (
-                        <div key={call.id} className="flex items-start gap-3">
+                        <div key={call.id} className="flex items-start gap-3 bg-red-50 p-2 rounded">
                             <AlertCircle className="h-4 w-4 text-red-500 mt-1" />
                             <div>
-                                <p className="text-sm font-medium">Failed · {formatTime(call.calledAt)}</p>
+                                <p className="text-sm font-medium text-red-900">Failed</p>
                                 {call.linkedInError && (
-                                    <p className="text-sm text-gray-600">{call.linkedInError}</p>
+                                    <p className="text-xs text-red-700 mt-1">{call.linkedInError}</p>
                                 )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {formatTime(call.calledAt)}
+                                </p>
                             </div>
                         </div>
                     ))}
+
+                    {completed.length === 0 && failed.length === 0 && (
+                        <p className="text-sm text-gray-500 italic">No history yet.</p>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
+
+
