@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import Papa from 'papaparse';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load .env.local manually
 const envPath = path.join(process.cwd(), '.env.local');
@@ -68,10 +69,14 @@ interface CSVRow {
     'Phone Number': string;
 }
 
-async function importProspects(filePath: string) {
+export async function importProspects(filePath: string) {
     console.log(`Reading file: ${filePath}`);
 
     try {
+        if (!fs.existsSync(filePath)) {
+            throw new Error(`File not found: ${filePath}`);
+        }
+
         const fileContent = fs.readFileSync(filePath, 'utf-8');
 
         const { data, errors } = Papa.parse<CSVRow>(fileContent, {
@@ -184,17 +189,20 @@ async function importProspects(filePath: string) {
         console.log('\nImport complete!');
     } catch (err) {
         console.error('Failed to import prospects:', err);
+        throw err;
     }
 }
 
-// Check args
-const args = process.argv.slice(2);
-const defaultFile = '/Users/aryanjain/Documents/OZL/UsefulDocs/QOZB-Contacts/All QOZB Development Projects USA - 20260126.xlsx - Results.csv';
-const targetFile = args[0] || defaultFile;
+// Check if run directly
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 
-if (!fs.existsSync(targetFile)) {
-    console.error(`File not found: ${targetFile}`);
-    process.exit(1);
+if (isMain) {
+    const args = process.argv.slice(2);
+    const defaultFile = '/Users/aryanjain/Documents/OZL/UsefulDocs/QOZB-Contacts/All QOZB Development Projects USA - 20260126.xlsx - Results.csv';
+    const targetFile = args[0] || defaultFile;
+
+    importProspects(targetFile).catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
 }
-
-importProspects(targetFile);
