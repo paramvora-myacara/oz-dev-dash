@@ -3,12 +3,13 @@
  * and links prospect_calls to prospect_phone_id.
  *
  * Run after applying the 20260203100000_create_prospect_phones migration.
- * Usage: npx tsx scripts/migrate_prospects_to_phones.ts
+ * Usage: npx tsx scripts/prospect-management/migrate-prospect-phones.ts
  */
 
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load .env.local
 const envPath = path.join(process.cwd(), '.env.local');
@@ -79,7 +80,7 @@ async function fetchAll<T>(
     return allData;
 }
 
-async function migrate() {
+export async function migrate() {
     console.log('Fetching prospects...');
     const prospects = await fetchAll<any>(
         'prospects',
@@ -186,7 +187,7 @@ async function migrate() {
             console.error('Code:', error.code);
             console.error('Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
             console.error('Sample Data:', JSON.stringify(batch[0], null, 2));
-            process.exit(1);
+            throw error;
         }
         process.stdout.write(`\rInserted ${Math.min(i + BATCH, prospectPhonesToInsert.length)}/${prospectPhonesToInsert.length}...`);
     }
@@ -292,7 +293,12 @@ async function migrate() {
     console.log('Migration complete.');
 }
 
-migrate().catch(err => {
-    console.error(err);
-    process.exit(1);
-});
+// Check if run directly
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMain) {
+    migrate().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}

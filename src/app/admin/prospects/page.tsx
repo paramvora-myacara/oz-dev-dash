@@ -13,6 +13,7 @@ import { createClient } from '@/utils/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeaderboardTab from '@/components/prospects/LeaderboardTab';
+import LinkedInQueue from '@/components/prospects/LinkedInQueue';
 
 const PAGE_SIZE = 50;
 
@@ -391,6 +392,9 @@ export default function ProspectsPage() {
             <Tabs defaultValue="prospects" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="prospects">Prospects</TabsTrigger>
+                    <TabsTrigger value="linkedin_queue" className="flex items-center gap-2">
+                        <span className="text-[#0a66c2] font-semibold">in</span> LinkedIn Queue
+                    </TabsTrigger>
                     <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
                 </TabsList>
 
@@ -442,6 +446,10 @@ export default function ProspectsPage() {
 
                 <TabsContent value="leaderboard">
                     <LeaderboardTab />
+                </TabsContent>
+
+                <TabsContent value="linkedin_queue">
+                    <LinkedInQueue currentUser={currentUser} />
                 </TabsContent>
             </Tabs>
 
