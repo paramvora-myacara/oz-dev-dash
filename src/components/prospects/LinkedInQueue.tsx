@@ -189,11 +189,48 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
                     <h2 className="text-2xl font-bold tracking-tight">LinkedIn Automation Queue</h2>
                     <p className="text-muted-foreground">Manage pending connection requests and review search results.</p>
                 </div>
-                <Button variant="outline" onClick={fetchQueue} disabled={isLoading}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh Queue
-                </Button>
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" onClick={fetchQueue} disabled={isLoading}>
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh Queue
+                    </Button>
+                </div>
             </div>
+
+            {/* Automation Status Bar */}
+            {(() => {
+                const now = new Date();
+                const ptTime = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'America/Los_Angeles',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: false
+                }).format(now);
+                const [hour, minute] = ptTime.split(':').map(Number);
+
+                // Active if time is between 6:30 PM (18:30) and 7:30 PM (19:30) 
+                // OR if any items are in 'connecting' status
+                const isScheduledTime = (hour === 18 && minute >= 30) || (hour === 19 && minute <= 30);
+                const isActive = isScheduledTime || inProgress.some(i => i.linkedin_status === 'connecting');
+
+                if (!isActive) return null;
+
+                return (
+                    <div className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-between shadow-lg animate-pulse">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                            <span className="font-medium">
+                                {inProgress.some(i => i.linkedin_status === 'connecting')
+                                    ? "Automation currently sending connection requests..."
+                                    : "Preparing daily connection batch (Scheduled for 6:30 PM PT)..."}
+                            </span>
+                        </div>
+                        <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                            {inProgress.length} Active Sessions
+                        </Badge>
+                    </div>
+                );
+            })()}
 
             {/* Action Required */}
             <div className="space-y-4">
