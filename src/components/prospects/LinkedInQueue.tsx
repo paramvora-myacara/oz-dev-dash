@@ -76,7 +76,7 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
     const inProgress = queueItems.filter(i => ['searching', 'connecting'].includes(i.linkedin_status));
     const history = queueItems.filter(i => ['invited', 'failed', 'search_failed'].includes(i.linkedin_status));
 
-    const handleRetry = async (callId: string) => {
+    const handleRetrySearch = async (callId: string) => {
         try {
             const res = await fetch('/api/linkedin/retry', {
                 method: 'POST',
@@ -85,13 +85,30 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
             });
 
             if (res.ok) {
-                // Refresh immediately to show pending status
                 fetchQueue();
             } else {
-                console.error('Retry failed');
+                console.error('Retry search failed');
             }
         } catch (error) {
             console.error('Error retrying search:', error);
+        }
+    };
+
+    const handleRetryConnection = async (callId: string) => {
+        try {
+            const res = await fetch('/api/linkedin/retry-connection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ callId }),
+            });
+
+            if (res.ok) {
+                fetchQueue();
+            } else {
+                console.error('Retry connection failed');
+            }
+        } catch (error) {
+            console.error('Error retrying connection:', error);
         }
     };
 
@@ -138,20 +155,15 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2 items-end">
-                        {type === 'action' && (
-                            <div className="flex gap-2">
-                                <Button size="sm" variant="outline" onClick={() => handleRetry(item.id)}>
-                                    <RefreshCw className="w-3 h-3 mr-1" /> Retry
-                                </Button>
-                                <Button size="sm" onClick={() => toggleExpanded(item.id)}>
-                                    {expandedIds.has(item.id) ? 'Hide Profiles' : 'Review Matches'}
-                                </Button>
-                            </div>
+                        {(type === 'action' || type === 'history') && item.linkedin_status === 'failed' && item.linkedin_url && (
+                            <Button size="sm" variant="outline" onClick={() => handleRetryConnection(item.id)}>
+                                <RefreshCw className="w-3 h-3 mr-1" /> Retry Connection
+                            </Button>
                         )}
 
-                        {(type === 'history' || item.linkedin_status === 'search_failed') && (
-                            <Button size="sm" variant="outline" onClick={() => handleRetry(item.id)}>
-                                <RefreshCw className="w-3 h-3 mr-1" /> Retry Search
+                        {(type === 'action' || type === 'history' || item.linkedin_status === 'search_failed') && (
+                            <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => handleRetrySearch(item.id)}>
+                                <RefreshCw className="w-3 h-3 mr-1" /> {item.linkedin_status === 'failed' ? 'Restart Search' : 'Retry Search'}
                             </Button>
                         )}
 

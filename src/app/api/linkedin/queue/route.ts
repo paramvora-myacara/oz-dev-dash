@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
                 linkedin_search_results (*)
             `)
             .not('linkedin_status', 'is', null) // Ensure it's not null
-            .order('called_at', { ascending: false });
+            .order('updated_at', { ascending: false });
 
         if (currentUser) {
             query = query.eq('caller_name', currentUser);

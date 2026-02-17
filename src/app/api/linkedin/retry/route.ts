@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
             .from('prospect_calls')
             .update({
                 linkedin_status: 'search_pending',
-                linkedin_error: null
+                linkedin_error: null,
+                updated_at: new Date().toISOString()
             })
             .eq('id', callId);
 
