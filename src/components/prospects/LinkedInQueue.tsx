@@ -10,7 +10,7 @@ import { LinkedInProfileSelector } from '@/components/prospects/LinkedInProfileS
 
 interface LinkedInQueueItem {
     id: string; // prospect_call_id
-    created_at: string;
+    called_at: string;
     prospect_phone_id: string;
     caller_name: string;
     linkedin_status: string;
@@ -108,7 +108,7 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                             {companyName && <span className="font-medium text-foreground mr-1.5">{companyName} ·</span>}
-                            {item.prospect_phones.phone_number} · Logged by {item.caller_name} · {formatToPT(item.created_at)}
+                            {item.prospect_phones.phone_number} · Logged by {item.caller_name} · {formatToPT(item.called_at)}
                         </p>
 
                         {/* Status Message */}
