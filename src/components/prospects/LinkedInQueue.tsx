@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,27 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
 
     useEffect(() => {
         fetchQueue();
+
+        const supabase = createClient();
+        const channel = supabase
+            .channel('linkedin_queue_updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'prospect_calls'
+                },
+                (payload) => {
+                    console.log('Realtime update:', payload);
+                    fetchQueue();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [fetchQueue]);
 
     const toggleExpanded = (id: string) => {
