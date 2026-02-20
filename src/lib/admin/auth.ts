@@ -50,6 +50,8 @@ export async function verifyAdmin(): Promise<AdminUser | null> {
 export async function verifyAdminCanEditSlug(slug: string): Promise<AdminUser | null> {
   const user = await verifyAdmin()
   if (!user) return null
+  // Internal admins can edit any listing without a row in admin_user_listings
+  if (user.role === 'internal_admin') return user
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('admin_user_listings')

@@ -5,14 +5,12 @@ import { useState, useEffect } from 'react';
 interface AdminUser {
   id: string;
   email: string;
+  role?: string;
 }
 
 interface AdminData {
   user: AdminUser;
-  listings: Array<{
-    listing_slug: string;
-    hostname?: string;
-  }>;
+  listings: Array<{ listing_slug: string }>;
 }
 
 export function useAdminAuth() {
@@ -49,9 +47,10 @@ export function useAdminAuth() {
     if (!adminData || isAdmin !== true) {
       return false;
     }
-    
-    const canEdit = adminData.listings.some(listing => listing.listing_slug === slug);
-    return canEdit;
+    if (adminData.user.role === 'internal_admin') {
+      return true;
+    }
+    return adminData.listings.some(listing => listing.listing_slug === slug);
   };
 
   return {

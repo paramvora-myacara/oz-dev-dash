@@ -13,7 +13,6 @@ interface AdminUser {
 
 interface Listing {
   listing_slug: string
-  hostname?: string
 }
 
 interface AdminData {
@@ -198,7 +197,6 @@ export default function AnalyticsPage() {
                   {data.listings.map((listing) => (
                     <option key={listing.listing_slug} value={listing.listing_slug}>
                       {listing.listing_slug}
-                      {listing.hostname && ` (${listing.hostname})`}
                     </option>
                   ))}
                 </select>

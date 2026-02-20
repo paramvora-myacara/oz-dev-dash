@@ -63,46 +63,6 @@ export async function middleware(request: NextRequest) {
   // Refresh session if expired - required for Server Components
   await supabase.auth.getUser()
 
-  // Host-based routing for whitelabeled domains (restored)
-  {
-    const { pathname: currentPathname } = request.nextUrl
-    const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
-    const hostname = rawHost.split(':')[0]?.toLowerCase() || ''
-
-    const isInternal =
-      currentPathname.startsWith('/_next') ||
-      currentPathname.startsWith('/api') ||
-      currentPathname === '/favicon.ico' ||
-      /\.(svg|png|jpg|jpeg|gif|webp)$/i.test(currentPathname)
-
-    if (hostname && !isInternal) {
-      const { data: domain } = await supabase
-        .from('domains')
-        .select('listing_slug')
-        .eq('hostname', hostname)
-        .maybeSingle()
-
-      if (domain?.listing_slug) {
-        const slug = domain.listing_slug
-        const isEditPath = currentPathname.includes('/edit')
-        const isAdminPath = currentPathname.startsWith('/admin')
-        const alreadySlugged = currentPathname === `/${slug}` || currentPathname.startsWith(`/${slug}/`)
-
-        // Block admin and edit routes on whitelabeled domains
-        if (isAdminPath || isEditPath) {
-          return NextResponse.redirect(new URL('/', request.url))
-        }
-
-        // For non-edit paths, rewrite to slugged version
-        if (!alreadySlugged) {
-          const url = request.nextUrl.clone()
-          url.pathname = currentPathname === '/' ? `/${slug}` : `/${slug}${currentPathname}`
-          return NextResponse.rewrite(url)
-        }
-      }
-    }
-  }
-
   // Admin protection for /admin and /{slug}/edit routes
   const { pathname: pathnameForAdmin } = request.nextUrl
 
