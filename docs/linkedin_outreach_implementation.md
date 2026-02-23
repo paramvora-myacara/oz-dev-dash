@@ -57,7 +57,7 @@ The following template will be used for all Family Office outreach:
 | `website` | TEXT | Firm website. |
 | `aum` | TEXT | Assets Under Management. |
 | `investment_prefs` | TEXT | Areas of interest for personalization. |
-| `status` | ENUM | `active`, `blocked` (Stop all outreach to this firm). |
+| `status` | ENUM | `active`, `blocked` (Stop all outreach to this firm), `replied` (Successfully engaged). |
 
 ### 3.2. `family_office_contacts` [NEW]
 | Field | Type | Description |
@@ -73,6 +73,7 @@ The following template will be used for all Family Office outreach:
 | :--- | :--- | :--- |
 | `id` | UUID | Primary Key. |
 | `source_id` | UUID | Links to `family_office_contacts`, `prospect_calls`, or `contacts`. |
+| `source_type` | TEXT | Specifies the linked table (e.g., 'family_office_contacts'). |
 | `firm_id` | UUID | FK used for rotation and blocking logic. |
 | `message` | TEXT | Pre-generated message (populated at 6:00 PM). |
 | `status` | ENUM | `pending`, `queued`, `connecting`, `invited`, `failed`, `stopped`. |
@@ -91,8 +92,8 @@ A dedicated command center for managing automation.
 - **Unified Queue**: View of all `pending` contacts across the ecosystem, sorted by priority.
 
 ### 4.2. Stop Outreach Mechanism
-- **Manual Control**: Since automatic reply detection on LinkedIn is not feasible, the UI will provide a "Stop Firm" action.
-- **Effect**: Clicking "Stop Firm" (or marking as 'Replied') marks the firm as `blocked` and transitions all related `pending`/`queued` tasks to `stopped`.
+- **Manual Control**: Since automatic reply detection on LinkedIn is not feasible, the UI will provide actions to "Stop Firm" or mark as "Replied".
+- **Effect**: Clicking "Stop Firm" marks the firm as `blocked`. Marking as replied sets the firm to `replied`. Both actions transition all related `pending`/`queued` tasks to `stopped`.
 
 ---
 
