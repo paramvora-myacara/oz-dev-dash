@@ -18,11 +18,15 @@ This document outlines the technical design and integration plan for the Family 
 ### 2.2. Company Rotation & "Two-Pass" Strategy
 To ensure broad coverage across the 2,500 contacts, we use a two-pass selection logic:
 
-1.  **Pass 1 (Broad Outreach)**: Target firms with **zero** pending or active outreach. Pick the first available contact. This ensures we hit every firm once before moving to a second person at any company.
-2.  **Pass 2 (Deep Outreach)**: If the daily limit (20/account) isn't reached, target firms where:
-    - Outreach to a previous person happened more than **14 days ago**.
-    - There has been **no reply** from that firm.
-    - Pick the *next* contact in the list for that firm.
+**Implementation primitives:**
+- **Trigger:** A scheduled Cron Job running at 6:00 PM daily.
+- **Compute:** A background worker process (Node.js/TypeScript) executing `BatchService.ts`.
+- **Logic Location:** The heavy lifting will be done at the database level using a **PostgreSQL Stored Procedure (RPC)** or a complex CTE (Common Table Expression) SQL query. This ensures performance and avoids loading thousands of rows into the Node.js memory space just to filter them.
+
+**SQL Logic Steps:**
+1.  **Pass 1 (Broad Outreach)**: The query filters for firms with `status = 'active'` that have **zero** historical or active records in the `linkedin_tasks` table. It uses a windowing function (`ROW_NUMBER() OVER(PARTITION BY firm_id)`) to select exactly *one* contact per firm until the 40-slot batch size is filled.
+2.  **Pass 2 (Deep Outreach)**: If Pass 1 yields fewer than 40 contacts, the query falls back to firms where all previous outreach is older than **14 days**, no contact has `replied`, and there are no tasks in an active state (`pending`, `queued`, `connecting`). It then selects the next available contact at those firms who hasn't been contacted yet.
+3.  **Atomicity**: The SQL query directly wraps this `SELECT` inside an `INSERT INTO linkedin_tasks (...) RETURNING *`, seamlessly allocating the batch to Jeff and Todd and preventing race conditions.
 
 **Daily Limits**:
 - 20 connection requests per account per day.
@@ -57,6 +61,10 @@ The following template will be used for all Family Office outreach:
 | `website` | TEXT | Firm website. |
 | `aum` | TEXT | Assets Under Management. |
 | `investment_prefs` | TEXT | Areas of interest for personalization. |
+| `about_company`| TEXT | Description of the firm. |
+| `category` | TEXT | e.g. 'SF' (Single Family), 'MF' (Multi Family). |
+| `year_founded` | TEXT | Founding year. |
+| `city`, `state`, `country` | TEXT | Firm geographic location data. |
 | `status` | ENUM | `active`, `blocked` (Stop all outreach to this firm), `replied` (Successfully engaged). |
 
 ### 3.2. `family_office_contacts` [NEW]
@@ -66,7 +74,11 @@ The following template will be used for all Family Office outreach:
 | `firm_id` | UUID | FK to `family_office_firms`. |
 | `first_name`, `last_name`| TEXT | Used for message personalization. |
 | `title` | TEXT | Contact's role. |
-| `linkedin_url` | TEXT | Target profile URL. |
+| `linkedin_url` | TEXT | Target profile URL (from 'LinkedIn Profile' column). |
+| `personal_email`, `company_email` | TEXT | Email data provided from source lists. |
+| `phone_number` | TEXT | Direct or company phone. |
+| `alma_mater` | TEXT | Educational background. |
+| `linkedin_rich_details` | TEXT | Contextual/scraped detail blob from source. |
 
 ### 3.3. `linkedin_tasks` [NEW]
 | Field | Type | Description |
