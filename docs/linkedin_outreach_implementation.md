@@ -62,6 +62,7 @@ The following template will be used for all Family Office outreach:
 | `aum` | TEXT | Assets Under Management. |
 | `investment_prefs` | TEXT | Areas of interest for personalization. |
 | `about_company`| TEXT | Description of the firm. |
+| `company_email`| TEXT | General firm email address (as most contacts per firm share the same). |
 | `category` | TEXT | e.g. 'SF' (Single Family), 'MF' (Multi Family). |
 | `year_founded` | TEXT | Founding year. |
 | `city`, `state`, `country` | TEXT | Firm geographic location data. |
@@ -75,7 +76,7 @@ The following template will be used for all Family Office outreach:
 | `first_name`, `last_name`| TEXT | Used for message personalization. |
 | `title` | TEXT | Contact's role. |
 | `linkedin_url` | TEXT | Target profile URL (from 'LinkedIn Profile' column). |
-| `personal_email`, `company_email` | TEXT | Email data provided from source lists. |
+| `personal_email` | TEXT | Email data provided from source lists. |
 | `phone_number` | TEXT | Direct or company phone. |
 | `alma_mater` | TEXT | Educational background. |
 | `linkedin_rich_details` | TEXT | Contextual/scraped detail blob from source. |
@@ -116,9 +117,17 @@ A dedicated command center for managing automation.
 - Develop `import_family_offices.ts` script to parse CSV and seed the database.
 
 ### Phase 2: Backend Logic (Service Refactor)
-- **`index.ts`**: Add 6:00 PM cron for the selection phase.
-- **`QueueService.ts`**: Refactor to be source-agnostic, processing from the `linkedin_tasks` table.
-- **`BatchService.ts` [NEW]**: Implement the Two-Pass selection SQL logic and message generation.
+- **`src/services/database.ts`**:
+  - Rip out the existing `prospect_calls` fetching logic.
+  - Implement a PostgreSQL CTE/RPC query string (or Supabase wrapper call) that locks `linkedin_tasks` rows using `FOR UPDATE SKIP LOCKED` and correctly fetches `queued` targets for a given `account_name`.
+- **`src/services/BatchService.ts` [NEW]**:
+  - Contains the Two-Pass selection algorithm explicitly defined above.
+  - Generates the pre-filled `message` string for each target (so execution does not dynamically parse names during the stagehand session).
+- **`src/services/QueueService.ts` & `src/index.ts` Refactor**:
+  - Maintain the parallel account session groupings found in `QueueService.ts` (`Promise.all` wrapping individual account iteration).
+  - Strip out dynamic message creation logic from `QueueService.ts` in favor of reading `task.message`.
+  - Maintain the robust Stagehand connection flow existing in `sendConnectionRequest` within `LinkedInService.ts`.
+  - Add the new `BatchService` execution at `6:00 PM` in `index.ts`. Keep `CONNECTION_CRON_SCHEDULE` to fire execution logic directly afterward (e.g. `6:30 PM`) for `queued` targets.
 
 ### Phase 3: Frontend Dashboard
 - Build the `/admin/linkedin` page in `oz-dev-dash`.
