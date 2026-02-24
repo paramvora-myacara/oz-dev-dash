@@ -732,26 +732,31 @@ People ──> Companies
 
 ## 5. Proposed Data Model
 
-### Core Principle: People-First
+### Core Principle: People-First, Contact Entities as First-Class
 
-Instead of organizing by outreach channel, organize around **people** and **organizations**, with outreach activities as separate, modular entities.
+Instead of organizing by outreach channel, organize around **people** and **organizations**, with contact points (phones, emails, LinkedIn profiles) as independent entities linked via junction tables. This allows multiple people to share a phone number, one person to have multiple emails, and status tracking at both the entity level ("this phone is disconnected") and the relationship level ("this is John's primary phone").
 
 ### Entity Relationship Overview
 
 ```
-organizations (1) ──── (many) people (1) ──── (many) contact_methods
-                                │
-                    ┌───────────┼───────────────────┐
-                    │           │                    │
-              (many) activities (many) campaign_     (many) property_
-                    │           recipients           associations
-                    │           │                    │
-                    │      campaigns                properties
-                    │      (email_queue,
-                    │       linkedin_queue,
-                    │       call_queue)
-                    │
-               user_events (via user_id)
+organizations ◄──── person_organizations ────► people
+                                                 │
+                          ┌──────────────────────┼──────────────────────┐
+                          │                      │                      │
+                   person_phones          person_emails          person_linkedin
+                          │                      │                      │
+                       phones                 emails           linkedin_profiles
+
+people ──── person_properties ────► properties
+
+people ──── activities (email_id, phone_id, linkedin_id FKs)
+                │
+           campaigns ──── campaign_recipients (email_id FK)
+                │
+           email_queue (existing)
+           linkedin_queue (new)
+
+people ──── user_events (via user_id)
 ```
 
 ### Layer 1: Core Entities
@@ -768,15 +773,6 @@ CREATE TABLE people (
         COALESCE(first_name || ' ' || last_name, first_name, last_name)
     ) STORED,
 
-    -- Primary contact methods (denormalized for quick access/filtering)
-    primary_email TEXT,
-    primary_phone TEXT,
-    primary_linkedin_url TEXT,
-
-    -- Organization link
-    organization_id UUID REFERENCES organizations(id),
-    title TEXT,
-
     -- Classification
     lead_status TEXT DEFAULT 'new',  -- new, warm, hot, customer, lost, do_not_contact
     tags TEXT[] DEFAULT '{}',
@@ -790,13 +786,11 @@ CREATE TABLE people (
     -- Flexible metadata
     details JSONB DEFAULT '{}',
 
-    -- Search
+    -- Search (name only; email/phone search handled via cross-table query function)
     search_vector tsvector GENERATED ALWAYS AS (
         to_tsvector('english',
             COALESCE(first_name, '') || ' ' ||
-            COALESCE(last_name, '') || ' ' ||
-            COALESCE(primary_email, '') || ' ' ||
-            COALESCE(primary_phone, '')
+            COALESCE(last_name, '')
         )
     ) STORED,
 
@@ -804,25 +798,88 @@ CREATE TABLE people (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- All ways to reach a person (modular, extensible)
-CREATE TABLE contact_methods (
+-- ═══ Contact Point Entities ═══
+-- Each contact method is a first-class entity with its own status lifecycle.
+-- Multiple people can share a phone number (common in QOZB data).
+-- One person can have multiple emails. Junction tables link them.
+
+CREATE TABLE phones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    number TEXT NOT NULL UNIQUE,       -- normalized: digits only
+    display_number TEXT,               -- formatted: "(212) 555-0100"
+    status TEXT DEFAULT 'active',      -- active, invalid, disconnected
+    carrier_type TEXT,                 -- mobile, landline, voip
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE emails (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    address TEXT NOT NULL UNIQUE,      -- lowercase, trimmed
+    status TEXT DEFAULT 'active',      -- active, hard_bounced, soft_bounced, suppressed
+    bounce_type TEXT,                  -- hard, soft, complaint
+    suppression_reason TEXT,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE linkedin_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    url TEXT NOT NULL UNIQUE,          -- normalized URL
+    profile_name TEXT,
+    profile_title TEXT,
+    profile_company TEXT,
+    profile_location TEXT,
+    profile_image_url TEXT,
+    connection_status TEXT,            -- none, pending, connected
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ═══ Junction Tables: People ↔ Contact Points ═══
+
+CREATE TABLE person_phones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
-
-    channel TEXT NOT NULL,  -- 'email', 'phone', 'linkedin', 'whatsapp', 'twitter', etc.
-    value TEXT NOT NULL,    -- the actual email/phone/URL
-    label TEXT,             -- 'work', 'personal', 'mobile', etc.
-
+    phone_id UUID NOT NULL REFERENCES phones(id) ON DELETE CASCADE,
+    label TEXT,                        -- 'work', 'mobile', 'property_line', 'switchboard'
     is_primary BOOLEAN DEFAULT false,
-    status TEXT DEFAULT 'active',  -- active, invalid, bounced, opted_out, do_not_contact
-
-    -- Channel-specific metadata
-    metadata JSONB DEFAULT '{}',  -- e.g., {email_status: 'valid', provider: 'gmail'}
-
+    source TEXT,                       -- 'qozb_import', 'manual', 'family_office_csv'
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(person_id, phone_id)
+);
 
-    UNIQUE(person_id, channel, value)
+CREATE TABLE person_emails (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+    email_id UUID NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
+    label TEXT,                        -- 'work', 'personal', 'secondary'
+    is_primary BOOLEAN DEFAULT false,
+    source TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(person_id, email_id)
+);
+
+CREATE TABLE person_linkedin (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+    linkedin_id UUID NOT NULL REFERENCES linkedin_profiles(id) ON DELETE CASCADE,
+    is_primary BOOLEAN DEFAULT false,
+    source TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(person_id, linkedin_id)
+);
+
+-- ═══ Junction Table: People ↔ Organizations ═══
+
+CREATE TABLE person_organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    title TEXT,                        -- their role/title at this org
+    is_primary BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(person_id, organization_id)
 );
 
 -- Companies, firms, funds, developers
@@ -898,7 +955,7 @@ CREATE TABLE properties (
 );
 
 -- Many-to-many: people <-> properties
-CREATE TABLE property_associations (
+CREATE TABLE person_properties (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
@@ -925,6 +982,11 @@ CREATE TABLE activities (
                                   -- 'status_changed', 'tag_added', etc.
     channel TEXT,  -- 'email', 'phone', 'linkedin', 'website', 'manual', etc.
 
+    -- Contact method entity used (FK to the specific entity)
+    email_id UUID REFERENCES emails(id) ON DELETE SET NULL,
+    phone_id UUID REFERENCES phones(id) ON DELETE SET NULL,
+    linkedin_id UUID REFERENCES linkedin_profiles(id) ON DELETE SET NULL,
+
     -- Context
     campaign_id UUID REFERENCES campaigns(id),
     performed_by TEXT,  -- 'jeff', 'todd', 'system', 'automation'
@@ -950,9 +1012,15 @@ Keep the existing campaign system largely as-is, add channel awareness:
 
 ```sql
 -- Existing campaigns table, add:
-ALTER TABLE campaigns ADD COLUMN channel TEXT DEFAULT 'email';  -- 'email', 'linkedin', 'multi'
+ALTER TABLE campaigns ADD COLUMN channel TEXT DEFAULT 'email';  -- 'email', 'linkedin'
 
--- campaign_steps, campaign_recipients, email_queue stay the same
+-- campaign_recipients: add email_id FK for selecting which email to use
+ALTER TABLE campaign_recipients ADD COLUMN email_id UUID REFERENCES emails(id);
+-- When adding a person to a campaign, default to their is_primary=true email.
+-- The email_id points to the specific email entity being used for this campaign.
+-- existing selected_email TEXT column can be kept for backward compatibility.
+
+-- campaign_steps, email_queue stay the same
 
 -- NEW: LinkedIn-specific execution queue
 CREATE TABLE linkedin_queue (
@@ -960,7 +1028,7 @@ CREATE TABLE linkedin_queue (
     person_id UUID NOT NULL REFERENCES people(id),
     campaign_id UUID REFERENCES campaigns(id),
 
-    linkedin_url TEXT NOT NULL,
+    linkedin_id UUID NOT NULL REFERENCES linkedin_profiles(id),  -- FK to linkedin entity
     message TEXT,
     account_name TEXT NOT NULL,  -- 'jeff', 'todd'
 
@@ -974,26 +1042,36 @@ CREATE TABLE linkedin_queue (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- NEW: Call queue (for systematic calling campaigns)
-CREATE TABLE call_queue (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    person_id UUID NOT NULL REFERENCES people(id),
-    campaign_id UUID REFERENCES campaigns(id),
-
-    phone_number TEXT NOT NULL,
-    assigned_to TEXT,  -- 'jeff', 'todd', 'michael', etc.
-
-    status TEXT DEFAULT 'queued',  -- queued, locked, called, completed, skipped
-    outcome TEXT,
-
-    lockout_until TIMESTAMPTZ,
-    follow_up_at TIMESTAMPTZ,
-
-    details JSONB DEFAULT '{}',
-
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- No call_queue table. Calling is manual and ad-hoc.
+-- Users browse the people list, pick someone, call, and log the result as an activity.
 ```
+
+### Layer 5: Search Strategy
+
+With no denormalized email/phone on the `people` table, search uses a cross-table query function:
+
+```sql
+-- Cross-table search: finds people by name, email, phone, or org
+CREATE OR REPLACE FUNCTION search_people(query TEXT, result_limit INT DEFAULT 50)
+RETURNS TABLE (person_id UUID, match_source TEXT)
+LANGUAGE sql AS $$
+    SELECT DISTINCT p.id AS person_id, 'name' AS match_source FROM people p
+    WHERE p.first_name ILIKE '%' || query || '%'
+       OR p.last_name ILIKE '%' || query || '%'
+    UNION
+    SELECT DISTINCT pe.person_id, 'email' FROM person_emails pe
+    JOIN emails e ON pe.email_id = e.id
+    WHERE e.address ILIKE '%' || query || '%'
+    UNION
+    SELECT DISTINCT pp.person_id, 'phone' FROM person_phones pp
+    JOIN phones ph ON pp.phone_id = ph.id
+    WHERE ph.number ILIKE '%' || query || '%'
+       OR ph.display_number ILIKE '%' || query || '%'
+    LIMIT result_limit;
+$$;
+```
+
+This can be optimized to a database view or materialized view later if needed.
 
 ### Layer 5: Site Events Integration
 
@@ -1014,96 +1092,115 @@ JOIN user_events ue ON ue.user_id = p.user_id
 WHERE p.user_id IS NOT NULL;
 ```
 
-### Future Addition: Deals (when needed)
-
-```sql
-CREATE TABLE deals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    person_id UUID REFERENCES people(id),
-    organization_id UUID REFERENCES organizations(id),
-    name TEXT,
-    stage TEXT,  -- 'initial_contact', 'meeting_scheduled', 'proposal', 'negotiation', 'closed_won', 'closed_lost'
-    value DECIMAL,
-    expected_close DATE,
-    details JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
 ---
 
 ## 6. Schema Design Trade-offs
 
-### Decision 1: Separate `contact_methods` table vs. columns on People
+### Decision 1: First-class contact entities vs. single `contact_methods` table
 
 | Approach | Pros | Cons |
 |----------|------|------|
-| **Normalized table (chosen)** | Track status/metadata per method. Easy to add channels (no migration). Dedup via UNIQUE constraint. | More joins. Extra fetch for UI display. |
-| **Multi-value columns** (`emails TEXT[]`, `phones TEXT[]`) | Simpler queries, all data on one row. | Can't track status per email/phone. Adding new channel = ALTER TABLE. |
-| **JSONB blob** (`contact_info JSONB`) | Most flexible, schema-free. | Can't easily index/query/filter. No referential integrity. |
+| **First-class entity tables (chosen)** (`phones`, `emails`, `linkedin_profiles` + junction tables) | Shared phone numbers are structural, not duplicated text. Per-entity status tracking separate from per-person relationship metadata. Forces dedup at import (UNIQUE on number/address). Phone-centric calling view is trivial. | More tables (~14 vs ~8). More joins for person detail. Import scripts need "find or create" logic. |
+| **Single `contact_methods` table** (person_id, channel, value) | Fewer tables. Simpler queries. Standard CRM pattern. | Same phone stored as duplicate text across people. Status ambiguity. Dedup is query-based, not structural. Rebuilds the `get_unique_prospect_phones()` grouping problem. |
+| **Multi-value columns** (`emails TEXT[]`, `phones TEXT[]`) | Simplest queries, all data on one row. | Can't track status per email/phone. Can't model shared phone numbers. Adding new channel = ALTER TABLE. |
 
-**Resolution**: Normalized table with denormalized primaries on People row. `primary_email`, `primary_phone`, `primary_linkedin_url` on `people` give fast filtering for the 90% case. `contact_methods` table holds the full picture with per-method status tracking. This mirrors how Attio works under the hood.
+**Resolution**: First-class entity tables. The QOZB data has widespread phone sharing across people (same switchboard for owner and manager). The `contact_methods` approach would recreate the same grouping/dedup problems we already solved with `get_unique_prospect_phones()`. The extra joins are negligible at our data volume (~25K records).
 
-### Decision 2: Polymorphic activities table vs. separate tables per type
+### Decision 2: Denormalized primary fields vs. just joins
 
 | Approach | Pros | Cons |
 |----------|------|------|
-| **Single polymorphic table (chosen)** | Single query for full timeline. Easy to add new activity types. Standard pattern (Salesforce, HubSpot). | `details` JSONB has no schema enforcement. |
+| **Just joins (chosen)** | Single source of truth. No staleness risk. No sync triggers. Simpler schema. | Every query showing contact info needs joins. Can't filter `WHERE primary_email IS NOT NULL` without a join. |
+| **Denormalized `primary_*` on `people`** | Faster list view queries. Full-text search can include email/phone. | Two sources of truth. Requires triggers or app logic to keep in sync. Data WILL drift. |
+
+**Resolution**: Start with just joins. At ~25K records, PostgreSQL handles 4-6 way joins in < 10ms. If performance becomes a concern, a database view (`CREATE VIEW people_view AS ...`) can be added at any time without schema changes. No denormalized fields, no triggers, no staleness.
+
+### Decision 3: Polymorphic activities table vs. separate tables per type
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Single polymorphic table (chosen)** | Single query for full timeline. Easy to add new activity types. Standard CRM pattern. | `details` JSONB has no schema enforcement. |
 | **Separate tables** (`email_activities`, `call_activities`, etc.) | Strong schema per type. | UNION queries for timeline. Adding new channel = new table + new UNION. |
 
-**Resolution**: Polymorphic table wins. The primary use case is displaying a chronological timeline, which requires a single indexed query. Schema enforcement happens at the application layer. The strong-typed fields (`activity_type`, `channel`, `outcome`) provide enough structure for filtering and reporting.
+**Resolution**: Polymorphic table wins. Activities reference the specific contact entity used (`email_id`, `phone_id`, `linkedin_id` FKs) for queryability — e.g., "show all outreach on this shared phone number across all people."
 
-### Decision 3: Campaign model -- generalize or keep channel-specific?
+### Decision 4: Campaign model -- generalize or keep channel-specific?
 
 **Resolution**: Hybrid approach.
-- **Campaigns table** = planning layer. Keep existing email campaign system. Add `channel` column. LinkedIn batches and call lists can also be campaigns.
-- **Queue tables** = channel-specific execution state. `email_queue`, `linkedin_queue`, `call_queue`. Operational, not conceptual.
+- **Campaigns table** = planning layer. Keep existing email campaign system. Add `channel` column. LinkedIn batches can also be campaigns.
+- **Queue tables** = channel-specific execution. `email_queue` (existing), `linkedin_queue` (new). No `call_queue` — calling is manual and ad-hoc, logged directly as activities.
 - **Activities** = what actually happened. Unified, channel-agnostic.
 
-This mirrors how Salesforce works: Campaigns are planning, Tasks/Emails are execution, Activities are history.
+### Decision 5: Person ↔ Organization relationship
+
+**Resolution**: Junction table (`person_organizations`) instead of FK on `people`. Allows one person to belong to multiple organizations (e.g., a family office principal who is also a QOZB property owner at a different company).
 
 ---
 
 ## 7. Migration Strategy
 
-### Phase 1: Create new tables and populate
+**Approach: Big Bang Cutover**
 
-This is the hardest part -- merging three identity systems.
+Build the new schema, run migration, switch all services at once. This is viable because:
+- Small data volume (~25K contacts) — migration runs in minutes, every record can be validated
+- Solo developer — maintaining dual-write logic across 6 backend services is harder than cutting over
+- Internal tool — no external API consumers, no SLAs
+- Source CSVs still exist as ultimate fallback
+- Supabase database snapshots provide instant rollback
 
-**Step 1: Start with `contacts` table** (richest data, most records). Each contact becomes a `person`. Their email becomes a `contact_method` with channel='email'.
+### Phase 1: Create new tables
 
-**Step 2: Merge in `prospect_phones`** (thousands of records). For each:
-- If `contact_email` matches an existing person's email → merge (add phone as contact_method, link to properties)
-- If `contact_name` fuzzy-matches an existing person at the same company → merge
-- Otherwise → create new person, add phone as contact_method
+Create all new tables: `people`, `organizations`, `phones`, `emails`, `linkedin_profiles`, `person_phones`, `person_emails`, `person_linkedin`, `person_organizations`, `properties`, `person_properties`, `activities`, `linkedin_queue`.
 
-**Step 3: Merge in Family Office contacts** (~2,865 records). For each:
-- If `linkedin_url` matches existing person → merge
-- If `personal_email` or `company_email` matches → merge
-- If `first_name + last_name + firm_name` matches → merge
-- Otherwise → create new person
+### Phase 2: Data migration script
 
-**Step 4: Link `user_id`** from existing contacts to people table.
+> **TODO**: Define the exact merge cascade / matching logic for deduplication across sources. Key questions:
+> - Email match → same person? (likely yes)
+> - LinkedIn match → same person? (likely yes)
+> - Phone + name match → same person? (likely yes, but threshold TBD)
+> - Name + org match → same person? (needs review — too many false positives?)
+> - When fields conflict, what wins? (website signup > manual > CSV import?)
 
-**Step 5: Create organizations** from distinct company names across all sources.
+High-level steps:
 
-**Step 6: Create properties** from `prospects` table data, link to people via `property_associations`.
+**Step 1**: Migrate `contacts` table → `people` + `emails` + `person_emails`. Each contact's email becomes an `emails` entity row + a `person_emails` link.
 
-### Phase 2: Backfill activities
+**Step 2**: Migrate `prospect_phones` → `people` + `phones` + `person_phones` + `properties` + `person_properties`. Dedup phone numbers (same number = same `phones` entity, linked to multiple people).
 
-- Convert `prospect_calls` → `activities` entries (channel='phone')
-- Convert `campaign_recipients` + `email_queue` sent records → `activities` entries (channel='email')
+**Step 3**: Import Family Office data → `people` + `organizations` + `person_organizations` + `emails` + `linkedin_profiles` + junction links. Dedup by linkedin_url and email.
+
+**Step 4**: Link `user_id` from existing contacts to new `people` rows.
+
+**Step 5**: Create `organizations` from distinct company/firm names across all sources.
+
+#### Pre-migration data test: Orphan property phones
+
+Before migration, run a Python script against the QOZB CSV to determine:
+1. How many rows have a property-level `Phone Number` that does NOT match any Owner/Manager/Trustee Contact Phone Number?
+2. Of those orphan phones, how many have at least one entity name (Owner/Manager/Trustee company)?
+3. Of those orphans, how many have NO entity at all?
+
+This determines whether orphan property phones should be linked to the organization, a synthetic person, or simply skipped.
+
+### Phase 3: Backfill activities
+
+- Convert `prospect_calls` → `activities` entries (channel='phone', phone_id FK)
+- Convert `campaign_recipients` + `email_queue` sent records → `activities` entries (channel='email', email_id FK)
 - Keep `user_events` separate with a view (cleaner than duplicating)
 
-### Phase 3: Redirect systems to new model
+### Phase 4: Update all services and cutover
 
-- Campaign system: recipient selection reads from `people` instead of `contacts`
-- Calling system: reads from `people` + `contact_methods` (channel='phone') instead of `prospect_phones`
-- LinkedIn system: reads from `people` + `contact_methods` (channel='linkedin') instead of planned `family_office_contacts`
+Update all backend services and API routes simultaneously:
+- Campaign system: recipient selection reads from `people` + `person_emails` instead of `contacts`
+- Calling system: reads from `people` + `person_phones` + `phones` instead of `prospect_phones`
+- LinkedIn system: reads from `people` + `person_linkedin` + `linkedin_profiles`
+- `campaign-runner`, `followup-scheduler`, `inbox-sync`: update any `contacts` table references
 
-### Phase 4: Retire old tables
+**Before cutover**: `grep -r "contacts\|prospect_phones\|prospect_calls\|property_associations\|contact_methods" --include="*.py" --include="*.ts" --include="*.tsx"` across all repos to ensure every reference is updated.
 
-Once stable, deprecate old `contacts`, `prospects`, `prospect_phones`, `prospect_calls` tables.
+### Phase 5: Retire old tables
+
+Rename old tables (e.g., `contacts` → `contacts_legacy`) and keep for a few weeks as safety net. Then drop.
 
 ---
 
@@ -1112,27 +1209,27 @@ Once stable, deprecate old `contacts`, `prospects`, `prospect_phones`, `prospect
 ### Main CRM View (`/admin/crm`)
 
 **Left Panel: People List**
-- Searchable, filterable list of all people
+- Searchable (via `search_people()` function), filterable list of all people
 - Filters: organization type, lead status, tags, has email/phone/linkedin, outreach history, site activity, location, source
 - Columns: Name, Organization, Title, Channels (icons for email/phone/linkedin), Last Activity, Lead Status
-- Bulk selection for "Add to campaign" or "Add to call queue" or "Add to LinkedIn queue"
+- Bulk selection for "Add to campaign" or "Add to LinkedIn queue"
 
 **Right Panel: Person Detail (360-degree view)**
-- **Header**: Name, title, organization, lead status badge, tags
-- **Contact methods**: All emails, phones, LinkedIn URLs with status indicators
-- **Properties**: Associated QOZB properties (if any)
-- **Timeline**: Unified chronological feed of ALL interactions:
-  - Emails sent/received (from campaigns)
-  - Calls made (with outcomes and notes)
-  - LinkedIn invites/connections
+- **Header**: Name, title(s), organization(s) (from `person_organizations`), lead status badge, tags
+- **Contact points**: All linked emails (from `person_emails` → `emails`), phones (from `person_phones` → `phones`), LinkedIn profiles — each with entity-level status (active/bounced/invalid)
+- **Properties**: Associated QOZB properties (from `person_properties`)
+- **Timeline**: Unified chronological feed of ALL interactions (from `activities`):
+  - Emails sent/received (with `email_id` FK showing which address was used)
+  - Calls made (with `phone_id` FK, outcomes and notes)
+  - LinkedIn invites/connections (with `linkedin_id` FK)
   - Site visits (pages viewed, webinars attended, vault access requests)
   - Manual notes
-- **Quick actions**: "Send email", "Add to campaign", "Queue call", "Connect on LinkedIn", "Add note"
+- **Quick actions**: "Send email", "Add to campaign", "Log call", "Connect on LinkedIn", "Add note"
 
 ### Channel-Specific Views (Tabs or Sub-Pages)
 
 - **Email Campaigns** (`/admin/crm/campaigns`) -- existing campaign system, mostly unchanged
-- **Call Queue** (`/admin/crm/calls`) -- existing calling interface, now pulling from `people`
+- **Calling** (`/admin/crm/calls`) -- people list filtered to those with phone numbers, calling is manual (no queue)
 - **LinkedIn Queue** (`/admin/crm/linkedin`) -- planned LinkedIn batch system
 - **Analytics** (`/admin/crm/analytics`) -- unified metrics across all channels
 
@@ -1142,13 +1239,15 @@ Once stable, deprecate old `contacts`, `prospects`, `prospect_phones`, `prospect
 
 To add a new channel (e.g., WhatsApp, SMS, direct mail):
 
-1. Add a new `channel` value to `contact_methods` (e.g., `'whatsapp'`)
-2. Create a channel-specific queue table (e.g., `whatsapp_queue`) following the same pattern as `email_queue`, `linkedin_queue`, `call_queue`
-3. Create a backend service/worker that processes the queue
-4. Add a UI tab in the CRM for managing that channel's queue
-5. All activities automatically flow into the unified `activities` table and timeline
+1. **Create a new contact point entity table** (e.g., `whatsapp_numbers` with `id`, `number`, `status`, etc.)
+2. **Create a junction table** (e.g., `person_whatsapp` with `person_id`, `whatsapp_id`, `is_primary`, `label`)
+3. **Create a channel-specific queue table** (e.g., `whatsapp_queue`) following the same pattern as `email_queue` and `linkedin_queue`
+4. **Add an FK on `activities`** (e.g., `whatsapp_id UUID REFERENCES whatsapp_numbers(id)`)
+5. **Create a backend service/worker** that processes the queue
+6. **Add a UI tab** in the CRM for managing that channel's queue
+7. All activities automatically flow into the unified `activities` table and timeline
 
-No changes to core `people`, `organizations`, or `activities` tables. No changes to the CRM list/detail views.
+No changes to core `people`, `organizations`, or `activities` tables (beyond the optional FK). No changes to the CRM list/detail views. The `search_people()` function can be extended with an additional UNION clause.
 
 ---
 
@@ -1157,63 +1256,79 @@ No changes to core `people`, `organizations`, or `activities` tables. No changes
 **Total estimate: 6-8 weeks** for a developer working full-time.
 
 ### Sprint 1: Foundation (1-2 weeks)
-- Create `people`, `organizations`, `contact_methods`, `properties`, `property_associations`, `activities` tables
-- Write migration script to merge `contacts` + `prospect_phones` + family office data into `people`
+- Create all new tables: `people`, `organizations`, `phones`, `emails`, `linkedin_profiles`, junction tables, `properties`, `person_properties`, `activities`
+- Run orphan property phones data test (Python script against QOZB CSV)
+- Write migration script to merge `contacts` + `prospect_phones` + family office data into `people` + entity tables
 - Backfill `activities` from `prospect_calls` and `campaign_recipients`/`email_queue`
+- Create `search_people()` cross-table search function
 - Basic unified CRM list page
 
 ### Sprint 2: People Detail & Timeline (1 week)
 - Person 360-degree detail view with timeline
+- Display all linked contact methods (phones, emails, LinkedIn) with status
 - Wire up site events via `user_id` link
 - Quick action buttons (send email, log call, add note)
 
 ### Sprint 3: Reconnect Email Campaigns (1 week)
-- Point campaign recipient selection at `people` table
+- Point campaign recipient selection at `people` + `person_emails` + `emails`
+- Add email selection (default to `is_primary`, allow override) when adding recipients
+- Update `campaign_recipients.email_id` FK usage
 - Ensure campaign-runner, followup-scheduler, inbox-sync work with new model
-- May need compatibility layer or view mapping `people` back to old `contacts` shape
 
 ### Sprint 4: Reconnect Calling System (1 week)
-- Port calling UI to work against `people` + `contact_methods` + `call_queue`
-- Port call logging to write to `activities`
-- Lock/unlock mechanism on `call_queue` entries
+- Port calling UI to work against `people` + `person_phones` + `phones`
+- Port call logging to write to `activities` (with `phone_id` FK)
+- No call_queue needed — calling is manual, users browse people list
 
 ### Sprint 5: LinkedIn Integration (1-2 weeks)
-- Import family office data into `people` + `organizations`
+- Import family office data into `people` + `organizations` + `person_organizations` + `linkedin_profiles`
+- Create `linkedin_queue` table
 - Build LinkedIn queue UI and batch selection
 - Wire up `linkedin-automation` service to `linkedin_queue` table
-- Activity logging for LinkedIn actions
+- Activity logging for LinkedIn actions (with `linkedin_id` FK)
 
 ### Sprint 6: Polish & Analytics (1 week)
 - Unified analytics dashboard
 - Bulk operations (tag, assign, add to campaign)
 - Advanced filtering and saved views
-- Search improvements
+- Search improvements (optimize `search_people()` if needed, consider views)
 
 ---
 
 ## 11. Open Design Decisions
 
-These need to be resolved before implementation begins:
+### Resolved
 
-### 1. Merge strategy for duplicate people
-When the same person appears in multiple data sources, what's the merge priority?
-- Suggested: website signup data (most recent, user-provided) > manually entered > CSV import
-- For conflicts: keep both values in the `details` JSONB
+| Decision | Resolution |
+|----------|------------|
+| Contact method storage | First-class entity tables (`phones`, `emails`, `linkedin_profiles`) with junction tables. Not a single `contact_methods` table. |
+| Denormalized primary fields | No. Just joins. Add views later if needed for optimization. |
+| Campaign generalization | Hybrid: `campaigns` table with `channel` field. Channel-specific queues (`email_queue`, `linkedin_queue`). No `call_queue`. |
+| Migration approach | Big bang cutover. |
+| Person ↔ Organization | Junction table (`person_organizations`), not FK on people. |
+| Activities ↔ Contact methods | FKs on activities (`email_id`, `phone_id`, `linkedin_id`). |
+| Search | Cross-table `search_people()` function. Optimize later if needed. |
 
-### 2. Campaign generalization depth
-Should `campaigns` become fully channel-agnostic, or keep separate campaign types? The existing email campaign system has email-specific logic (SparkPost, domain rotation, IMAP threading).
-- Recommended: Generalize the `campaigns` table with a `channel` field, but keep channel-specific execution tables (`email_queue`, `linkedin_queue`, `call_queue`).
+### Still Open
 
-### 3. Migration approach
-- **Big bang**: Build new system, migrate all data, retire old tables. Clean but risky.
-- **Parallel run**: Keep both in sync temporarily, gradually move features. Safer but more work.
-- **Strangler fig**: Build new CRM view on top of old tables using views/joins, then gradually migrate underlying tables. Pragmatic middle ground.
+#### 1. Merge strategy for duplicate people (TODO)
+When the same person appears in multiple data sources, what's the merge cascade?
+- Email match → same person?
+- LinkedIn URL match → same person?
+- Phone + name match → same person?
+- Name + org match → same person?
+- When fields conflict, what wins? (website signup > manual > CSV import?)
+- For unresolvable conflicts: keep both values in `details` JSONB?
 
-### 4. Calling system backend location
+#### 2. Orphan property phones
+Pending data test (Python script against QOZB CSV). See Migration Strategy Phase 2 for test specification. Decision depends on results — may link to org, create synthetic person, or skip.
+
+#### 3. Calling system backend location
 Currently all in oz-dev-dash API routes. Should it move to ozl-backend for consistency with email campaigns and LinkedIn?
 
-### 5. Organization deduplication
+#### 4. Organization deduplication
 Family Office firms, QOZB entities, and companies from contacts table will have overlapping/duplicate organizations. Fuzzy matching analysis showed 16 groups of potential duplicates just in family office data. How aggressive should automated merging be?
+- Suggested: Keep exact Firm Name matches as distinct firms (avoid fuzzy merging due to false positives).
 
 ---
 
