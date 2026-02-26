@@ -38,7 +38,35 @@ BEGIN
     END IF;
 END $$;
 
--- ─── 2. Unique constraint on organizations.name ───────────────────────────────
+-- ─── 2. property_organizations junction table ─────────────────────────────────
+-- Direct link between a property and the organizations involved with it.
+-- Role indicates the relationship: 'owner', 'manager', 'trustee', 'special_servicer'.
+-- This avoids a 4-table join through people just to answer "who owns this property?".
+
+CREATE TABLE IF NOT EXISTS property_organizations (
+    property_id     UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    role            TEXT NOT NULL,  -- 'owner', 'manager', 'trustee', 'special_servicer'
+    source          TEXT DEFAULT 'qozb_import',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (property_id, organization_id, role)
+);
+
+CREATE INDEX IF NOT EXISTS idx_property_orgs_property ON property_organizations(property_id);
+CREATE INDEX IF NOT EXISTS idx_property_orgs_org      ON property_organizations(organization_id);
+
+-- Add to realtime publication
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime' AND tablename = 'property_organizations'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE property_organizations;
+    END IF;
+END $$;
+
+-- ─── 3. Unique constraint on organizations.name ───────────────────────────────
 -- Required for the import script to use ON CONFLICT (name) DO UPDATE
 -- to safely upsert organizations without duplicates.
 -- Strategy: exact name match only. "Greystar" and "Greystar Management" are
