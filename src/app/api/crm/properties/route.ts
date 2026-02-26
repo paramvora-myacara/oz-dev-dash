@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '0');
     const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search') || '';
+    const tag = searchParams.get('tag') || 'all';
 
     let query = supabase
         .from('properties')
@@ -19,6 +20,10 @@ export async function GET(request: Request) {
     if (search) {
         const ftsQuery = search.trim().split(/\s+/).join(' & ');
         query = query.textSearch('search_vector', ftsQuery);
+    }
+
+    if (tag && tag !== 'all') {
+        query = query.eq('details->>source', tag);
     }
 
     const { data, count, error } = await query

@@ -28,9 +28,15 @@ export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
         </Button>
     );
 
+    const tagOptions = [
+        { label: "All Properties", value: "all" },
+        { label: "QOZB Projects", value: "qozb_import" },
+    ];
+
     return (
         <CRMShell
             {...tableState}
+            tagOptions={tagOptions}
             searchPlaceholder="Search properties by name..."
             actions={bulkActions}
         >
