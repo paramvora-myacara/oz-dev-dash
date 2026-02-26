@@ -777,8 +777,8 @@ CREATE TABLE people (
     lead_status TEXT DEFAULT 'new',  -- new, warm, hot, customer, lost, do_not_contact
     tags TEXT[] DEFAULT '{}',
 
-    -- Source tracking
-    sources TEXT[] DEFAULT '{}',  -- e.g., ['qozb_csv', 'family_office_db', 'website_signup']
+    -- Source tracking: derivable from junction table `source` fields
+    -- (person_emails.source, person_phones.source, etc.). No array here to avoid sync drift.
 
     -- Link to authenticated website user (if they've signed up)
     user_id UUID REFERENCES auth.users(id),
@@ -806,68 +806,57 @@ CREATE TABLE people (
 CREATE TABLE phones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     number TEXT NOT NULL UNIQUE,       -- normalized: digits only
-    display_number TEXT,               -- formatted: "(212) 555-0100"
     status TEXT DEFAULT 'active',      -- active, invalid, disconnected
-    carrier_type TEXT,                 -- mobile, landline, voip
-    metadata JSONB DEFAULT '{}',
+    metadata JSONB DEFAULT '{}',       -- carrier_type, display formatting, lookup data
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE emails (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     address TEXT NOT NULL UNIQUE,      -- lowercase, trimmed
-    status TEXT DEFAULT 'active',      -- active, hard_bounced, soft_bounced, suppressed
-    bounce_type TEXT,                  -- hard, soft, complaint
-    suppression_reason TEXT,
-    metadata JSONB DEFAULT '{}',
+    status TEXT DEFAULT 'active',      -- active, bounced, suppressed
+    metadata JSONB DEFAULT '{}',       -- bounce_type, suppression_reason, sparkpost details
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE linkedin_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     url TEXT NOT NULL UNIQUE,          -- normalized URL
-    profile_name TEXT,
-    profile_title TEXT,
-    profile_company TEXT,
-    profile_location TEXT,
-    profile_image_url TEXT,
+    profile_name TEXT,                 -- for display/matching before person link exists
     connection_status TEXT,            -- none, pending, connected
-    metadata JSONB DEFAULT '{}',
+    metadata JSONB DEFAULT '{}',       -- title, company, location, image_url, scrape data
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ═══ Junction Tables: People ↔ Contact Points ═══
 
 CREATE TABLE person_phones (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     phone_id UUID NOT NULL REFERENCES phones(id) ON DELETE CASCADE,
     label TEXT,                        -- 'work', 'mobile', 'property_line', 'switchboard'
     is_primary BOOLEAN DEFAULT false,
     source TEXT,                       -- 'qozb_import', 'manual', 'family_office_csv'
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(person_id, phone_id)
+    PRIMARY KEY (person_id, phone_id)
 );
 
 CREATE TABLE person_emails (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     email_id UUID NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
     label TEXT,                        -- 'work', 'personal', 'secondary'
     is_primary BOOLEAN DEFAULT false,
     source TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(person_id, email_id)
+    PRIMARY KEY (person_id, email_id)
 );
 
 CREATE TABLE person_linkedin (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     linkedin_id UUID NOT NULL REFERENCES linkedin_profiles(id) ON DELETE CASCADE,
     is_primary BOOLEAN DEFAULT false,
     source TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(person_id, linkedin_id)
+    PRIMARY KEY (person_id, linkedin_id)
 );
 
 -- ═══ Junction Table: People ↔ Organizations ═══
@@ -901,12 +890,8 @@ CREATE TABLE organizations (
     zip TEXT,
     country TEXT DEFAULT 'US',
 
-    -- Business details
-    aum TEXT,
-    year_founded TEXT,
-    investment_prefs TEXT,
-    about TEXT,
-    industry TEXT,
+    -- Business details (aum, year_founded, investment_prefs, about, industry)
+    -- stored in details JSONB — these are family-office-specific, not universal.
 
     -- Outreach state
     status TEXT DEFAULT 'active',  -- active, blocked, do_not_contact
@@ -937,15 +922,9 @@ CREATE TABLE properties (
     city TEXT,
     state TEXT,
     zip TEXT,
-    market TEXT,
-    submarket TEXT,
 
-    units INTEGER,
-    sqft INTEGER,
-    completion_date TEXT,
-    latitude DECIMAL,
-    longitude DECIMAL,
-
+    -- QOZB-specific fields (market, submarket, units, sqft, completion_date,
+    -- latitude, longitude) stored in details JSONB — not universal to all properties.
     details JSONB DEFAULT '{}',
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -980,7 +959,7 @@ CREATE TABLE activities (
                                   -- 'linkedin_invite_sent', 'linkedin_accepted',
                                   -- 'site_visit', 'webinar_attended', 'note_added',
                                   -- 'status_changed', 'tag_added', etc.
-    channel TEXT,  -- 'email', 'phone', 'linkedin', 'website', 'manual', etc.
+    -- channel: derivable from activity_type or which FK is populated (email_id/phone_id/linkedin_id)
 
     -- Contact method entity used (FK to the specific entity)
     email_id UUID REFERENCES emails(id) ON DELETE SET NULL,
@@ -1003,7 +982,6 @@ CREATE TABLE activities (
 
 CREATE INDEX idx_activities_person_time ON activities(person_id, occurred_at DESC);
 CREATE INDEX idx_activities_type ON activities(activity_type);
-CREATE INDEX idx_activities_channel ON activities(channel);
 ```
 
 ### Layer 4: Campaigns (Channel-Aware)
@@ -1066,7 +1044,6 @@ LANGUAGE sql AS $$
     SELECT DISTINCT pp.person_id, 'phone' FROM person_phones pp
     JOIN phones ph ON pp.phone_id = ph.id
     WHERE ph.number ILIKE '%' || query || '%'
-       OR ph.display_number ILIKE '%' || query || '%'
     LIMIT result_limit;
 $$;
 ```
@@ -1308,6 +1285,11 @@ No changes to core `people`, `organizations`, or `activities` tables (beyond the
 | Person ↔ Organization | Junction table (`person_organizations`), not FK on people. |
 | Activities ↔ Contact methods | FKs on activities (`email_id`, `phone_id`, `linkedin_id`). |
 | Search | Cross-table `search_people()` function. Optimize later if needed. |
+| Contact entity fields | Minimal top-level columns. `phones`: number + status. `emails`: address + status. `linkedin_profiles`: url + profile_name + connection_status. Diagnostic/display fields (bounce_type, suppression_reason, profile_title, carrier_type, etc.) in `metadata` JSONB. |
+| Org/property detail fields | Source-specific fields (aum, year_founded, market, units, sqft, etc.) in `details` JSONB. Only universal fields get top-level columns. |
+| Junction table PKs | Composite PKs for contact junction tables (person_phones, person_emails, person_linkedin). No synthetic UUID — nothing references them. person_organizations and person_properties keep UUIDs. |
+| People.sources | Dropped. Derivable from `source` on junction tables. Eliminates sync drift. |
+| Activities.channel | Dropped. Derivable from `activity_type` or which contact entity FK is populated. |
 
 ### Still Open
 
