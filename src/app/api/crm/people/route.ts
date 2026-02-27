@@ -19,6 +19,9 @@ export async function GET(request: Request) {
     const emailStatusParam = searchParams.get('email_status');
     const emailStatuses = emailStatusParam ? emailStatusParam.split(',') : [];
 
+    const hasEmail = searchParams.get('has_email');
+    const hasLinkedin = searchParams.get('has_linkedin');
+
     let query = supabase
         .from('people')
         .select(`
@@ -60,6 +63,20 @@ export async function GET(request: Request) {
         // Filter by email status. This requires joining through person_emails to emails table.
         // We use the dot notation for the filter.
         query = query.filter('person_emails.emails.status', 'in', `(${emailStatuses.join(',')})`);
+    }
+
+    if (hasEmail === 'true') {
+        // Rows where at least one person_email exists
+        query = query.not('person_emails', 'is', null);
+    } else if (hasEmail === 'false') {
+        // Rows where no person_email exists
+        query = query.is('person_emails', null);
+    }
+
+    if (hasLinkedin === 'true') {
+        query = query.not('person_linkedin', 'is', null);
+    } else if (hasLinkedin === 'false') {
+        query = query.is('person_linkedin', null);
     }
 
 

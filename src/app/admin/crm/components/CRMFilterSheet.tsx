@@ -65,7 +65,9 @@ export function CRMFilterSheet({
         (filters.location ? 1 : 0) +
         (filters.role ? 1 : 0) +
         (filters.source ? 1 : 0) +
-        (filters.email_status ? 1 : 0);
+        (filters.email_status ? 1 : 0) +
+        (filters.has_email && filters.has_email !== 'all' ? 1 : 0) +
+        (filters.has_linkedin && filters.has_linkedin !== 'all' ? 1 : 0);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -90,6 +92,62 @@ export function CRMFilterSheet({
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 py-4">
+                    {/* Contact Coverage Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Contact Coverage</h4>
+                            {((filters.has_email && filters.has_email !== 'all') || (filters.has_linkedin && filters.has_linkedin !== 'all')) && (
+                                <button
+                                    onClick={() => {
+                                        setFilter("has_email", "all");
+                                        setFilter("has_linkedin", "all");
+                                    }}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="space-y-3">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Email Address</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    {['all', 'true', 'false'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('has_email', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_email || 'all') === val
+                                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                    : "text-slate-400 hover:text-slate-600 font-medium"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">LinkedIn Profile</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    {['all', 'true', 'false'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('has_linkedin', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_linkedin || 'all') === val
+                                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                    : "text-slate-400 hover:text-slate-600 font-medium"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
                     {/* Tags Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">

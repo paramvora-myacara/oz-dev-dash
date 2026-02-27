@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, ChevronLeft, ChevronRight, CheckSquare, Filter } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, CheckSquare, Filter, Mail, Linkedin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CRMFilterSheet } from "./CRMFilterSheet";
@@ -53,18 +53,68 @@ export function CRMShell({
             return acc + 1;
         }, 0);
 
+    const handleToggleEmail = () => {
+        if (!setFilter) return;
+        const current = filters.has_email;
+        if (current === 'true') setFilter('has_email', 'false');
+        else if (current === 'false') setFilter('has_email', 'all');
+        else setFilter('has_email', 'true');
+    };
+
+    const handleToggleLinkedin = () => {
+        if (!setFilter) return;
+        const current = filters.has_linkedin;
+        if (current === 'true') setFilter('has_linkedin', 'false');
+        else if (current === 'false') setFilter('has_linkedin', 'all');
+        else setFilter('has_linkedin', 'true');
+    };
+
     return (
         <div className="flex flex-col gap-4 w-full">
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-2 w-full sm:w-[400px] relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input
-                        placeholder={searchPlaceholder}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 h-10 rounded-xl"
-                    />
+                <div className="flex items-center gap-2 w-full sm:w-auto relative flex-1 max-w-[500px]">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                            placeholder={searchPlaceholder}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 h-10 rounded-xl w-full"
+                        />
+                    </div>
+
+                    {setFilter && (
+                        <div className="flex items-center gap-1.5 ml-1">
+                            <Button
+                                variant="outline"
+                                onClick={handleToggleEmail}
+                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_email === 'true'
+                                    ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
+                                    : filters.has_email === 'false'
+                                        ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
+                                        : "text-slate-400 hover:bg-slate-50 border-slate-200"
+                                    }`}
+                            >
+                                <Mail className={`w-4 h-4 ${filters.has_email === 'true' ? 'fill-blue-700/10' : ''}`} />
+                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">Email</span>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                onClick={handleToggleLinkedin}
+                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_linkedin === 'true'
+                                    ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
+                                    : filters.has_linkedin === 'false'
+                                        ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
+                                        : "text-slate-400 hover:bg-slate-50 border-slate-200"
+                                    }`}
+                            >
+                                <Linkedin className={`w-4 h-4 ${filters.has_linkedin === 'true' ? 'fill-indigo-700/10' : ''}`} />
+                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">LI</span>
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -74,8 +124,8 @@ export function CRMShell({
                                 variant="outline"
                                 onClick={() => setIsFilterOpen(true)}
                                 className={`h-10 rounded-xl flex items-center gap-2 font-medium tracking-tight ${activeFilterCount > 0
-                                        ? "border-slate-900 bg-slate-50 text-slate-900 shadow-sm"
-                                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                    ? "border-slate-900 bg-slate-50 text-slate-900 shadow-sm"
+                                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
                                     }`}
                             >
                                 <Filter className={`w-4 h-4 ${activeFilterCount > 0 ? 'fill-slate-900' : ''}`} />
