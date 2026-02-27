@@ -61,8 +61,6 @@ export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
                         <TableHead>Address</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Organizations</TableHead>
-                        <TableHead># People</TableHead>
-                        <TableHead>QOZB Details</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -102,12 +100,6 @@ export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
                                     )}
                                     {(!property.property_organizations || property.property_organizations.length === 0) && '-'}
                                 </div>
-                            </TableCell>
-                            <TableCell>{property.person_properties?.length || 0}</TableCell>
-                            <TableCell className="text-sm text-slate-500">
-                                {property.details?.submarket
-                                    ? `Submarket: ${property.details.submarket}`
-                                    : "-"}
                             </TableCell>
                         </TableRow>
                     ))}

@@ -12,9 +12,12 @@ export async function GET(request: Request) {
     let query = supabase
         .from('properties')
         .select(`
-    *,
-    person_properties(people(id, first_name, last_name, display_name), role),
-    property_organizations(organizations(id, name, org_type), role)
+            id,
+            property_name,
+            address,
+            city,
+            state,
+            property_organizations(organizations(id, name, org_type), role)
         `, { count: 'exact' });
 
     if (search) {
