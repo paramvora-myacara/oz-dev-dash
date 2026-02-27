@@ -61,7 +61,6 @@ export function CompaniesTable({ onRowClick }: CompaniesTableProps) {
                         <TableHead>Company Name</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Location</TableHead>
-                        <TableHead># People</TableHead>
                         <TableHead>Status</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -85,7 +84,6 @@ export function CompaniesTable({ onRowClick }: CompaniesTableProps) {
                                     ? `${company.city}, ${company.state}`
                                     : company.address || "-"}
                             </TableCell>
-                            <TableCell>{company.person_organizations?.length || 0}</TableCell>
                             <TableCell>
                                 <Badge
                                     variant={
