@@ -10,7 +10,7 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(50);
     const [search, setSearch] = useState("");
-    const [tag, setTag] = useState("all");
+    const [filters, setFilters] = useState<Record<string, any>>({});
     const [totalCount, setTotalCount] = useState(0);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -23,9 +23,17 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
             if (search) {
                 url.searchParams.set("search", search);
             }
-            if (tag && tag !== "all") {
-                url.searchParams.set("tag", tag);
-            }
+
+            // Add all filters to searchParams
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== "" && (Array.isArray(value) ? value.length > 0 : value !== 'all')) {
+                    if (Array.isArray(value)) {
+                        url.searchParams.set(key, value.join(','));
+                    } else {
+                        url.searchParams.set(key, value.toString());
+                    }
+                }
+            });
 
             const res = await fetch(url.toString());
             const json = await res.json();
@@ -36,7 +44,7 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
         } finally {
             setLoading(false);
         }
-    }, [endpoint, page, pageSize, search, tag]);
+    }, [endpoint, page, pageSize, search, filters]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -45,10 +53,10 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
         return () => clearTimeout(timer);
     }, [fetchData]);
 
-    // When search or tag changes, reset to page 0
+    // When search or filters change, reset to page 0
     useEffect(() => {
         setPage(0);
-    }, [search, tag]);
+    }, [search, filters]);
 
     const toggleSelection = (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation(); // Prevent row click from triggering
@@ -71,6 +79,14 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
         }
     };
 
+    const setFilter = (key: string, value: any) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const clearFilters = () => {
+        setFilters({});
+    };
+
     return {
         data,
         loading,
@@ -81,8 +97,10 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
         setPageSize,
         search,
         setSearch,
-        tag,
-        setTag,
+        filters,
+        setFilters,
+        setFilter,
+        clearFilters,
         selectedIds,
         toggleSelection,
         toggleAll,
