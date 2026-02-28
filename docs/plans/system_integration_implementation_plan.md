@@ -174,28 +174,113 @@ $$;
 The goal is to centralize data interaction around the `/admin/crm` view.
 
 ### 2.1 Campaign Creation Lens
-Campaign creation will be initiated from two points, utilizing the existing `ContactSelectionStep.tsx` logic:
-1.  **From CRM (`/admin/crm`):** Bulk select rows on `PeopleTable` ➔ "Add to Campaign" (existing or new). 
+Campaign generation will be streamlined to use the **exact same UI** whether you are starting from the CRM or from an existing campaign draft. The legacy `ContactSelectionStep.tsx` will be deprecated and functionally replaced by recycling the `PeopleTable` component.
+
+1.  **From CRM (`/admin/crm`):** Bulk select rows on `PeopleTable` ➔ "New Campaign". 
 
 **Code Snippet (`src/app/admin/crm/components/PeopleTable.tsx`):**
 ```tsx
+const { setPendingContacts } = useCampaignDraftStore();
+
 const bulkActions = (
     <Button 
         size="sm" 
         variant="outline" 
         className="h-7 text-xs ml-2 bg-white"
         onClick={() => {
-            // Logic to open a modal that passes selectedIds to either:
-            // 1. Add to existing campaign via API
-            // 2. Redirect to /admin/campaigns/new with IDs in query/state
+            const ids = table.getSelectedRowModel().rows.map(r => r.original.id);
+            setPendingContacts(ids);
+            router.push('/admin/campaigns/new');
         }}
     >
-        <Mail className="w-3 h-3 mr-1" /> Add to Campaign
+        <Mail className="w-3 h-3 mr-1" /> New Campaign
     </Button>
 );
 ```
 
-2.  **From Campaigns (`/admin/campaigns`):** Clicking "New Campaign" embeds the CRM filter UI directly into the campaign creation wizard.
+**State Hand-off (Zustand over LocalStorage):**
+Instead of polluting `localStorage` or hitting browser URL limits, we will leverage the app's existing `zustand` library to handle the in-memory hand-off between routes. Because Next.js App Router navigates without a full page reload, Zustand state persists perfectly across the transition.
+
+**1. The Store (`src/stores/campaignDraftStore.ts`):**
+```ts
+import { create } from 'zustand';
+
+interface CampaignDraftState {
+    pendingContactIds: string[];
+    setPendingContacts: (ids: string[]) => void;
+    clearPendingContacts: () => void;
+}
+
+export const useCampaignDraftStore = create<CampaignDraftState>((set) => ({
+    pendingContactIds: [],
+    setPendingContacts: (ids) => set({ pendingContactIds: ids }),
+    clearPendingContacts: () => set({ pendingContactIds: [] }),
+}));
+```
+
+**2. The Trigger (`src/app/admin/crm/components/PeopleTable.tsx`):**
+```tsx
+const { setPendingContacts } = useCampaignDraftStore();
+
+const bulkActions = (
+    <Button 
+        size="sm" variant="outline" className="h-7 text-xs ml-2 bg-white"
+        onClick={() => {
+            // Save to Zustand memory
+            const ids = table.getSelectedRowModel().rows.map(r => r.original.id);
+            setPendingContacts(ids);
+            
+            // Soft-navigate to the new campaign wizard
+            router.push('/admin/campaigns/new');
+        }}
+    >
+        <Mail className="w-3 h-3 mr-1" /> New Campaign
+    </Button>
+);
+```
+
+**3. The Ingestion (`src/app/admin/campaigns/new/page.tsx` amendments):**
+Currently, `new/page.tsx` just creates the campaign and redirects. We will amend `handleCreate` to read from the Zustand store.
+
+```tsx
+// Inside NewCampaignPage component
+const { pendingContactIds, clearPendingContacts } = useCampaignDraftStore();
+
+const handleCreate = async (e: React.FormEvent) => {
+    // ... validation ...
+    const campaign = await createCampaign({ name, sender })
+
+    // Check Zustand store for passed contacts
+    if (pendingContactIds.length > 0) {
+        try {
+            await addRecipients(campaign.id, pendingContactIds);
+        } catch (e) {
+            console.error("Failed to add pending contacts", e);
+        } finally {
+            clearPendingContacts(); // Wipe from memory
+        }
+    }
+
+    router.push(`/admin/campaigns/${campaign.id}`)
+}
+```
+
+2.  **From Campaigns (`/admin/campaigns/[id]`):** If a campaign is in a "Draft" status with no recipients, the Campaign Editor will render the CRM `PeopleTable` so users can securely add recipients using the new graph data structure.
+
+**Code Snippet (`src/app/admin/campaigns/[id]/page.tsx` amendments):**
+```tsx
+// Inside the CampaignEditPage render logic
+{currentStep === 'select-recipients' && (
+  <div className="h-full flex flex-col">
+     {/* Render the core CRM component directly */}
+     <PeopleTable 
+        mode="campaign_selection" 
+        campaignId={campaignId}
+        onContinue={(selectedIds) => handleContinueFromRecipients(selectedIds)} 
+     />
+  </div>
+)}
+```
 
 ### 2.2 Proactive Email Validation in Campaigns
 Instead of the backend silently skipping bad emails during a campaign run:
