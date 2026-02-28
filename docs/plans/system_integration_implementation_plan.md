@@ -330,14 +330,9 @@ INSERT INTO activities (
 The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync.py`) handles polling Gmail for replies. This logic must be updated to integrate with the new CRM identity schema and emit historical events to the new `activities` table.
 
 **Required Logic Updates in `process_new_replies`:**
-1. **Resolve `person_id`:** Instead of querying the legacy `contacts` table, look up the `emails` table (by `address`) and join through `person_emails` to resolve the `person_id`.
+1. **Resolve `recipient_person_id`:** Instead of querying the legacy `contacts` table, look up the `emails` table (by `address`) and join through `person_emails` to resolve the `recipient_person_id`. This logic should utilize the new shared utility `get_person_id_by_email` from `ozl_shared.db` (which replaces `get_contact_id_by_email`).
    ```python
-   email_res = supabase.table('emails').select('id').eq('address', prospect_email).maybe_single().execute()
-   person_id = None
-   if email_res.data:
-       person_res = supabase.table('person_emails').select('person_id').eq('email_id', email_res.data['id']).execute()
-       if person_res.data:
-           person_id = person_res.data[0]['person_id']
+   person_id = get_person_id_by_email(supabase, prospect_email)
    ```
 2. **Update Execution State:** Keep updating `campaign_recipients` to mark the person as `replied` (ensuring we cancel queued emails). Note: `campaign_recipients` is slated to have its `contact_id` FK migrated to `recipient_person_id`.
 3. **Emit to Activities Ledger:** Insert a chronological event record into the new `activities` table.
@@ -364,7 +359,28 @@ Before any downstream code runs (and before backfilling), we must decouple seque
 **Required Steps for `campaign_recipients` Mutation:**
 1. **Schema Addition:** Add `recipient_person_id` (UUID, FK to `people.id` ON DELETE CASCADE).
 2. **Backfill:** Execute a `UPDATE` statement mapping the old `contact_id` string to the new UUID using the `contacts_to_people_mapping.json` generated during the original migration phase.
-3. **App Logic Swap:** Refactor `inbox_sync.py`, `followup_scheduler.py`, `generate.py`, and `db.py` to target `recipient_person_id`.
+3. **App Logic Swap:** Refactor `inbox_sync.py`, `followup_scheduler.py`, `generate.py`, and `db.py` to target `recipient_person_id`. Rewrite the shared lookup utility (`get_contact_id_by_email` -> `get_person_id_by_email`) inside `ozl_shared/db.py` so both the webhook payload processor and the inbox sync worker can securely resolve identities from a single point of truth.
+
+```python
+# ozl_shared/db.py (or within the webhook/inbox modules as a shared util)
+def get_person_id_by_email(supabase: Client, email_address: str) -> Optional[str]:
+    """Resolves a human person_id from a raw email address string."""
+    try:
+        # First, find the email record
+        email_res = supabase.table('emails').select('id').eq('address', email_address).maybe_single().execute()
+        if not email_res.data:
+            return None
+            
+        # Second, map it to the person_emails junction
+        person_res = supabase.table('person_emails').select('person_id').eq('email_id', email_res.data['id']).execute()
+        if not person_res.data:
+            return None
+            
+        return person_res.data[0]['person_id']
+    except Exception as e:
+        logging.error(f"Failed to lookup person_id for email {email_address}: {e}")
+        return None
+```
 4. **Cleanup:** Drop the `contact_id` column.
 
 *(Note: The `selected_email` column remains as a static text representation of the ultimate delivery location to avoid explosive query joins in tight worker loops.)*
