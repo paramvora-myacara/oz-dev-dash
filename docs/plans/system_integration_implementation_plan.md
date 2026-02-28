@@ -176,33 +176,32 @@ const isValidEmail = (contact: any) => {
 )}
 ```
 
-### 2.3 Deprecating the Standalone Prospects Route
-`/admin/prospects` will be replaced by a **"Call Mode" Toggle** on the main CRM interface.
-*   **Action:** When activated, CRM filters to contacts requiring immediate calls.
-*   **Execution:** Opening `<EntitySheet>` provides dialer controls and outcome logging directly within context.
+### 2.3 Deprecating the Standalone Prospects Route & Table Adjustments
+`/admin/prospects` will be replaced by bringing contact capabilities directly into the main CRM interface. To facilitate active outreach without cluttering the view:
 
-**Code Snippet - CRM Toggle & Filter Logic:**
+1.  **Quick Filters:** A "Has Phone" toggle will be placed next to the Email and LinkedIn filter buttons, adjacent to the search bar. This serves to quickly filter the dataset for callability.
+2.  **Table Real Estate:** `status` and `title` columns will be removed from the `/admin/crm` People table to prioritize screen space.
+3.  **Dynamic "Contact Info" Column:** A new `Contact Info` column will be introduced. It will only be visible if at least one of the quick filters (Email, LinkedIn, Phone) is toggled on. It aggregates the target information (e.g., stacking emails and phone numbers) to allow quick scanning.
+4.  **Logging Actions:** The dialer controls and outcome logging will happen directly within the `<EntitySheet>` when a user clicks into a row.
+
+**Code Snippet - Dynamic Column Logic:**
 ```tsx
-// Inside CRMShell.tsx
-const [isCallMode, setIsCallMode] = useState(false);
-
-// ... in the top toolbar ...
-<Button
-    variant={isCallMode ? "default" : "outline"}
-    onClick={() => {
-        setIsCallMode(!isCallMode);
-        if (!isCallMode) {
-            // Apply Call Mode filters 
-            // e.g. setFilter('lead_status', ['warm', 'hot']);
-            // setFilter('requires_followup', true); -- hypothetical filter
-        } else {
-            // Clear Call Mode filters
-        }
-    }}
->
-    <Phone className="w-4 h-4 mr-2" />
-    Call Mode
-</Button>
+// Inside PeopleTable.tsx column definitions
+{
+    accessorKey: 'contactInfo',
+    header: 'Contact Info',
+    // visibility state is bound to: (hasEmailFilter || hasPhoneFilter || hasLinkedInFilter)
+    cell: ({ row }) => {
+        const p = row.original;
+        return (
+            <div className="flex flex-col text-xs">
+                {/* Conditionally render phones, emails, linkedin based on active toggles */}
+                {hasPhoneFilter && p.person_phones?.map(ph => <span key={ph.id}>{ph.phones.number}</span>)}
+                {hasEmailFilter && p.person_emails?.map(e => <span key={e.id}>{e.emails.address}</span>)}
+            </div>
+        );
+    }
+}
 ```
 
 ### 2.4 The Outreach Timeline
@@ -227,6 +226,29 @@ The `<EntitySheet>` will feature a unified timeline component.
     </div>
 </div>
 ```
+
+### 2.5 Porting the Entity Lock & Caller Identity System
+To prevent collisions during active outreach campaigns, the locking mechanisms from `/admin/prospects` will be ported over entirely. This applies across all core CRM entities (`people`, `organizations`, `properties`) to ensure data integrity regardless of how a user navigates.
+
+1. **Database Schema Enhancements:**
+   We will add lock-tracking columns directly to the tables for seamless Supabase Realtime subscription updates.
+   ```sql
+   ALTER TABLE people ADD COLUMN viewing_by TEXT, ADD COLUMN lockout_until TIMESTAMPTZ;
+   ALTER TABLE organizations ADD COLUMN viewing_by TEXT, ADD COLUMN lockout_until TIMESTAMPTZ;
+   ALTER TABLE properties ADD COLUMN viewing_by TEXT, ADD COLUMN lockout_until TIMESTAMPTZ;
+   ```
+
+2. **Caller Identity & Verification:**
+   * Reusing the `UserPasswordGrid` modal from the prospects page. If a user is unauthenticated locally within the context of the CRM calling environment, they must verify their identity.
+   * State is persisted via `localStorage.getItem('prospect_current_user')`.
+   * The page title in `/admin/crm` will be updated to reflect the active caller (e.g., *"Calling as Param (Change)"*).
+
+3. **Lock Lifecycle via API:**
+   * **Opening the Sheet:** Intercept row clicks. Fire `POST /api/crm/[entity_type]/[id]/lock`. If `409 Conflict` is returned, alert: *"This contact is currently being viewed by [User]"* and abort. Otherwise, render `<EntitySheet>`.
+   * **Closing the Sheet:** Fire `DELETE /api/crm/[entity_type]/[id]/lock` using a `keepalive: true` fetch on sheet close or component unmount.
+
+4. **Realtime UI Updates:**
+   The `CRMShell` will maintain a Supabase Realtime channel subscription listening for `UPDATE` events on these tables. If another user acquires a lock, their name and a lock icon will render instantly on the datatable row, greying it out to prevent simultaneous access.
 
 ---
 
