@@ -326,11 +326,59 @@ INSERT INTO activities (
 );
 ```
 
+### 4.3 Inbox Sync Reply Processing Update
+The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync.py`) handles polling Gmail for replies. This logic must be updated to integrate with the new CRM identity schema and emit historical events to the new `activities` table.
+
+**Required Logic Updates in `process_new_replies`:**
+1. **Resolve `person_id`:** Instead of querying the legacy `contacts` table, look up the `emails` table (by `address`) and join through `person_emails` to resolve the `person_id`.
+   ```python
+   email_res = supabase.table('emails').select('id').eq('address', prospect_email).maybe_single().execute()
+   person_id = None
+   if email_res.data:
+       person_res = supabase.table('person_emails').select('person_id').eq('email_id', email_res.data['id']).execute()
+       if person_res.data:
+           person_id = person_res.data[0]['person_id']
+   ```
+2. **Update Execution State:** Keep updating `campaign_recipients` to mark the person as `replied` (ensuring we cancel queued emails). Note: `campaign_recipients` is slated to have its `contact_id` FK migrated to `person_id`.
+3. **Emit to Activities Ledger:** Insert a chronological event record into the new `activities` table.
+   ```python
+   if person_id:
+       supabase.table('activities').insert({
+           'person_id': person_id,
+           'type': 'email_reply',
+           'channel': 'email',
+           'description': f'Replied to campaign "{campaign_name}"',
+           'metadata': {'msg_id': msg_id, 'subject': subject},
+           'timestamp': 'now()'
+       }).execute()
+   ```
+
 ---
 
 ## 5. Required Database Migrations & Backfills
 
-### 5.1 Website Signups Trigger
+### 5.1 Create Activities Table
+
+Before performing backfills or capturing new events, we must establish the unified timeline ledger.
+
+**Implementation (`supabase/migrations/XXX_create_activities_table.sql`):**
+```sql
+CREATE TABLE IF NOT EXISTS activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    person_id UUID NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,          -- e.g., 'email_reply', 'call_logged', 'linkedin_message'
+    channel TEXT NOT NULL,       -- 'email', 'phone', 'linkedin', 'system'
+    description TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_activities_person_id ON activities(person_id);
+CREATE INDEX idx_activities_timestamp ON activities(timestamp);
+```
+
+### 5.2 Website Signups Trigger
 
 **Implementation (`supabase/migrations/XXX_update_auth_trigger.sql`):**
 ```sql
@@ -363,27 +411,37 @@ END;
 $$;
 ```
 
-### 5.2 Historical Telemetry Backfill
-To populate the timeline, we must backfill `activities` from existing tables.
+### 5.3 Historical Telemetry Backfill
+To populate the timeline, we must backfill `activities` from existing legacy execution tables. This will be done after the FKs are correctly migrated (e.g., `campaign_recipients` updated to reference `person_id`).
 
 **Implementation Strategy:**
 
 1.  **Prospect Calls:** 
 ```sql
-INSERT INTO activities (contact_id, channel, description, timestamp) 
-SELECT person_id, 'phone', notes, created_at 
-FROM old_prospect_calls;
+INSERT INTO activities (person_id, type, channel, description, timestamp, metadata) 
+SELECT 
+    -- Requires a JOIN or mapping since prospect_calls only has prospect_phone_id/prospect_id natively
+    person_mappings.person_id, 
+    'call_logged',
+    'phone', 
+    'Outcome: ' || outcome, 
+    called_at,
+    jsonb_build_object('phone_used', phone_used)
+FROM prospect_calls
+JOIN person_mappings ON ...; -- Pseudo-logic indicating the required linking 
 ```
 
 2.  **Campaign Responses:** 
 ```sql
-INSERT INTO activities (contact_id, channel, title, description, timestamp)
+INSERT INTO activities (person_id, type, channel, description, timestamp)
 SELECT 
-    contact_id, 
+    person_id, -- formerly contact_id 
     'email_reply', 
-    'Email Reply',
+    'email',
     'Replied to Campaign ' || campaign_id,
     replied_at
 FROM campaign_recipients 
 WHERE replied_at IS NOT NULL;
 ```
+
+3.  **Other Events:** Similar inserts for email bounces, opens, and website `user_events` will follow the same pattern once the `person_id` mappings are live.
