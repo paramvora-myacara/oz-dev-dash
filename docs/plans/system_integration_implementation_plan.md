@@ -15,15 +15,61 @@ The "Add Contact" modal will pop up when a user clicks an 'Add Contact' button o
     *   Lead Status (Dropdown: New, Warm, Cold, etc. Defaults to 'new')
     *   Tags (Searchable Multi-select combining `tags` and `contact_types` from the old system)
 
-2.  **Contact Methods (Dynamic Repeater):**
-    *   Add Email (Address, Is Primary Toggle, Label Dropdown: Work/Personal/Other)
-    *   Add Phone (Number, Is Primary Toggle, Label Dropdown: Mobile/Work/Home/Main)
-    *   Add LinkedIn (URL)
+2.  **Contact Methods (Global Entity Search Enforced):**
+    *   *Rule:* All contact inputs must query the global tables (`emails`, `phones`, `linkedin_profiles`) as the user types. If a match exists, it must be selected to link the existing ID rather than creating a duplicate.
+    *   Add Email (Address Autocomplete, Is Primary Toggle, Label Dropdown)
+    *   Add Phone (Number Autocomplete, Is Primary Toggle, Label Dropdown)
+    *   Add LinkedIn (URL Autocomplete)
 
 3.  **Organization (Optional Autocomplete):**
     *   Search querying `organizations` table.
     *   *Creation Logic:* If "Acme Corp" doesn't exist, create it on the fly and link it via `person_organizations`.
     *   Job Title/Role string.
+
+### 1.2 Shared UI Logic: Global Entity Autocomplete
+To keep our codebase DRY, the autocomplete behavior required in the Add Contact form and the Call Modal's "Add Phone/Email" prompts will use a shared custom hook.
+
+**Code Snippet - `useGlobalEntitySearch` Hook:**
+```tsx
+import { useState, useEffect } from 'react';
+import { supabase } from '@/utils/supabase/client';
+
+export function useGlobalEntitySearch(table: 'emails' | 'phones' | 'linkedin_profiles', queryField: string) {
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    useEffect(() => {
+        if (query.trim().length < 3) {
+            setResults([]);
+            return;
+        }
+
+        const fetchResults = async () => {
+            setIsSearching(true);
+            const { data } = await supabase
+                .from(table)
+                .select(`id, ${queryField}`)
+                .ilike(queryField, `%${query}%`)
+                .limit(5);
+
+            setResults(data || []);
+            setIsSearching(false);
+        };
+
+        const timeout = setTimeout(fetchResults, 300); // Debounce
+        return () => clearTimeout(timeout);
+    }, [query, table, queryField]);
+
+    return { query, setQuery, results, isSearching };
+}
+
+// Usage in Component:
+// const { query, setQuery, results } = useGlobalEntitySearch('phones', 'number');
+// <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Type phone..." />
+// {results.map(r => <button onClick={() => selectExisting(r.id)}>{r.number} (Existing)</button>)}
+// {results.length === 0 && query.length > 5 && <button onClick={createNew}>Create "{query}" as new</button>}
+```
 
 ### 1.2 Database: The `create_contact_full` RPC
 To guarantee atomicity and prevent partial records (e.g., a person without an email), we will use a Supabase Postgres RPC transaction rather than sequential API calls.
@@ -182,7 +228,13 @@ const isValidEmail = (contact: any) => {
 1.  **Quick Filters:** A "Has Phone" toggle will be placed next to the Email and LinkedIn filter buttons, adjacent to the search bar. This serves to quickly filter the dataset for callability.
 2.  **Table Real Estate:** `status` and `title` columns will be removed from the `/admin/crm` People table to prioritize screen space.
 3.  **Dynamic "Contact Info" Column:** A new `Contact Info` column will be introduced. It will only be visible if at least one of the quick filters (Email, LinkedIn, Phone) is toggled on. It aggregates the target information (e.g., stacking emails and phone numbers) to allow quick scanning.
-4.  **Logging Actions:** The dialer controls and outcome logging will happen directly within the `<EntitySheet>` when a user clicks into a row.
+4.  **Logging Actions & The Call Modal:** The dialer controls and outcome logging will happen directly within the `<EntitySheet>`. A prominent "Log Call" button will sit at the top right of the sheet, opening a ported `<CallModal>` tightly bound to the new `person_id`.
+    *   **Global Entity Search (Pre-requisite for New Entities):** Wherever the UI allows adding a "new" phone or email (e.g., the missing phone prompt or new email capture), it must *first* query the `phones` or `emails` tables as the user types. If the record already exists in the database, the UI will display the autocomplete result, allowing you to simply link the existing global entity rather than creating a duplicate. Only if no results match will the UI allow the creation of a brand new record.
+    *   **Missing Phone Prompt:** If the person has no phone numbers assigned to them, clicking "Log Call" will first display a UI state to manually add a phone number and link it to the person. Once added, it will proceed to the standard call logging view.
+    *   **Phone Selection:** The modal will display all known phone numbers for the person (from `person_phones`), allowing the user to select the specific number they dialed to accurately attribute the activity log.
+    *   **Email Selection:** If the person has linked emails (from `person_emails`), the modal will present a dropdown or radio list of these existing emails to choose as the target for the follow-up.
+    *   **New Email Capture:** Users will still have the option to manually capture an email address during the call. Following the Global Entity Search rule, the API will link an existing email or upsert a new one into the CRM.
+    *   **Skip Email Option:** For outcomes that naturally trigger a follow-up (like `answered` or `no_answer`), a clear "Skip follow-up email" checkbox will allow callers to log the outcome and update the CRM state without actually dispatching the automated message.
 
 **Code Snippet - Dynamic Column Logic:**
 ```tsx
@@ -329,24 +381,25 @@ WHERE
 ```
 
 ### 4.2 Calling CRM System
-Instead of updating a static `call_status` column, the backend will merely insert an event.
 
-**Implementation (PostgreSQL activity insert):**
-```sql
-INSERT INTO activities (
-    contact_id, 
-    type, 
-    channel, 
-    description, 
-    metadata
-) VALUES (
-    $1, 
-    'call_logged', 
-    'phone', 
-    'Left Voicemail', 
-    '{"duration_seconds": 45, "disposition": "voicemail"}'::jsonb
-);
-```
+Instead of a single database insert, the front-end will hit a new route (e.g., `POST /api/crm/people/[person_id]/calls`) which handles both the timeline logging and the current-state mutations in a single transaction. It will closely mirror the logic in `src/app/api/prospects/[id]/call/route.ts`.
+
+**Required API Route Logic:**
+1. **Activity Ledger Insert:** Insert a chronological event record into the new `activities` table. Include caller tracking and extra info natively in the JSONB.
+   ```sql
+   INSERT INTO activities (person_id, type, channel, description, metadata) 
+   VALUES ($1, 'call_logged', 'phone', 'Outcome: ' || $2, 
+           jsonb_build_object('caller_name', $3, 'phone_used', $4, 'email_captured', $5));
+   ```
+2. **Current State Mutations:** Based on the call outcome, mutate the CRM graph entities:
+   * **Invalid Number:** `UPDATE phones SET status = 'invalid' WHERE number = $1`
+   * **Do Not Call (DNC):** `UPDATE people SET lead_status = 'do_not_contact' WHERE id = $1`
+   * **Follow Up:** Store the follow up time inside the person's JSONB details so the UI can filter on it:
+     `UPDATE people SET details = jsonb_set(details, '{follow_up_at}', to_jsonb($1::text)) WHERE id = $2`
+3. **Captured Email Upsert (Critical):** If the caller enters a *new* email address into the `<CallModal>` during the call:
+   * Perform an `UPSERT` into the `emails` table.
+   * Attempt to `INSERT` into the `person_emails` junction table marking it as `source = 'manual_call'`.
+4. **Trigger Follow-Up (Async):** Automatically trigger the `sendGmailEmail` function in the background (passing the captured email and outcome) exactly as the old route did.
 
 ### 4.3 Inbox Sync Reply Processing Update
 The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync.py`) handles polling Gmail for replies. This logic must be updated to integrate with the new CRM identity schema and emit historical events to the new `activities` table.
@@ -499,32 +552,50 @@ To populate the timeline, we must backfill `activities` from existing legacy exe
 
 **Implementation Strategy:**
 
-1.  **Prospect Calls:** 
+1.  **Prospect Calls (Historical):** 
+
+First, we populate the chronological timeline in the `activities` table, moving specific call data like caller identifier and collected emails into the `metadata` JSONB block.
+
 ```sql
 INSERT INTO activities (person_id, type, channel, description, timestamp, metadata) 
 SELECT 
-    -- Requires a JOIN or mapping since prospect_calls only has prospect_phone_id/prospect_id natively
-    person_mappings.person_id, 
-    'call_logged',
+    -- Requires a mapping from the old prospect_id
+    pm.person_id, 
+    'call_logged', 
     'phone', 
-    'Outcome: ' || outcome, 
-    called_at,
-    jsonb_build_object('phone_used', phone_used)
-FROM prospect_calls
-JOIN person_mappings ON ...; -- Pseudo-logic indicating the required linking 
+    'Outcome: ' || pc.outcome, 
+    pc.called_at,
+    jsonb_build_object(
+        'caller_name', pc.caller_name, 
+        'phone_used', pc.phone_used, 
+        'email_captured', pc.email_captured
+    )
+FROM prospect_calls pc
+JOIN person_mappings pm ON pc.prospect_id = pm.prospect_id;
 ```
 
-3.  **Campaign Responses:** 
+Second, we must migrate the **final status states** from the legacy `prospects` table to the new entities (since historical calls dictate the current readiness of a contact):
+* **Invalid numbers:** Update `phones.status = 'invalid'` where the old `prospects.call_status = 'invalid_number'`.
+* **DNC flags:** Update `people.lead_status = 'do_not_contact'` where the old `prospects.call_status = 'do_not_call'`.
+* **Follow-ups:** Migrate the `prospects.follow_up_at` timestamp into the `people.details` JSONB block as `{"follow_up_at": "..."}`.
+
+3.  **Campaign Timeline Sync:** 
+
+Instead of only grabbing replies seamlessly, we must utilize `campaign_recipients` to paint the full historical picture (Sends, Bounces, Replies, and Unsubscribes). We must also `JOIN` the `campaigns` table to ensure the timeline description is human-readable.
+
 ```sql
-INSERT INTO activities (person_id, type, channel, description, timestamp)
+-- Example for Replies (similar SELECTs should be UNIONed for sent_at, bounced_at, unsubscribed_at)
+INSERT INTO activities (person_id, type, channel, description, timestamp, metadata)
 SELECT 
-    recipient_person_id, 
+    cr.recipient_person_id, 
     'email_reply', 
     'email',
-    'Replied to Campaign ' || campaign_id,
-    replied_at
-FROM campaign_recipients 
-WHERE replied_at IS NOT NULL;
+    'Replied to Campaign: ' || c.name,
+    cr.replied_at,
+    jsonb_build_object('campaign_id', c.id)
+FROM campaign_recipients cr
+JOIN campaigns c ON cr.campaign_id = c.id
+WHERE cr.replied_at IS NOT NULL;
 ```
 
 4.  **Other Events:** Similar inserts for email bounces, opens, and website `user_events` will follow the same pattern once the `recipient_person_id` mappings are live.
