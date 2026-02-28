@@ -279,9 +279,6 @@ const handleCreate = async (e: React.FormEvent) => {
         onContinue={(selectedIds) => handleContinueFromRecipients(selectedIds)} 
      />
   </div>
-)}
-```
-
 ### 2.2 Proactive Email Validation in Campaigns
 Instead of the backend silently skipping bad emails during a campaign run:
 1. All selected contacts enter the "Review" step.
@@ -289,10 +286,10 @@ Instead of the backend silently skipping bad emails during a campaign run:
 3. The user can manually resolve this (select a secondary email) or click "Remove Invalid" before launching.
 
 **Code Snippet - Validation logic during Review Step:**
-```typescript
+```tsx
 // Inside a component rendering the review list
 const isValidEmail = (contact: any) => {
-    const primaryEmail = contact.person_emails?.find(pe => pe.is_primary)?.emails;
+    const primaryEmail = contact.person_emails?.find((pe: any) => pe.is_primary)?.emails;
     if (!primaryEmail) return false;
     
     // Flag if bounced or suppressed
@@ -301,13 +298,35 @@ const isValidEmail = (contact: any) => {
 
 // ... rendered within the UI row ...
 {!isValidEmail(contact) && (
-    <Tooltip content={`Email status: ${primaryEmail.status}`}>
+    <Tooltip content={`Email status: ${contact.person_emails?.find((pe: any) => pe.is_primary)?.emails?.status}`}>
         <AlertCircle className="w-4 h-4 text-red-500" />
     </Tooltip>
 )}
 ```
 
-### 2.3 Deprecating the Standalone Prospects Route & Table Adjustments
+### 2.3 CRM Filter Data Mapping
+To deprecate `ContactSelectionStep.tsx`, the main CRM `PeopleTable` and its API (`GET /api/crm/people`) must absorb all its filtering logic. Below is the mapping of how the legacy filters map into the new normalized schema:
+
+1.  **Location:** Filtered natively via text search.
+    *   *Schema Mapping:* Text match against `people.details->>'location'`.
+2.  **Contact Types (Developer, Investor, Fund, Broker):** Filtered natively via arrays.
+    *   *Schema Mapping:* Array containment query against `people.tags`. (Unified with Specialization Tag logic, no need to query organizations here based on V1 spec).
+3.  **Website Activity:** Checks if a user has performed actions (e.g. Tax calculator, OZ Check).
+    *   *Schema Mapping:* Sub-query against `user_events` joining on `people.user_id`. (Logic unchanged from V1).
+4.  **Tags / Specialization (Family Office, Multi-Family Office):** Filtered natively via arrays.
+    *   *Schema Mapping:* Array containment query against `people.tags`.
+5.  **Campaign Response (Replied, Bounced, No Reply):** Checks interaction history against a past campaign.
+    *   *Schema Mapping:* Sub-query against `campaign_recipients` joining on `people.id` = `recipient_person_id`.
+6.  **Email Status (Verified, Catch-all, Suppressed, Bounced):**
+    *   *Schema Mapping:* Requires a JOIN. Query filters `people` via `person_emails` into the `emails` table checking `emails.status`.
+7.  **Lead Status (Warm / Cold):** Filtered natively.
+    *   *Schema Mapping:* Direct equality check on top-level column `people.lead_status`.
+8.  **Exclude Campaigns (Not Contacted In):** Drops recipients already in a specific campaign.
+    *   *Schema Mapping:* Exclude sub-query against `campaign_recipients` joining on `people.id` = `recipient_person_id`.
+9.  **Source:** Tracks where the contact was imported from.
+    *   *Schema Mapping:* Text match against `people.details->>'import_source'`.
+
+### 2.4 Deprecating the Standalone Prospects Route & Table Adjustments
 `/admin/prospects` will be replaced by bringing contact capabilities directly into the main CRM interface. To facilitate active outreach without cluttering the view:
 
 1.  **Quick Filters:** A "Has Phone" toggle will be placed next to the Email and LinkedIn filter buttons, adjacent to the search bar. This serves to quickly filter the dataset for callability.
