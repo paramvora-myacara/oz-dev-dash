@@ -358,7 +358,40 @@ Before any downstream code runs (and before backfilling), we must decouple seque
 
 **Required Steps for `campaign_recipients` Mutation:**
 1. **Schema Addition:** Add `recipient_person_id` (UUID, FK to `people.id` ON DELETE CASCADE).
-2. **Backfill:** Execute a `UPDATE` statement mapping the old `contact_id` string to the new UUID using the `contacts_to_people_mapping.json` generated during the original migration phase.
+2. **Backfill Execution:** Parse the `contacts_to_people_mapping.json` file generated during the primary data import. This artifact provides the exact 1:1 translation from the old legacy string to the new UUID. We will use a Python script to chunk these updates to the database safely.
+   
+```python
+import json
+from supabase import create_client
+
+supabase = create_client('SUPABASE_URL', 'SERVICE_ROLE_KEY')
+
+def backfill_campaign_recipients():
+    with open('contacts_to_people_mapping.json', 'r') as f:
+        mappings = json.load(f)
+        
+    print(f"Loaded {len(mappings)} identity mappings.")
+    
+    # Example dictionary structure: {"old_contact_id_string": {"person_id": "new-uuid"}}
+    
+    # Process in chunks to avoid slamming the database
+    for old_id, new_data in mappings.items():
+        new_person_id = new_data.get('person_id')
+        if not new_person_id:
+            continue
+            
+        try:
+            # Update all campaign appearances for this human
+            res = supabase.table('campaign_recipients') \
+                .update({'recipient_person_id': new_person_id}) \
+                .eq('contact_id', old_id) \
+                .execute()
+                
+            if res.data:
+                print(f"Updated {len(res.data)} campaign records for person {new_person_id}")
+        except Exception as e:
+            print(f"Failed to update {old_id}: {e}")
+```
 3. **App Logic Swap:** Refactor `inbox_sync.py`, `followup_scheduler.py`, `generate.py`, and `db.py` to target `recipient_person_id`. Rewrite the shared lookup utility (`get_contact_id_by_email` -> `get_person_id_by_email`) inside `ozl_shared/db.py` so both the webhook payload processor and the inbox sync worker can securely resolve identities from a single point of truth.
 
 ```python
