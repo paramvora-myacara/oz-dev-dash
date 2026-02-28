@@ -7,7 +7,7 @@ This document outlines the detailed plan for integrating our isolated microservi
 ## 1. Contact Creation Workflow
 
 ### 1.1 UI: Add Contact Form
-The "Add Contact" modal will move away from a flat-field approach to a structured graph-builder UI representing core entities.
+The "Add Contact" modal will pop up when a user clicks an 'Add Contact' button on the CRM directory page. It will move away from a flat-field approach to a structured graph-builder UI representing core entities.
 
 **Components:**
 1.  **The Human (Required):**
@@ -70,9 +70,35 @@ BEGIN
         FROM inserted_email;
     END LOOP;
 
-    -- (Repeat similar loop for phones and linkedin)
+    -- 3. Insert Contact Methods (Phones)
+    FOR contact_method IN SELECT * FROM jsonb_array_elements(payload->'phones') LOOP
+        -- Upsert phone to get ID
+        WITH inserted_phone AS (
+            INSERT INTO phones (number)
+            VALUES (contact_method->>'number')
+            ON CONFLICT (number) DO UPDATE SET number = EXCLUDED.number
+            RETURNING id
+        )
+        INSERT INTO person_phones (person_id, phone_id, is_primary, label)
+        SELECT new_person_id, id, (contact_method->>'is_primary')::boolean, contact_method->>'label'
+        FROM inserted_phone;
+    END LOOP;
 
-    -- 3. Handle Organization Link
+    -- 4. Insert Contact Methods (LinkedIn)
+    FOR contact_method IN SELECT * FROM jsonb_array_elements(payload->'linkedin') LOOP
+        -- Upsert LinkedIn to get ID
+        WITH inserted_linkedin AS (
+            INSERT INTO linkedin_profiles (url)
+            VALUES (contact_method->>'url')
+            ON CONFLICT (url) DO UPDATE SET url = EXCLUDED.url
+            RETURNING id
+        )
+        INSERT INTO person_linkedin (person_id, linkedin_id, is_primary)
+        SELECT new_person_id, id, (contact_method->>'is_primary')::boolean
+        FROM inserted_linkedin;
+    END LOOP;
+
+    -- 5. Handle Organization Link
     IF payload->>'organization_id' IS NOT NULL THEN
         -- Link existing
         INSERT INTO person_organizations (person_id, organization_id, title)
@@ -103,7 +129,26 @@ The goal is to centralize data interaction around the `/admin/crm` view.
 
 ### 2.1 Campaign Creation Lens
 Campaign creation will be initiated from two points, utilizing the existing `ContactSelectionStep.tsx` logic:
-1.  **From CRM (`/admin/crm`):** Bulk select rows on `PeopleTable` ➔ "Add to Campaign" (existing or new).
+1.  **From CRM (`/admin/crm`):** Bulk select rows on `PeopleTable` ➔ "Add to Campaign" (existing or new). 
+
+**Code Snippet (`src/app/admin/crm/components/PeopleTable.tsx`):**
+```tsx
+const bulkActions = (
+    <Button 
+        size="sm" 
+        variant="outline" 
+        className="h-7 text-xs ml-2 bg-white"
+        onClick={() => {
+            // Logic to open a modal that passes selectedIds to either:
+            // 1. Add to existing campaign via API
+            // 2. Redirect to /admin/campaigns/new with IDs in query/state
+        }}
+    >
+        <Mail className="w-3 h-3 mr-1" /> Add to Campaign
+    </Button>
+);
+```
+
 2.  **From Campaigns (`/admin/campaigns`):** Clicking "New Campaign" embeds the CRM filter UI directly into the campaign creation wizard.
 
 ### 2.2 Proactive Email Validation in Campaigns
@@ -112,10 +157,53 @@ Instead of the backend silently skipping bad emails during a campaign run:
 2. The UI queries the `emails` table. If `emails.status IN ('bounced', 'suppressed')` for a contact's primary email, it flags them in red.
 3. The user can manually resolve this (select a secondary email) or click "Remove Invalid" before launching.
 
+**Code Snippet - Validation logic during Review Step:**
+```typescript
+// Inside a component rendering the review list
+const isValidEmail = (contact: any) => {
+    const primaryEmail = contact.person_emails?.find(pe => pe.is_primary)?.emails;
+    if (!primaryEmail) return false;
+    
+    // Flag if bounced or suppressed
+    return !['bounced', 'suppressed'].includes(primaryEmail.status);
+};
+
+// ... rendered within the UI row ...
+{!isValidEmail(contact) && (
+    <Tooltip content={`Email status: ${primaryEmail.status}`}>
+        <AlertCircle className="w-4 h-4 text-red-500" />
+    </Tooltip>
+)}
+```
+
 ### 2.3 Deprecating the Standalone Prospects Route
 `/admin/prospects` will be replaced by a **"Call Mode" Toggle** on the main CRM interface.
 *   **Action:** When activated, CRM filters to contacts requiring immediate calls.
 *   **Execution:** Opening `<EntitySheet>` provides dialer controls and outcome logging directly within context.
+
+**Code Snippet - CRM Toggle & Filter Logic:**
+```tsx
+// Inside CRMShell.tsx
+const [isCallMode, setIsCallMode] = useState(false);
+
+// ... in the top toolbar ...
+<Button
+    variant={isCallMode ? "default" : "outline"}
+    onClick={() => {
+        setIsCallMode(!isCallMode);
+        if (!isCallMode) {
+            // Apply Call Mode filters 
+            // e.g. setFilter('lead_status', ['warm', 'hot']);
+            // setFilter('requires_followup', true); -- hypothetical filter
+        } else {
+            // Clear Call Mode filters
+        }
+    }}
+>
+    <Phone className="w-4 h-4 mr-2" />
+    Call Mode
+</Button>
+```
 
 ### 2.4 The Outreach Timeline
 The `<EntitySheet>` will feature a unified timeline component.
@@ -279,5 +367,23 @@ $$;
 To populate the timeline, we must backfill `activities` from existing tables.
 
 **Implementation Strategy:**
-1.  **Prospect Calls:** `INSERT INTO activities (contact_id, channel, description, timestamp) SELECT person_id, 'phone', notes, created_at FROM old_prospect_calls;`
-2.  **Campaign Responses:** `INSERT INTO activities (...) SELECT person_id, 'email_reply', 'Replied to Campaign ' || campaign_id... FROM campaign_recipients WHERE replied_at IS NOT NULL;`
+
+1.  **Prospect Calls:** 
+```sql
+INSERT INTO activities (contact_id, channel, description, timestamp) 
+SELECT person_id, 'phone', notes, created_at 
+FROM old_prospect_calls;
+```
+
+2.  **Campaign Responses:** 
+```sql
+INSERT INTO activities (contact_id, channel, title, description, timestamp)
+SELECT 
+    contact_id, 
+    'email_reply', 
+    'Email Reply',
+    'Replied to Campaign ' || campaign_id,
+    replied_at
+FROM campaign_recipients 
+WHERE replied_at IS NOT NULL;
+```
