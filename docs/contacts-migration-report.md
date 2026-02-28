@@ -196,9 +196,9 @@ A production `pg_dump` was taken before migration: `oz-dev-dash/prod_data_only.s
 
 #### 1. Migrate `campaign_recipients` Foreign Keys
 The `campaign_recipients` table still references `contacts.id`. It needs:
-- Add `person_id` and `email_id` columns (FK to `people` and `emails`)
-- Backfill using `contacts_to_people_mapping.json`
-- Update application code to use the new FKs
+- Add a new `recipient_person_id` column (UUID FK to the `people` table)
+- Backfill `recipient_person_id` using `contacts_to_people_mapping.json`
+- Update application code (such as `inbox_sync.py`, `followup_scheduler.py`) to map execution to `recipient_person_id`
 - Eventually drop the `contact_id` column
 
 **Data needed:** The mapping JSON is already saved at `contact_merge_scripts/contacts_to_people_mapping.json`.

@@ -339,7 +339,7 @@ The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync
        if person_res.data:
            person_id = person_res.data[0]['person_id']
    ```
-2. **Update Execution State:** Keep updating `campaign_recipients` to mark the person as `replied` (ensuring we cancel queued emails). Note: `campaign_recipients` is slated to have its `contact_id` FK migrated to `person_id`.
+2. **Update Execution State:** Keep updating `campaign_recipients` to mark the person as `replied` (ensuring we cancel queued emails). Note: `campaign_recipients` is slated to have its `contact_id` FK migrated to `recipient_person_id`.
 3. **Emit to Activities Ledger:** Insert a chronological event record into the new `activities` table.
    ```python
    if person_id:
@@ -357,7 +357,19 @@ The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync
 
 ## 5. Required Database Migrations & Backfills
 
-### 5.1 Create Activities Table
+### 5.1 Prerequisite: `campaign_recipients` Identity Migration
+
+Before any downstream code runs (and before backfilling), we must decouple sequence execution state from the legacy `contacts` table and explicitly bind it to the new `people` hierarchy.
+
+**Required Steps for `campaign_recipients` Mutation:**
+1. **Schema Addition:** Add `recipient_person_id` (UUID, FK to `people.id` ON DELETE CASCADE).
+2. **Backfill:** Execute a `UPDATE` statement mapping the old `contact_id` string to the new UUID using the `contacts_to_people_mapping.json` generated during the original migration phase.
+3. **App Logic Swap:** Refactor `inbox_sync.py`, `followup_scheduler.py`, `generate.py`, and `db.py` to target `recipient_person_id`.
+4. **Cleanup:** Drop the `contact_id` column.
+
+*(Note: The `selected_email` column remains as a static text representation of the ultimate delivery location to avoid explosive query joins in tight worker loops.)*
+
+### 5.2 Create Activities Table
 
 Before performing backfills or capturing new events, we must establish the unified timeline ledger.
 
@@ -378,7 +390,7 @@ CREATE INDEX idx_activities_person_id ON activities(person_id);
 CREATE INDEX idx_activities_timestamp ON activities(timestamp);
 ```
 
-### 5.2 Website Signups Trigger
+### 5.3 Website Signups Trigger
 
 **Implementation (`supabase/migrations/XXX_update_auth_trigger.sql`):**
 ```sql
@@ -411,8 +423,8 @@ END;
 $$;
 ```
 
-### 5.3 Historical Telemetry Backfill
-To populate the timeline, we must backfill `activities` from existing legacy execution tables. This will be done after the FKs are correctly migrated (e.g., `campaign_recipients` updated to reference `person_id`).
+### 5.4 Historical Telemetry Backfill
+To populate the timeline, we must backfill `activities` from existing legacy execution tables. This will be done after the FKs are correctly migrated (e.g., `campaign_recipients` updated to reference `recipient_person_id`).
 
 **Implementation Strategy:**
 
@@ -431,11 +443,11 @@ FROM prospect_calls
 JOIN person_mappings ON ...; -- Pseudo-logic indicating the required linking 
 ```
 
-2.  **Campaign Responses:** 
+3.  **Campaign Responses:** 
 ```sql
 INSERT INTO activities (person_id, type, channel, description, timestamp)
 SELECT 
-    person_id, -- formerly contact_id 
+    recipient_person_id, 
     'email_reply', 
     'email',
     'Replied to Campaign ' || campaign_id,
@@ -444,4 +456,4 @@ FROM campaign_recipients
 WHERE replied_at IS NOT NULL;
 ```
 
-3.  **Other Events:** Similar inserts for email bounces, opens, and website `user_events` will follow the same pattern once the `person_id` mappings are live.
+4.  **Other Events:** Similar inserts for email bounces, opens, and website `user_events` will follow the same pattern once the `recipient_person_id` mappings are live.
