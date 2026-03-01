@@ -106,8 +106,8 @@ BEGIN
     FOR contact_method IN SELECT * FROM jsonb_array_elements(payload->'emails') LOOP
         -- Upsert email to get ID
         WITH inserted_email AS (
-            INSERT INTO emails (address, status)
-            VALUES (contact_method->>'address', 'Valid')
+            INSERT INTO emails (address, status, metadata)
+            VALUES (contact_method->>'address', 'active', jsonb_build_object('verification_status', 'Valid'))
             ON CONFLICT (address) DO UPDATE SET address = EXCLUDED.address
             RETURNING id
         )
@@ -318,7 +318,7 @@ To deprecate `ContactSelectionStep.tsx`, the main CRM `PeopleTable` and its API 
 5.  **Campaign Response (Replied, Bounced, No Reply):** Checks interaction history against a past campaign.
     *   *Schema Mapping:* Sub-query against `campaign_recipients` joining on `people.id` = `recipient_person_id`.
 6.  **Email Status (Verified, Catch-all, Suppressed, Bounced):**
-    *   *Schema Mapping:* Requires a JOIN. Query filters `people` via `person_emails` into the `emails` table checking `emails.status`.
+    *   *Schema Mapping:* Requires a JOIN. Query filters `people` via `person_emails` into the `emails` table checking `emails.status` (for deliverability) OR `emails.metadata->>'verification_status'` (for Valid/Catch-all).
 7.  **Lead Status (Warm / Cold):** Filtered natively.
     *   *Schema Mapping:* Direct equality check on top-level column `people.lead_status`.
 8.  **Exclude Campaigns (Not Contacted In):** Drops recipients already in a specific campaign.
@@ -422,18 +422,19 @@ if (tags.length > 0) {
 }
 
 // 2. Email Verification Status
-// Import scripts correctly save statuses directly to emails.status (e.g., 'bounced', 'suppressed', 'Valid').
+// Import scripts correctly save statuses directly to emails.status (e.g., 'bounced', 'suppressed'), and 'Valid' to emails.metadata->>'verification_status'.
 if (emailStatuses.length > 0) {
+    // Note: implementation must filter against both status and metadata depending on the requested array values
     query = query.filter('person_emails.emails.status', 'in', `(${emailStatuses.map(s => `"${s}"`).join(',')})`);
 }
 
 // 3. Campaign Performance (Replied, Bounced, No Reply)
 if (campaignResponse) {
     if (campaignResponse === 'replied') {
-        query = query.not('history.replied_at', 'is', null);
+        query = query.not('campaign_recipients.replied_at', 'is', null);
     } else if (campaignResponse === 'bounced') {
         // Querying activities or updated campaign_recipients for bounce state
-        query = query.eq('history.status', 'bounced'); 
+        query = query.eq('campaign_recipients.status', 'bounced'); 
     }
 }
 
@@ -446,9 +447,9 @@ if (websiteEvents && websiteEvents.length > 0) {
 
 // 5. Outreach History
 if (campaignHistory === 'any') {
-    query = query.not('history', 'is', null);
+    query = query.not('campaign_recipients', 'is', null);
 } else if (campaignHistory === 'none') {
-    query = query.is('history', null);
+    query = query.is('campaign_recipients', null);
 }
 
 // 6. Lead Status
@@ -475,10 +476,10 @@ Instead of a single database insert, the frontend proxy will hit a new Python ba
            jsonb_build_object('caller_name', $3, 'phone_used', $4, 'email_captured', $5));
    ```
 2. **Current State Mutations:** Based on the call outcome, mutate the CRM graph entities:
-   * **Invalid Number:** `UPDATE phones SET status = 'invalid' WHERE number = $1`
+   * **Phone Readiness (Call Status):** `UPDATE person_phones SET call_status = $3, last_called_at = NOW(), call_count = COALESCE(call_count, 0) + 1 WHERE person_id = $1 AND phone_id = (SELECT id FROM phones WHERE number = $2)`
    * **Do Not Call (DNC):** `UPDATE people SET lead_status = 'do_not_contact' WHERE id = $1`
-   * **Follow Up:** Store the follow up time inside the person's JSONB details so the UI can filter on it:
-     `UPDATE people SET details = jsonb_set(details, '{follow_up_at}', to_jsonb($1::text)) WHERE id = $2`
+   * **Follow Up:** Store the follow up time directly on the person_phones junction so it ties to the specific person-phone relationship called.
+     `UPDATE person_phones SET follow_up_at = $1 WHERE person_id = $2 AND phone_id = (SELECT id FROM phones WHERE number = $3)`
 3. **Captured Email Upsert (Critical):** If the caller enters a *new* email address into the `<CallModal>` during the call:
    * Perform an `UPSERT` into the `emails` table.
    * Attempt to `INSERT` into the `person_emails` junction table marking it as `source = 'manual_call'`.
@@ -638,8 +639,8 @@ BEGIN
 
         -- Insert the email if it wasn't found
         IF target_email_id IS NULL THEN
-            INSERT INTO public.emails (address, status)
-            VALUES (NEW.email, 'Valid')
+            INSERT INTO public.emails (address, status, metadata)
+            VALUES (NEW.email, 'active', jsonb_build_object('verification_status', 'Valid'))
             RETURNING id INTO target_email_id;
         END IF;
 
@@ -680,10 +681,35 @@ FROM prospect_calls pc
 JOIN person_mappings pm ON pc.prospect_id = pm.prospect_id;
 ```
 
-Second, we must migrate the **final status states** from the legacy `prospects` table to the new entities (since historical calls dictate the current readiness of a contact):
-* **Invalid numbers:** Update `phones.status = 'invalid'` where the old `prospects.call_status = 'invalid_number'`.
-* **DNC flags:** Update `people.lead_status = 'do_not_contact'` where the old `prospects.call_status = 'do_not_call'`.
-* **Follow-ups:** Migrate the `prospects.follow_up_at` timestamp into the `people.details` JSONB block as `{"follow_up_at": "..."}`.
+Second, we must migrate the **final status states** from the legacy `prospects` table to the `person_phones` junction table (since historical calls dictate the readiness of the specific person-phone relationship). This avoids wiping the database and acts as a safe, instantaneous migration on production:
+
+```sql
+-- 1. Sync Call Statuses and Follow-ups to the person-phone link
+UPDATE person_phones pp
+SET 
+    call_status = p_old.call_status::text,
+    last_called_at = p_old.last_called_at,
+    follow_up_at = p_old.follow_up_at
+FROM prospects p_old
+JOIN properties prop_new ON prop_new.property_name = p_old.property_name AND prop_new.address = p_old.address
+JOIN person_properties p_prop ON p_prop.property_id = prop_new.id
+JOIN phones ph_new ON ph_new.id = pp.phone_id
+WHERE pp.person_id = p_prop.person_id
+  AND EXISTS (
+      SELECT 1 FROM jsonb_array_elements(p_old.phone_numbers) as old_ph
+      WHERE old_ph->>'number' = ph_new.number
+  )
+  AND (p_old.call_status != 'new' OR p_old.follow_up_at IS NOT NULL);
+
+-- 2. DNC flags: Migrate to the Person
+UPDATE people p_new
+SET lead_status = 'do_not_contact'
+FROM prospects p_old
+JOIN properties prop_new ON prop_new.property_name = p_old.property_name AND prop_new.address = p_old.address
+JOIN person_properties p_prop ON p_prop.property_id = prop_new.id
+WHERE p_new.id = p_prop.person_id 
+  AND p_old.call_status = 'do_not_call';
+```
 
 3.  **Campaign Timeline Sync:** 
 
@@ -753,4 +779,30 @@ if person_id:
         'metadata': {'ip': request_ip, 'campaign_id': campaign_id},
         'timestamp': open_time
     }).execute()
+```
+
+### 5.5 Email Verification Status Fix (Production Backfill)
+We must migrate the legacy `email_status` (Valid/Catch-all) from the `people.details` JSONB column to the proper location directly on the email record (`emails.metadata->>'verification_status'`). This SQL backfill ensures data correctness in production without needing a full re-import:
+
+```sql
+-- 1. Move email_status from people.details to emails.metadata
+UPDATE emails e
+SET metadata = jsonb_set(
+    COALESCE(e.metadata, '{}'::jsonb),
+    '{verification_status}',
+    to_jsonb(sub.email_status)
+)
+FROM (
+  SELECT pe.email_id, p.details->>'email_status' as email_status
+  FROM person_emails pe
+  JOIN people p ON p.id = pe.person_id
+  WHERE p.details->>'email_status' IS NOT NULL
+    AND pe.source = 'contacts_import'
+) sub
+WHERE e.id = sub.email_id;
+
+-- 2. Remove the legacy field from people.details to clean up the graph
+UPDATE people
+SET details = details - 'email_status'
+WHERE details ? 'email_status';
 ```
