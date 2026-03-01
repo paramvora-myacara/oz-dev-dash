@@ -527,6 +527,15 @@ The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync
 
 ## 5. Required Database Migrations & Backfills
 
+### 5.0 Migration Execution Order
+When executing these changes on the production database, the scripts must be run in the following chronological sequence to ensure referential integrity and prevent data loss:
+
+1. **Establish the Foundation:** Execute schema additions first. Run `create_activities_table.sql` and `create_contact_rpc.sql` (Sections 1.2 and 5.2). Apply the `handle_new_user()` trigger update (Section 5.3). Finally, add the `recipient_person_id` column to the `campaign_recipients` table (Section 5.1 Step 1).
+2. **Identity Linkage:** Run the `campaign_recipients` identity backfill script (Section 5.1 Step 2). This associates historical campaign data with the new `people` graph based on email addresses.
+3. **Verify App Connectivity:** Swap the deployed python backend and API proxies to use the new `recipient_person_id` column and the `get_person_id_by_email` lookup utility.
+4. **Data Sanitization:** Run the Email Verification Status Fix (Section 5.5). This safely moves `Valid/Catch-all` tags off the `people.details` JSON and onto the `emails.metadata` JSON for properly sourced records.
+5. **Historical Telemetry (Final):** Run the Historical Telemetry Backfill queries (Section 5.4). This pulls legacy call statuses into the `person_phones` junction, migrates DNC flags, and inserts legacy email replies and calls into the new `activities` ledger.
+
 ### 5.1 Prerequisite: `campaign_recipients` Identity Migration
 
 Before any downstream code runs (and before backfilling), we must decouple sequence execution state from the legacy `contacts` table and explicitly bind it to the new `people` hierarchy.
@@ -544,19 +553,122 @@ JOIN emails e ON lower(c.email) = lower(e.address)
 JOIN person_emails pe ON e.id = pe.email_id
 WHERE cr.contact_id = c.id;
 ```
-3. **App Logic Swap:** Refactor `inbox_sync.py`, `followup_scheduler.py`, `generate.py`, and `db.py` to target `recipient_person_id`. Rewrite the shared lookup utility (`get_contact_id_by_email` -> `get_person_id_by_email`) inside `ozl_shared/db.py` so both the webhook payload processor and the inbox sync worker can securely resolve identities from a single point of truth.
+3. **App Logic Swap:** Refactor backend Python services to target `recipient_person_id` instead of `contact_id`, and `people` instead of `contacts`.
 
+**Required `ozl-backend` Service Refactors:**
+
+**A. API Recipient Router (`services/api/routers/recipients.py`)**  
+Swap the nested select from `contacts` to `people` and use the new identity column.
 ```python
-# ozl_shared/db.py (or within the webhook/inbox modules as a shared util)
+# Old: supabase.table("campaign_recipients").select("*, contacts(*)").execute()
+# New:
+response = supabase.table("campaign_recipients").select("*, people(*)").eq("campaign_id", campaign_id).execute()
+
+# Replace insertions:
+for person_id in request.contact_ids:  # frontend still passes an array of IDs
+    recipients.append({
+        "campaign_id": campaign_id,
+        "recipient_person_id": person_id, # Replaces contact_id
+        "selected_email": selected_emails.get(person_id),
+    })
+```
+
+**B. Email Generator (`services/api/tasks/generate.py`)**  
+```python
+# New (fetch from people instead of contacts):
+recipients_response = supabase.table("campaign_recipients").select("*, people(*)").eq("campaign_id", campaign_id).range(offset, offset + BATCH_SIZE - 1).execute()
+
+# Update payload builder:
+for recipient in recipients:
+    person_data = recipient.get("people", {}) 
+    # Use native database columns from the `people` table
+    row = {
+        "FirstName": person_data.get("first_name", ""),
+        "LastName": person_data.get("last_name", ""),
+        "Email": target_email,
+        **(person_data.get("details", {})) # Pull custom vars from details JSONB
+    }
+```
+
+**C. Followup Scheduler (`services/api/tasks/followup_scheduler.py` & `shared-lib/.../followup_scheduler.py`)**  
+```python
+# New query update replacing `contacts(*)`
+due_recipients_response = supabase.table("campaign_recipients") \
+    .select("*, people(*)") \
+    .lte("next_email_at", now_aware.isoformat()) \
+# Global Suppression Checks
+# 1. Person is marked 'do_not_contact' (e.g., from a spam complaint or manual update)
+person = recipient.get("people", {})
+if person.get("lead_status") == "do_not_contact":
+    supabase.table("campaign_recipients").update({
+        "exit_reason": "do_not_contact",
+        "next_email_at": None,
+        "next_step_id": None
+    }).eq("id", recipient["id"]).execute()
+    continue
+
+# 2. The specific email is marked bounced or unsubscribed
+# Note: You will need to fetch the email's current status if it isn't returned in the primary cross-join
+email_status_res = supabase.table("emails").select("status").eq("address", target_email).maybe_single().execute()
+if email_status_res.data and email_status_res.data["status"] in ["bounced", "unsubscribed"]:
+    supabase.table("campaign_recipients").update({
+        "exit_reason": email_status_res.data["status"], # 'bounced' or 'unsubscribed'
+        "next_email_at": None,
+        "next_step_id": None
+    }).eq("id", recipient["id"]).execute()
+    continue
+```
+
+**D. Webhook Processor (`services/api/shared/webhook_processor.py`)**
+Update bounces, unsubscribes, and spam complaints to find the `person_id` instead of `contact_id`. We suppress the exact email address for bounces/unsubscribes, but we suppress the *entire person* if they submit a spam complaint.
+```python
+# Replace get_contact_id_by_email
+person_id = get_person_id_by_email(supabase, contact_email)
+
+# Update execution state using recipient_person_id
+supabase.table('campaign_recipients').update({
+    'status': event_type # 'bounced', 'unsubscribed', or 'spam_complaint'
+}).eq('campaign_id', campaign_id).eq('recipient_person_id', person_id).execute()
+
+# If BOUNCE or UNSUBSCRIBE: Suppress the specific email address globally
+supabase.table('emails').update({
+    'status': event_type, # 'bounced' or 'unsubscribed'
+    'metadata': {'suppression_reason': event_type, 'suppression_date': 'now()'}
+}).eq('address', contact_email).execute()
+
+# If SPAM COMPLAINT: Suppress the entire person (burn the lead globally)
+supabase.table('people').update({
+    'lead_status': 'do_not_contact'
+}).eq('id', person_id).execute()
+```
+
+**E. Inbox Sync (`services/inbox-sync/inbox_sync.py`)**
+```python
+person_id = get_person_id_by_email(supabase, prospect_email)
+
+if person_id:
+    supabase.table('campaign_recipients') \
+        .update({
+            'status': 'replied',
+            'exit_reason': 'replied',
+            'replied_at': 'now()'
+        }) \
+        .eq('campaign_id', campaign_id) \
+        .eq('recipient_person_id', person_id) \
+        .or_('exit_reason.is.null,exit_reason.eq.completed') \
+        .execute() 
+```
+
+**F. Shared Lookup Utility Rewrite (`ozl_shared/db.py`)**
+Rewrite `get_contact_id_by_email` to securely resolve identities from the correct global table:
+```python
 def get_person_id_by_email(supabase: Client, email_address: str) -> Optional[str]:
     """Resolves a human person_id from a raw email address string."""
     try:
-        # First, find the email record
         email_res = supabase.table('emails').select('id').eq('address', email_address).maybe_single().execute()
         if not email_res.data:
             return None
             
-        # Second, map it to the person_emails junction
         person_res = supabase.table('person_emails').select('person_id').eq('email_id', email_res.data['id']).execute()
         if not person_res.data:
             return None
@@ -566,7 +678,8 @@ def get_person_id_by_email(supabase: Client, email_address: str) -> Optional[str
         logging.error(f"Failed to lookup person_id for email {email_address}: {e}")
         return None
 ```
-4. **Cleanup:** Drop the `contact_id` column.
+
+4. **Cleanup:** Drop the `contact_id` column from `campaign_recipients`.
 
 *(Note: The `selected_email` column remains as a static text representation of the ultimate delivery location to avoid explosive query joins in tight worker loops.)*
 
@@ -805,4 +918,18 @@ WHERE e.id = sub.email_id;
 UPDATE people
 SET details = details - 'email_status'
 WHERE details ? 'email_status';
+```
+
+### 5.6 Email Suppression Standardization
+Currently, the `emails.status` column features values like `suppressed`, `bounced`, and `active`. The system uses `suppressed` interchangeably with `unsubscribed` (storing the exact reason inside the JSONB). We must update the production database to standardize all `suppressed` email rows to strictly use `unsubscribed` as the top-level status when the jsonb reason is "unsubscribed".
+
+```sql
+-- Convert generic 'suppressed' status to explicit 'unsubscribed' status 
+-- where the JSONB metadata clarifies the reason.
+UPDATE emails
+SET 
+    status = 'unsubscribed'
+WHERE 
+    status = 'suppressed' 
+    AND metadata->>'suppression_reason' = 'unsubscribed';
 ```
