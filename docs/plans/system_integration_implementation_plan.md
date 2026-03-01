@@ -532,39 +532,16 @@ Before any downstream code runs (and before backfilling), we must decouple seque
 
 **Required Steps for `campaign_recipients` Mutation:**
 1. **Schema Addition:** Add `recipient_person_id` (UUID, FK to `people.id` ON DELETE CASCADE).
-2. **Backfill Execution:** Parse the `contacts_to_people_mapping.json` file generated during the primary data import. This artifact provides the exact 1:1 translation from the old legacy string to the new UUID. We will use a Python script to chunk these updates to the database safely.
+2. **Backfill Execution:** Instead of relying on fragile local JSON artifacts from the import script, we will utilize a pure SQL `UPDATE` statement ran directly against the production database. Because both legacy `contacts` and the new `people` schema exist in the same database, we can securely cross-walk using the email address. This is instantaneous, idempotent, and avoids local-to-prod mapping errors.
    
-```python
-import json
-from supabase import create_client
-
-supabase = create_client('SUPABASE_URL', 'SERVICE_ROLE_KEY')
-
-def backfill_campaign_recipients():
-    with open('contacts_to_people_mapping.json', 'r') as f:
-        mappings = json.load(f)
-        
-    print(f"Loaded {len(mappings)} identity mappings.")
-    
-    # Example dictionary structure: {"old_contact_id_string": {"person_id": "new-uuid"}}
-    
-    # Process in chunks to avoid slamming the database
-    for old_id, new_data in mappings.items():
-        new_person_id = new_data.get('person_id')
-        if not new_person_id:
-            continue
-            
-        try:
-            # Update all campaign appearances for this human
-            res = supabase.table('campaign_recipients') \
-                .update({'recipient_person_id': new_person_id}) \
-                .eq('contact_id', old_id) \
-                .execute()
-                
-            if res.data:
-                print(f"Updated {len(res.data)} campaign records for person {new_person_id}")
-        except Exception as e:
-            print(f"Failed to update {old_id}: {e}")
+```sql
+-- Join legacy contacts to new people via the emails bridge
+UPDATE campaign_recipients cr
+SET recipient_person_id = pe.person_id
+FROM contacts c
+JOIN emails e ON lower(c.email) = lower(e.address)
+JOIN person_emails pe ON e.id = pe.email_id
+WHERE cr.contact_id = c.id;
 ```
 3. **App Logic Swap:** Refactor `inbox_sync.py`, `followup_scheduler.py`, `generate.py`, and `db.py` to target `recipient_person_id`. Rewrite the shared lookup utility (`get_contact_id_by_email` -> `get_person_id_by_email`) inside `ozl_shared/db.py` so both the webhook payload processor and the inbox sync worker can securely resolve identities from a single point of truth.
 
@@ -623,23 +600,53 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-    new_person_id uuid;
-    new_email_id uuid;
+    target_person_id uuid;
+    target_email_id uuid;
 BEGIN
-    -- 1. Create Person
-    INSERT INTO public.people (user_id, lead_status, tags)
-    VALUES (NEW.id, 'warm', ARRAY['website_signup'])
-    RETURNING id INTO new_person_id;
+    -- 1. Check if the email already exists in our CRM global emails table
+    SELECT id INTO target_email_id FROM public.emails WHERE address = NEW.email;
 
-    -- 2. Create Email
-    INSERT INTO public.emails (address, status)
-    VALUES (NEW.email, 'Valid')
-    ON CONFLICT (address) DO UPDATE SET address = EXCLUDED.address
-    RETURNING id INTO new_email_id;
+    -- 2. If the email exists, find the person it belongs to
+    IF target_email_id IS NOT NULL THEN
+        SELECT person_id INTO target_person_id 
+        FROM public.person_emails 
+        WHERE email_id = target_email_id 
+        LIMIT 1;
+    END IF;
 
-    -- 3. Link them
-    INSERT INTO public.person_emails (person_id, email_id, is_primary, source)
-    VALUES (new_person_id, new_email_id, true, 'auth_trigger');
+    -- 3. Route logic based on whether they exist in the CRM
+    IF target_person_id IS NOT NULL THEN
+        -- A: ENRICH EXISTING PERSON (They were imported before they signed up)
+        UPDATE public.people 
+        SET 
+            user_id = NEW.id, -- Link their new auth account
+            lead_status = 'warm', -- Upgrade their status
+            -- Append the signup tag safely avoiding duplicates
+            tags = ARRAY(SELECT DISTINCT unnest(array_append(tags, 'website_signup')))
+        WHERE id = target_person_id;
+    ELSE
+        -- B: CREATE BRAND NEW PERSON (Total stranger)
+        INSERT INTO public.people (user_id, lead_status, tags, first_name, last_name)
+        VALUES (
+            NEW.id, 
+            'warm', 
+            ARRAY['website_signup'],
+            NULLIF(NEW.raw_user_meta_data->>'first_name', ''),
+            NULLIF(NEW.raw_user_meta_data->>'last_name', '')
+        )
+        RETURNING id INTO target_person_id;
+
+        -- Insert the email if it wasn't found
+        IF target_email_id IS NULL THEN
+            INSERT INTO public.emails (address, status)
+            VALUES (NEW.email, 'Valid')
+            RETURNING id INTO target_email_id;
+        END IF;
+
+        -- Link the newly created email and person
+        INSERT INTO public.person_emails (person_id, email_id, is_primary, source)
+        VALUES (target_person_id, target_email_id, true, 'auth_trigger');
+    END IF;
 
     RETURN NEW;
 END;
