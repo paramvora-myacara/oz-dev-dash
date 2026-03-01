@@ -461,34 +461,13 @@ if (leadStatuses.length > 0) {
 
 ## 4. Backend System Integration (`ozl-backend`)
 
-### 4.1 LinkedIn Automation
-The LinkedIn crawler requires an extensive join to get valid targets.
+### 4.1 Calling CRM System
 
-**Implementation (Python Script SQL Query):**
-```sql
-SELECT 
-    p.id as person_id, 
-    p.first_name, 
-    o.id as org_id, 
-    o.name as org_name,
-    lp.id as linkedin_id, 
-    lp.url as linkedin_url
-FROM people p
-JOIN person_organizations po ON p.id = po.person_id
-JOIN organizations o ON po.organization_id = o.id
-JOIN person_linkedin pl ON p.id = pl.person_id
-JOIN linkedin_profiles lp ON pl.linkedin_id = lp.id
-WHERE 
-    lp.status = 'active'
-    AND p.lead_status IN ('warm', 'hot')
-    -- Additional logic to rotate organizations and respect daily limits
-```
+**Architecture Note:** All new programmatic API routes for the CRM (including the call logging functionality described below) will be built in the **Python backend API service (`ozl-backend`)**. The Next.js frontend will communicate with these services via Vercel API route proxies (e.g., `/api/backend-proxy/...`), instead of executing the database logic inside native Vercel/Next.js API routes. This centralizes our heavier mutations and integrations into the Python ecosystem.
 
-### 4.2 Calling CRM System
+Instead of a single database insert, the frontend proxy will hit a new Python backend route (e.g., `POST /api/backend-proxy/crm/people/[person_id]/calls`) which handles both the timeline logging and the current-state mutations in a single transaction. It will closely mirror the logic conceptually found in the old `src/app/api/prospects/[id]/call/route.ts`.
 
-Instead of a single database insert, the front-end will hit a new route (e.g., `POST /api/crm/people/[person_id]/calls`) which handles both the timeline logging and the current-state mutations in a single transaction. It will closely mirror the logic in `src/app/api/prospects/[id]/call/route.ts`.
-
-**Required API Route Logic:**
+**Required Python API Route Logic:**
 1. **Activity Ledger Insert:** Insert a chronological event record into the new `activities` table. Include caller tracking and extra info natively in the JSONB.
    ```sql
    INSERT INTO activities (person_id, type, channel, description, metadata) 
@@ -503,9 +482,25 @@ Instead of a single database insert, the front-end will hit a new route (e.g., `
 3. **Captured Email Upsert (Critical):** If the caller enters a *new* email address into the `<CallModal>` during the call:
    * Perform an `UPSERT` into the `emails` table.
    * Attempt to `INSERT` into the `person_emails` junction table marking it as `source = 'manual_call'`.
-4. **Trigger Follow-Up (Async):** Automatically trigger the `sendGmailEmail` function in the background (passing the captured email and outcome) exactly as the old route did.
+4. **Trigger Follow-Up (Synchronous):** The `send_gmail_email` function will be executed synchronously before returning the HTTP response. While this adds 1-3 seconds to the request latency, it prioritizes reliability over raw speed. The UI will wait for confirmation that the email was actually delivered to the Gmail API. If the email fails (e.g., expired OAuth token), the backend can catch the exception and return a partial success response (e.g., "Call logged, but follow-up failed") so the sales rep is immediately aware.
+   ```python
+   from services.email_service import send_gmail_email
+   
+   # ... After DB mutations are committed ...
+   
+   try:
+       # Blocks the response until Google confirms receipt
+       send_result = send_gmail_email(
+           person_id=person_id,
+           recipient_email=email,
+           outcome=outcome
+       )
+   except Exception as e:
+       # Handle failures loudly so the UI can render an error toast
+       return {"status": "partial_success", "error": f"Follow up failed: {str(e)}"}
+   ```
 
-### 4.3 Inbox Sync Reply Processing Update
+### 4.2 Inbox Sync Reply Processing Update
 The `inbox-sync` background service (`ozl-backend/services/inbox-sync/inbox_sync.py`) handles polling Gmail for replies. This logic must be updated to integrate with the new CRM identity schema and emit historical events to the new `activities` table.
 
 **Required Logic Updates in `process_new_replies`:**
@@ -702,4 +697,53 @@ JOIN campaigns c ON cr.campaign_id = c.id
 WHERE cr.replied_at IS NOT NULL;
 ```
 
-4.  **Other Events:** Similar inserts for email bounces, opens, and website `user_events` will follow the same pattern once the `recipient_person_id` mappings are live.
+4.  **Other Events & Architectural Tradeoffs:**
+We must carefully consider the tradeoff of duplicating data into the new `activities` ledger versus querying it natively.
+
+**The Tradeoff (`user_events`):**
+If a user clicks a button on the website, a row is added to the legacy `user_events` table for analytic tracking. 
+* *Pro - Duplication:* If we copy every `user_event` into the `activities` ledger via a DB trigger, the CRM frontend only needs to query *one* table to render the entire Outreach Timeline. 
+* *Con - Duplication:* High volume events (like `page_view`) will massively bloat the `activities` table with noisy telemetry that isn't true "CRM Outreach".
+**Decision:** We will **NOT** duplicate website `user_events` into the `activities` ledger. The `<EntitySheet>` UI will run two parallel queries: one to fetch `activities` (calls, emails, linkedin) and one to fetch `user_events` (website clicks/logins), merging them client-side or in the API layer before sorting them chronologically for the timeline render.
+
+**The Tradeoff (Email Webhooks - Bounces/Opens/Clicks):**
+Unlike website events, email interactions (opens, clicks, bounces) are explicitly CRM outreach events. Currently, SendGrid/Mailgun webhooks hit our python backend (`ozl-backend/api/webhooks...`) and update the `campaign_recipients` table (e.g., `SET bounced_at = NOW()`).
+**Decision:** We **WILL** dual-write these email events into the `activities` ledger directly from the python webhook handlers in real-time. This ensures the timeline accurately reflects micro-interactions that don't fit perfectly into the `campaign_recipients` schema.
+
+**Implementation (`ozl-backend` Webhook Python Snippets):**
+When a bounce webhook is received from the email provider:
+```python
+# Inside webhook handler after verifying payload
+person_id = get_person_id_by_email(supabase, email_address)
+
+if person_id:
+    # 1. Update the state table (legacy integration)
+    supabase.table('campaign_recipients')\
+        .update({'bounced_at': bounce_time, 'status': 'bounced'})\
+        .eq('recipient_person_id', person_id)\
+        .eq('campaign_id', campaign_id).execute()
+        
+    # 2. Append to the ledger for the UI timeline
+    supabase.table('activities').insert({
+        'person_id': person_id,
+        'type': 'email_bounce',
+        'channel': 'email',
+        'description': f'Email bounced during campaign: {campaign_name}',
+        'metadata': {'reason': bounce_reason, 'campaign_id': campaign_id},
+        'timestamp': bounce_time
+    }).execute()
+```
+
+When an "Open" webhook is received (note: we don't track opens in `campaign_recipients`, so the ledger is the *only* place this goes):
+```python
+if person_id:
+    # Append to the ledger for the UI timeline
+    supabase.table('activities').insert({
+        'person_id': person_id,
+        'type': 'email_opened',
+        'channel': 'email',
+        'description': f'Opened email from campaign: {campaign_name}',
+        'metadata': {'ip': request_ip, 'campaign_id': campaign_id},
+        'timestamp': open_time
+    }).execute()
+```
