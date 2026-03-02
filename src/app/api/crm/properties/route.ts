@@ -33,7 +33,8 @@ export async function GET(request: Request) {
 
     const { data, count, error } = await query
         .range(page * limit, (page + 1) * limit - 1)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true });
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

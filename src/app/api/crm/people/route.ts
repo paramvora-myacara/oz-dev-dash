@@ -76,7 +76,8 @@ export async function GET(request: Request) {
             campaign_recipients ( campaign_id, status, replied_at )
         `)
         .in('id', ids)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true });
 
     if (error) {
         console.error('Error fetching full records:', error);
