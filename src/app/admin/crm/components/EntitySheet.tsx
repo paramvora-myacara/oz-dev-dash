@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
+import { CRMCallModal } from "./CRMCallModal";
 
 interface EntitySheetProps {
     sheet: { type: string, id: string, data: any };
@@ -19,12 +20,14 @@ interface EntitySheetProps {
     onClose?: () => void;
     onOpenRelated: (type: string, id: string, data: any) => void;
     closeAll: () => void;
+    currentUser?: string | null;
 }
 
-export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll }: EntitySheetProps) {
+export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, currentUser }: EntitySheetProps) {
     const { type, id, data: initialData } = sheet;
     const [data, setData] = useState<any>(initialData);
     const [loading, setLoading] = useState(true);
+    const [isCallModalOpen, setIsCallModalOpen] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -81,6 +84,9 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll }: 
                                 </SheetDescription>
                             </div>
                             <Badge>{data.lead_status}</Badge>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                            <Button size="sm" onClick={() => setIsCallModalOpen(true)}>Log Call</Button>
                         </div>
                     </SheetHeader>
 
@@ -164,6 +170,27 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll }: 
 
                         <Separator />
                         <div>
+                            <h4 className="font-semibold mb-2">Outreach Timeline</h4>
+                            {data.timeline?.length > 0 ? (
+                                <div className="space-y-4 border-l-2 border-slate-200 ml-3 pl-4">
+                                    {data.timeline.map((event: any) => (
+                                        <div key={event.id} className="relative">
+                                            <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
+                                            <div className="text-sm">
+                                                <span className="font-semibold">{event.channel === 'phone' ? 'Called' : 'Emailed'}</span>
+                                                <span className="text-muted-foreground ml-2">{new Date(event.timestamp).toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="text-xs text-slate-600 mt-1">{event.description}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-sm text-muted-foreground">No outreach events yet.</div>
+                            )}
+                        </div>
+
+                        <Separator />
+                        <div>
                             <h4 className="font-semibold mb-2">Metadata Details</h4>
                             <pre className="text-xs bg-slate-100 dark:bg-slate-900 p-2 rounded-md overflow-x-auto">
                                 {JSON.stringify(data.details, null, 2)}
@@ -171,6 +198,22 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll }: 
                         </div>
                     </div>
                 </SheetContent>
+                <CRMCallModal
+                    open={isCallModalOpen}
+                    onOpenChange={setIsCallModalOpen}
+                    person={data}
+                    currentUser={currentUser}
+                    onLogged={() => {
+                        setIsCallModalOpen(false);
+                        setLoading(true);
+                        fetch(`/api/crm/people/${id}`)
+                            .then((res) => res.json())
+                            .then((fullData) => {
+                                if (fullData && !fullData.error) setData(fullData);
+                            })
+                            .finally(() => setLoading(false));
+                    }}
+                />
             </Sheet>
         );
     }
