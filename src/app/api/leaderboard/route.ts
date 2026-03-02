@@ -8,76 +8,67 @@ export async function GET(request: Request) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const { data: calls, error } = await supabase
-        .from('prospect_calls')
-        .select('*')
-        .gte('called_at', thirtyDaysAgo.toISOString())
-        .order('called_at', { ascending: false });
+    // 1. Fetch calls ONLY from new activities table
+    const { data: activities, error: activityError } = await supabase
+        .from('activities')
+        .select('metadata, timestamp')
+        .eq('type', 'call_logged')
+        .gte('timestamp', thirtyDaysAgo.toISOString());
 
-    if (error) {
-        console.error('Leaderboard DB Error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    if (activityError) {
+        console.error('Activity Fetch Error:', activityError);
+        return NextResponse.json({ error: activityError.message }, { status: 500 });
     }
 
-    // 2. Fetch Aggregated Pending Signups Snapshot
+    // 2. Fetch Pending Signups ONLY from new person_phones table
     const { data: pendingStats, error: pendingError } = await supabase
-        .rpc('get_pending_signups_by_caller', { p_last_days: 30 });
+        .from('person_phones')
+        .select('last_called_by')
+        .eq('call_status', 'pending_signup')
+        .gte('last_called_at', thirtyDaysAgo.toISOString());
 
     if (pendingError) {
-        console.error('Pending Signups RPC Error:', pendingError);
-        // Continue without crashing, just showing 0
+        console.error('Pending Stats Fetch Error:', pendingError);
     }
 
     const leaderboard: Record<string, any> = {};
 
-    // Initialize leaderboard with calls data
-    calls.forEach((call: any) => {
-        const caller = call.caller_name || 'Unknown';
-        if (!leaderboard[caller]) {
-            leaderboard[caller] = {
-                caller,
+    const getStats = (caller: string) => {
+        const name = caller || 'Unknown';
+        if (!leaderboard[name]) {
+            leaderboard[name] = {
+                caller: name,
                 totalCalls: 0,
                 connected: 0,
-                pendingSignups: 0, // Changed from emailsSent
+                pendingSignups: 0,
                 lastCall: null,
                 outcomes: {}
             };
         }
+        return leaderboard[name];
+    };
 
-        const stats = leaderboard[caller];
+    // Process Activities
+    activities?.forEach((activity: any) => {
+        const m = activity.metadata || {};
+        const stats = getStats(m.caller_name);
         stats.totalCalls++;
 
-        if (call.outcome === 'answered') stats.connected++;
+        const outcome = m.outcome || 'unknown';
+        if (outcome === 'answered') stats.connected++;
 
-        // Track last call
-        const callTime = new Date(call.called_at).getTime();
+        const callTime = new Date(activity.timestamp).getTime();
         const currentLast = stats.lastCall ? new Date(stats.lastCall).getTime() : 0;
-        if (callTime > currentLast) {
-            stats.lastCall = call.called_at;
-        }
+        if (callTime > currentLast) stats.lastCall = activity.timestamp;
 
-        // Breakdown
-        const outcome = call.outcome || 'unknown';
         stats.outcomes[outcome] = (stats.outcomes[outcome] || 0) + 1;
     });
 
     // Merge Pending Signups
-    if (pendingStats) {
-        pendingStats.forEach((p: any) => {
-            const caller = p.caller_name || 'Unknown';
-            if (!leaderboard[caller]) {
-                leaderboard[caller] = {
-                    caller,
-                    totalCalls: 0,
-                    connected: 0,
-                    pendingSignups: 0,
-                    lastCall: null,
-                    outcomes: {}
-                };
-            }
-            leaderboard[caller].pendingSignups = p.pending_count;
-        });
-    }
+    pendingStats?.forEach((p: any) => {
+        const stats = getStats(p.last_called_by);
+        stats.pendingSignups++;
+    });
 
     const data = Object.values(leaderboard).sort((a: any, b: any) => b.totalCalls - a.totalCalls);
 
