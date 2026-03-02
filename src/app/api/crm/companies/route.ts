@@ -17,10 +17,11 @@ export async function GET(request: Request) {
         .from('organizations')
         .select('*', { count: 'exact' });
 
-    if (search) {
-        const ftsQuery = search.trim().split(/\s+/).join(' & ');
+    if (search && search.trim()) {
+        const cleanSearch = search.trim().replace(/[!&|()<>:]/g, ' ');
+        const ftsQuery = cleanSearch.split(/\s+/).filter(Boolean).map(t => `${t}:*`).join(' & ');
         console.log(`[API] Applying text search: ${ftsQuery}`);
-        query = query.textSearch('search_vector', ftsQuery);
+        query = query.textSearch('search_vector', ftsQuery, { config: 'english' });
     }
 
     if (tag && tag !== 'all') {

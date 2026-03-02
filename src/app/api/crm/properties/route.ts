@@ -22,9 +22,10 @@ export async function GET(request: Request) {
             property_organizations(organizations(id, name, org_type), role)
         `, { count: 'exact' });
 
-    if (search) {
-        const ftsQuery = search.trim().split(/\s+/).join(' & ');
-        query = query.textSearch('search_vector', ftsQuery);
+    if (search && search.trim()) {
+        const cleanSearch = search.trim().replace(/[!&|()<>:]/g, ' ');
+        const ftsQuery = cleanSearch.split(/\s+/).filter(Boolean).map(t => `${t}:*`).join(' & ');
+        query = query.textSearch('search_vector', ftsQuery, { config: 'english' });
     }
 
     if (tag && tag !== 'all') {
