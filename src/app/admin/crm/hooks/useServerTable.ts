@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 interface UseServerTableProps {
     endpoint: string;
@@ -52,6 +53,52 @@ export function useServerTable({ endpoint }: UseServerTableProps) {
         }, 300); // 300ms debounce
         return () => clearTimeout(timer);
     }, [fetchData]);
+
+    // Realtime subscription for locking
+    useEffect(() => {
+        const supabase = createClient();
+
+        // Map endpoint to table name
+        let tableName = "";
+        if (endpoint.includes("/people")) tableName = "people";
+        else if (endpoint.includes("/companies")) tableName = "organizations";
+        else if (endpoint.includes("/properties")) tableName = "properties";
+
+        if (!tableName) return;
+
+        console.log(`[Realtime] Subscribing to ${tableName} locks...`);
+
+        const channel = supabase
+            .channel(`table-locks-${tableName}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: tableName,
+                },
+                (payload) => {
+                    const updatedRow = payload.new;
+                    setData((currentData) =>
+                        currentData.map((item) =>
+                            item.id === updatedRow.id
+                                ? {
+                                    ...item,
+                                    viewing_by: updatedRow.viewing_by,
+                                    lockout_until: updatedRow.lockout_until
+                                }
+                                : item
+                        )
+                    );
+                }
+            )
+            .subscribe();
+
+        return () => {
+            console.log(`[Realtime] Unsubscribing from ${tableName} locks...`);
+            supabase.removeChannel(channel);
+        };
+    }, [endpoint]);
 
     // When search or filters change, reset to page 0
     useEffect(() => {

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Search, ChevronLeft, ChevronRight, CheckSquare, Filter, Mail, Linkedin } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, CheckSquare, Filter, Mail, Linkedin, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CRMFilterSheet } from "./CRMFilterSheet";
 import { Badge } from "@/components/ui/badge";
+import { type Campaign } from "@/types/email-editor";
 
 interface CRMShellProps {
     children: React.ReactNode;
@@ -22,6 +23,7 @@ interface CRMShellProps {
     setFilter?: (key: string, value: any) => void;
     clearFilters?: () => void;
     tagOptions?: { label: string; value: string }[];
+    campaigns?: Campaign[];
 }
 
 export function CRMShell({
@@ -41,6 +43,7 @@ export function CRMShell({
     setFilter,
     clearFilters,
     tagOptions = [],
+    campaigns = [],
 }: CRMShellProps) {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const maxPage = Math.max(0, Math.ceil(totalCount / pageSize) - 1);
@@ -67,6 +70,14 @@ export function CRMShell({
         if (current === 'true') setFilter('has_linkedin', 'false');
         else if (current === 'false') setFilter('has_linkedin', 'all');
         else setFilter('has_linkedin', 'true');
+    };
+
+    const handleTogglePhone = () => {
+        if (!setFilter) return;
+        const current = filters.has_phone;
+        if (current === 'true') setFilter('has_phone', 'false');
+        else if (current === 'false') setFilter('has_phone', 'all');
+        else setFilter('has_phone', 'true');
     };
 
     return (
@@ -113,6 +124,20 @@ export function CRMShell({
                                 <Linkedin className={`w-4 h-4 ${filters.has_linkedin === 'true' ? 'fill-indigo-700/10' : ''}`} />
                                 <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">LI</span>
                             </Button>
+
+                            <Button
+                                variant="outline"
+                                onClick={handleTogglePhone}
+                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_phone === 'true'
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
+                                    : filters.has_phone === 'false'
+                                        ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
+                                        : "text-slate-400 hover:bg-slate-50 border-slate-200"
+                                    }`}
+                            >
+                                <Phone className={`w-4 h-4 ${filters.has_phone === 'true' ? 'fill-emerald-700/10' : ''}`} />
+                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">Phone</span>
+                            </Button>
                         </div>
                     )}
                 </div>
@@ -144,6 +169,7 @@ export function CRMShell({
                                 setFilter={setFilter}
                                 clearFilters={clearFilters}
                                 tagOptions={tagOptions}
+                                campaigns={campaigns}
                             />
                         </>
                     )}

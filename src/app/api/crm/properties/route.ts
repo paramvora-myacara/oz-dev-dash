@@ -17,6 +17,8 @@ export async function GET(request: Request) {
             address,
             city,
             state,
+            viewing_by,
+            lockout_until,
             property_organizations(organizations(id, name, org_type), role)
         `, { count: 'exact' });
 

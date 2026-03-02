@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { type Campaign } from "@/types/email-editor";
 
 interface CRMFilterSheetProps {
     open: boolean;
@@ -23,6 +24,7 @@ interface CRMFilterSheetProps {
     setFilter: (key: string, value: any) => void;
     clearFilters: () => void;
     tagOptions: { label: string; value: string }[];
+    campaigns: Campaign[];
 }
 
 const LEAD_STATUS_OPTIONS = [
@@ -41,9 +43,35 @@ export function CRMFilterSheet({
     setFilter,
     clearFilters,
     tagOptions,
+    campaigns,
 }: CRMFilterSheetProps) {
     const selectedTags = filters.tag || [];
     const selectedStatuses = filters.lead_status || [];
+    const selectedCampaignHistory = filters.campaign_history || 'all'; // can be 'any', 'none', or list of IDs
+    const selectedCampaignResponses = filters.campaign_response || [];
+    const excludedCampaignIds = filters.exclude_campaign_ids || [];
+
+    const toggleCampaignResponse = (status: string) => {
+        const next = selectedCampaignResponses.includes(status)
+            ? selectedCampaignResponses.filter((s: string) => s !== status)
+            : [...selectedCampaignResponses, status];
+        setFilter("campaign_response", next);
+    };
+
+    const toggleExcludeCampaign = (id: string) => {
+        const next = excludedCampaignIds.includes(id)
+            ? excludedCampaignIds.filter((cid: string) => cid !== id)
+            : [...excludedCampaignIds, id];
+        setFilter("exclude_campaign_ids", next);
+    };
+
+    const toggleCampaignPresence = (id: string) => {
+        let current = Array.isArray(filters.campaign_history) ? filters.campaign_history : [];
+        const next = current.includes(id)
+            ? current.filter((cid: string) => cid !== id)
+            : [...current, id];
+        setFilter("campaign_history", next);
+    };
 
     const toggleTag = (tag: string) => {
         const next = selectedTags.includes(tag)
@@ -67,11 +95,15 @@ export function CRMFilterSheet({
         (filters.source ? 1 : 0) +
         (filters.email_status ? 1 : 0) +
         (filters.has_email && filters.has_email !== 'all' ? 1 : 0) +
-        (filters.has_linkedin && filters.has_linkedin !== 'all' ? 1 : 0);
+        (filters.has_linkedin && filters.has_linkedin !== 'all' ? 1 : 0) +
+        (filters.has_phone && filters.has_phone !== 'all' ? 1 : 0) +
+        (selectedCampaignHistory !== 'all' ? 1 : 0) +
+        (selectedCampaignResponses.length > 0 ? 1 : 0) +
+        (excludedCampaignIds.length > 0 ? 1 : 0);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-md flex flex-col h-full">
+            <SheetContent className="sm:max-w-xl flex flex-col h-full">
                 <SheetHeader className="mb-4">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
@@ -96,11 +128,12 @@ export function CRMFilterSheet({
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Contact Coverage</h4>
-                            {((filters.has_email && filters.has_email !== 'all') || (filters.has_linkedin && filters.has_linkedin !== 'all')) && (
+                            {((filters.has_email && filters.has_email !== 'all') || (filters.has_linkedin && filters.has_linkedin !== 'all') || (filters.has_phone && filters.has_phone !== 'all')) && (
                                 <button
                                     onClick={() => {
                                         setFilter("has_email", "all");
                                         setFilter("has_linkedin", "all");
+                                        setFilter("has_phone", "all");
                                     }}
                                     className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
                                 >
@@ -117,8 +150,8 @@ export function CRMFilterSheet({
                                             key={val}
                                             onClick={() => setFilter('has_email', val)}
                                             className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_email || 'all') === val
-                                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
-                                                    : "text-slate-400 hover:text-slate-600 font-medium"
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                : "text-slate-400 hover:text-slate-600 font-medium"
                                                 }`}
                                         >
                                             {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
@@ -135,13 +168,127 @@ export function CRMFilterSheet({
                                             key={val}
                                             onClick={() => setFilter('has_linkedin', val)}
                                             className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_linkedin || 'all') === val
-                                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
-                                                    : "text-slate-400 hover:text-slate-600 font-medium"
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                : "text-slate-400 hover:text-slate-600 font-medium"
                                                 }`}
                                         >
                                             {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
                                         </button>
                                     ))}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Phone Number</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    {['all', 'true', 'false'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('has_phone', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_phone || 'all') === val
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                : "text-slate-400 hover:text-slate-600 font-medium"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* Outreach & Campaigns Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Outreach History</h4>
+                            {(selectedCampaignHistory !== 'all' || selectedCampaignResponses.length > 0 || excludedCampaignIds.length > 0) && (
+                                <button
+                                    onClick={() => {
+                                        setFilter("campaign_history", "all");
+                                        setFilter("campaign_response", []);
+                                        setFilter("exclude_campaign_ids", []);
+                                    }}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear Outreach Filters
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Historical Presence</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 mb-2">
+                                    {['all', 'any', 'none'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('campaign_history', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${selectedCampaignHistory === val
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                                : "text-slate-400 hover:text-slate-600"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'any' ? 'Contacted' : 'Never'}
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedCampaignHistory !== 'none' && campaigns.length > 0 && (
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 max-h-40 overflow-y-auto space-y-1">
+                                        <p className="text-[9px] uppercase font-black text-slate-400 mb-2">Specific Campaigns (OR)</p>
+                                        {campaigns.map(c => (
+                                            <label key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
+                                                <Checkbox
+                                                    checked={Array.isArray(filters.campaign_history) && filters.campaign_history.includes(c.id)}
+                                                    onCheckedChange={() => toggleCampaignPresence(c.id)}
+                                                />
+                                                <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 truncate">{c.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Recipient Experience</label>
+                                <div className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                    {[
+                                        { label: 'Replied', value: 'replied' },
+                                        { label: 'No Reply', value: 'no_reply' },
+                                        { label: 'Bounced', value: 'bounced' }
+                                    ].map(opt => (
+                                        <label key={opt.value} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
+                                            <Checkbox
+                                                checked={selectedCampaignResponses.includes(opt.value)}
+                                                onCheckedChange={() => toggleCampaignResponse(opt.value)}
+                                            />
+                                            <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-900">{opt.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-red-500 tracking-wider flex items-center gap-1">
+                                    Exclude Campaigns
+                                </label>
+                                <div className="p-3 bg-red-50/30 rounded-xl border border-red-100 max-h-40 overflow-y-auto space-y-1 mt-2">
+                                    {campaigns.length === 0 ? (
+                                        <p className="text-[10px] text-slate-400 italic">No campaigns found</p>
+                                    ) : (
+                                        campaigns.map(c => (
+                                            <label key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
+                                                <Checkbox
+                                                    checked={excludedCampaignIds.includes(c.id)}
+                                                    onCheckedChange={() => toggleExcludeCampaign(c.id)}
+                                                    className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                                                />
+                                                <span className="text-xs font-medium text-slate-600 group-hover:text-red-700 truncate">{c.name}</span>
+                                            </label>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>
