@@ -85,8 +85,9 @@ export async function POST(request: Request) {
         type PersonRow = typeof people extends (infer R)[] ? R : never;
         type LinkedInProfile = { id: string; url: string };
         for (const person of (people || [])) {
-            const linkedinLink = (person as PersonRow & { person_linkedin?: { linkedin_profiles?: LinkedInProfile[] }[] }).person_linkedin?.[0];
-            const profile = linkedinLink?.linkedin_profiles?.[0];
+            const linkedinLink = (person as PersonRow & { person_linkedin?: { linkedin_profiles?: LinkedInProfile }[] }).person_linkedin?.[0];
+            // Supabase returns linkedin_profiles as a single object (many-to-one), not an array
+            const profile = linkedinLink?.linkedin_profiles;
 
             if (!profile?.url) {
                 skipped.push({ id: person.id, reason: 'No LinkedIn profile' });

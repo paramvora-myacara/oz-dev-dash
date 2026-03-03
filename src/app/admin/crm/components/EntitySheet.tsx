@@ -216,6 +216,9 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
     const [isAddingOrg, setIsAddingOrg] = useState(false);
     const [isAddingProperty, setIsAddingProperty] = useState(false);
     const [syncing, setSyncing] = useState(false);
+    const [isSearchingLinkedin, setIsSearchingLinkedin] = useState(false);
+    const [linkedinSearchResults, setLinkedinSearchResults] = useState<any[]>([]);
+    const [showLinkedinDiscovery, setShowLinkedinDiscovery] = useState(false);
 
     const refreshPerson = async () => {
         setLoading(true);
@@ -257,6 +260,15 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
         fetchFullData();
         return () => { mounted = false; };
     }, [type, id, initialData]);
+
+    useEffect(() => {
+        if (showLinkedinDiscovery && type === 'person') {
+            fetch(`/api/crm/people/${id}/linkedin/search`)
+                .then(res => res.json())
+                .then(json => { if (json.data) setLinkedinSearchResults(json.data); })
+                .catch(err => console.error('Failed to fetch search results', err));
+        }
+    }, [showLinkedinDiscovery, id, type]);
 
     const handleOpenChange = (open: boolean) => {
         if (!open && onClose) onClose();
@@ -329,6 +341,37 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
             });
             setIsAddingPhone(false);
             setAddingPhoneInput('');
+            await refreshPerson();
+        } catch (e: any) { alert(e.message); }
+        finally { setSyncing(false); }
+    };
+
+    const handleSetPrimaryLinkedin = async (targetLinkedinId: string) => {
+        if (!data.person_linkedin?.length) return;
+        setSyncing(true);
+        try {
+            await syncPerson(id, {
+                linkedin: data.person_linkedin.map((pl: any) => ({
+                    url: pl.linkedin_profiles.url,
+                    is_primary: pl.linkedin_profiles.id === targetLinkedinId,
+                })),
+            });
+            await refreshPerson();
+        } catch (e: any) { alert(e.message); }
+        finally { setSyncing(false); }
+    };
+
+    const handleQuickAddLinkedin = async (url: string) => {
+        if (!url.trim()) return;
+        setSyncing(true);
+        try {
+            const existing = (data.person_linkedin || []).map((pl: any) => ({
+                url: pl.linkedin_profiles.url,
+                is_primary: pl.is_primary,
+            }));
+            await syncPerson(id, {
+                linkedin: [...existing, { url: url.trim(), is_primary: false }],
+            });
             await refreshPerson();
         } catch (e: any) { alert(e.message); }
         finally { setSyncing(false); }
@@ -521,20 +564,108 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
 
                             {/* LinkedIn */}
                             <div>
-                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400 block mb-1.5">LinkedIn</span>
-                                <div className="space-y-1">
+                                <div className="flex justify-between items-center mb-1.5">
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">LinkedIn</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 px-1.5 text-[10px] text-blue-600 hover:bg-blue-50"
+                                        onClick={() => setShowLinkedinDiscovery(!showLinkedinDiscovery)}
+                                    >
+                                        {showLinkedinDiscovery ? 'Cancel' : 'Discover'}
+                                    </Button>
+                                </div>
+
+                                {showLinkedinDiscovery && (
+                                    <div className="mb-3 p-3 bg-blue-50/50 border border-blue-100 rounded-lg space-y-3 animate-in zoom-in-95 duration-150">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-bold uppercase text-blue-600">Suggested Profiles</span>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 px-2 text-[10px] text-blue-600"
+                                                disabled={isSearchingLinkedin}
+                                                onClick={async () => {
+                                                    setIsSearchingLinkedin(true);
+                                                    try {
+                                                        const context = data.person_organizations?.[0]?.organizations?.name || data.person_properties?.[0]?.properties?.property_name || '';
+                                                        const res = await fetch(`/api/crm/people/${id}/linkedin/search`, {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ name: data.display_name, context })
+                                                        });
+                                                        const json = await res.json();
+                                                        if (json.data) setLinkedinSearchResults(json.data);
+                                                    } finally {
+                                                        setIsSearchingLinkedin(false);
+                                                    }
+                                                }}
+                                            >
+                                                {isSearchingLinkedin ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+                                                {linkedinSearchResults.length > 0 ? 'Re-scan' : 'Search with Tavily'}
+                                            </Button>
+                                        </div>
+
+                                        {linkedinSearchResults.length > 0 && (
+                                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                                {linkedinSearchResults.map((result) => {
+                                                    const alreadyLinked = data.person_linkedin?.some((pl: any) => pl.linkedin_profiles.url === result.profile_url);
+                                                    return (
+                                                        <div key={result.id} className="p-2 bg-white rounded border border-blue-100 flex items-start justify-between gap-3 shadow-sm">
+                                                            <div className="min-w-0">
+                                                                <div className="text-xs font-semibold truncate text-slate-800">{result.profile_name}</div>
+                                                                <div className="text-[10px] text-slate-500 truncate">{result.profile_title || 'No Title'}</div>
+                                                                <a href={result.profile_url} target="_blank" rel="noreferrer" className="text-[9px] text-blue-500 hover:underline truncate block">View Profile ↗</a>
+                                                            </div>
+                                                            <Button
+                                                                size="sm"
+                                                                variant={alreadyLinked ? "secondary" : "default"}
+                                                                className="h-6 px-3 text-[9px] shrink-0"
+                                                                disabled={alreadyLinked || syncing}
+                                                                onClick={() => handleQuickAddLinkedin(result.profile_url)}
+                                                            >
+                                                                {alreadyLinked ? 'Added' : 'Add'}
+                                                            </Button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {!isSearchingLinkedin && linkedinSearchResults.length === 0 && (
+                                            <div className="text-[10px] text-slate-400 italic text-center py-2">No results yet. Click search to find profiles using AI.</div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="space-y-1.5">
                                     {data.person_linkedin?.map((pl: any) => (
-                                        <div key={pl.linkedin_profiles.id} className="text-sm px-3 py-2 bg-slate-50 rounded-md">
-                                            <a href={pl.linkedin_profiles.url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline truncate block max-w-full">
-                                                {pl.linkedin_profiles.url}
-                                            </a>
+                                        <div
+                                            key={pl.linkedin_profiles.id}
+                                            className="group flex items-center justify-between px-3 py-2 rounded-md bg-slate-50 border border-transparent hover:border-blue-200 transition-all"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <a href={pl.linkedin_profiles.url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline truncate block">
+                                                    {pl.linkedin_profiles.url}
+                                                </a>
+                                            </div>
+                                            {pl.is_primary ? (
+                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] font-bold shadow-none ml-2 shrink-0">Primary</Badge>
+                                            ) : (
+                                                <button
+                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[9px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight ml-2 shrink-0"
+                                                    onClick={() => handleSetPrimaryLinkedin(pl.linkedin_profiles.id)}
+                                                >
+                                                    <Star className="w-3 h-3" /> Set Primary
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
-                                    {!loading && !data.person_linkedin?.length && (
-                                        <div className="text-xs text-muted-foreground">No LinkedIn profiles.</div>
+                                    {!loading && !data.person_linkedin?.length && !showLinkedinDiscovery && (
+                                        <div className="text-xs text-muted-foreground">No LinkedIn profiles found.</div>
                                     )}
                                 </div>
                             </div>
+
                         </div>
 
                         <Separator />
