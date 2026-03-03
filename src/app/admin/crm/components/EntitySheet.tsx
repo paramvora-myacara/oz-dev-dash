@@ -26,6 +26,48 @@ interface EntitySheetProps {
     currentUser?: string | null;
 }
 
+// ── Render details JSONB as a key/value table ─────────────────────────────────
+function DetailsTable({ details }: { details: Record<string, unknown> | null | undefined }) {
+    if (details == null || Object.keys(details).length === 0) {
+        return <div className="text-sm text-muted-foreground">No metadata</div>;
+    }
+    const rows = Object.entries(details).map(([key, value]) => {
+        const display =
+            value === null || value === undefined
+                ? '—'
+                : typeof value === 'object'
+                    ? JSON.stringify(value, null, 2)
+                    : String(value);
+        return { key, display, isObject: typeof value === 'object' && value !== null };
+    });
+    return (
+        <div className="rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/50">
+                        <th className="text-left font-medium px-3 py-2 border-b border-slate-200 dark:border-slate-700">Key</th>
+                        <th className="text-left font-medium px-3 py-2 border-b border-slate-200 dark:border-slate-700">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map(({ key, display, isObject }) => (
+                        <tr key={key} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                            <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-300 align-top whitespace-nowrap">{key}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
+                                {isObject ? (
+                                    <pre className="text-xs bg-slate-100 dark:bg-slate-900 p-2 rounded overflow-x-auto m-0">{display}</pre>
+                                ) : (
+                                    <span className="break-all">{display}</span>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
 // ── Small hook: search properties directly from Supabase ──────────────────────
 function usePropertySearch(query: string) {
     const [results, setResults] = useState<any[]>([]);
@@ -744,9 +786,7 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                         {/* ── Metadata ───────────────────────────────────── */}
                         <div>
                             <h4 className="font-semibold mb-2 text-sm">Metadata Details</h4>
-                            <pre className="text-xs bg-slate-100 dark:bg-slate-900 p-2 rounded-md overflow-x-auto">
-                                {JSON.stringify(data.details, null, 2)}
-                            </pre>
+                            <DetailsTable details={data.details} />
                         </div>
                     </div>
                 </SheetContent>
@@ -852,9 +892,7 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                         <Separator />
                         <div>
                             <h4 className="font-semibold mb-2 text-sm">Details (JSONB)</h4>
-                            <pre className="text-xs bg-slate-100 dark:bg-slate-900 p-2 rounded-md overflow-x-auto">
-                                {JSON.stringify(data.details, null, 2)}
-                            </pre>
+                            <DetailsTable details={data.details} />
                         </div>
                     </div>
                 </SheetContent>
@@ -938,9 +976,7 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                         <Separator />
                         <div>
                             <h4 className="font-semibold mb-2 text-sm">Metadata Details (JSONB)</h4>
-                            <pre className="text-xs bg-slate-100 dark:bg-slate-900 p-2 rounded-md overflow-x-auto">
-                                {JSON.stringify(data.details, null, 2)}
-                            </pre>
+                            <DetailsTable details={data.details} />
                         </div>
                     </div>
                 </SheetContent>
