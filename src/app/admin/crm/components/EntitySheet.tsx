@@ -725,7 +725,9 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                         <div key={event.id} className="relative">
                                             <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
                                             <div className="text-sm">
-                                                <span className="font-semibold">{event.channel === 'phone' ? 'Called' : 'Emailed'}</span>
+                                                <span className="font-semibold">
+                                                {event.channel === 'phone' ? 'Called' : event.channel === 'website' ? 'Website' : 'Emailed'}
+                                            </span>
                                                 <span className="text-muted-foreground ml-2">{new Date(event.timestamp).toLocaleDateString()}</span>
                                             </div>
                                             <div className="text-xs text-slate-600 mt-1">{event.description}</div>

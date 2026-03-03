@@ -56,22 +56,34 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             type: 'email_sent',
             channel: 'email',
             description: `Campaign: ${r.campaigns?.name || 'Sent Email'}`,
-            timestamp: r.sent_at || r.created_at, // Fallback to created_at if sent_at is null
+            timestamp: r.sent_at || r.created_at,
             metadata: {
                 campaign_id: r.campaign_id,
                 status: r.status,
                 replied_at: r.replied_at
             }
         }))
-        .filter((ev: any) => ev.timestamp); // Ensure we have a date
+        .filter((ev: any) => ev.timestamp);
 
-    console.log(`Timeline metrics for ${id}:`, {
-        activities: activities.length,
-        campaignHistory: (data.campaign_recipients || []).length,
-        mappedEvents: campaignEvents.length
-    });
+    // Website events (user_events) when person is linked to an auth user
+    let websiteEvents: Array<{ id: string; channel: string; type: string; description: string; timestamp: string }> = [];
+    if (data.user_id) {
+        const { data: events } = await supabase
+            .from('user_events')
+            .select('id, event_type, endpoint, created_at')
+            .eq('user_id', data.user_id)
+            .order('created_at', { ascending: false })
+            .limit(100);
+        websiteEvents = (events || []).map((e: any) => ({
+            id: e.id,
+            channel: 'website',
+            type: e.event_type,
+            description: e.endpoint ? `${e.event_type} · ${e.endpoint}` : e.event_type,
+            timestamp: e.created_at,
+        }));
+    }
 
-    const timeline = [...activities, ...campaignEvents].sort(
+    const timeline = [...activities, ...campaignEvents, ...websiteEvents].sort(
         (a: any, b: any) =>
             new Date(b.timestamp || b.created_at).getTime() - new Date(a.timestamp || a.created_at).getTime(),
     );
