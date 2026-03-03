@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { type Campaign } from "@/types/email-editor";
+import { CATEGORY_OPTIONS, CATEGORY_VALUES } from "../constants";
 
 interface CRMFilterSheetProps {
     open: boolean;
@@ -46,6 +47,7 @@ export function CRMFilterSheet({
     campaigns,
 }: CRMFilterSheetProps) {
     const selectedTags = filters.tag || [];
+    const categoryValueSet = new Set<string>(CATEGORY_VALUES);
     const selectedStatuses = filters.lead_status || [];
     const selectedCampaignHistory = filters.campaign_history || 'all'; // can be 'any', 'none', or list of IDs
     const selectedCampaignResponses = filters.campaign_response || [];
@@ -124,21 +126,21 @@ export function CRMFilterSheet({
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 py-4">
-                    {/* 1. Tags Section */}
+                    {/* 1. Categories (top) */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories / Tags</h4>
-                            {selectedTags.length > 0 && (
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories</h4>
+                            {selectedTags.some((t: string) => categoryValueSet.has(t)) && (
                                 <button
-                                    onClick={() => setFilter("tag", [])}
+                                    onClick={() => setFilter("tag", selectedTags.filter((t: string) => !categoryValueSet.has(t)))}
                                     className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            {tagOptions.map((opt) => (
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            {CATEGORY_OPTIONS.map((opt) => (
                                 <label
                                     key={opt.value}
                                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-all group"
@@ -471,6 +473,45 @@ export function CRMFilterSheet({
                                     </span>
                                 </label>
                             ))}
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 9. Tags (dynamic, last) */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Tags</h4>
+                            {selectedTags.some((t: string) => !categoryValueSet.has(t)) && (
+                                <button
+                                    onClick={() => setFilter("tag", selectedTags.filter((t: string) => categoryValueSet.has(t)))}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 max-h-40 overflow-y-auto">
+                            {tagOptions
+                                .filter((opt) => !categoryValueSet.has(opt.value))
+                                .map((opt) => (
+                                    <label
+                                        key={opt.value}
+                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-all group"
+                                    >
+                                        <Checkbox
+                                            checked={selectedTags.includes(opt.value)}
+                                            onCheckedChange={() => toggleTag(opt.value)}
+                                            className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                                        />
+                                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">
+                                            {opt.label}
+                                        </span>
+                                    </label>
+                                ))}
+                            {tagOptions.filter((opt) => !categoryValueSet.has(opt.value)).length === 0 && (
+                                <p className="text-xs text-slate-400 py-2">No other tags in data</p>
+                            )}
                         </div>
                     </div>
                 </div>

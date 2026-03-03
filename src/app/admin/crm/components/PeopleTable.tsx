@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -35,6 +35,8 @@ import { CRMShell } from "./CRMShell";
 import { useRouter } from "next/navigation";
 import { useCampaignDraftStore } from "@/stores/campaignDraftStore";
 import { type Campaign } from '@/types/email-editor';
+import { tagToLabel } from '@/lib/utils';
+import { CATEGORY_OPTIONS } from '../constants';
 
 interface PeopleTableProps {
     onRowClick?: (data: any) => void;
@@ -53,6 +55,17 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     const [showLinkedInConfirm, setShowLinkedInConfirm] = useState(false);
     const [linkedInSender, setLinkedInSender] = useState(currentUser || 'Jeff');
     const [linkedInLoading, setLinkedInLoading] = useState(false);
+    const [tagOptions, setTagOptions] = useState<{ label: string; value: string }[]>([]);
+
+    useEffect(() => {
+        fetch('/api/crm/people/tags')
+            .then((res) => res.json())
+            .then((data) => {
+                const tags = data?.tags ?? [];
+                setTagOptions(tags.map((t: string) => ({ value: t, label: tagToLabel(t) })));
+            })
+            .catch(() => setTagOptions([]));
+    }, []);
 
     const selectedIds = Array.from(tableState.selectedIds);
     const hasEmailFilter = tableState.filters.has_email === 'true';
@@ -121,13 +134,6 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
         )
     );
 
-    const tagOptions = [
-        { label: "Family Offices", value: "family_office" },
-        { label: "QOZBs", value: "qozb_property_contact" },
-        { label: "Investor", value: "investor" },
-        { label: "Developer", value: "developer" },
-    ];
-
     const getTagBadge = (tag: string) => {
         const lower = tag.toLowerCase();
         if (lower.includes('investor')) return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' };
@@ -141,6 +147,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
         <CRMShell
             {...tableState}
             tagOptions={tagOptions}
+            categoryOptions={CATEGORY_OPTIONS.slice()}
             campaigns={campaigns}
             searchPlaceholder="Search people by name..."
             actions={bulkActions}
@@ -214,7 +221,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                                         key={tag}
                                                         className={`${styles.bg} ${styles.text} ${styles.border} border shadow-none px-2 py-0 text-[10px] uppercase font-bold tracking-tight rounded-md`}
                                                     >
-                                                        {tag.replace('_', ' ')}
+                                                        {tagToLabel(tag)}
                                                     </Badge>
                                                 );
                                             })}
