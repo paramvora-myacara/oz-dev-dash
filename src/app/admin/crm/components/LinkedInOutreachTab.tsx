@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
     RefreshCw, Check, AlertCircle, Clock, ExternalLink,
-    Pencil, Trash2, RotateCcw, Linkedin
+    Pencil, Trash2, RotateCcw, Linkedin, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 interface QueueItem {
@@ -40,6 +40,7 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
     const [senderFilter, setSenderFilter] = useState('all');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editMessage, setEditMessage] = useState('');
+    const [expandedErrorId, setExpandedErrorId] = useState<string | null>(null);
 
     const fetchQueue = useCallback(async () => {
         setIsLoading(true);
@@ -175,9 +176,29 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
                                 </span>
                             )}
                             {item.status === 'failed' && (
-                                <span className="text-red-600 font-medium flex items-center gap-1">
-                                    <AlertCircle className="w-3 h-3" /> Failed: {item.error || 'Unknown'}
-                                </span>
+                                <div className="flex flex-col gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setExpandedErrorId((id) => (id === item.id ? null : item.id))}
+                                        className="text-red-600 font-medium flex items-center gap-1 text-left hover:underline"
+                                    >
+                                        <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                                        <span className="truncate max-w-[200px]" title={item.error || undefined}>
+                                            Failed: {(item.error || 'Unknown').slice(0, 60)}
+                                            {(item.error?.length ?? 0) > 60 ? '…' : ''}
+                                        </span>
+                                        {expandedErrorId === item.id ? (
+                                            <ChevronUp className="w-3 h-3 flex-shrink-0" />
+                                        ) : (
+                                            <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                                        )}
+                                    </button>
+                                    {expandedErrorId === item.id && item.error && (
+                                        <pre className="mt-2 p-3 text-xs bg-red-50 border border-red-100 rounded-md overflow-auto max-h-40 whitespace-pre-wrap text-red-800 font-mono">
+                                            {item.error}
+                                        </pre>
+                                    )}
+                                </div>
                             )}
                         </div>
 
