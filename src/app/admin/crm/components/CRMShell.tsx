@@ -59,24 +59,21 @@ export function CRMShell({
     const handleToggleEmail = () => {
         if (!setFilter) return;
         const current = filters.has_email;
-        if (current === 'true') setFilter('has_email', 'false');
-        else if (current === 'false') setFilter('has_email', 'all');
+        if (current === 'true') setFilter('has_email', 'all');
         else setFilter('has_email', 'true');
     };
 
     const handleToggleLinkedin = () => {
         if (!setFilter) return;
         const current = filters.has_linkedin;
-        if (current === 'true') setFilter('has_linkedin', 'false');
-        else if (current === 'false') setFilter('has_linkedin', 'all');
+        if (current === 'true') setFilter('has_linkedin', 'all');
         else setFilter('has_linkedin', 'true');
     };
 
     const handleTogglePhone = () => {
         if (!setFilter) return;
         const current = filters.has_phone;
-        if (current === 'true') setFilter('has_phone', 'false');
-        else if (current === 'false') setFilter('has_phone', 'all');
+        if (current === 'true') setFilter('has_phone', 'all');
         else setFilter('has_phone', 'true');
     };
 

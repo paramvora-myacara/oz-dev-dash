@@ -103,7 +103,7 @@ export function CRMFilterSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-xl flex flex-col h-full">
+            <SheetContent className="sm:max-w-2xl flex flex-col h-full">
                 <SheetHeader className="mb-4">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
@@ -124,7 +124,41 @@ export function CRMFilterSheet({
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 py-4">
-                    {/* Contact Coverage Section */}
+                    {/* 1. Tags Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories / Tags</h4>
+                            {selectedTags.length > 0 && (
+                                <button
+                                    onClick={() => setFilter("tag", [])}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            {tagOptions.map((opt) => (
+                                <label
+                                    key={opt.value}
+                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-all group"
+                                >
+                                    <Checkbox
+                                        checked={selectedTags.includes(opt.value)}
+                                        onCheckedChange={() => toggleTag(opt.value)}
+                                        className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                                    />
+                                    <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">
+                                        {opt.label}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 2. Contact Coverage Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Contact Coverage</h4>
@@ -200,7 +234,56 @@ export function CRMFilterSheet({
 
                     <Separator className="bg-slate-100" />
 
-                    {/* Outreach & Campaigns Section */}
+                    {/* 3. Location Search Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Location Search</h4>
+                            {filters.location && (
+                                <button
+                                    onClick={() => setFilter("location", "")}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
+                            <Input
+                                placeholder="State, City, or Code..."
+                                value={filters.location || ""}
+                                onChange={(e) => setFilter("location", e.target.value)}
+                                className="pl-9 bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 4. Role Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Professional Role</h4>
+                            {filters.role && (
+                                <button
+                                    onClick={() => setFilter("role", "")}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <Input
+                            placeholder="e.g. CEO, MD, Partner..."
+                            value={filters.role || ""}
+                            onChange={(e) => setFilter("role", e.target.value)}
+                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                        />
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 5. Outreach & Campaigns Section */}
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Outreach History</h4>
@@ -295,67 +378,31 @@ export function CRMFilterSheet({
                     </div>
 
                     <Separator className="bg-slate-100" />
-                    {/* Tags Section */}
+
+                    {/* 6. Import Source Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories / Tags</h4>
-                            {selectedTags.length > 0 && (
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Import Source</h4>
+                            {filters.source && (
                                 <button
-                                    onClick={() => setFilter("tag", [])}
+                                    onClick={() => setFilter("source", "")}
                                     className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            {tagOptions.map((opt) => (
-                                <label
-                                    key={opt.value}
-                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-all group"
-                                >
-                                    <Checkbox
-                                        checked={selectedTags.includes(opt.value)}
-                                        onCheckedChange={() => toggleTag(opt.value)}
-                                        className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
-                                    />
-                                    <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">
-                                        {opt.label}
-                                    </span>
-                                </label>
-                            ))}
-                        </div>
+                        <Input
+                            placeholder="e.g. LinkedIn, Eventbrite..."
+                            value={filters.source || ""}
+                            onChange={(e) => setFilter("source", e.target.value)}
+                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                        />
                     </div>
 
                     <Separator className="bg-slate-100" />
 
-                    {/* Location Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Location Search</h4>
-                            {filters.location && (
-                                <button
-                                    onClick={() => setFilter("location", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
-                            <Input
-                                placeholder="State, City, or Code..."
-                                value={filters.location || ""}
-                                onChange={(e) => setFilter("location", e.target.value)}
-                                className="pl-9 bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
-                            />
-                        </div>
-                    </div>
-
-                    <Separator className="bg-slate-100" />
-
-                    {/* Email Status Section */}
+                    {/* 7. Email Status Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Email Verification</h4>
@@ -395,53 +442,7 @@ export function CRMFilterSheet({
 
                     <Separator className="bg-slate-100" />
 
-                    {/* Role Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Professional Role</h4>
-                            {filters.role && (
-                                <button
-                                    onClick={() => setFilter("role", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <Input
-                            placeholder="e.g. CEO, MD, Partner..."
-                            value={filters.role || ""}
-                            onChange={(e) => setFilter("role", e.target.value)}
-                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
-                        />
-                    </div>
-
-                    <Separator className="bg-slate-100" />
-
-                    {/* Source Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Import Source</h4>
-                            {filters.source && (
-                                <button
-                                    onClick={() => setFilter("source", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <Input
-                            placeholder="e.g. LinkedIn, Eventbrite..."
-                            value={filters.source || ""}
-                            onChange={(e) => setFilter("source", e.target.value)}
-                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
-                        />
-                    </div>
-
-                    <Separator className="bg-slate-100" />
-
-                    {/* Status Section */}
+                    {/* 8. Lead Status Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Lead Status</h4>
