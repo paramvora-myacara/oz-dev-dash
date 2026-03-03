@@ -13,6 +13,7 @@ import { getCampaigns } from '@/lib/api/campaigns-backend';
 import { type Campaign } from '@/types/email-editor';
 
 import { CampaignsTab } from './CampaignsTab';
+import { LinkedInOutreachTab } from './LinkedInOutreachTab';
 import LeaderboardTab from '@/components/prospects/LeaderboardTab';
 
 export function CRMDashboard() {
@@ -149,6 +150,7 @@ export function CRMDashboard() {
                     <TabsTrigger value="companies">Companies</TabsTrigger>
                     <TabsTrigger value="properties">Properties</TabsTrigger>
                     <TabsTrigger value="campaigns">Email Campaigns</TabsTrigger>
+                    <TabsTrigger value="linkedin">LinkedIn Outreach</TabsTrigger>
                     <TabsTrigger value="leaderboard">Call Leaderboard</TabsTrigger>
                 </TabsList>
                 <TabsContent value="people" className="w-full">
@@ -167,6 +169,9 @@ export function CRMDashboard() {
                 </TabsContent>
                 <TabsContent value="campaigns" className="w-full">
                     <CampaignsTab />
+                </TabsContent>
+                <TabsContent value="linkedin" className="w-full">
+                    <LinkedInOutreachTab currentUser={currentUser} />
                 </TabsContent>
                 <TabsContent value="leaderboard" className="w-full">
                     <div className="bg-white rounded-2xl border shadow-sm p-6">
