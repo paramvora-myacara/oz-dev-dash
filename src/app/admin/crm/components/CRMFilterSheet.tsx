@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { type Campaign } from "@/types/email-editor";
+import { CATEGORY_OPTIONS, CATEGORY_VALUES } from "../constants";
 
 interface CRMFilterSheetProps {
     open: boolean;
@@ -23,6 +25,7 @@ interface CRMFilterSheetProps {
     setFilter: (key: string, value: any) => void;
     clearFilters: () => void;
     tagOptions: { label: string; value: string }[];
+    campaigns: Campaign[];
 }
 
 const LEAD_STATUS_OPTIONS = [
@@ -41,9 +44,36 @@ export function CRMFilterSheet({
     setFilter,
     clearFilters,
     tagOptions,
+    campaigns,
 }: CRMFilterSheetProps) {
     const selectedTags = filters.tag || [];
+    const categoryValueSet = new Set<string>(CATEGORY_VALUES);
     const selectedStatuses = filters.lead_status || [];
+    const selectedCampaignHistory = filters.campaign_history || 'all'; // can be 'any', 'none', or list of IDs
+    const selectedCampaignResponses = filters.campaign_response || [];
+    const excludedCampaignIds = filters.exclude_campaign_ids || [];
+
+    const toggleCampaignResponse = (status: string) => {
+        const next = selectedCampaignResponses.includes(status)
+            ? selectedCampaignResponses.filter((s: string) => s !== status)
+            : [...selectedCampaignResponses, status];
+        setFilter("campaign_response", next);
+    };
+
+    const toggleExcludeCampaign = (id: string) => {
+        const next = excludedCampaignIds.includes(id)
+            ? excludedCampaignIds.filter((cid: string) => cid !== id)
+            : [...excludedCampaignIds, id];
+        setFilter("exclude_campaign_ids", next);
+    };
+
+    const toggleCampaignPresence = (id: string) => {
+        let current = Array.isArray(filters.campaign_history) ? filters.campaign_history : [];
+        const next = current.includes(id)
+            ? current.filter((cid: string) => cid !== id)
+            : [...current, id];
+        setFilter("campaign_history", next);
+    };
 
     const toggleTag = (tag: string) => {
         const next = selectedTags.includes(tag)
@@ -67,11 +97,15 @@ export function CRMFilterSheet({
         (filters.source ? 1 : 0) +
         (filters.email_status ? 1 : 0) +
         (filters.has_email && filters.has_email !== 'all' ? 1 : 0) +
-        (filters.has_linkedin && filters.has_linkedin !== 'all' ? 1 : 0);
+        (filters.has_linkedin && filters.has_linkedin !== 'all' ? 1 : 0) +
+        (filters.has_phone && filters.has_phone !== 'all' ? 1 : 0) +
+        (selectedCampaignHistory !== 'all' ? 1 : 0) +
+        (selectedCampaignResponses.length > 0 ? 1 : 0) +
+        (excludedCampaignIds.length > 0 ? 1 : 0);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-md flex flex-col h-full">
+            <SheetContent className="sm:max-w-2xl flex flex-col h-full">
                 <SheetHeader className="mb-4">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
@@ -92,77 +126,21 @@ export function CRMFilterSheet({
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 py-4">
-                    {/* Contact Coverage Section */}
+                    {/* 1. Categories (top) */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Contact Coverage</h4>
-                            {((filters.has_email && filters.has_email !== 'all') || (filters.has_linkedin && filters.has_linkedin !== 'all')) && (
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories</h4>
+                            {selectedTags.some((t: string) => categoryValueSet.has(t)) && (
                                 <button
-                                    onClick={() => {
-                                        setFilter("has_email", "all");
-                                        setFilter("has_linkedin", "all");
-                                    }}
+                                    onClick={() => setFilter("tag", selectedTags.filter((t: string) => !categoryValueSet.has(t)))}
                                     className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="space-y-3">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Email Address</label>
-                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                                    {['all', 'true', 'false'].map((val) => (
-                                        <button
-                                            key={val}
-                                            onClick={() => setFilter('has_email', val)}
-                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_email || 'all') === val
-                                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
-                                                    : "text-slate-400 hover:text-slate-600 font-medium"
-                                                }`}
-                                        >
-                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">LinkedIn Profile</label>
-                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                                    {['all', 'true', 'false'].map((val) => (
-                                        <button
-                                            key={val}
-                                            onClick={() => setFilter('has_linkedin', val)}
-                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_linkedin || 'all') === val
-                                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
-                                                    : "text-slate-400 hover:text-slate-600 font-medium"
-                                                }`}
-                                        >
-                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator className="bg-slate-100" />
-                    {/* Tags Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories / Tags</h4>
-                            {selectedTags.length > 0 && (
-                                <button
-                                    onClick={() => setFilter("tag", [])}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            {tagOptions.map((opt) => (
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            {CATEGORY_OPTIONS.map((opt) => (
                                 <label
                                     key={opt.value}
                                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-all group"
@@ -182,7 +160,83 @@ export function CRMFilterSheet({
 
                     <Separator className="bg-slate-100" />
 
-                    {/* Location Section */}
+                    {/* 2. Contact Coverage Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Contact Coverage</h4>
+                            {((filters.has_email && filters.has_email !== 'all') || (filters.has_linkedin && filters.has_linkedin !== 'all') || (filters.has_phone && filters.has_phone !== 'all')) && (
+                                <button
+                                    onClick={() => {
+                                        setFilter("has_email", "all");
+                                        setFilter("has_linkedin", "all");
+                                        setFilter("has_phone", "all");
+                                    }}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="space-y-3">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Email Address</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    {['all', 'true', 'false'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('has_email', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_email || 'all') === val
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                : "text-slate-400 hover:text-slate-600 font-medium"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">LinkedIn Profile</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    {['all', 'true', 'false'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('has_linkedin', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_linkedin || 'all') === val
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                : "text-slate-400 hover:text-slate-600 font-medium"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Phone Number</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                    {['all', 'true', 'false'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('has_phone', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_phone || 'all') === val
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
+                                                : "text-slate-400 hover:text-slate-600 font-medium"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'true' ? 'Has' : 'None'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 3. Location Search Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Location Search</h4>
@@ -208,7 +262,149 @@ export function CRMFilterSheet({
 
                     <Separator className="bg-slate-100" />
 
-                    {/* Email Status Section */}
+                    {/* 4. Role Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Professional Role</h4>
+                            {filters.role && (
+                                <button
+                                    onClick={() => setFilter("role", "")}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <Input
+                            placeholder="e.g. CEO, MD, Partner..."
+                            value={filters.role || ""}
+                            onChange={(e) => setFilter("role", e.target.value)}
+                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                        />
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 5. Outreach & Campaigns Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Outreach History</h4>
+                            {(selectedCampaignHistory !== 'all' || selectedCampaignResponses.length > 0 || excludedCampaignIds.length > 0) && (
+                                <button
+                                    onClick={() => {
+                                        setFilter("campaign_history", "all");
+                                        setFilter("campaign_response", []);
+                                        setFilter("exclude_campaign_ids", []);
+                                    }}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear Outreach Filters
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Historical Presence</label>
+                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 mb-2">
+                                    {['all', 'any', 'none'].map((val) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setFilter('campaign_history', val)}
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${selectedCampaignHistory === val
+                                                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                                : "text-slate-400 hover:text-slate-600"
+                                                }`}
+                                        >
+                                            {val === 'all' ? 'Any' : val === 'any' ? 'Contacted' : 'Never'}
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedCampaignHistory !== 'none' && campaigns.length > 0 && (
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 max-h-40 overflow-y-auto space-y-1">
+                                        <p className="text-[9px] uppercase font-black text-slate-400 mb-2">Specific Campaigns (OR)</p>
+                                        {campaigns.map(c => (
+                                            <label key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
+                                                <Checkbox
+                                                    checked={Array.isArray(filters.campaign_history) && filters.campaign_history.includes(c.id)}
+                                                    onCheckedChange={() => toggleCampaignPresence(c.id)}
+                                                />
+                                                <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 truncate">{c.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Recipient Experience</label>
+                                <div className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                    {[
+                                        { label: 'Replied', value: 'replied' },
+                                        { label: 'No Reply', value: 'no_reply' },
+                                        { label: 'Bounced', value: 'bounced' }
+                                    ].map(opt => (
+                                        <label key={opt.value} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
+                                            <Checkbox
+                                                checked={selectedCampaignResponses.includes(opt.value)}
+                                                onCheckedChange={() => toggleCampaignResponse(opt.value)}
+                                            />
+                                            <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-900">{opt.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] uppercase font-bold text-red-500 tracking-wider flex items-center gap-1">
+                                    Exclude Campaigns
+                                </label>
+                                <div className="p-3 bg-red-50/30 rounded-xl border border-red-100 max-h-40 overflow-y-auto space-y-1 mt-2">
+                                    {campaigns.length === 0 ? (
+                                        <p className="text-[10px] text-slate-400 italic">No campaigns found</p>
+                                    ) : (
+                                        campaigns.map(c => (
+                                            <label key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
+                                                <Checkbox
+                                                    checked={excludedCampaignIds.includes(c.id)}
+                                                    onCheckedChange={() => toggleExcludeCampaign(c.id)}
+                                                    className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                                                />
+                                                <span className="text-xs font-medium text-slate-600 group-hover:text-red-700 truncate">{c.name}</span>
+                                            </label>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 6. Import Source Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Import Source</h4>
+                            {filters.source && (
+                                <button
+                                    onClick={() => setFilter("source", "")}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <Input
+                            placeholder="e.g. LinkedIn, Eventbrite..."
+                            value={filters.source || ""}
+                            onChange={(e) => setFilter("source", e.target.value)}
+                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                        />
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 7. Email Status Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Email Verification</h4>
@@ -248,53 +444,7 @@ export function CRMFilterSheet({
 
                     <Separator className="bg-slate-100" />
 
-                    {/* Role Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Professional Role</h4>
-                            {filters.role && (
-                                <button
-                                    onClick={() => setFilter("role", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <Input
-                            placeholder="e.g. CEO, MD, Partner..."
-                            value={filters.role || ""}
-                            onChange={(e) => setFilter("role", e.target.value)}
-                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
-                        />
-                    </div>
-
-                    <Separator className="bg-slate-100" />
-
-                    {/* Source Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Import Source</h4>
-                            {filters.source && (
-                                <button
-                                    onClick={() => setFilter("source", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <Input
-                            placeholder="e.g. LinkedIn, Eventbrite..."
-                            value={filters.source || ""}
-                            onChange={(e) => setFilter("source", e.target.value)}
-                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
-                        />
-                    </div>
-
-                    <Separator className="bg-slate-100" />
-
-                    {/* Status Section */}
+                    {/* 8. Lead Status Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Lead Status</h4>
@@ -323,6 +473,45 @@ export function CRMFilterSheet({
                                     </span>
                                 </label>
                             ))}
+                        </div>
+                    </div>
+
+                    <Separator className="bg-slate-100" />
+
+                    {/* 9. Tags (dynamic, last) */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Tags</h4>
+                            {selectedTags.some((t: string) => !categoryValueSet.has(t)) && (
+                                <button
+                                    onClick={() => setFilter("tag", selectedTags.filter((t: string) => categoryValueSet.has(t)))}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 max-h-40 overflow-y-auto">
+                            {tagOptions
+                                .filter((opt) => !categoryValueSet.has(opt.value))
+                                .map((opt) => (
+                                    <label
+                                        key={opt.value}
+                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-all group"
+                                    >
+                                        <Checkbox
+                                            checked={selectedTags.includes(opt.value)}
+                                            onCheckedChange={() => toggleTag(opt.value)}
+                                            className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                                        />
+                                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">
+                                            {opt.label}
+                                        </span>
+                                    </label>
+                                ))}
+                            {tagOptions.filter((opt) => !categoryValueSet.has(opt.value)).length === 0 && (
+                                <p className="text-xs text-slate-400 py-2">No other tags in data</p>
+                            )}
                         </div>
                     </div>
                 </div>

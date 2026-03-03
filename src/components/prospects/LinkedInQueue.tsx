@@ -98,24 +98,6 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
     const inProgress = queueItems.filter(i => ['searching', 'connecting'].includes(i.linkedin_status));
     const history = queueItems.filter(i => ['invited', 'failed', 'search_failed'].includes(i.linkedin_status));
 
-    const handleRetrySearch = async (callId: string) => {
-        try {
-            const res = await fetch('/api/linkedin/retry', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ callId }),
-            });
-
-            if (res.ok) {
-                fetchQueue();
-            } else {
-                console.error('Retry search failed');
-            }
-        } catch (error) {
-            console.error('Error retrying search:', error);
-        }
-    };
-
     const handleRetryConnection = async (callId: string) => {
         try {
             const res = await fetch('/api/linkedin/retry-connection', {
@@ -180,12 +162,6 @@ export default function LinkedInQueue({ currentUser }: LinkedInQueueProps) {
                         {(type === 'action' || type === 'history') && item.linkedin_status === 'failed' && item.linkedin_url && (
                             <Button size="sm" variant="outline" onClick={() => handleRetryConnection(item.id)}>
                                 <RefreshCw className="w-3 h-3 mr-1" /> Retry Connection
-                            </Button>
-                        )}
-
-                        {(type === 'action' || type === 'history' || item.linkedin_status === 'search_failed') && (
-                            <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => handleRetrySearch(item.id)}>
-                                <RefreshCw className="w-3 h-3 mr-1" /> {item.linkedin_status === 'failed' ? 'Restart Search' : 'Retry Search'}
                             </Button>
                         )}
 

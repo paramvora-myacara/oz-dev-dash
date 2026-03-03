@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createCampaign } from '@/lib/api/campaigns-backend'
+import { addRecipients, createCampaign } from '@/lib/api/campaigns-backend'
 import type { CampaignSender } from '@/types/email-editor'
+import { useCampaignDraftStore } from '@/stores/campaignDraftStore'
 
 const MAX_CAMPAIGN_NAME_LENGTH = 25
 
@@ -12,6 +13,7 @@ export default function NewCampaignPage() {
   const [name, setName] = useState('')
   const [sender, setSender] = useState<CampaignSender | null>(null)
   const [creating, setCreating] = useState(false)
+  const { pendingContactIds, clearPendingContacts } = useCampaignDraftStore()
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +33,15 @@ export default function NewCampaignPage() {
     try {
       setCreating(true)
       const campaign = await createCampaign({ name, sender })
+      if (pendingContactIds.length > 0) {
+        try {
+          await addRecipients(campaign.id, pendingContactIds)
+        } catch (err) {
+          console.error('Failed to add pending contacts', err)
+        } finally {
+          clearPendingContacts()
+        }
+      }
       router.push(`/admin/campaigns/${campaign.id}`)
     } catch (err: any) {
       alert('Failed to create campaign: ' + err.message)
@@ -78,22 +89,20 @@ export default function NewCampaignPage() {
             <button
               type="button"
               onClick={() => setSender('todd_vitzthum')}
-              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${
-                sender === 'todd_vitzthum'
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${sender === 'todd_vitzthum'
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Todd Vitzthum
             </button>
             <button
               type="button"
               onClick={() => setSender('jeff_richmond')}
-              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${
-                sender === 'jeff_richmond'
+              className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors ${sender === 'jeff_richmond'
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Jeff Richmond
             </button>

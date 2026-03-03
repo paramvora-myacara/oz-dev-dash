@@ -9,23 +9,23 @@
   --secondary-bg: #0a0a0a;
   --card-bg: rgba(255, 255, 255, 0.03);
   --card-hover-bg: rgba(255, 255, 255, 0.05);
-  
+
   /* Glass effects */
   --glass-bg: rgba(255, 255, 255, 0.02);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
+
   /* Text colors */
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-tertiary: rgba(255, 255, 255, 0.5);
-  
+
   /* Accent colors - minimal and purposeful */
   --accent-blue: #0071e3;
   --accent-green: #30d158;
   --accent-red: #ff375f;
   --accent-purple: #bf5af2;
-  
+
   /* Subtle accent usage */
   --accent-blue-subtle: rgba(0, 113, 227, 0.15);
   --accent-green-subtle: rgba(48, 209, 88, 0.15);
@@ -38,17 +38,17 @@
   --secondary-bg: #f8f9fa;
   --card-bg: rgba(0, 0, 0, 0.03);
   --card-hover-bg: rgba(0, 0, 0, 0.05);
-  
+
   /* Glass effects for light mode */
   --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-  
+
   /* Text colors for light mode */
   --text-primary: #000000;
   --text-secondary: rgba(0, 0, 0, 0.7);
   --text-tertiary: rgba(0, 0, 0, 0.5);
-  
+
   /* Accent colors remain the same but subtle versions change */
   --accent-blue-subtle: rgba(0, 113, 227, 0.1);
   --accent-green-subtle: rgba(48, 209, 88, 0.1);
@@ -85,13 +85,29 @@ a {
     @apply bg-white dark:bg-black text-black dark:text-white font-sans antialiased;
     font-family: "TASA Orbiter", system-ui, sans-serif;
   }
-  h1,h2,h3,h4,h5,h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
     font-family: "TASA Orbiter", system-ui, sans-serif;
   }
-  p, span, div, a, button, input, textarea, select, label {
+
+  p,
+  span,
+  div,
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  label {
     font-family: "TASA Orbiter", system-ui, sans-serif;
   }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
@@ -119,6 +135,7 @@ a {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -172,6 +189,7 @@ a {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -179,10 +197,13 @@ a {
 }
 
 @keyframes pulse-subtle {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.4;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.6;
     transform: scale(1.05);
@@ -190,9 +211,12 @@ a {
 }
 
 @keyframes glow-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 12px rgba(48, 209, 88, 0.4));
   }
+
   50% {
     filter: drop-shadow(0 0 20px rgba(48, 209, 88, 0.6));
   }
@@ -243,44 +267,192 @@ html.light {
 }
 
 /* Force Tailwind classes to work properly */
-.bg-white { background-color: #ffffff !important; }
-.bg-black { background-color: #000000 !important; }
-.text-white { color: #ffffff !important; }
-.text-black { color: #000000 !important; }
+.bg-white {
+  background-color: #ffffff !important;
+}
+
+.bg-black {
+  background-color: #000000 !important;
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+.text-black {
+  color: #000000 !important;
+}
 
 /* Text with opacity variants */
-.text-black\/70 { color: rgba(0, 0, 0, 0.7) !important; }
-.text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
-.text-white\/90 { color: rgba(255, 255, 255, 0.9) !important; }
+.text-black\/70 {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.text-white\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.text-white\/90 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
 
 /* Gray colors - these should invert */
-.text-gray-400 { color: #9ca3af !important; }
-.text-gray-600 { color: #4b5563 !important; }
-.text-gray-800 { color: #1f2937 !important; }
-.text-gray-900 { color: #111827 !important; }
+.text-gray-400 {
+  color: #9ca3af !important;
+}
+
+.text-gray-600 {
+  color: #4b5563 !important;
+}
+
+.text-gray-800 {
+  color: #1f2937 !important;
+}
+
+.text-gray-900 {
+  color: #111827 !important;
+}
 
 /* Dark mode overrides */
-.dark .bg-white { background-color: #000000 !important; }
-.dark .bg-black { background-color: #ffffff !important; }
-.dark .text-white { color: #000000 !important; }
-.dark .text-black { color: #ffffff !important; }
+.dark .bg-white {
+  background-color: #000000 !important;
+}
+
+.dark .bg-black {
+  background-color: #ffffff !important;
+}
+
+.dark .text-white {
+  color: #000000 !important;
+}
+
+.dark .text-black {
+  color: #ffffff !important;
+}
 
 /* Text with opacity variants in dark mode */
-.dark .text-black\/70 { color: rgba(255, 255, 255, 0.7) !important; }
-.dark .text-white\/70 { color: rgba(0, 0, 0, 0.7) !important; }
-.dark .text-white\/90 { color: rgba(0, 0, 0, 0.9) !important; }
+.dark .text-black\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dark .text-white\/70 {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.dark .text-white\/90 {
+  color: rgba(0, 0, 0, 0.9) !important;
+}
 
 /* Gray colors in dark mode */
-.dark .text-gray-400 { color: #d1d5db !important; }
-.dark .text-gray-600 { color: #e5e7eb !important; }
-.dark .text-gray-800 { color: #f3f4f6 !important; }
-.dark .text-gray-900 { color: #f9fafb !important; }
+.dark .text-gray-400 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-600 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-gray-800 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+/* Slate colors in dark mode */
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500 {
+  color: #a1a1aa !important;
+}
+
+.dark .text-slate-400 {
+  color: #a1a1aa !important;
+}
+
+.dark .bg-slate-900 {
+  background-color: #f8fafc !important;
+}
+
+.dark .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: #0f172a !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #334155 !important;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .border-slate-300 {
+  border-color: #475569 !important;
+}
+
+.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+.dark .border-slate-50 {
+  border-color: #0f172a !important;
+}
+
+.dark .fill-slate-900 {
+  fill: #f8fafc !important;
+}
+
+.dark .fill-slate-400 {
+  fill: #64748b !important;
+}
 
 /* Color variations for card text */
-.text-emerald-200 { color: #a7f3d0 !important; }
-.text-indigo-200 { color: #c7d2fe !important; }
-.text-purple-200 { color: #e9d5ff !important; }
-.text-orange-200 { color: #fed7aa !important; }
+.text-emerald-200 {
+  color: #a7f3d0 !important;
+}
+
+.text-indigo-200 {
+  color: #c7d2fe !important;
+}
+
+.text-purple-200 {
+  color: #e9d5ff !important;
+}
+
+.text-orange-200 {
+  color: #fed7aa !important;
+}
 
 .signwell-modal-root,
 #signwell-modal-root {
@@ -290,7 +462,7 @@ html.light {
   pointer-events: none;
 }
 
-.signwell-modal-root > * {
+.signwell-modal-root>* {
   pointer-events: auto;
 }
 
@@ -316,9 +488,8 @@ body.signwell-open {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
-
-

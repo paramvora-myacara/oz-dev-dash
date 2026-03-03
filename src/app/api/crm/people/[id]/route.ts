@@ -20,14 +20,73 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             person_emails ( emails ( * ), is_primary ),
             person_phones ( phones ( * ), is_primary ),
             person_linkedin ( linkedin_profiles ( * ), is_primary ),
-            person_properties ( properties ( * ), role )
+            person_properties ( properties ( * ), role ),
+            activities (*),
+            campaign_recipients (
+                id, 
+                campaign_id, 
+                status, 
+                sent_at, 
+                replied_at, 
+                created_at,
+                campaigns ( name ) 
+            )
         `)
         .eq('id', id)
         .single();
 
     if (error) {
+        console.error('Error fetching person:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    if (!data) {
+        console.error('No data found for person ID:', id);
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    console.log('Successfully fetched person data:', !!data);
+
+    const activities = data.activities || [];
+
+    // Map campaign history to timeline events
+    const campaignEvents = (data.campaign_recipients || [])
+        .map((r: any) => ({
+            id: r.id,
+            type: 'email_sent',
+            channel: 'email',
+            description: `Campaign: ${r.campaigns?.name || 'Sent Email'}`,
+            timestamp: r.sent_at || r.created_at,
+            metadata: {
+                campaign_id: r.campaign_id,
+                status: r.status,
+                replied_at: r.replied_at
+            }
+        }))
+        .filter((ev: any) => ev.timestamp);
+
+    // Website events (user_events) when person is linked to an auth user
+    let websiteEvents: Array<{ id: string; channel: string; type: string; description: string; timestamp: string }> = [];
+    if (data.user_id) {
+        const { data: events } = await supabase
+            .from('user_events')
+            .select('id, event_type, endpoint, created_at')
+            .eq('user_id', data.user_id)
+            .order('created_at', { ascending: false })
+            .limit(100);
+        websiteEvents = (events || []).map((e: any) => ({
+            id: e.id,
+            channel: 'website',
+            type: e.event_type,
+            description: e.endpoint ? `${e.event_type} · ${e.endpoint}` : e.event_type,
+            timestamp: e.created_at,
+        }));
+    }
+
+    const timeline = [...activities, ...campaignEvents, ...websiteEvents].sort(
+        (a: any, b: any) =>
+            new Date(b.timestamp || b.created_at).getTime() - new Date(a.timestamp || a.created_at).getTime(),
+    );
+
+    return NextResponse.json({ ...data, timeline });
 }

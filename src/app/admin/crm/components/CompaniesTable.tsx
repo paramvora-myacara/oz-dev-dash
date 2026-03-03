@@ -11,15 +11,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 import { useServerTable } from "../hooks/useServerTable";
 import { CRMShell } from "./CRMShell";
 
 interface CompaniesTableProps {
     onRowClick: (data: any) => void;
+    currentUser?: string | null;
 }
 
-export function CompaniesTable({ onRowClick }: CompaniesTableProps) {
+export function CompaniesTable({ onRowClick, currentUser }: CompaniesTableProps) {
     const tableState = useServerTable({ endpoint: "/api/crm/companies" });
 
     const bulkActions = (
@@ -66,10 +67,13 @@ export function CompaniesTable({ onRowClick }: CompaniesTableProps) {
                 </TableHeader>
                 <TableBody>
                     {tableState.data.map((company) => (
+                        (() => {
+                            const lockedByOther = !!company.viewing_by && company.viewing_by !== currentUser;
+                            return (
                         <TableRow
                             key={company.id}
-                            className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
-                            onClick={() => onRowClick(company)}
+                            className={lockedByOther ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"}
+                            onClick={() => !lockedByOther && onRowClick(company)}
                         >
                             <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
@@ -77,7 +81,17 @@ export function CompaniesTable({ onRowClick }: CompaniesTableProps) {
                                     onCheckedChange={() => tableState.toggleSelection(company.id)}
                                 />
                             </TableCell>
-                            <TableCell className="font-medium">{company.name}</TableCell>
+                            <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                    <span>{company.name}</span>
+                                    {company.viewing_by && (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-tight text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                                            <Lock className="w-3 h-3" />
+                                            {company.viewing_by === currentUser ? 'You' : company.viewing_by}
+                                        </span>
+                                    )}
+                                </div>
+                            </TableCell>
                             <TableCell>{company.org_type || "-"}</TableCell>
                             <TableCell>
                                 {company.city && company.state
@@ -94,6 +108,8 @@ export function CompaniesTable({ onRowClick }: CompaniesTableProps) {
                                 </Badge>
                             </TableCell>
                         </TableRow>
+                            );
+                        })()
                     ))}
                 </TableBody>
             </Table>

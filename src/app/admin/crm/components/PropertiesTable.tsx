@@ -11,15 +11,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 import { useServerTable } from "../hooks/useServerTable";
 import { CRMShell } from "./CRMShell";
 
 interface PropertiesTableProps {
     onRowClick: (data: any) => void;
+    currentUser?: string | null;
 }
 
-export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
+export function PropertiesTable({ onRowClick, currentUser }: PropertiesTableProps) {
     const tableState = useServerTable({ endpoint: "/api/crm/properties" });
 
     const bulkActions = (
@@ -65,10 +66,13 @@ export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
                 </TableHeader>
                 <TableBody>
                     {tableState.data.map((property) => (
+                        (() => {
+                            const lockedByOther = !!property.viewing_by && property.viewing_by !== currentUser;
+                            return (
                         <TableRow
                             key={property.id}
-                            className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
-                            onClick={() => onRowClick(property)}
+                            className={lockedByOther ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"}
+                            onClick={() => !lockedByOther && onRowClick(property)}
                         >
                             <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
@@ -79,7 +83,15 @@ export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
                                 />
                             </TableCell>
                             <TableCell className="font-medium">
-                                {property.property_name}
+                                <div className="flex items-center gap-2">
+                                    <span>{property.property_name}</span>
+                                    {property.viewing_by && (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-tight text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                                            <Lock className="w-3 h-3" />
+                                            {property.viewing_by === currentUser ? 'You' : property.viewing_by}
+                                        </span>
+                                    )}
+                                </div>
                             </TableCell>
                             <TableCell>{property.address || "-"}</TableCell>
                             <TableCell>
@@ -102,6 +114,8 @@ export function PropertiesTable({ onRowClick }: PropertiesTableProps) {
                                 </div>
                             </TableCell>
                         </TableRow>
+                            );
+                        })()
                     ))}
                 </TableBody>
             </Table>

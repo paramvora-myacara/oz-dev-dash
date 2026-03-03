@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Search, ChevronLeft, ChevronRight, CheckSquare, Filter, Mail, Linkedin } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, CheckSquare, Filter, Mail, Linkedin, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CRMFilterSheet } from "./CRMFilterSheet";
 import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { type Campaign } from "@/types/email-editor";
 
 interface CRMShellProps {
     children: React.ReactNode;
@@ -22,6 +24,9 @@ interface CRMShellProps {
     setFilter?: (key: string, value: any) => void;
     clearFilters?: () => void;
     tagOptions?: { label: string; value: string }[];
+    /** Options for the toolbar Categories dropdown (defaults to tagOptions if not set) */
+    categoryOptions?: { label: string; value: string }[];
+    campaigns?: Campaign[];
 }
 
 export function CRMShell({
@@ -41,7 +46,10 @@ export function CRMShell({
     setFilter,
     clearFilters,
     tagOptions = [],
+    categoryOptions,
+    campaigns = [],
 }: CRMShellProps) {
+    const toolbarCategoryOptions = categoryOptions?.length ? categoryOptions : tagOptions;
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const maxPage = Math.max(0, Math.ceil(totalCount / pageSize) - 1);
 
@@ -56,24 +64,29 @@ export function CRMShell({
     const handleToggleEmail = () => {
         if (!setFilter) return;
         const current = filters.has_email;
-        if (current === 'true') setFilter('has_email', 'false');
-        else if (current === 'false') setFilter('has_email', 'all');
+        if (current === 'true') setFilter('has_email', 'all');
         else setFilter('has_email', 'true');
     };
 
     const handleToggleLinkedin = () => {
         if (!setFilter) return;
         const current = filters.has_linkedin;
-        if (current === 'true') setFilter('has_linkedin', 'false');
-        else if (current === 'false') setFilter('has_linkedin', 'all');
+        if (current === 'true') setFilter('has_linkedin', 'all');
         else setFilter('has_linkedin', 'true');
+    };
+
+    const handleTogglePhone = () => {
+        if (!setFilter) return;
+        const current = filters.has_phone;
+        if (current === 'true') setFilter('has_phone', 'all');
+        else setFilter('has_phone', 'true');
     };
 
     return (
         <div className="flex flex-col gap-4 w-full">
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-2 w-full sm:w-auto relative flex-1 max-w-[500px]">
+                <div className="flex items-center gap-2 w-full sm:w-auto relative flex-1 max-w-[720px] min-w-0">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
@@ -113,6 +126,31 @@ export function CRMShell({
                                 <Linkedin className={`w-4 h-4 ${filters.has_linkedin === 'true' ? 'fill-indigo-700/10' : ''}`} />
                                 <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">LI</span>
                             </Button>
+
+                            <Button
+                                variant="outline"
+                                onClick={handleTogglePhone}
+                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_phone === 'true'
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
+                                    : filters.has_phone === 'false'
+                                        ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
+                                        : "text-slate-400 hover:bg-slate-50 border-slate-200"
+                                    }`}
+                            >
+                                <Phone className={`w-4 h-4 ${filters.has_phone === 'true' ? 'fill-emerald-700/10' : ''}`} />
+                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">Phone</span>
+                            </Button>
+
+                            <div className="w-[160px] [&_button]:h-10 [&_button]:rounded-xl [&_button]:border-dashed [&_button]:border-slate-200 [&_button]:text-slate-600 [&_button]:hover:bg-slate-50 [&_button]:text-sm [&_button]:font-medium [&_button]:tracking-tight">
+                                <MultiSelect
+                                    options={toolbarCategoryOptions}
+                                    selected={Array.isArray(filters.tag) ? filters.tag : []}
+                                    onSelectionChange={(selected) => setFilter('tag', selected)}
+                                    placeholder="Categories"
+                                    contentClassName="rounded-xl border border-slate-200 shadow-lg bg-white py-2 max-h-[280px] overflow-y-auto"
+                                    optionClassName="px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg mx-1.5"
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -144,6 +182,7 @@ export function CRMShell({
                                 setFilter={setFilter}
                                 clearFilters={clearFilters}
                                 tagOptions={tagOptions}
+                                campaigns={campaigns}
                             />
                         </>
                     )}

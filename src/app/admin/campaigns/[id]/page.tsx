@@ -6,16 +6,16 @@ import Link from 'next/link'
 import { ArrowLeft, Rocket, Mail, Pencil, AlertCircle, ChevronDown, ChevronUp, Eye, RefreshCw, Check, Loader2 } from 'lucide-react'
 import EmailEditor from '@/components/email-editor/EmailEditor'
 import CampaignStepper, { type CampaignStep } from '@/components/campaign/CampaignStepper'
-import ContactSelectionStep from '@/components/campaign/ContactSelectionStep'
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails } from '@/lib/api/campaigns-backend'
+import { updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails, addRecipients } from '@/lib/api/campaigns-backend'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
 import type { QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
 import { createClient } from '@/utils/supabase/client'
+import { PeopleTable } from '@/app/admin/crm/components/PeopleTable'
 
 export default function CampaignEditPage() {
   const params = useParams()
@@ -73,8 +73,6 @@ export default function CampaignEditPage() {
   // Regeneration state
 
   // Contact selection state
-  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
-
   // Sample data from database (replaces CSV)
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
 
@@ -249,11 +247,13 @@ export default function CampaignEditPage() {
 
   // Continue from recipient selection to design step
   const handleContinueFromRecipients = useCallback(async (contactIds: string[]) => {
-    setSelectedContactIds(contactIds)
+    if (contactIds.length > 0) {
+      await addRecipients(campaignId, contactIds)
+    }
     setCurrentStep('design')
     // Force refresh to ensure cache has latest recipient count before step routing logic runs
     await refreshCampaignData()
-  }, [refreshCampaignData])
+  }, [campaignId, refreshCampaignData])
 
   // Back from design to recipient selection
   const handleBackToRecipients = useCallback(() => {
@@ -657,11 +657,13 @@ export default function CampaignEditPage() {
       {/* Main Content based on step */}
       <div className="flex-1 overflow-hidden">
         {currentStep === 'select-recipients' && (
-          <ContactSelectionStep
-            campaignId={campaignId}
-            onContinue={handleContinueFromRecipients}
-            onBack={() => router.push('/admin/campaigns')}
-          />
+          <div className="h-full flex flex-col p-4 sm:p-6">
+            <PeopleTable
+              mode="campaign_selection"
+              campaignId={campaignId}
+              onContinue={handleContinueFromRecipients}
+            />
+          </div>
         )}
 
         {currentStep === 'design' && (

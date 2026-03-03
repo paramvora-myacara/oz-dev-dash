@@ -60,12 +60,10 @@ export default function EmailValidationErrorsModal({
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              stagedCount > 0 ? 'bg-amber-100' : 'bg-red-100'
-            }`}>
-              <AlertTriangle className={`w-5 h-5 ${
-                stagedCount > 0 ? 'text-amber-600' : 'text-red-600'
-              }`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stagedCount > 0 ? 'bg-amber-100' : 'bg-red-100'
+              }`}>
+              <AlertTriangle className={`w-5 h-5 ${stagedCount > 0 ? 'text-amber-600' : 'text-red-600'
+                }`} />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">
@@ -115,29 +113,29 @@ export default function EmailValidationErrorsModal({
             </div>
 
             {/* Categorized Summary */}
-            {(categorizedErrors.invalidFormat.length > 0 || 
-              categorizedErrors.missing.length > 0 || 
+            {(categorizedErrors.invalidFormat.length > 0 ||
+              categorizedErrors.missing.length > 0 ||
               categorizedErrors.duplicates.length > 0) && (
-              <div className="px-6 py-3 bg-gray-50 border-b">
-                <div className="flex flex-wrap gap-3 text-sm">
-                  {categorizedErrors.invalidFormat.length > 0 && (
-                    <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded">
-                      {categorizedErrors.invalidFormat.length} Invalid Format
-                    </span>
-                  )}
-                  {categorizedErrors.missing.length > 0 && (
-                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded">
-                      {categorizedErrors.missing.length} Missing Email
-                    </span>
-                  )}
-                  {categorizedErrors.duplicates.length > 0 && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                      {categorizedErrors.duplicates.length} Duplicates
-                    </span>
-                  )}
+                <div className="px-6 py-3 bg-gray-50 border-b">
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    {categorizedErrors.invalidFormat.length > 0 && (
+                      <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded">
+                        {categorizedErrors.invalidFormat.length} Invalid Format
+                      </span>
+                    )}
+                    {categorizedErrors.missing.length > 0 && (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded">
+                        {categorizedErrors.missing.length} Missing Email
+                      </span>
+                    )}
+                    {categorizedErrors.duplicates.length > 0 && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        {categorizedErrors.duplicates.length} Duplicates
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Scrollable Error List */}
             <div className="flex-1 overflow-y-auto px-6 py-4">

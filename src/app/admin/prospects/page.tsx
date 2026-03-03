@@ -395,7 +395,6 @@ export default function ProspectsPage() {
                     <TabsTrigger value="linkedin_queue" className="flex items-center gap-2">
                         <span className="text-[#0a66c2] font-semibold">in</span> LinkedIn Queue
                     </TabsTrigger>
-                    <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="prospects" className="space-y-4">
@@ -444,9 +443,6 @@ export default function ProspectsPage() {
                     )}
                 </TabsContent>
 
-                <TabsContent value="leaderboard">
-                    <LeaderboardTab />
-                </TabsContent>
 
                 <TabsContent value="linkedin_queue">
                     <LinkedInQueue currentUser={currentUser} />

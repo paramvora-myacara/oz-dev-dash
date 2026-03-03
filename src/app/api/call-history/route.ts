@@ -10,34 +10,59 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
-    let query = supabase
-        .from('prospect_calls')
+    // 1. Fetch activities ONLY from the new CRM activities table
+    let activityQuery = supabase
+        .from('activities')
         .select(`
-            *,
-            prospects (
-                property_name,
-                city,
-                state
+            id,
+            timestamp,
+            metadata,
+            people (
+                display_name,
+                person_properties (
+                    properties (property_name, city, state)
+                )
             )
-        `, { count: 'exact' });
+        `, { count: 'exact' })
+        .eq('type', 'call_logged');
 
     if (callerName) {
-        query = query.eq('caller_name', callerName);
+        activityQuery = activityQuery.eq('metadata->>caller_name', callerName);
     }
 
-    query = query
-        .order('called_at', { ascending: false })
+    const { data: activityData, error, count } = await activityQuery
+        .order('timestamp', { ascending: false })
         .range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
-
     if (error) {
+        console.error('Activity History Fetch Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 2. Map to unified format
+    const formattedData = (activityData || []).map((act: any) => {
+        const m = act.metadata || {};
+        const person = act.people || {};
+        const prop = person.person_properties?.[0]?.properties || {};
+
+        return {
+            id: act.id,
+            called_at: act.timestamp,
+            caller_name: m.caller_name || 'Unknown',
+            outcome: m.outcome || 'unknown',
+            phone_used: m.phone_used || '-',
+            email_captured: m.email_captured,
+            prospects: {
+                property_name: prop.property_name || person.display_name || '-',
+                city: prop.city || '',
+                state: prop.state || ''
+            }
+        };
+    });
+
     return NextResponse.json({
-        data,
-        count,
+        data: formattedData,
+        count: count || 0,
         page,
         totalPages: Math.ceil((count || 0) / limit)
     });
