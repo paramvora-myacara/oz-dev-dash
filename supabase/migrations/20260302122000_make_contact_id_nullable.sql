@@ -9,10 +9,10 @@ ALTER TABLE campaign_recipients ALTER COLUMN contact_id DROP NOT NULL;
 
 -- 2. Clean up any legacy records that don't have a recipient_person_id
 -- Postgres cannot enforce NOT NULL if existing rows contain NULLs.
-DELETE FROM campaign_recipients WHERE recipient_person_id IS NULL;
+-- DELETE FROM campaign_recipients WHERE recipient_person_id IS NULL;
 
--- 3. Enforce NOT NULL on the new CRM-based recipient_person_id
-ALTER TABLE campaign_recipients ALTER COLUMN recipient_person_id SET NOT NULL;
+-- 3. Relax NOT NULL on the new CRM-based recipient_person_id for transition
+-- ALTER TABLE campaign_recipients ALTER COLUMN recipient_person_id SET NOT NULL;
 
 -- 3. Clean up uniqueness for contact_id (optional but keeps standard)
 -- The existing UNIQUE(campaign_id, contact_id) already ignores NULLs in Postgres,
