@@ -304,15 +304,13 @@ export async function getRecipients(campaignId: string): Promise<any[]> {
 // Add recipients
 export async function addRecipients(
   campaignId: string,
-  contactIds: string[],
-  selectedEmails?: Record<string, string>
+  contactIds: string[]
 ): Promise<{ success: boolean; count: number }> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/recipients`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contact_ids: contactIds,
-      selected_emails: selectedEmails,
     }),
   });
   if (!res.ok) {
@@ -372,22 +370,24 @@ export async function getCampaignSampleRecipients(id: string, limit = 5): Promis
 
   // Transform recipients into flat row objects
   const rows = recipients.slice(0, limit).map((r: any) => {
-    const contact = r.contacts || (Array.isArray(r.contacts) ? r.contacts[0] : {});
+    const person = Array.isArray(r.people) ? r.people[0] : (r.people || {});
+    const fallbackContact = Array.isArray(r.contacts) ? r.contacts[0] : (r.contacts || {});
+    const contact = person && Object.keys(person).length > 0 ? person : fallbackContact;
 
     // Flatten contact details if present
     const details = (contact.details as Record<string, string>) || {};
 
     const row: Record<string, any> = {
       ...details,
-      Name: contact.name || '',
+      Name: contact.name || contact.display_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim(),
       FirstName: (() => {
-        const fullName = contact.name || '';
-        const parts = fullName.trim().split(' ', 1);
+        const fullName = contact.name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim();
+        const parts = fullName.trim().split(/\s+/);
         return parts[0] || '';
       })(),
       LastName: (() => {
-        const fullName = contact.name || '';
-        const parts = fullName.trim().split(' ', 1);
+        const fullName = contact.name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim();
+        const parts = fullName.trim().split(/\s+/);
         return parts.length > 1 ? parts.slice(1).join(' ') : '';
       })(),
       Email: r.selected_email || contact.email || '',
