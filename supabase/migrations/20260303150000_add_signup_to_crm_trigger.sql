@@ -29,16 +29,18 @@ BEGIN
         SET
             user_id = NEW.id,
             lead_status = 'warm',
-            tags = ARRAY(SELECT DISTINCT unnest(array_append(tags, 'website_signup')))
+            tags = ARRAY(SELECT DISTINCT unnest(array_append(tags, 'website_signup'))),
+            details = COALESCE(details, '{}'::jsonb) || '{"import_source":"website_signup"}'::jsonb
         WHERE id = target_person_id;
     ELSE
         -- B: CREATE BRAND NEW PERSON (Total stranger)
         -- Name: prefer first_name/last_name from metadata; else derive from full_name (split on first space)
-        INSERT INTO public.people (user_id, lead_status, tags, first_name, last_name)
+        INSERT INTO public.people (user_id, lead_status, tags, details, first_name, last_name)
         VALUES (
             NEW.id,
             'warm',
             ARRAY['website_signup'],
+            '{"import_source":"website_signup"}'::jsonb,
             NULLIF(trim(COALESCE(
                 NEW.raw_user_meta_data->>'first_name',
                 split_part(trim(COALESCE(NEW.raw_user_meta_data->>'full_name', '')), ' ', 1)
