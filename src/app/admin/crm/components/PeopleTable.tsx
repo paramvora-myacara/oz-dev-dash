@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
     Table,
     TableBody,
@@ -37,25 +37,28 @@ import { useCampaignDraftStore } from "@/stores/campaignDraftStore";
 import { type Campaign } from '@/types/email-editor';
 import { tagToLabel } from '@/lib/utils';
 import { CATEGORY_OPTIONS } from '../constants';
+import type { CampaignRecipientSelectionPayload, PeopleFiltersForRecipients } from '@/types/campaign-recipient-selection';
 
 interface PeopleTableProps {
     onRowClick?: (data: any) => void;
     mode?: 'default' | 'campaign_selection';
     campaignId?: string;
-    onContinue?: (selectedIds: string[]) => void;
+    onContinue?: (selection: CampaignRecipientSelectionPayload) => void;
     currentUser?: string | null;
     campaigns?: Campaign[];
 }
 
 export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentUser, campaigns = [] }: PeopleTableProps) {
     const router = useRouter();
-    const { setPendingContacts } = useCampaignDraftStore();
+    const { setPendingRecipientSelection } = useCampaignDraftStore();
     const tableState = useServerTable({ endpoint: "/api/crm/people" });
 
     const [showLinkedInConfirm, setShowLinkedInConfirm] = useState(false);
     const [linkedInSender, setLinkedInSender] = useState(currentUser || 'Jeff');
     const [linkedInLoading, setLinkedInLoading] = useState(false);
     const [tagOptions, setTagOptions] = useState<{ label: string; value: string }[]>([]);
+    const [selectionMode, setSelectionMode] = useState<"page" | "all-matching">("page");
+    const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         fetch('/api/crm/people/tags')
@@ -68,6 +71,104 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     }, []);
 
     const selectedIds = Array.from(tableState.selectedIds);
+    const visibleIds = useMemo(() => tableState.data.map((person: any) => person.id), [tableState.data]);
+    const isAllMatchingMode = selectionMode === "all-matching";
+    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => tableState.selectedIds.has(id));
+
+    const peopleFiltersForRecipients = useCallback((): PeopleFiltersForRecipients => {
+        const filters = tableState.filters || {};
+        return {
+            search: tableState.search || undefined,
+            tag: Array.isArray(filters.tag) && filters.tag.length > 0 ? filters.tag : undefined,
+            location: filters.location || undefined,
+            role: filters.role || undefined,
+            source: filters.source || undefined,
+            lead_status: Array.isArray(filters.lead_status) && filters.lead_status.length > 0 ? filters.lead_status : undefined,
+            email_status: Array.isArray(filters.email_status) && filters.email_status.length > 0 ? filters.email_status : undefined,
+            has_email: filters.has_email || "all",
+            has_linkedin: filters.has_linkedin || "all",
+            has_phone: filters.has_phone || "all",
+            campaign_history: filters.campaign_history ? (Array.isArray(filters.campaign_history) && filters.campaign_history.length === 0 ? undefined : filters.campaign_history) : undefined,
+            campaign_response: Array.isArray(filters.campaign_response) && filters.campaign_response.length > 0 ? filters.campaign_response : undefined,
+            exclude_campaign_ids: Array.isArray(filters.exclude_campaign_ids) && filters.exclude_campaign_ids.length > 0 ? filters.exclude_campaign_ids : undefined,
+        };
+    }, [tableState.filters, tableState.search]);
+
+    const getSelectionPayload = useCallback((): CampaignRecipientSelectionPayload => {
+        if (isAllMatchingMode) {
+            return {
+                selectAllMatching: true,
+                filters: peopleFiltersForRecipients(),
+                exclusions: Array.from(excludedIds),
+                explicitSelections: selectedIds,
+            };
+        }
+
+        return {
+            selectAllMatching: false,
+            contact_ids: Array.from(tableState.selectedIds),
+            explicitSelections: [],
+        };
+    }, [excludedIds, isAllMatchingMode, peopleFiltersForRecipients, selectedIds, tableState.selectedIds]);
+
+    const selectionCount = isAllMatchingMode
+        ? Math.max(tableState.totalCount - excludedIds.size, 0)
+        : tableState.selectedIds.size;
+
+    const canSelectAllMatching = !isAllMatchingMode && allVisibleSelected && tableState.totalCount > tableState.selectedIds.size;
+
+    useEffect(() => {
+        if (!isAllMatchingMode) return;
+        setExcludedIds(new Set());
+    }, [tableState.search, tableState.filters, tableState.page, tableState.pageSize, isAllMatchingMode]);
+
+    const handleEnableAllMatching = useCallback(() => {
+        setSelectionMode("all-matching");
+        tableState.setSelectedIds(new Set());
+        setExcludedIds(new Set());
+    }, [tableState]);
+
+    const handleDisableAllMatching = useCallback(() => {
+        setSelectionMode("page");
+        tableState.setSelectedIds(new Set());
+        setExcludedIds(new Set());
+    }, [tableState]);
+
+    const handleRowSelection = useCallback((personId: string, checked: boolean) => {
+        if (!isAllMatchingMode) {
+            tableState.toggleSelection(personId);
+            return;
+        }
+
+        setExcludedIds((prev) => {
+            const next = new Set(prev);
+            if (checked) {
+                next.delete(personId);
+            } else {
+                next.add(personId);
+            }
+            return next;
+        });
+    }, [isAllMatchingMode, tableState]);
+
+    const toggleAllVisible = useCallback((checked: boolean) => {
+        if (!isAllMatchingMode) {
+            tableState.toggleAll(visibleIds, checked);
+            return;
+        }
+
+        setExcludedIds((prev) => {
+            const next = new Set(prev);
+            visibleIds.forEach((id) => {
+                if (checked) {
+                    next.delete(id);
+                } else {
+                    next.add(id);
+                }
+            });
+            return next;
+        });
+    }, [isAllMatchingMode, visibleIds, tableState]);
     const hasEmailFilter = tableState.filters.has_email === 'true';
     const hasLinkedinFilter = tableState.filters.has_linkedin === 'true';
     const hasPhoneFilter = tableState.filters.has_phone === 'true';
@@ -101,22 +202,60 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
 
     const bulkActions = (
         mode === 'campaign_selection' ? (
-            <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs ml-2 bg-white"
-                onClick={() => onContinue?.(selectedIds)}
-            >
-                <Mail className="w-3 h-3 mr-1" /> Continue
-            </Button>
+            <>
+                {canSelectAllMatching && (
+                    <button
+                        type="button"
+                        onClick={handleEnableAllMatching}
+                        className="text-xs underline text-slate-500 hover:text-slate-700"
+                    >
+                        Select all {tableState.totalCount} matching
+                    </button>
+                )}
+                {isAllMatchingMode && (
+                    <button
+                        type="button"
+                        onClick={handleDisableAllMatching}
+                        className="text-xs underline text-slate-500 hover:text-slate-700"
+                    >
+                        Select this page only
+                    </button>
+                )}
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs ml-2 bg-white"
+                    onClick={() => onContinue?.(getSelectionPayload())}
+                >
+                    <Mail className="w-3 h-3 mr-1" /> Continue
+                </Button>
+            </>
         ) : (
             <>
+                {canSelectAllMatching && (
+                    <button
+                        type="button"
+                        onClick={handleEnableAllMatching}
+                        className="text-xs underline text-slate-500 hover:text-slate-700"
+                    >
+                        Select all {tableState.totalCount} matching
+                    </button>
+                )}
+                {isAllMatchingMode && (
+                    <button
+                        type="button"
+                        onClick={handleDisableAllMatching}
+                        className="text-xs underline text-slate-500 hover:text-slate-700 mr-2"
+                    >
+                        Select this page only
+                    </button>
+                )}
                 <Button
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs ml-2 bg-white"
                     onClick={() => {
-                        setPendingContacts(selectedIds);
+                        setPendingRecipientSelection(getSelectionPayload());
                         router.push('/admin/campaigns/new');
                     }}
                 >
@@ -146,6 +285,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     return (
         <CRMShell
             {...tableState}
+            selectedCount={selectionCount}
             tagOptions={tagOptions}
             categoryOptions={CATEGORY_OPTIONS.slice()}
             campaigns={campaigns}
@@ -159,14 +299,11 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                             <Checkbox
                                 checked={
                                     tableState.data.length > 0 &&
-                                    tableState.selectedIds.size === tableState.data.length
+                                    (isAllMatchingMode
+                                        ? visibleIds.every((id) => !excludedIds.has(id))
+                                        : tableState.selectedIds.size === tableState.data.length)
                                 }
-                                onCheckedChange={(checked) =>
-                                    tableState.toggleAll(
-                                        tableState.data.map((d: any) => d.id),
-                                        !!checked,
-                                    )
-                                }
+                                onCheckedChange={(checked) => toggleAllVisible(!!checked)}
                             />
                         </TableHead>
                         <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Name</TableHead>
@@ -192,8 +329,8 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                 >
                                     <TableCell onClick={(e) => e.stopPropagation()}>
                                         <Checkbox
-                                            checked={tableState.selectedIds.has(person.id)}
-                                            onCheckedChange={() => tableState.toggleSelection(person.id)}
+                                            checked={isAllMatchingMode ? !excludedIds.has(person.id) : tableState.selectedIds.has(person.id)}
+                                            onCheckedChange={(checked) => handleRowSelection(person.id, !!checked)}
                                         />
                                     </TableCell>
                                     <TableCell className="font-semibold text-base text-slate-900">

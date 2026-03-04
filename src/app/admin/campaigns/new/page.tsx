@@ -13,7 +13,7 @@ export default function NewCampaignPage() {
   const [name, setName] = useState('')
   const [sender, setSender] = useState<CampaignSender | null>(null)
   const [creating, setCreating] = useState(false)
-  const { pendingContactIds, clearPendingContacts } = useCampaignDraftStore()
+  const { pendingRecipientSelection, clearPendingRecipientSelection } = useCampaignDraftStore()
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,13 +33,13 @@ export default function NewCampaignPage() {
     try {
       setCreating(true)
       const campaign = await createCampaign({ name, sender })
-      if (pendingContactIds.length > 0) {
+      if (pendingRecipientSelection && (pendingRecipientSelection.selectAllMatching || (!pendingRecipientSelection.selectAllMatching && pendingRecipientSelection.contact_ids.length > 0))) {
         try {
-          await addRecipients(campaign.id, pendingContactIds)
+          await addRecipients(campaign.id, pendingRecipientSelection)
         } catch (err) {
           console.error('Failed to add pending contacts', err)
         } finally {
-          clearPendingContacts()
+          clearPendingRecipientSelection()
         }
       }
       router.push(`/admin/campaigns/${campaign.id}`)

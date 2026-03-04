@@ -5,6 +5,7 @@
  */
 
 import type { Campaign, QueuedEmail, LaunchResponse, CampaignStep, StepEdge, Section, SectionMode } from '@/types/email-editor';
+import type { CampaignRecipientSelectionPayload } from '@/types/campaign-recipient-selection';
 
 // Use Next.js proxy routes instead of direct backend calls
 // The proxy handles authentication server-side using httpOnly cookies
@@ -304,14 +305,12 @@ export async function getRecipients(campaignId: string): Promise<any[]> {
 // Add recipients
 export async function addRecipients(
   campaignId: string,
-  contactIds: string[]
+  selection: CampaignRecipientSelectionPayload
 ): Promise<{ success: boolean; count: number }> {
   const res = await fetch(`${PROXY_BASE}/${campaignId}/recipients`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contact_ids: contactIds,
-    }),
+    body: JSON.stringify(selection),
   });
   if (!res.ok) {
     const error = await parseErrorResponse(res);

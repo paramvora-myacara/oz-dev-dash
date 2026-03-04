@@ -18,6 +18,7 @@ interface CRMShellProps {
     totalCount: number;
     loading: boolean;
     selectedIds: Set<string>;
+    selectedCount?: number;
     searchPlaceholder?: string;
     actions?: React.ReactNode;
     filters?: Record<string, any>;
@@ -43,6 +44,7 @@ export function CRMShell({
     searchPlaceholder = "Search...",
     actions,
     filters = {},
+    selectedCount,
     setFilter,
     clearFilters,
     tagOptions = [],
@@ -60,6 +62,8 @@ export function CRMShell({
             if (value === 'all') return acc;
             return acc + 1;
         }, 0);
+
+    const selectedCountToShow = selectedCount ?? selectedIds.size;
 
     const handleToggleEmail = () => {
         if (!setFilter) return;
@@ -187,10 +191,10 @@ export function CRMShell({
                         </>
                     )}
 
-                    {selectedIds.size > 0 && (
+    {selectedCountToShow > 0 && (
                         <div className="flex items-center gap-2 bg-blue-50 text-blue-700 h-10 px-3 rounded-md text-sm font-medium mr-2 border border-blue-100">
                             <CheckSquare className="w-4 h-4" />
-                            {selectedIds.size} Selected
+            {selectedCountToShow} Selected
                             <div className="flex gap-1 ml-2">{actions}</div>
                         </div>
                     )}
