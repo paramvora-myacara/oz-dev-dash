@@ -114,7 +114,7 @@ export function CampaignsTab() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm">
+            <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200">
                 <div className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-blue-600" />
                     <h3 className="font-semibold text-lg text-gray-900">Campaign Management</h3>
@@ -130,7 +130,7 @@ export function CampaignsTab() {
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50 border border-red-100 text-red-800 rounded-xl flex items-center gap-3">
+                <div className="p-4 bg-red-50 border border-red-100 text-red-800 rounded-lg flex items-center gap-3">
                     <div className="bg-red-100 p-2 rounded-full">
                         <Trash2 className="w-4 h-4 text-red-600" />
                     </div>
@@ -140,7 +140,7 @@ export function CampaignsTab() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: Recent Campaigns */}
-                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col">
+                <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
                         <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-xs">Recent Campaigns</h2>
                         <Button variant="ghost" size="sm" onClick={loadCampaigns} className="h-8 w-8 p-0">
@@ -219,7 +219,7 @@ export function CampaignsTab() {
                 </div>
 
                 {/* Right: Days Scheduled */}
-                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col">
+                <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <Calendar size={16} className="text-slate-400" />
@@ -250,7 +250,7 @@ export function CampaignsTab() {
                                     return (
                                         <div
                                             key={day.date}
-                                            className={`rounded-xl p-3 border transition-all ${isWeekend
+                                            className={`rounded-lg p-3 border transition-all ${isWeekend
                                                 ? 'bg-slate-50/50 border-slate-100 opacity-60'
                                                 : day.isToday
                                                     ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-100'

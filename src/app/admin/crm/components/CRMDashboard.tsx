@@ -177,7 +177,7 @@ export function CRMDashboard() {
                     <LinkedInOutreachTab currentUser={currentUser} />
                 </TabsContent>
                 <TabsContent value="leaderboard" className="w-full">
-                    <div className="bg-white rounded-2xl border shadow-sm p-6">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6">
                         <LeaderboardTab />
                     </div>
                 </TabsContent>
@@ -203,7 +203,7 @@ export function CRMDashboard() {
 
             {mounted && (!currentUser || !isPasswordVerified) && (
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
+                    <div className="bg-card border rounded-lg shadow-md max-w-md w-full p-6 space-y-6">
                         {!tempSelectedUser ? (
                             <>
                                 <div className="space-y-2 text-center">

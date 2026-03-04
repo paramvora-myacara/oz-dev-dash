@@ -93,7 +93,7 @@ export function CRMShell({
                             placeholder={searchPlaceholder}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 h-10 rounded-xl w-full"
+                            className="pl-9 h-10 rounded-md w-full"
                         />
                     </div>
 
@@ -102,7 +102,7 @@ export function CRMShell({
                             <Button
                                 variant="outline"
                                 onClick={handleToggleEmail}
-                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_email === 'true'
+                                className={`h-10 rounded-md px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_email === 'true'
                                     ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
                                     : filters.has_email === 'false'
                                         ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
@@ -116,7 +116,7 @@ export function CRMShell({
                             <Button
                                 variant="outline"
                                 onClick={handleToggleLinkedin}
-                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_linkedin === 'true'
+                                className={`h-10 rounded-md px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_linkedin === 'true'
                                     ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm"
                                     : filters.has_linkedin === 'false'
                                         ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
@@ -130,7 +130,7 @@ export function CRMShell({
                             <Button
                                 variant="outline"
                                 onClick={handleTogglePhone}
-                                className={`h-10 rounded-xl px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_phone === 'true'
+                                className={`h-10 rounded-md px-3 flex items-center gap-2 transition-all duration-200 border-dashed ${filters.has_phone === 'true'
                                     ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
                                     : filters.has_phone === 'false'
                                         ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
@@ -141,13 +141,13 @@ export function CRMShell({
                                 <span className="hidden md:inline text-xs uppercase font-medium tracking-wide">Phone</span>
                             </Button>
 
-                            <div className="w-[160px] [&_button]:h-10 [&_button]:rounded-xl [&_button]:border-dashed [&_button]:border-slate-200 [&_button]:text-slate-600 [&_button]:hover:bg-slate-50 [&_button]:text-sm [&_button]:font-medium [&_button]:tracking-tight">
+                            <div className="w-[160px] [&_button]:h-10 [&_button]:rounded-md [&_button]:border-dashed [&_button]:border-slate-200 [&_button]:text-slate-600 [&_button]:hover:bg-slate-50 [&_button]:text-sm [&_button]:font-medium [&_button]:tracking-tight">
                                 <MultiSelect
                                     options={toolbarCategoryOptions}
                                     selected={Array.isArray(filters.tag) ? filters.tag : []}
                                     onSelectionChange={(selected) => setFilter('tag', selected)}
                                     placeholder="Categories"
-                                    contentClassName="rounded-xl border border-slate-200 shadow-lg bg-white py-2 max-h-[280px] overflow-y-auto"
+                                    contentClassName="rounded-md border border-slate-200 shadow-md bg-white py-2 max-h-[280px] overflow-y-auto"
                                     optionClassName="px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg mx-1.5"
                                 />
                             </div>
@@ -161,7 +161,7 @@ export function CRMShell({
                             <Button
                                 variant="outline"
                                 onClick={() => setIsFilterOpen(true)}
-                                className={`h-10 rounded-xl flex items-center gap-2 font-medium tracking-tight ${activeFilterCount > 0
+                                className={`h-10 rounded-md flex items-center gap-2 font-medium tracking-tight ${activeFilterCount > 0
                                     ? "border-slate-900 bg-slate-50 text-slate-900 shadow-sm"
                                     : "border-slate-200 text-slate-600 hover:bg-slate-50"
                                     }`}
@@ -188,7 +188,7 @@ export function CRMShell({
                     )}
 
                     {selectedIds.size > 0 && (
-                        <div className="flex items-center gap-2 bg-blue-50 text-blue-700 h-10 px-3 rounded-xl text-sm font-bold mr-2 border border-blue-100 shadow-sm animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-2 bg-blue-50 text-blue-700 h-10 px-3 rounded-md text-sm font-medium mr-2 border border-blue-100">
                             <CheckSquare className="w-4 h-4" />
                             {selectedIds.size} Selected
                             <div className="flex gap-1 ml-2">{actions}</div>
@@ -201,7 +201,7 @@ export function CRMShell({
                             setPageSize(Number(e.target.value));
                             setPage(0); // Reset page on limit change
                         }}
-                        className="h-10 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 font-medium text-slate-700"
+                        className="h-10 px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 font-medium text-slate-700"
                     >
                         <option value={25}>25 per page</option>
                         <option value={50}>50 per page</option>
@@ -214,10 +214,10 @@ export function CRMShell({
             </div>
 
             {/* Table Content Container */}
-            <div className="bg-white rounded-2xl border shadow-sm flex flex-col min-h-[400px] relative overflow-hidden">
+            <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] flex flex-col min-h-[400px] relative overflow-hidden">
                 {loading && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center animate-in fade-in duration-300">
-                        <div className="flex items-center gap-2 bg-white px-5 py-3 rounded-2xl shadow-xl border border-slate-100">
+                        <div className="flex items-center gap-2 bg-white px-5 py-3 rounded-md shadow-md border border-slate-100">
                             <div className="w-5 h-5 rounded-full border-2 border-slate-200 border-t-slate-900 animate-spin" />
                             <span className="text-sm font-medium text-slate-900">Loading records...</span>
                         </div>
