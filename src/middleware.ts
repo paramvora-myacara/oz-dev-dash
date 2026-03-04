@@ -69,9 +69,7 @@ export async function middleware(request: NextRequest) {
   // Check if this is an admin route that needs protection
   const isAdminRoute = pathnameForAdmin.startsWith('/admin')
   const isEditRoute = pathnameForAdmin.includes('/edit')
-  const isProspectsRoute = pathnameForAdmin.startsWith('/admin/prospects')
-
-  if ((isAdminRoute || isEditRoute) && !isProspectsRoute) {
+  if ((isAdminRoute || isEditRoute)) {
     // Skip protection for login page to avoid redirect loops
     if (pathnameForAdmin === '/admin/login') {
       return response
