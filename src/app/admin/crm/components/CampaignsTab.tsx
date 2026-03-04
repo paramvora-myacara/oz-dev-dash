@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Mail, RefreshCw, Calendar, Users, Inbox } from 'lucide-react'
+import { Plus, Trash2, Mail, RefreshCw, Calendar, Users } from 'lucide-react'
 import { getCampaigns, deleteCampaign, getGlobalStatus } from '@/lib/api/campaigns-backend'
 import { getStatusLabel, getStatusColor } from '@/lib/utils/status-labels'
 import { Button } from '@/components/ui/button'
@@ -104,7 +104,7 @@ export function CampaignsTab() {
             <div className="flex items-center justify-center h-64">
                 <div className="flex flex-col items-center gap-2">
                     <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-                    <p className="text-sm font-medium text-slate-500 uppercase tracking-widest">Loading Campaigns...</p>
+                    <p className="text-sm font-medium text-gray-500">Loading campaigns…</p>
                 </div>
             </div>
         )
@@ -117,16 +117,10 @@ export function CampaignsTab() {
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm">
                 <div className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-bold text-lg">Campaign Management</h3>
+                    <h3 className="font-semibold text-lg text-gray-900">Campaign Management</h3>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                        <Link href="/admin/inbox">
-                            <Inbox className="w-4 h-4 mr-2" />
-                            Inbox
-                        </Link>
-                    </Button>
-                    <Button size="sm" asChild>
+                    <Button asChild className="bg-blue-600 text-white hover:bg-blue-700 h-9 px-4 font-medium rounded-md">
                         <Link href="/admin/campaigns/new">
                             <Plus className="w-4 h-4 mr-2" />
                             New Campaign
@@ -148,7 +142,7 @@ export function CampaignsTab() {
                 {/* Left: Recent Campaigns */}
                 <div className="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
-                        <h2 className="font-bold text-slate-800 uppercase tracking-tight text-sm">Recent Campaigns</h2>
+                        <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-xs">Recent Campaigns</h2>
                         <Button variant="ghost" size="sm" onClick={loadCampaigns} className="h-8 w-8 p-0">
                             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                         </Button>
@@ -156,7 +150,7 @@ export function CampaignsTab() {
                     {campaigns.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-400">
                             <Mail className="w-12 h-12 mb-4 opacity-20" />
-                            <p className="font-bold text-xs uppercase tracking-widest">No campaigns found</p>
+                            <p className="font-medium text-sm text-gray-500">No campaigns found</p>
                             <Button variant="link" size="sm" asChild className="mt-2">
                                 <Link href="/admin/campaigns/new">Create your first campaign</Link>
                             </Button>
@@ -166,10 +160,10 @@ export function CampaignsTab() {
                             <table className="min-w-full">
                                 <thead>
                                     <tr className="bg-slate-50/30 border-b">
-                                        <th className="px-6 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                                        <th className="px-6 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="px-6 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Size</th>
-                                        <th className="px-6 py-3 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"></th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Size</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -184,11 +178,11 @@ export function CampaignsTab() {
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                                    <span className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                                                         {campaign.name}
                                                     </span>
                                                     {campaign.entryStepId && (
-                                                        <span className="px-1.5 py-0.5 text-[8px] uppercase font-black bg-purple-50 text-purple-600 rounded-md border border-purple-100">
+                                                        <span className="px-2 py-0.5 text-[10px] uppercase font-semibold bg-purple-50 text-purple-700 rounded border border-purple-100">
                                                             Sequence
                                                         </span>
                                                     )}
@@ -199,7 +193,7 @@ export function CampaignsTab() {
                                                     {getStatusLabel(campaign.status)}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600">
                                                 {campaign.totalRecipients.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -229,14 +223,14 @@ export function CampaignsTab() {
                     <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <Calendar size={16} className="text-slate-400" />
-                            <h2 className="font-bold text-slate-800 uppercase tracking-tight text-sm">7-Day Schedule</h2>
+                            <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-xs">7-Day Schedule</h2>
                         </div>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={fetchCampaignStatus}
                             disabled={isRefreshing}
-                            className="h-8 text-xs font-bold uppercase tracking-widest text-slate-500"
+                            className="h-8 text-xs font-medium uppercase tracking-wide text-gray-500"
                         >
                             <RefreshCw size={12} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                             Refresh
@@ -265,18 +259,18 @@ export function CampaignsTab() {
                                                         : 'bg-white border-slate-100'
                                                 }`}
                                         >
-                                            <div className="text-[9px] font-black uppercase tracking-widest mb-1 text-slate-400">
+                                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-gray-400">
                                                 {day.dayLabel}
                                             </div>
-                                            <div className="text-xl font-black text-slate-900 leading-none">
+                                            <div className="text-xl font-bold text-gray-900 leading-none">
                                                 {day.queued.toLocaleString()}
                                             </div>
-                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">
+                                            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mt-1">
                                                 queued
                                             </div>
 
                                             {day.isToday && day.sent > 0 && (
-                                                <div className="text-[9px] font-black text-green-600 uppercase tracking-tighter mt-1">
+                                                <div className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mt-1">
                                                     {day.sent} sent
                                                 </div>
                                             )}
@@ -294,7 +288,7 @@ export function CampaignsTab() {
                                                     style={{ width: `${Math.min(100, percentage)}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="flex justify-between items-center mt-1.5 text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                                            <div className="flex justify-between items-center mt-1.5 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
                                                 <span>{percentage}% cap</span>
                                                 <span>{usedCapacity}/{day.capacity}</span>
                                             </div>
@@ -305,28 +299,28 @@ export function CampaignsTab() {
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full py-10 text-slate-400">
                                 <Calendar size={32} className="opacity-20 mb-3" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-center">No emails scheduled</p>
+                                <p className="text-xs font-medium text-gray-400 text-center">No emails scheduled</p>
                             </div>
                         )}
 
                         {/* Summary Stats */}
                         {campaignStatus && (
                             <div className="mt-8 grid grid-cols-4 gap-4">
-                                <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
-                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Weekly Vol</div>
-                                    <div className="text-xl font-black text-slate-900">{campaignStatus.total.toLocaleString()}</div>
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-center">
+                                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Weekly Vol</div>
+                                    <div className="text-xl font-bold text-gray-900">{campaignStatus.total.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 text-center shadow-sm">
-                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Queued</div>
-                                    <div className="text-xl font-black text-slate-900">{campaignStatus.queued.toLocaleString()}</div>
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-center">
+                                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Queued</div>
+                                    <div className="text-xl font-bold text-gray-900">{campaignStatus.queued.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-green-50/50 rounded-2xl p-4 border border-green-100 text-center shadow-sm">
-                                    <div className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1.5">Sent</div>
-                                    <div className="text-xl font-black text-green-700">{campaignStatus.sent.toLocaleString()}</div>
+                                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100 text-center">
+                                    <div className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1.5">Sent</div>
+                                    <div className="text-xl font-bold text-emerald-700">{campaignStatus.sent.toLocaleString()}</div>
                                 </div>
-                                <div className={`rounded-2xl p-4 border text-center shadow-sm ${campaignStatus.failed > 0 ? 'bg-red-50/50 border-red-100' : 'bg-slate-50/50 border-slate-100'}`}>
-                                    <div className={`text-[9px] font-black uppercase tracking-widest mb-1.5 ${campaignStatus.failed > 0 ? 'text-red-600' : 'text-slate-400'}`}>Failed</div>
-                                    <div className={`text-xl font-black ${campaignStatus.failed > 0 ? 'text-red-700' : 'text-slate-900'}`}>{campaignStatus.failed.toLocaleString()}</div>
+                                <div className={`rounded-lg p-4 border text-center ${campaignStatus.failed > 0 ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
+                                    <div className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${campaignStatus.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>Failed</div>
+                                    <div className={`text-xl font-bold ${campaignStatus.failed > 0 ? 'text-red-700' : 'text-gray-900'}`}>{campaignStatus.failed.toLocaleString()}</div>
                                 </div>
                             </div>
                         )}

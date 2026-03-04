@@ -371,6 +371,7 @@ export function CRMCallModal({ open, onOpenChange, person, currentUser, onLogged
           <Button
             onClick={handleSubmit}
             disabled={saving || (!skipEmail && !hasTargetEmail && ['answered', 'no_answer', 'invalid_number'].includes(outcome))}
+            className="bg-blue-600 text-white hover:bg-blue-700 font-medium"
           >
             {saving ? 'Logging...' : 'Log Call'}
           </Button>

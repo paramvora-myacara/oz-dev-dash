@@ -110,7 +110,7 @@ export function CRMShell({
                                     }`}
                             >
                                 <Mail className={`w-4 h-4 ${filters.has_email === 'true' ? 'fill-blue-700/10' : ''}`} />
-                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">Email</span>
+                                <span className="hidden md:inline text-xs uppercase font-medium tracking-wide">Email</span>
                             </Button>
 
                             <Button
@@ -124,7 +124,7 @@ export function CRMShell({
                                     }`}
                             >
                                 <Linkedin className={`w-4 h-4 ${filters.has_linkedin === 'true' ? 'fill-indigo-700/10' : ''}`} />
-                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">LI</span>
+                                <span className="hidden md:inline text-xs uppercase font-medium tracking-wide">LI</span>
                             </Button>
 
                             <Button
@@ -138,7 +138,7 @@ export function CRMShell({
                                     }`}
                             >
                                 <Phone className={`w-4 h-4 ${filters.has_phone === 'true' ? 'fill-emerald-700/10' : ''}`} />
-                                <span className="hidden md:inline text-[10px] uppercase font-bold tracking-tight">Phone</span>
+                                <span className="hidden md:inline text-xs uppercase font-medium tracking-wide">Phone</span>
                             </Button>
 
                             <div className="w-[160px] [&_button]:h-10 [&_button]:rounded-xl [&_button]:border-dashed [&_button]:border-slate-200 [&_button]:text-slate-600 [&_button]:hover:bg-slate-50 [&_button]:text-sm [&_button]:font-medium [&_button]:tracking-tight">
@@ -219,7 +219,7 @@ export function CRMShell({
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center animate-in fade-in duration-300">
                         <div className="flex items-center gap-2 bg-white px-5 py-3 rounded-2xl shadow-xl border border-slate-100">
                             <div className="w-5 h-5 rounded-full border-2 border-slate-200 border-t-slate-900 animate-spin" />
-                            <span className="text-sm font-bold tracking-tight text-slate-900">Loading records...</span>
+                            <span className="text-sm font-medium text-slate-900">Loading records...</span>
                         </div>
                     </div>
                 )}
@@ -229,10 +229,10 @@ export function CRMShell({
                         <div className="bg-slate-50 p-6 rounded-full mb-6">
                             <Search className="w-12 h-12 text-slate-200" />
                         </div>
-                        <h3 className="text-xl font-bold tracking-tight text-slate-900">
+                        <h3 className="text-lg font-semibold text-slate-900">
                             No matching records
                         </h3>
-                        <p className="mt-2 font-medium text-xs tracking-widest uppercase text-slate-400 max-w-[200px] text-center">
+                        <p className="mt-2 text-sm text-slate-400 max-w-[200px] text-center">
                             Try adjusting your filters or search terms to see more results
                         </p>
                     </div>
@@ -241,7 +241,7 @@ export function CRMShell({
 
             {/* Pagination Footer */}
             {(totalCount > 0 || page > 0) && (
-                <div className="flex items-center justify-between text-xs font-bold text-slate-400 py-2 uppercase tracking-widest">
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 py-3 uppercase tracking-wide">
                     <div>
                         Showing {Math.min(page * pageSize + 1, totalCount)} –{" "}
                         {Math.min((page + 1) * pageSize, totalCount)} of {totalCount}{" "}

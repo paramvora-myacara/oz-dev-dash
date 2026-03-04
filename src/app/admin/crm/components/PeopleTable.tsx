@@ -169,11 +169,11 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                 }
                             />
                         </TableHead>
-                        <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Name</TableHead>
-                        <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Company</TableHead>
-                        <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Tags</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Name</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Company</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tags</TableHead>
                         {showContactInfo && (
-                            <TableHead className="text-xs font-bold uppercase tracking-widest text-slate-400">Contact Info</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contact Info</TableHead>
                         )}
                     </TableRow>
                 </TableHeader>
@@ -196,11 +196,11 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                             onCheckedChange={() => tableState.toggleSelection(person.id)}
                                         />
                                     </TableCell>
-                                    <TableCell className="font-bold text-slate-900">
+                                    <TableCell className="font-semibold text-slate-900">
                                         <div className="flex items-center gap-2">
                                             <span>{person.display_name}</span>
                                             {person.viewing_by && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-tight text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                                                <span className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
                                                     <Lock className="w-3 h-3" />
                                                     {person.viewing_by === currentUser ? 'You' : person.viewing_by}
                                                 </span>
@@ -219,7 +219,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                                 return (
                                                     <Badge
                                                         key={tag}
-                                                        className={`${styles.bg} ${styles.text} ${styles.border} border shadow-none px-2 py-0 text-[10px] uppercase font-bold tracking-tight rounded-md`}
+                                                        className={`${styles.bg} ${styles.text} ${styles.border} border shadow-none px-2 py-0.5 text-xs uppercase font-medium tracking-wide rounded`}
                                                     >
                                                         {tagToLabel(tag)}
                                                     </Badge>

@@ -437,10 +437,14 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                     {data.person_organizations?.map((po: any) => po.title).join(', ') || 'No title'}
                                 </SheetDescription>
                             </div>
-                            <Badge>{data.lead_status}</Badge>
-                        </div>
-                        <div className="mt-3 flex justify-end">
-                            <Button size="sm" onClick={() => setIsCallModalOpen(true)}>Log Call</Button>
+                            <div className="mt-3 flex justify-end">
+                                <Button
+                                    onClick={() => setIsCallModalOpen(true)}
+                                    className="bg-blue-600 text-white hover:bg-blue-700 h-9 px-4 font-medium rounded-md"
+                                >
+                                    Log Call
+                                </Button>
+                            </div>
                         </div>
                     </SheetHeader>
 
@@ -453,7 +457,7 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-6 px-2 text-[10px] text-blue-600 hover:bg-blue-50 border border-dashed border-transparent hover:border-blue-200"
+                                    className="h-7 px-3 text-xs text-blue-600 hover:bg-blue-50 border border-dashed border-transparent hover:border-blue-200 font-medium"
                                     onClick={() => setIsAddingOrg(!isAddingOrg)}
                                 >
                                     {isAddingOrg ? 'Cancel' : <><Plus className="w-3 h-3 mr-0.5" /> Link Org</>}
@@ -493,11 +497,11 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                             {/* Emails */}
                             <div className="mb-3">
                                 <div className="flex justify-between items-center mb-1.5">
-                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</span>
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-5 px-1.5 text-[10px] text-blue-600 hover:bg-blue-50"
+                                        className="h-7 px-2.5 text-xs text-blue-600 hover:bg-blue-50 font-medium"
                                         onClick={() => setIsAddingEmail(!isAddingEmail)}
                                     >
                                         {isAddingEmail ? 'Cancel' : '+ Add'}
@@ -514,10 +518,10 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                                 {pe.label && <span className="ml-2 text-[10px] text-slate-400 uppercase">{pe.label}</span>}
                                             </div>
                                             {pe.is_primary ? (
-                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] font-bold shadow-none">Primary</Badge>
+                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[11px] font-bold shadow-none">Primary</Badge>
                                             ) : (
                                                 <button
-                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[9px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight"
+                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight"
                                                     onClick={() => handleSetPrimaryEmail(pe.emails.id)}
                                                 >
                                                     <Star className="w-3 h-3" /> Set Primary
@@ -550,11 +554,11 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                             {/* Phones */}
                             <div className="mb-3">
                                 <div className="flex justify-between items-center mb-1.5">
-                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Phone</span>
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-5 px-1.5 text-[10px] text-blue-600 hover:bg-blue-50"
+                                        className="h-7 px-2.5 text-xs text-blue-600 hover:bg-blue-50 font-medium"
                                         onClick={() => setIsAddingPhone(!isAddingPhone)}
                                     >
                                         {isAddingPhone ? 'Cancel' : '+ Add'}
@@ -571,10 +575,10 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                                 {pp.label && <span className="ml-2 text-[10px] text-slate-400 uppercase">{pp.label}</span>}
                                             </div>
                                             {pp.is_primary ? (
-                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] font-bold shadow-none">Primary</Badge>
+                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[11px] font-bold shadow-none">Primary</Badge>
                                             ) : (
                                                 <button
-                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[9px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight"
+                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight"
                                                     onClick={() => handleSetPrimaryPhone(pp.phones.id)}
                                                 >
                                                     <Star className="w-3 h-3" /> Set Primary
@@ -607,11 +611,11 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                             {/* LinkedIn */}
                             <div>
                                 <div className="flex justify-between items-center mb-1.5">
-                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">LinkedIn</span>
+                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">LinkedIn</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-5 px-1.5 text-[10px] text-blue-600 hover:bg-blue-50"
+                                        className="h-7 px-2.5 text-xs text-blue-600 hover:bg-blue-50 font-medium"
                                         onClick={() => setShowLinkedinDiscovery(!showLinkedinDiscovery)}
                                     >
                                         {showLinkedinDiscovery ? 'Cancel' : 'Discover'}
@@ -662,7 +666,7 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                                             <Button
                                                                 size="sm"
                                                                 variant={alreadyLinked ? "secondary" : "default"}
-                                                                className="h-6 px-3 text-[9px] shrink-0"
+                                                                className="h-7 px-3 text-xs shrink-0"
                                                                 disabled={alreadyLinked || syncing}
                                                                 onClick={() => handleQuickAddLinkedin(result.profile_url)}
                                                             >
@@ -691,10 +695,10 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                                 </a>
                                             </div>
                                             {pl.is_primary ? (
-                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] font-bold shadow-none ml-2 shrink-0">Primary</Badge>
+                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[11px] font-bold shadow-none ml-2 shrink-0">Primary</Badge>
                                             ) : (
                                                 <button
-                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[9px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight ml-2 shrink-0"
+                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight ml-2 shrink-0"
                                                     onClick={() => handleSetPrimaryLinkedin(pl.linkedin_profiles.id)}
                                                 >
                                                     <Star className="w-3 h-3" /> Set Primary
@@ -719,7 +723,7 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-6 px-2 text-[10px] text-blue-600 hover:bg-blue-50 border border-dashed border-transparent hover:border-blue-200"
+                                    className="h-7 px-3 text-xs text-blue-600 hover:bg-blue-50 border border-dashed border-transparent hover:border-blue-200 font-medium"
                                     onClick={() => setIsAddingProperty(!isAddingProperty)}
                                 >
                                     {isAddingProperty ? 'Cancel' : <><Plus className="w-3 h-3 mr-0.5" /> Link Property</>}
@@ -768,8 +772,8 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                             <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
                                             <div className="text-sm">
                                                 <span className="font-semibold">
-                                                {event.channel === 'phone' ? 'Called' : event.channel === 'website' ? 'Website' : 'Emailed'}
-                                            </span>
+                                                    {event.channel === 'phone' ? 'Called' : event.channel === 'website' ? 'Website' : 'Emailed'}
+                                                </span>
                                                 <span className="text-muted-foreground ml-2">{new Date(event.timestamp).toLocaleDateString()}</span>
                                             </div>
                                             <div className="text-xs text-slate-600 mt-1">{event.description}</div>

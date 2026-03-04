@@ -121,7 +121,7 @@ export function CRMDashboard() {
     return (
         <div className="w-full">
             <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-xl font-bold">
+                <h2 className="text-lg font-semibold text-gray-900">
                     {currentUser && isPasswordVerified ? `Calling as ${currentUser}` : 'CRM Directory'}
                 </h2>
                 {currentUser && isPasswordVerified && (
@@ -138,7 +138,10 @@ export function CRMDashboard() {
                         >
                             (Change)
                         </Button>
-                        <Button size="sm" onClick={() => setShowAddContactModal(true)}>
+                        <Button
+                            onClick={() => setShowAddContactModal(true)}
+                            className="bg-blue-600 text-white hover:bg-blue-700 h-9 px-4 font-medium rounded-md"
+                        >
                             Add Contact
                         </Button>
                     </>
