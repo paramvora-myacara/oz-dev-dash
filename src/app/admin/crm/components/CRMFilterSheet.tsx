@@ -106,26 +106,29 @@ export function CRMFilterSheet({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-2xl flex flex-col h-full">
-                <SheetHeader className="mb-4">
+                <SheetHeader className="mb-1">
                     <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                            <SheetTitle className="flex items-center gap-2 text-xl">
-                                <Filter className="w-5 h-5 text-slate-900" />
-                                Advanced Filters
-                                {activeFilterCount > 0 && (
-                                    <Badge variant="secondary" className="ml-1 bg-slate-100 text-slate-900 border-none">
-                                        {activeFilterCount}
-                                    </Badge>
-                                )}
-                            </SheetTitle>
-                            <SheetDescription>
-                                Refine your CRM data with granular segmenting.
-                            </SheetDescription>
-                        </div>
+                        <SheetTitle className="flex items-center gap-2 text-xl">
+                            <Filter className="w-5 h-5 text-slate-900" />
+                            Advanced Filters
+                            {activeFilterCount > 0 && (
+                                <Badge variant="secondary" className="ml-1 bg-slate-100 text-slate-900 border-none">
+                                    {activeFilterCount}
+                                </Badge>
+                            )}
+                        </SheetTitle>
+                        {activeFilterCount > 0 && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-xs font-medium text-slate-400 hover:text-red-600 uppercase tracking-wide transition-colors"
+                            >
+                                Clear all
+                            </button>
+                        )}
                     </div>
                 </SheetHeader>
 
-                <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 py-4">
+                <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-6 py-2">
                     {/* 1. Categories (top) */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -305,7 +308,7 @@ export function CRMFilterSheet({
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Historical Presence</label>
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">Historical Presence</label>
                                 <div className="grid grid-cols-3 gap-1 bg-gray-50 p-1 rounded-md border border-gray-100 mb-2">
                                     {['all', 'any', 'none'].map((val) => (
                                         <button
@@ -329,7 +332,7 @@ export function CRMFilterSheet({
                                                     checked={Array.isArray(filters.campaign_history) && filters.campaign_history.includes(c.id)}
                                                     onCheckedChange={() => toggleCampaignPresence(c.id)}
                                                 />
-                                                <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 truncate">{c.name}</span>
+                                                <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 truncate">{c.name}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -337,8 +340,8 @@ export function CRMFilterSheet({
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Recipient Experience</label>
-                                <div className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">Recipient Experience</label>
+                                <div className="grid grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
                                     {[
                                         { label: 'Replied', value: 'replied' },
                                         { label: 'No Reply', value: 'no_reply' },
@@ -349,7 +352,7 @@ export function CRMFilterSheet({
                                                 checked={selectedCampaignResponses.includes(opt.value)}
                                                 onCheckedChange={() => toggleCampaignResponse(opt.value)}
                                             />
-                                            <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900">{opt.label}</span>
+                                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">{opt.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -370,7 +373,7 @@ export function CRMFilterSheet({
                                                     onCheckedChange={() => toggleExcludeCampaign(c.id)}
                                                     className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
                                                 />
-                                                <span className="text-xs font-medium text-slate-600 group-hover:text-red-700 truncate">{c.name}</span>
+                                                <span className="text-sm font-medium text-slate-600 group-hover:text-red-700 truncate">{c.name}</span>
                                             </label>
                                         ))
                                     )}

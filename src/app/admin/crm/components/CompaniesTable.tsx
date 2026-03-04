@@ -8,7 +8,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Lock, Mail } from "lucide-react";
@@ -59,10 +58,8 @@ export function CompaniesTable({ onRowClick, currentUser }: CompaniesTableProps)
                                 }
                             />
                         </TableHead>
-                        <TableHead>Company Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Company Name</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">Type</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -70,44 +67,30 @@ export function CompaniesTable({ onRowClick, currentUser }: CompaniesTableProps)
                         (() => {
                             const lockedByOther = !!company.viewing_by && company.viewing_by !== currentUser;
                             return (
-                        <TableRow
-                            key={company.id}
-                            className={lockedByOther ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"}
-                            onClick={() => !lockedByOther && onRowClick(company)}
-                        >
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                                <Checkbox
-                                    checked={tableState.selectedIds.has(company.id)}
-                                    onCheckedChange={() => tableState.toggleSelection(company.id)}
-                                />
-                            </TableCell>
-                            <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                    <span>{company.name}</span>
-                                    {company.viewing_by && (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-tight text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
-                                            <Lock className="w-3 h-3" />
-                                            {company.viewing_by === currentUser ? 'You' : company.viewing_by}
-                                        </span>
-                                    )}
-                                </div>
-                            </TableCell>
-                            <TableCell>{company.org_type || "-"}</TableCell>
-                            <TableCell>
-                                {company.city && company.state
-                                    ? `${company.city}, ${company.state}`
-                                    : company.address || "-"}
-                            </TableCell>
-                            <TableCell>
-                                <Badge
-                                    variant={
-                                        company.status === "active" ? "default" : "secondary"
-                                    }
+                                <TableRow
+                                    key={company.id}
+                                    className={lockedByOther ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"}
+                                    onClick={() => !lockedByOther && onRowClick(company)}
                                 >
-                                    {company.status}
-                                </Badge>
-                            </TableCell>
-                        </TableRow>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <Checkbox
+                                            checked={tableState.selectedIds.has(company.id)}
+                                            onCheckedChange={() => tableState.toggleSelection(company.id)}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="font-semibold text-base text-slate-900">
+                                        <div className="flex items-center gap-2">
+                                            <span>{company.name}</span>
+                                            {company.viewing_by && (
+                                                <span className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                                    <Lock className="w-3 h-3" />
+                                                    {company.viewing_by === currentUser ? 'You' : company.viewing_by}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-base text-slate-600 font-medium">{company.org_type || "–"}</TableCell>
+                                </TableRow>
                             );
                         })()
                     ))}

@@ -248,11 +248,11 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm">
+            <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200">
                 <div className="flex items-center gap-2">
                     <Linkedin className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-bold text-lg">LinkedIn Outreach</h3>
-                    <span className="text-xs text-muted-foreground ml-2">Runner: 6:30 PM PT daily</span>
+                    <h3 className="font-semibold text-lg text-gray-900">LinkedIn Outreach</h3>
+                    <span className="text-sm font-medium text-gray-500 ml-2">Runner: 6:30 PM PT daily</span>
                 </div>
                 <Button variant="outline" size="sm" onClick={fetchQueue} disabled={isLoading}>
                     <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -274,27 +274,27 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
 
             {/* Summary stats */}
             <div className="grid grid-cols-4 gap-4">
-                <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100 text-center">
-                    <div className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Queued</div>
-                    <div className="text-2xl font-black text-amber-700">{queued.length}</div>
+                <div className="bg-amber-50 rounded-lg p-5 border border-amber-200 text-center shadow-sm">
+                    <div className="text-sm font-semibold text-amber-700 uppercase tracking-wide mb-1.5">Queued</div>
+                    <div className="text-3xl font-bold text-amber-700">{queued.length}</div>
                 </div>
-                <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 text-center">
-                    <div className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Processing</div>
-                    <div className="text-2xl font-black text-blue-700">{processing.length}</div>
+                <div className="bg-blue-50 rounded-lg p-5 border border-blue-200 text-center shadow-sm">
+                    <div className="text-sm font-semibold text-blue-700 uppercase tracking-wide mb-1.5">Processing</div>
+                    <div className="text-3xl font-bold text-blue-700">{processing.length}</div>
                 </div>
-                <div className="bg-green-50/50 rounded-xl p-4 border border-green-100 text-center">
-                    <div className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Sent</div>
-                    <div className="text-2xl font-black text-green-700">{sent.length}</div>
+                <div className="bg-green-50 rounded-lg p-5 border border-green-200 text-center shadow-sm">
+                    <div className="text-sm font-semibold text-green-700 uppercase tracking-wide mb-1.5">Sent</div>
+                    <div className="text-3xl font-bold text-green-700">{sent.length}</div>
                 </div>
-                <div className={`rounded-xl p-4 border text-center ${failed.length > 0 ? 'bg-red-50/50 border-red-100' : 'bg-slate-50/50 border-slate-100'}`}>
-                    <div className={`text-[9px] font-black uppercase tracking-widest mb-1 ${failed.length > 0 ? 'text-red-600' : 'text-slate-400'}`}>Failed</div>
-                    <div className={`text-2xl font-black ${failed.length > 0 ? 'text-red-700' : 'text-slate-400'}`}>{failed.length}</div>
+                <div className={`rounded-lg p-5 border text-center shadow-sm ${failed.length > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className={`text-sm font-semibold uppercase tracking-wide mb-1.5 ${failed.length > 0 ? 'text-red-700' : 'text-slate-500'}`}>Failed</div>
+                    <div className={`text-3xl font-bold ${failed.length > 0 ? 'text-red-700' : 'text-slate-500'}`}>{failed.length}</div>
                 </div>
             </div>
 
             {/* Queued section */}
             <div className="space-y-3">
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-2">
                     Queued for Tonight
                     <Badge variant="secondary">{queued.length + processing.length}</Badge>
                 </h3>
@@ -313,7 +313,7 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
             {/* Sent section */}
             {sent.length > 0 && (
                 <div className="space-y-3">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-2">
                         Sent <Badge variant="secondary">{sent.length}</Badge>
                     </h3>
                     <div className="grid gap-2 opacity-80">
@@ -325,7 +325,7 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
             {/* Failed section */}
             {failed.length > 0 && (
                 <div className="space-y-3">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-red-400 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-red-500 flex items-center gap-2">
                         Failed <Badge variant="destructive">{failed.length}</Badge>
                     </h3>
                     <div className="grid gap-3">

@@ -142,7 +142,7 @@ export function CampaignsTab() {
                 {/* Left: Recent Campaigns */}
                 <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
-                        <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-xs">Recent Campaigns</h2>
+                        <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-sm">Recent Campaigns</h2>
                         <Button variant="ghost" size="sm" onClick={loadCampaigns} className="h-8 w-8 p-0">
                             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                         </Button>
@@ -156,7 +156,7 @@ export function CampaignsTab() {
                             </Button>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto max-h-[380px] overflow-y-auto">
                             <table className="min-w-full">
                                 <thead>
                                     <tr className="bg-slate-50/30 border-b">
@@ -178,22 +178,22 @@ export function CampaignsTab() {
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                    <span className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                                                         {campaign.name}
                                                     </span>
                                                     {campaign.entryStepId && (
-                                                        <span className="px-2 py-0.5 text-[10px] uppercase font-semibold bg-purple-50 text-purple-700 rounded border border-purple-100">
+                                                        <span className="px-2 py-0.5 text-xs uppercase font-semibold bg-purple-50 text-purple-700 rounded border border-purple-100">
                                                             Sequence
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border ${getStatusColor(campaign.status).includes('bg-green') ? 'bg-green-50 text-green-700 border-green-100' : getStatusColor(campaign.status).includes('bg-blue') ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded border ${getStatusColor(campaign.status).includes('bg-green') ? 'bg-green-50 text-green-700 border-green-200' : getStatusColor(campaign.status).includes('bg-blue') ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                     {getStatusLabel(campaign.status)}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600">
+                                            <td className="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-700">
                                                 {campaign.totalRecipients.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -223,7 +223,7 @@ export function CampaignsTab() {
                     <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <Calendar size={16} className="text-slate-400" />
-                            <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-xs">7-Day Schedule</h2>
+                            <h2 className="font-semibold text-gray-800 uppercase tracking-wide text-sm">7-Day Schedule</h2>
                         </div>
                         <Button
                             variant="ghost"
@@ -250,22 +250,22 @@ export function CampaignsTab() {
                                     return (
                                         <div
                                             key={day.date}
-                                            className={`rounded-lg p-3 border transition-all ${isWeekend
-                                                ? 'bg-slate-50/50 border-slate-100 opacity-60'
+                                            className={`rounded-lg p-3 border shadow-sm transition-all ${isWeekend
+                                                ? 'bg-slate-100 border-slate-200 opacity-60'
                                                 : day.isToday
-                                                    ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-100'
+                                                    ? 'bg-blue-100/70 border-blue-300 ring-1 ring-blue-200'
                                                     : day.queued > 0
-                                                        ? 'bg-indigo-50/30 border-indigo-100'
-                                                        : 'bg-white border-slate-100'
+                                                        ? 'bg-indigo-50 border-indigo-200'
+                                                        : 'bg-white border-slate-200'
                                                 }`}
                                         >
-                                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-gray-400">
+                                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-gray-500">
                                                 {day.dayLabel}
                                             </div>
-                                            <div className="text-xl font-bold text-gray-900 leading-none">
+                                            <div className="text-lg font-bold text-gray-900 leading-none">
                                                 {day.queued.toLocaleString()}
                                             </div>
-                                            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mt-1">
+                                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-1">
                                                 queued
                                             </div>
 
@@ -288,7 +288,7 @@ export function CampaignsTab() {
                                                     style={{ width: `${Math.min(100, percentage)}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="flex justify-between items-center mt-1.5 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+                                            <div className="flex justify-between items-center mt-1.5 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
                                                 <span>{percentage}% cap</span>
                                                 <span>{usedCapacity}/{day.capacity}</span>
                                             </div>
@@ -306,21 +306,21 @@ export function CampaignsTab() {
                         {/* Summary Stats */}
                         {campaignStatus && (
                             <div className="mt-8 grid grid-cols-4 gap-4">
-                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-center">
-                                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Weekly Vol</div>
-                                    <div className="text-xl font-bold text-gray-900">{campaignStatus.total.toLocaleString()}</div>
+                                <div className="bg-gray-100 rounded-lg p-4 border border-gray-200 text-center">
+                                    <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Weekly Vol</div>
+                                    <div className="text-2xl font-bold text-gray-900">{campaignStatus.total.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-center">
-                                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Queued</div>
-                                    <div className="text-xl font-bold text-gray-900">{campaignStatus.queued.toLocaleString()}</div>
+                                <div className="bg-gray-100 rounded-lg p-4 border border-gray-200 text-center">
+                                    <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Queued</div>
+                                    <div className="text-2xl font-bold text-gray-900">{campaignStatus.queued.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100 text-center">
-                                    <div className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1.5">Sent</div>
-                                    <div className="text-xl font-bold text-emerald-700">{campaignStatus.sent.toLocaleString()}</div>
+                                <div className="bg-emerald-100 rounded-lg p-4 border border-emerald-200 text-center">
+                                    <div className="text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-1.5">Sent</div>
+                                    <div className="text-2xl font-bold text-emerald-700">{campaignStatus.sent.toLocaleString()}</div>
                                 </div>
-                                <div className={`rounded-lg p-4 border text-center ${campaignStatus.failed > 0 ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
-                                    <div className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${campaignStatus.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>Failed</div>
-                                    <div className={`text-xl font-bold ${campaignStatus.failed > 0 ? 'text-red-700' : 'text-gray-900'}`}>{campaignStatus.failed.toLocaleString()}</div>
+                                <div className={`rounded-lg p-4 border text-center ${campaignStatus.failed > 0 ? 'bg-red-100 border-red-200' : 'bg-gray-100 border-gray-200'}`}>
+                                    <div className={`text-sm font-semibold uppercase tracking-wide mb-1.5 ${campaignStatus.failed > 0 ? 'text-red-600' : 'text-gray-500'}`}>Failed</div>
+                                    <div className={`text-2xl font-bold ${campaignStatus.failed > 0 ? 'text-red-700' : 'text-gray-900'}`}>{campaignStatus.failed.toLocaleString()}</div>
                                 </div>
                             </div>
                         )}

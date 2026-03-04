@@ -196,7 +196,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                             onCheckedChange={() => tableState.toggleSelection(person.id)}
                                         />
                                     </TableCell>
-                                    <TableCell className="font-semibold text-slate-900">
+                                    <TableCell className="font-semibold text-base text-slate-900">
                                         <div className="flex items-center gap-2">
                                             <span>{person.display_name}</span>
                                             {person.viewing_by && (
@@ -207,7 +207,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                             )}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="font-medium text-slate-600">
+                                    <TableCell className="text-base font-medium text-slate-600">
                                         {person.person_organizations?.[0]?.organizations?.name || "-"}
                                         {person.person_organizations?.length > 1 &&
                                             ` (+${person.person_organizations.length - 1})`}
@@ -228,7 +228,7 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                                         </div>
                                     </TableCell>
                                     {showContactInfo && (
-                                        <TableCell className="text-xs">
+                                        <TableCell className="text-sm">
                                             <div className="flex flex-col gap-0.5">
                                                 {hasPhoneFilter && (person.person_phones || []).map((ph: any) => (
                                                     <span key={`ph-${ph.phones?.id}`}>{ph.phones?.number}</span>
