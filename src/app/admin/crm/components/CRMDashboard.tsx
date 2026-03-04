@@ -121,7 +121,7 @@ export function CRMDashboard() {
     return (
         <div className="w-full">
             <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-xl font-bold">
+                <h2 className="text-lg font-semibold text-gray-900">
                     {currentUser && isPasswordVerified ? `Calling as ${currentUser}` : 'CRM Directory'}
                 </h2>
                 {currentUser && isPasswordVerified && (
@@ -138,7 +138,10 @@ export function CRMDashboard() {
                         >
                             (Change)
                         </Button>
-                        <Button size="sm" onClick={() => setShowAddContactModal(true)}>
+                        <Button
+                            onClick={() => setShowAddContactModal(true)}
+                            className="bg-blue-600 text-white hover:bg-blue-700 h-9 px-4 font-medium rounded-md"
+                        >
                             Add Contact
                         </Button>
                     </>
@@ -174,7 +177,7 @@ export function CRMDashboard() {
                     <LinkedInOutreachTab currentUser={currentUser} />
                 </TabsContent>
                 <TabsContent value="leaderboard" className="w-full">
-                    <div className="bg-white rounded-2xl border shadow-sm p-6">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6">
                         <LeaderboardTab />
                     </div>
                 </TabsContent>
@@ -200,7 +203,7 @@ export function CRMDashboard() {
 
             {mounted && (!currentUser || !isPasswordVerified) && (
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-card border rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
+                    <div className="bg-card border rounded-lg shadow-md max-w-md w-full p-6 space-y-6">
                         {!tempSelectedUser ? (
                             <>
                                 <div className="space-y-2 text-center">

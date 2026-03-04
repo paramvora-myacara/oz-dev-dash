@@ -106,40 +106,43 @@ export function CRMFilterSheet({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-2xl flex flex-col h-full">
-                <SheetHeader className="mb-4">
+                <SheetHeader className="mb-1">
                     <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                            <SheetTitle className="flex items-center gap-2 text-xl">
-                                <Filter className="w-5 h-5 text-slate-900" />
-                                Advanced Filters
-                                {activeFilterCount > 0 && (
-                                    <Badge variant="secondary" className="ml-1 bg-slate-100 text-slate-900 border-none">
-                                        {activeFilterCount}
-                                    </Badge>
-                                )}
-                            </SheetTitle>
-                            <SheetDescription>
-                                Refine your CRM data with granular segmenting.
-                            </SheetDescription>
-                        </div>
+                        <SheetTitle className="flex items-center gap-2 text-xl">
+                            <Filter className="w-5 h-5 text-slate-900" />
+                            Advanced Filters
+                            {activeFilterCount > 0 && (
+                                <Badge variant="secondary" className="ml-1 bg-slate-100 text-slate-900 border-none">
+                                    {activeFilterCount}
+                                </Badge>
+                            )}
+                        </SheetTitle>
+                        {activeFilterCount > 0 && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-xs font-medium text-slate-400 hover:text-red-600 uppercase tracking-wide transition-colors"
+                            >
+                                Clear all
+                            </button>
+                        )}
                     </div>
                 </SheetHeader>
 
-                <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-8 py-4">
+                <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-6 py-2">
                     {/* 1. Categories (top) */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Categories</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Categories</h4>
                             {selectedTags.some((t: string) => categoryValueSet.has(t)) && (
                                 <button
                                     onClick={() => setFilter("tag", selectedTags.filter((t: string) => !categoryValueSet.has(t)))}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-md border border-gray-100">
                             {CATEGORY_OPTIONS.map((opt) => (
                                 <label
                                     key={opt.value}
@@ -163,7 +166,7 @@ export function CRMFilterSheet({
                     {/* 2. Contact Coverage Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Contact Coverage</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Contact Coverage</h4>
                             {((filters.has_email && filters.has_email !== 'all') || (filters.has_linkedin && filters.has_linkedin !== 'all') || (filters.has_phone && filters.has_phone !== 'all')) && (
                                 <button
                                     onClick={() => {
@@ -171,7 +174,7 @@ export function CRMFilterSheet({
                                         setFilter("has_linkedin", "all");
                                         setFilter("has_phone", "all");
                                     }}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
@@ -179,13 +182,13 @@ export function CRMFilterSheet({
                         </div>
                         <div className="space-y-3">
                             <div className="flex flex-col gap-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Email Address</label>
-                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">Email Address</label>
+                                <div className="grid grid-cols-3 gap-1 bg-gray-50 p-1 rounded-md border border-gray-100">
                                     {['all', 'true', 'false'].map((val) => (
                                         <button
                                             key={val}
                                             onClick={() => setFilter('has_email', val)}
-                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_email || 'all') === val
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all uppercase tracking-wide ${(filters.has_email || 'all') === val
                                                 ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
                                                 : "text-slate-400 hover:text-slate-600 font-medium"
                                                 }`}
@@ -197,13 +200,13 @@ export function CRMFilterSheet({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">LinkedIn Profile</label>
-                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">LinkedIn Profile</label>
+                                <div className="grid grid-cols-3 gap-1 bg-gray-50 p-1 rounded-md border border-gray-100">
                                     {['all', 'true', 'false'].map((val) => (
                                         <button
                                             key={val}
                                             onClick={() => setFilter('has_linkedin', val)}
-                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_linkedin || 'all') === val
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all uppercase tracking-wide ${(filters.has_linkedin || 'all') === val
                                                 ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
                                                 : "text-slate-400 hover:text-slate-600 font-medium"
                                                 }`}
@@ -215,13 +218,13 @@ export function CRMFilterSheet({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Phone Number</label>
-                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">Phone Number</label>
+                                <div className="grid grid-cols-3 gap-1 bg-gray-50 p-1 rounded-md border border-gray-100">
                                     {['all', 'true', 'false'].map((val) => (
                                         <button
                                             key={val}
                                             onClick={() => setFilter('has_phone', val)}
-                                            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${(filters.has_phone || 'all') === val
+                                            className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all uppercase tracking-wide ${(filters.has_phone || 'all') === val
                                                 ? "bg-white text-slate-900 shadow-sm border border-slate-200 font-extrabold"
                                                 : "text-slate-400 hover:text-slate-600 font-medium"
                                                 }`}
@@ -239,11 +242,11 @@ export function CRMFilterSheet({
                     {/* 3. Location Search Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Location Search</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Location Search</h4>
                             {filters.location && (
                                 <button
                                     onClick={() => setFilter("location", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
@@ -255,7 +258,7 @@ export function CRMFilterSheet({
                                 placeholder="State, City, or Code..."
                                 value={filters.location || ""}
                                 onChange={(e) => setFilter("location", e.target.value)}
-                                className="pl-9 bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                                className="pl-9 bg-white border-gray-200 focus:ring-2 focus:ring-blue-500 rounded-md shadow-none"
                             />
                         </div>
                     </div>
@@ -265,11 +268,11 @@ export function CRMFilterSheet({
                     {/* 4. Role Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Professional Role</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Professional Role</h4>
                             {filters.role && (
                                 <button
                                     onClick={() => setFilter("role", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
@@ -279,7 +282,7 @@ export function CRMFilterSheet({
                             placeholder="e.g. CEO, MD, Partner..."
                             value={filters.role || ""}
                             onChange={(e) => setFilter("role", e.target.value)}
-                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                            className="bg-white border-gray-200 focus:ring-2 focus:ring-blue-500 rounded-md shadow-none"
                         />
                     </div>
 
@@ -288,7 +291,7 @@ export function CRMFilterSheet({
                     {/* 5. Outreach & Campaigns Section */}
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Outreach History</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Outreach History</h4>
                             {(selectedCampaignHistory !== 'all' || selectedCampaignResponses.length > 0 || excludedCampaignIds.length > 0) && (
                                 <button
                                     onClick={() => {
@@ -296,7 +299,7 @@ export function CRMFilterSheet({
                                         setFilter("campaign_response", []);
                                         setFilter("exclude_campaign_ids", []);
                                     }}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear Outreach Filters
                                 </button>
@@ -305,8 +308,8 @@ export function CRMFilterSheet({
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Historical Presence</label>
-                                <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 mb-2">
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">Historical Presence</label>
+                                <div className="grid grid-cols-3 gap-1 bg-gray-50 p-1 rounded-md border border-gray-100 mb-2">
                                     {['all', 'any', 'none'].map((val) => (
                                         <button
                                             key={val}
@@ -321,15 +324,15 @@ export function CRMFilterSheet({
                                     ))}
                                 </div>
                                 {selectedCampaignHistory !== 'none' && campaigns.length > 0 && (
-                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 max-h-40 overflow-y-auto space-y-1">
-                                        <p className="text-[9px] uppercase font-black text-slate-400 mb-2">Specific Campaigns (OR)</p>
+                                    <div className="p-3 bg-gray-50 rounded-md border border-gray-100 max-h-40 overflow-y-auto space-y-1">
+                                        <p className="text-[10px] uppercase font-semibold text-slate-400 mb-2">Specific Campaigns (OR)</p>
                                         {campaigns.map(c => (
                                             <label key={c.id} className="flex items-center gap-2 p-1.5 rounded-md hover:bg-white cursor-pointer transition-all group">
                                                 <Checkbox
                                                     checked={Array.isArray(filters.campaign_history) && filters.campaign_history.includes(c.id)}
                                                     onCheckedChange={() => toggleCampaignPresence(c.id)}
                                                 />
-                                                <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 truncate">{c.name}</span>
+                                                <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 truncate">{c.name}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -337,8 +340,8 @@ export function CRMFilterSheet({
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Recipient Experience</label>
-                                <div className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                                <label className="text-xs uppercase font-semibold text-slate-500 tracking-wide">Recipient Experience</label>
+                                <div className="grid grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
                                     {[
                                         { label: 'Replied', value: 'replied' },
                                         { label: 'No Reply', value: 'no_reply' },
@@ -349,17 +352,17 @@ export function CRMFilterSheet({
                                                 checked={selectedCampaignResponses.includes(opt.value)}
                                                 onCheckedChange={() => toggleCampaignResponse(opt.value)}
                                             />
-                                            <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-900">{opt.label}</span>
+                                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">{opt.label}</span>
                                         </label>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] uppercase font-bold text-red-500 tracking-wider flex items-center gap-1">
+                                <label className="text-xs uppercase font-semibold text-red-500 tracking-wide flex items-center gap-1">
                                     Exclude Campaigns
                                 </label>
-                                <div className="p-3 bg-red-50/30 rounded-xl border border-red-100 max-h-40 overflow-y-auto space-y-1 mt-2">
+                                <div className="p-3 bg-red-50/50 rounded-md border border-red-100 max-h-40 overflow-y-auto space-y-1 mt-2">
                                     {campaigns.length === 0 ? (
                                         <p className="text-[10px] text-slate-400 italic">No campaigns found</p>
                                     ) : (
@@ -370,7 +373,7 @@ export function CRMFilterSheet({
                                                     onCheckedChange={() => toggleExcludeCampaign(c.id)}
                                                     className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
                                                 />
-                                                <span className="text-xs font-medium text-slate-600 group-hover:text-red-700 truncate">{c.name}</span>
+                                                <span className="text-sm font-medium text-slate-600 group-hover:text-red-700 truncate">{c.name}</span>
                                             </label>
                                         ))
                                     )}
@@ -384,11 +387,11 @@ export function CRMFilterSheet({
                     {/* 6. Import Source Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Import Source</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Import Source</h4>
                             {filters.source && (
                                 <button
                                     onClick={() => setFilter("source", "")}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
@@ -398,7 +401,7 @@ export function CRMFilterSheet({
                             placeholder="e.g. LinkedIn, Eventbrite..."
                             value={filters.source || ""}
                             onChange={(e) => setFilter("source", e.target.value)}
-                            className="bg-white border-slate-200 focus:ring-2 focus:ring-slate-900 rounded-xl shadow-sm"
+                            className="bg-white border-gray-200 focus:ring-2 focus:ring-blue-500 rounded-md shadow-none"
                         />
                     </div>
 
@@ -407,17 +410,17 @@ export function CRMFilterSheet({
                     {/* 7. Email Status Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Email Verification</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Email Verification</h4>
                             {(filters.email_status || []).length > 0 && (
                                 <button
                                     onClick={() => setFilter("email_status", [])}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-md border border-gray-100">
                             {["Valid", "Catch-all", "Unknown", "Invalid"].map((status) => (
                                 <label
                                     key={status}
@@ -447,17 +450,17 @@ export function CRMFilterSheet({
                     {/* 8. Lead Status Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Lead Status</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Lead Status</h4>
                             {selectedStatuses.length > 0 && (
                                 <button
                                     onClick={() => setFilter("lead_status", [])}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-md border border-gray-100">
                             {LEAD_STATUS_OPTIONS.map((opt) => (
                                 <label
                                     key={opt.value}
@@ -481,17 +484,17 @@ export function CRMFilterSheet({
                     {/* 9. Tags (dynamic, last) */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Tags</h4>
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Tags</h4>
                             {selectedTags.some((t: string) => !categoryValueSet.has(t)) && (
                                 <button
                                     onClick={() => setFilter("tag", selectedTags.filter((t: string) => categoryValueSet.has(t)))}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter transition-colors"
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-900 uppercase tracking-wide transition-colors"
                                 >
                                     Clear
                                 </button>
                             )}
                         </div>
-                        <div className="grid grid-cols-1 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 max-h-40 overflow-y-auto">
+                        <div className="grid grid-cols-1 gap-2 p-3 bg-gray-50 rounded-md border border-gray-100 max-h-40 overflow-y-auto">
                             {tagOptions
                                 .filter((opt) => !categoryValueSet.has(opt.value))
                                 .map((opt) => (
@@ -514,12 +517,12 @@ export function CRMFilterSheet({
                             )}
                         </div>
                     </div>
-                </div>
+                </div >
 
                 <SheetFooter className="mt-auto pt-6 border-t border-slate-100 sm:flex-col gap-3">
                     <Button
                         onClick={() => onOpenChange(false)}
-                        className="w-full bg-slate-900 text-white hover:bg-slate-800 rounded-xl h-11 font-bold tracking-tight shadow-md"
+                        className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-md h-11 font-medium shadow-sm"
                     >
                         Apply {activeFilterCount > 0 ? `(${activeFilterCount})` : ''} Filters
                     </Button>
@@ -527,13 +530,13 @@ export function CRMFilterSheet({
                         variant="ghost"
                         onClick={clearFilters}
                         disabled={activeFilterCount === 0}
-                        className="w-full text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-11 font-bold text-xs uppercase tracking-widest transition-all"
+                        className="w-full text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md h-11 font-medium text-xs uppercase tracking-wide transition-all"
                     >
                         <RotateCcw className="w-3 h-3 mr-2" />
                         Reset All Filters
                     </Button>
                 </SheetFooter>
-            </SheetContent>
-        </Sheet>
+            </SheetContent >
+        </Sheet >
     );
 }
