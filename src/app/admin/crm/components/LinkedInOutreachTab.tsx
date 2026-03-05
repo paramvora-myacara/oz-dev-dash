@@ -38,6 +38,7 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
     const [items, setItems] = useState<QueueItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [senderFilter, setSenderFilter] = useState('all');
+    const [retryingAll, setRetryingAll] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editMessage, setEditMessage] = useState('');
     const [expandedErrorId, setExpandedErrorId] = useState<string | null>(null);
@@ -123,6 +124,37 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
             fetchQueue();
         } catch (err) {
             console.error('Failed to remove:', err);
+        }
+    };
+
+    const handleRetryAllFailed = async () => {
+        if (failed.length === 0) return;
+
+        try {
+            setRetryingAll(true);
+
+            const payload: { sender_account?: string } = {};
+            if (senderFilter !== 'all') {
+                payload.sender_account = senderFilter;
+            }
+
+            const res = await fetch('/api/crm/linkedin-queue/retry-failed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const { error } = await res.json().catch(() => ({}));
+                console.error('Failed to retry all:', error || 'Request failed');
+                return;
+            }
+
+            fetchQueue();
+        } catch (err) {
+            console.error('Failed to retry all failed items:', err);
+        } finally {
+            setRetryingAll(false);
         }
     };
 
@@ -325,9 +357,20 @@ export function LinkedInOutreachTab({ currentUser }: LinkedInOutreachTabProps) {
             {/* Failed section */}
             {failed.length > 0 && (
                 <div className="space-y-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-red-500 flex items-center gap-2">
-                        Failed <Badge variant="destructive">{failed.length}</Badge>
-                    </h3>
+                    <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-red-500 flex items-center gap-2">
+                            Failed <Badge variant="destructive">{failed.length}</Badge>
+                        </h3>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleRetryAllFailed}
+                            disabled={retryingAll}
+                        >
+                            <RotateCcw className={`w-3 h-3 mr-1 ${retryingAll ? 'animate-spin' : ''}`} />
+                            {retryingAll ? 'Retrying...' : 'Retry all'}
+                        </Button>
+                    </div>
                     <div className="grid gap-3">
                         {failed.map(renderItem)}
                     </div>
