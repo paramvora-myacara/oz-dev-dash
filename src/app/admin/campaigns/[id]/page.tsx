@@ -9,12 +9,12 @@ import CampaignStepper, { type CampaignStep } from '@/components/campaign/Campai
 import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
-import { updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails, addRecipients } from '@/lib/api/campaigns-backend'
+import { updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails, addRecipients, getCampaigns } from '@/lib/api/campaigns-backend'
 import type { CampaignRecipientSelectionPayload } from '@/types/campaign-recipient-selection'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
-import type { QueuedEmail, Section, SectionMode, SampleData, EmailFormat } from '@/types/email-editor'
+import type { QueuedEmail, Section, SectionMode, SampleData, EmailFormat, Campaign } from '@/types/email-editor'
 import { createClient } from '@/utils/supabase/client'
 import { PeopleTable } from '@/app/admin/crm/components/PeopleTable'
 
@@ -76,6 +76,7 @@ export default function CampaignEditPage() {
   // Contact selection state
   // Sample data from database (replaces CSV)
   const [sampleData, setSampleData] = useState<SampleData | null>(null)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
 
   // Fetch current admin user email
   useEffect(() => {
@@ -98,6 +99,22 @@ export default function CampaignEditPage() {
   }, [])
 
   // Campaign data loads automatically via useCampaignStatus hook
+
+  useEffect(() => {
+    if (!campaignId) return
+
+    const fetchCampaigns = async () => {
+      try {
+        const allCampaigns = await getCampaigns()
+        setCampaigns((allCampaigns || []).filter((campaign) => campaign.id !== campaignId))
+      } catch (err) {
+        console.error('Failed to load campaigns for recipient filters', err)
+        setCampaigns([])
+      }
+    }
+
+    fetchCampaigns()
+  }, [campaignId])
 
   // Campaign data loads automatically via useCampaignStatus hook
   // Set loading to false when campaignData is loaded or fails to load
@@ -656,12 +673,13 @@ export default function CampaignEditPage() {
       )}
 
       {/* Main Content based on step */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {currentStep === 'select-recipients' && (
-          <div className="h-full flex flex-col p-4 sm:p-6">
+            <div className="h-full overflow-y-auto flex flex-col p-4 sm:p-6">
             <PeopleTable
               mode="campaign_selection"
               campaignId={campaignId}
+              campaigns={campaigns}
               onContinue={handleContinueFromRecipients}
             />
           </div>
