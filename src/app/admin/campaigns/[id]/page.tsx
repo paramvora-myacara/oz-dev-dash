@@ -10,7 +10,7 @@ import FormatSampleStep from '@/components/campaign/FormatSampleStep'
 import RegenerateWarningModal from '@/components/campaign/RegenerateWarningModal'
 import EmailValidationErrorsModal from '@/components/campaign/EmailValidationErrorsModal'
 import { updateCampaign, generateEmails, getStagedEmails, launchCampaign, sendTestEmail, getCampaignSampleRecipients, retryFailed, getCampaignSummary, getEmails, addRecipients, getCampaigns } from '@/lib/api/campaigns-backend'
-import type { CampaignRecipientSelectionPayload } from '@/types/campaign-recipient-selection'
+import { hasRecipientSelection, type CampaignRecipientSelectionPayload } from '@/types/campaign-recipient-selection'
 import { useCampaignStatus } from '@/hooks/useCampaignStatus'
 import { getStatusLabel } from '@/lib/utils/status-labels'
 import { isValidEmail } from '@/lib/utils/validation'
@@ -265,7 +265,7 @@ export default function CampaignEditPage() {
 
   // Continue from recipient selection to design step
   const handleContinueFromRecipients = useCallback(async (selection: CampaignRecipientSelectionPayload) => {
-    if (selection.selectAllMatching || (!selection.selectAllMatching && selection.contact_ids.length > 0)) {
+    if (hasRecipientSelection(selection)) {
       await addRecipients(campaignId, selection)
     }
     setCurrentStep('design')

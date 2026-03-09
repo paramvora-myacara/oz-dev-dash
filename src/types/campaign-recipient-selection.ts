@@ -14,13 +14,12 @@ export interface PeopleFiltersForRecipients {
   exclude_campaign_ids?: string[];
 }
 
-export type CampaignRecipientSelectionPayload =
+/** One segment: either all-matching (filters + exclusions) or explicit IDs */
+export type CampaignRecipientSegment =
   | {
       selectAllMatching: false;
       contact_ids: string[];
       explicitSelections?: string[];
-      filters?: PeopleFiltersForRecipients;
-      exclusions?: string[];
     }
   | {
       selectAllMatching: true;
@@ -29,3 +28,28 @@ export type CampaignRecipientSelectionPayload =
       explicitSelections?: string[];
       contact_ids?: never;
     };
+
+/** Payload: either legacy single segment or multi-segment (carry-over) */
+export type CampaignRecipientSelectionPayload =
+  | CampaignRecipientSegment
+  | { segments: CampaignRecipientSegment[] };
+
+export function hasRecipientSelection(
+  payload: CampaignRecipientSelectionPayload | null
+): boolean {
+  if (!payload) return false;
+  if ("segments" in payload) {
+    return (
+      payload.segments.length > 0 &&
+      payload.segments.some(
+        (s) =>
+          s.selectAllMatching ||
+          (!s.selectAllMatching && (s.contact_ids?.length ?? 0) > 0)
+      )
+    );
+  }
+  return (
+    payload.selectAllMatching ||
+    (!payload.selectAllMatching && (payload.contact_ids?.length ?? 0) > 0)
+  );
+}

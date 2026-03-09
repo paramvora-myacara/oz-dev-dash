@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
     Table,
     TableBody,
@@ -37,7 +37,7 @@ import { useCampaignDraftStore } from "@/stores/campaignDraftStore";
 import { type Campaign } from '@/types/email-editor';
 import { tagToLabel } from '@/lib/utils';
 import { CATEGORY_OPTIONS } from '../constants';
-import type { CampaignRecipientSelectionPayload, PeopleFiltersForRecipients } from '@/types/campaign-recipient-selection';
+import type { CampaignRecipientSelectionPayload, CampaignRecipientSegment, PeopleFiltersForRecipients } from '@/types/campaign-recipient-selection';
 
 interface PeopleTableProps {
     onRowClick?: (data: any) => void;
@@ -59,6 +59,15 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     const [tagOptions, setTagOptions] = useState<{ label: string; value: string }[]>([]);
     const [selectionMode, setSelectionMode] = useState<"page" | "all-matching">("page");
     const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
+    const [committedSegments, setCommittedSegments] = useState<
+        Array<{ type: "all-matching"; filters: PeopleFiltersForRecipients; exclusions: string[]; count: number }>
+    >([]);
+    const prevSegmentRef = useRef<{
+        key: string;
+        filters: PeopleFiltersForRecipients;
+        exclusions: string[];
+        count: number;
+    } | null>(null);
 
     useEffect(() => {
         fetch('/api/crm/people/tags')
@@ -95,27 +104,73 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     }, [tableState.filters, tableState.search]);
 
     const getSelectionPayload = useCallback((): CampaignRecipientSelectionPayload => {
-        if (isAllMatchingMode) {
-            return {
-                selectAllMatching: true,
-                filters: peopleFiltersForRecipients(),
-                exclusions: Array.from(excludedIds),
-                explicitSelections: selectedIds,
-            };
-        }
+        const currentSegment: CampaignRecipientSegment = isAllMatchingMode
+            ? {
+                  selectAllMatching: true,
+                  filters: peopleFiltersForRecipients(),
+                  exclusions: Array.from(excludedIds),
+                  explicitSelections: [],
+              }
+            : {
+                  selectAllMatching: false,
+                  contact_ids: Array.from(tableState.selectedIds),
+                  explicitSelections: [],
+              };
 
-        return {
-            selectAllMatching: false,
-            contact_ids: Array.from(tableState.selectedIds),
-            explicitSelections: [],
-        };
-    }, [excludedIds, isAllMatchingMode, peopleFiltersForRecipients, selectedIds, tableState.selectedIds]);
+        const allSegments: CampaignRecipientSegment[] = [
+            ...committedSegments.map(
+                (s): CampaignRecipientSegment => ({
+                    selectAllMatching: true,
+                    filters: s.filters,
+                    exclusions: s.exclusions,
+                    explicitSelections: [],
+                })
+            ),
+            currentSegment,
+        ];
+
+        if (allSegments.length === 1) return allSegments[0];
+        return { segments: allSegments };
+    }, [committedSegments, excludedIds, isAllMatchingMode, peopleFiltersForRecipients, tableState.selectedIds]);
 
     const selectionCount = isAllMatchingMode
         ? Math.max(tableState.totalCount - excludedIds.size, 0)
         : tableState.selectedIds.size;
 
+    const committedCount = committedSegments.reduce((sum, s) => sum + s.count, 0);
+    const totalSelectionCount = committedCount + selectionCount;
+
     const canSelectAllMatching = !isAllMatchingMode && allVisibleSelected && tableState.totalCount > tableState.selectedIds.size;
+
+    // When filters/search change in all-matching mode: commit previous segment and switch to page mode so the new view doesn't auto-select all
+    useEffect(() => {
+        if (!isAllMatchingMode) {
+            prevSegmentRef.current = null;
+            return;
+        }
+        const currentKey = JSON.stringify([tableState.filters, tableState.search]);
+        const currentFilters = peopleFiltersForRecipients();
+        const currentExclusions = Array.from(excludedIds);
+        const prev = prevSegmentRef.current;
+        const currentCount = Math.max(tableState.totalCount - excludedIds.size, 0);
+        if (prev && prev.key !== currentKey) {
+            setCommittedSegments((s) => [
+                ...s,
+                { type: "all-matching", filters: prev.filters, exclusions: prev.exclusions, count: prev.count },
+            ]);
+            setSelectionMode("page");
+            tableState.setSelectedIds(new Set());
+            setExcludedIds(new Set());
+            prevSegmentRef.current = null;
+            return;
+        }
+        prevSegmentRef.current = {
+            key: currentKey,
+            filters: currentFilters,
+            exclusions: currentExclusions,
+            count: currentCount,
+        };
+    }, [tableState.search, tableState.filters, isAllMatchingMode, peopleFiltersForRecipients, excludedIds, tableState]);
 
     useEffect(() => {
         if (!isAllMatchingMode) return;
@@ -129,10 +184,23 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     }, [tableState]);
 
     const handleDisableAllMatching = useCallback(() => {
+        if (isAllMatchingMode && (tableState.totalCount > 0 || excludedIds.size > 0)) {
+            const count = Math.max(tableState.totalCount - excludedIds.size, 0);
+            setCommittedSegments((s) => [
+                ...s,
+                {
+                    type: "all-matching",
+                    filters: peopleFiltersForRecipients(),
+                    exclusions: Array.from(excludedIds),
+                    count,
+                },
+            ]);
+        }
+        prevSegmentRef.current = null;
         setSelectionMode("page");
         tableState.setSelectedIds(new Set());
         setExcludedIds(new Set());
-    }, [tableState]);
+    }, [isAllMatchingMode, tableState.totalCount, excludedIds, peopleFiltersForRecipients, tableState]);
 
     const handleRowSelection = useCallback((personId: string, checked: boolean) => {
         if (!isAllMatchingMode) {
@@ -283,9 +351,10 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
     };
 
     return (
+        <>
         <CRMShell
             {...tableState}
-            selectedCount={selectionCount}
+            selectedCount={totalSelectionCount}
             tagOptions={tagOptions}
             categoryOptions={CATEGORY_OPTIONS.slice()}
             campaigns={campaigns}
@@ -417,6 +486,13 @@ export function PeopleTable({ onRowClick, mode = 'default', onContinue, currentU
                 </AlertDialogContent>
             </AlertDialog>
         </CRMShell>
+
+        {totalSelectionCount > 0 && (
+            <div className="bg-white border-t border-slate-200 px-4 sm:px-6 py-4 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20 rounded-b-lg">
+                <p className="text-base font-bold text-slate-900">{totalSelectionCount.toLocaleString()} PEOPLE SELECTED</p>
+            </div>
+        )}
+        </>
     );
 }
 

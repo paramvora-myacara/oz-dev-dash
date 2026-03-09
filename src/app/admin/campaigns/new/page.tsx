@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { addRecipients, createCampaign } from '@/lib/api/campaigns-backend'
 import type { CampaignSender } from '@/types/email-editor'
 import { useCampaignDraftStore } from '@/stores/campaignDraftStore'
+import { hasRecipientSelection } from '@/types/campaign-recipient-selection'
 
 const MAX_CAMPAIGN_NAME_LENGTH = 25
 
@@ -33,7 +34,7 @@ export default function NewCampaignPage() {
     try {
       setCreating(true)
       const campaign = await createCampaign({ name, sender })
-      if (pendingRecipientSelection && (pendingRecipientSelection.selectAllMatching || (!pendingRecipientSelection.selectAllMatching && pendingRecipientSelection.contact_ids.length > 0))) {
+      if (pendingRecipientSelection && hasRecipientSelection(pendingRecipientSelection)) {
         try {
           await addRecipients(campaign.id, pendingRecipientSelection)
         } catch (err) {
