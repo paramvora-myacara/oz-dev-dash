@@ -230,6 +230,13 @@ export default function CampaignEditPage() {
   useEffect(() => {
     // Use smart status: if polling shows staged emails, treat as staged regardless of campaignData.status
     if (campaignData) {
+      // Completed should always render the complete phase (even if a backend edge-case leaves staged rows).
+      // Any stragglers should surface as failed emails in the complete view.
+      if (campaignData.status === 'completed') {
+        setCurrentStep('complete')
+        return
+      }
+
       const hasStagedEmails = campaignData.staged_count > 0
       const effectiveStatus = hasStagedEmails ? 'staged' : campaignData.status
 
