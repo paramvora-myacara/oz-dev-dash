@@ -261,6 +261,8 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
     const [isSearchingLinkedin, setIsSearchingLinkedin] = useState(false);
     const [linkedinSearchResults, setLinkedinSearchResults] = useState<any[]>([]);
     const [showLinkedinDiscovery, setShowLinkedinDiscovery] = useState(false);
+    const [localExpiredLinkedinIds, setLocalExpiredLinkedinIds] = useState<Set<string>>(new Set());
+    const [localRequestSentLinkedinIds, setLocalRequestSentLinkedinIds] = useState<Set<string>>(new Set());
 
     const refreshPerson = async () => {
         setLoading(true);
@@ -417,6 +419,84 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
             await refreshPerson();
         } catch (e: any) { alert(e.message); }
         finally { setSyncing(false); }
+    };
+
+    const sendLinkedinRequestSent = async (linkedinProfileId: string) => {
+        setSyncing(true);
+        try {
+            const res = await fetch(`/api/backend-proxy/crm/people/${id}/linkedin/request-sent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    linkedin_profile_id: linkedinProfileId,
+                    sender: currentUser || null,
+                }),
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Failed to mark request sent');
+            }
+            await refreshPerson();
+            setLocalRequestSentLinkedinIds((prev) => {
+                const next = new Set(prev);
+                next.add(linkedinProfileId);
+                return next;
+            });
+        } catch (e: any) {
+            alert(e.message || 'Failed to mark request sent');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const expireLinkedinProfile = async (linkedinProfileId: string, expired: boolean) => {
+        setSyncing(true);
+        try {
+            const endpoint = expired
+                ? `/api/backend-proxy/crm/linkedin-profiles/${linkedinProfileId}/expire`
+                : `/api/backend-proxy/crm/linkedin-profiles/${linkedinProfileId}/unexpire`;
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    person_id: id,
+                    actor: currentUser || null,
+                }),
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Failed to update LinkedIn profile');
+            }
+            await refreshPerson();
+            setLocalExpiredLinkedinIds((prev) => {
+                const next = new Set(prev);
+                if (expired) next.add(linkedinProfileId);
+                else next.delete(linkedinProfileId);
+                return next;
+            });
+        } catch (e: any) {
+            alert(e.message || 'Failed to update LinkedIn profile');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const toggleLocalRequestSent = (linkedinProfileId: string) => {
+        setLocalRequestSentLinkedinIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(linkedinProfileId)) next.delete(linkedinProfileId);
+            else next.add(linkedinProfileId);
+            return next;
+        });
+    };
+
+    const toggleLocalExpired = (linkedinProfileId: string) => {
+        setLocalExpiredLinkedinIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(linkedinProfileId)) next.delete(linkedinProfileId);
+            else next.add(linkedinProfileId);
+            return next;
+        });
     };
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -684,28 +764,92 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                 )}
 
                                 <div className="space-y-1.5">
-                                    {data.person_linkedin?.map((pl: any) => (
-                                        <div
-                                            key={pl.linkedin_profiles.id}
-                                            className="group flex items-center justify-between px-3 py-2 rounded-md bg-slate-50 border border-transparent hover:border-blue-200 transition-all"
-                                        >
-                                            <div className="min-w-0 flex-1">
-                                                <a href={pl.linkedin_profiles.url} target="_blank" rel="noreferrer" className="text-base text-blue-500 hover:underline truncate block">
-                                                    {pl.linkedin_profiles.url}
-                                                </a>
-                                            </div>
-                                            {pl.is_primary ? (
-                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs font-bold shadow-none ml-2 shrink-0">Primary</Badge>
-                                            ) : (
-                                                <button
-                                                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight ml-2 shrink-0"
-                                                    onClick={() => handleSetPrimaryLinkedin(pl.linkedin_profiles.id)}
+                                    {(data.person_linkedin || []).map((pl: any, idx: number) => {
+                                            const liId = pl.linkedin_profiles.id;
+                                            const liUrl = pl.linkedin_profiles.url;
+                                            const isExpired =
+                                                !!pl?.linkedin_profiles?.is_expired ||
+                                                localExpiredLinkedinIds.has(liId);
+                                            const isRequestSent = localRequestSentLinkedinIds.has(liId);
+
+                                            return (
+                                                <div
+                                                    key={liId ?? `linkedin-${idx}`}
+                                                    className={`group flex items-start justify-between gap-3 px-3 py-2 rounded-md border transition-all ${
+                                                        isExpired
+                                                            ? 'bg-slate-50/60 border-slate-200 opacity-80'
+                                                            : 'bg-slate-50 border-transparent hover:border-blue-200'
+                                                    }`}
                                                 >
-                                                    <Star className="w-3 h-3" /> Set Primary
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                                    <div className="min-w-0 flex-1">
+                                                        <a
+                                                            href={liUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className={`text-base hover:underline truncate block ${
+                                                                isExpired ? 'text-slate-400 line-through' : 'text-blue-500'
+                                                            }`}
+                                                        >
+                                                            {liUrl}
+                                                        </a>
+                                                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                                                            {pl.is_primary && (
+                                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px] font-bold shadow-none">Primary</Badge>
+                                                            )}
+                                                            {isRequestSent && (
+                                                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-bold shadow-none">Request sent</Badge>
+                                                            )}
+                                                            {isExpired && (
+                                                                <Badge className="bg-slate-200 text-slate-700 border-slate-300 text-[10px] font-bold shadow-none">Expired</Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="shrink-0 flex items-center gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant={isRequestSent ? "secondary" : "outline"}
+                                                            className="h-8 px-3 text-xs"
+                                                            onClick={() => {
+                                                                if (isRequestSent) {
+                                                                    // UI-only undo for now; we'll add backend undo if/when needed.
+                                                                    toggleLocalRequestSent(liId);
+                                                                } else {
+                                                                    sendLinkedinRequestSent(liId);
+                                                                }
+                                                            }}
+                                                            disabled={syncing}
+                                                        >
+                                                            {isRequestSent ? 'Undo' : 'Request sent'}
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant={isExpired ? "secondary" : "outline"}
+                                                            className="h-8 px-3 text-xs"
+                                                            onClick={() => {
+                                                                // Persist to backend. UI-only toggle is still used as fallback if backend isn't ready.
+                                                                expireLinkedinProfile(liId, !isExpired);
+                                                            }}
+                                                            disabled={syncing}
+                                                        >
+                                                            {isExpired ? 'Un-expire' : 'Mark expired'}
+                                                        </Button>
+
+                                                        {!pl.is_primary && (
+                                                            <button
+                                                                type="button"
+                                                                className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[10px] text-slate-400 hover:text-blue-600 transition-all uppercase font-semibold tracking-tight"
+                                                                onClick={() => handleSetPrimaryLinkedin(liId)}
+                                                            >
+                                                                <Star className="w-3 h-3" /> Set Primary
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     {!loading && !data.person_linkedin?.length && !showLinkedinDiscovery && (
                                         <div className="text-xs text-muted-foreground">No LinkedIn profiles found.</div>
                                     )}
@@ -772,7 +916,13 @@ export function EntitySheet({ sheet, index, onClose, onOpenRelated, closeAll, cu
                                             <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
                                             <div className="text-base">
                                                 <span className="font-semibold">
-                                                    {event.channel === 'phone' ? 'Called' : event.channel === 'website' ? 'Website' : 'Emailed'}
+                                                    {event.channel === 'phone'
+                                                        ? 'Called'
+                                                        : event.channel === 'website'
+                                                            ? 'Website'
+                                                            : event.channel === 'linkedin'
+                                                                ? 'LinkedIn'
+                                                                : 'Emailed'}
                                                 </span>
                                                 <span className="text-muted-foreground ml-2">{new Date(event.timestamp).toLocaleDateString()}</span>
                                             </div>

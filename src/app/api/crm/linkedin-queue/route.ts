@@ -71,7 +71,7 @@ export async function POST(request: Request) {
             .from('people')
             .select(`
                 id, first_name, last_name, display_name, tags,
-                person_linkedin ( linkedin_profiles ( id, url ) )
+                person_linkedin ( is_primary, linkedin_profiles ( id, url, is_expired ) )
             `)
             .in('id', person_ids);
 
@@ -83,14 +83,19 @@ export async function POST(request: Request) {
         const skipped: { id: string; reason: string }[] = [];
 
         type PersonRow = typeof people extends (infer R)[] ? R : never;
-        type LinkedInProfile = { id: string; url: string };
+        type LinkedInProfile = { id: string; url: string; is_expired?: boolean | null };
         for (const person of (people || [])) {
-            const linkedinLink = (person as PersonRow & { person_linkedin?: { linkedin_profiles?: LinkedInProfile }[] }).person_linkedin?.[0];
-            // Supabase returns linkedin_profiles as a single object (many-to-one), not an array
-            const profile = linkedinLink?.linkedin_profiles;
+            const links = (person as PersonRow & {
+                person_linkedin?: { is_primary?: boolean; linkedin_profiles?: LinkedInProfile }[];
+            }).person_linkedin || [];
+
+            // Prefer primary, but always ignore expired profiles.
+            const sorted = [...links].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
+            const chosen = sorted.find((l) => l.linkedin_profiles?.url && !l.linkedin_profiles?.is_expired);
+            const profile = chosen?.linkedin_profiles;
 
             if (!profile?.url) {
-                skipped.push({ id: person.id, reason: 'No LinkedIn profile' });
+                skipped.push({ id: person.id, reason: links.length > 0 ? 'Only expired LinkedIn profiles' : 'No LinkedIn profile' });
                 continue;
             }
             if (!person.first_name) {
