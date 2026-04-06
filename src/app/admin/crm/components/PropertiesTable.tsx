@@ -38,7 +38,7 @@ export function PropertiesTable({ onRowClick, currentUser }: PropertiesTableProp
         <CRMShell
             {...tableState}
             tagOptions={tagOptions}
-            searchPlaceholder="Search properties by name..."
+            searchPlaceholder="Search by name, address, or location..."
             actions={bulkActions}
         >
             <Table>
