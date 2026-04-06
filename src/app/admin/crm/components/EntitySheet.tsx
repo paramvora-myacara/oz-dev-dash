@@ -75,10 +75,11 @@ function usePropertySearch(query: string) {
         if (query.trim().length < 2) { setResults([]); return; }
         const supabase = createClient();
         const t = setTimeout(async () => {
+            const ftsQuery = query.trim().split(/\s+/).filter(Boolean).map(t => `${t}:*`).join(' & ');
             const { data } = await supabase
                 .from('properties')
-                .select('id, property_name, city, state')
-                .ilike('property_name', `%${query}%`)
+                .select('id, property_name, address, city, state')
+                .textSearch('search_vector', ftsQuery, { config: 'english' })
                 .limit(6);
             setResults(data || []);
         }, 300);
@@ -200,7 +201,7 @@ function LinkPropertyForm({ personId, onDone }: { personId: string; onDone: () =
         <div className="mt-3 p-3 bg-blue-50/60 border border-blue-100 rounded-lg space-y-2 animate-in zoom-in-95 duration-150">
             <Input
                 autoFocus
-                placeholder="Search property name..."
+                placeholder="Search by address or property name..."
                 value={query}
                 onChange={(e) => { setSelectedProp(null); setQuery(e.target.value); }}
                 className="h-8 text-sm bg-white"
@@ -212,9 +213,10 @@ function LinkPropertyForm({ personId, onDone }: { personId: string; onDone: () =
                             key={r.id}
                             type="button"
                             className="w-full px-3 py-2 text-left text-xs hover:bg-blue-50 transition-colors border-b last:border-0"
-                            onClick={() => { setSelectedProp(r); setQuery(r.property_name); }}
+                            onClick={() => { setSelectedProp(r); setQuery(r.address || r.property_name); }}
                         >
-                            <span className="font-medium">{r.property_name}</span>
+                            <span className="font-medium">{r.address || r.property_name}</span>
+                            {r.address && <span className="text-slate-500 ml-2">{r.property_name}</span>}
                             {r.city && <span className="text-slate-400 ml-2 text-[10px]">{r.city}, {r.state}</span>}
                             {selectedProp?.id === r.id && (
                                 <Badge className="ml-2 bg-blue-100 text-blue-700 text-[9px] border-none">✓</Badge>
