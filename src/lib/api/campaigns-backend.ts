@@ -199,7 +199,7 @@ export interface CampaignSummary {
     countUnsubscribed: number | null;
   };
   /** Distinct CRM people from activities; denominator = counts.sent */
-  engagementMetrics: {
+  engagementMetrics?: {
     uniqueOpens: number;
     uniqueClicks: number;
     openRate: number | null;
