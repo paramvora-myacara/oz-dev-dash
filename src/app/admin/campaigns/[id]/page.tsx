@@ -62,11 +62,19 @@ export default function CampaignEditPage() {
       unsubscribeRate: number | null
       countUnsubscribed: number | null
     }
+    engagementMetrics?: {
+      uniqueOpens: number
+      uniqueClicks: number
+      openRate: number | null
+      clickRate: number | null
+    }
   } | null>(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
   const [loadingFailed, setLoadingFailed] = useState(false)
   const [retryingFailed, setRetryingFailed] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
+  const [sentPreviewEmail, setSentPreviewEmail] = useState<QueuedEmail | null>(null)
+  const [loadingSentPreview, setLoadingSentPreview] = useState(false)
 
   // Campaign data hook (includes status, polling for progress)
   const { status: campaignData, refresh: refreshCampaignData, isLoading: dataLoading } = useCampaignStatus(campaignId)
@@ -217,12 +225,28 @@ export default function CampaignEditPage() {
           lastSentAt: summary.lastSentAt,
           nextScheduledFor: summary.nextScheduledFor,
           sparkpostMetrics: summary.sparkpostMetrics,
+          engagementMetrics: summary.engagementMetrics,
         })
       }
     } catch (err) {
       console.error('Failed to load campaign summary', err)
     } finally {
       setLoadingSummary(false)
+    }
+  }, [campaignId])
+
+  const loadSentPreview = useCallback(async () => {
+    if (!campaignId) return
+    try {
+      setLoadingSentPreview(true)
+      // Backend orders sent by sent_at desc — first row is the last message delivered (e.g. final sequence step)
+      const emails = await getEmails(campaignId, 'sent', 1, 0)
+      setSentPreviewEmail(emails[0] ?? null)
+    } catch (err) {
+      console.error('Failed to load sent email preview', err)
+      setSentPreviewEmail(null)
+    } finally {
+      setLoadingSentPreview(false)
     }
   }, [campaignId])
 
@@ -265,8 +289,9 @@ export default function CampaignEditPage() {
     if (currentStep === 'complete') {
       loadSummary()
       loadFailedEmails()
+      loadSentPreview()
     }
-  }, [currentStep, loadSummary, loadFailedEmails])
+  }, [currentStep, loadSummary, loadFailedEmails, loadSentPreview])
 
   // Autosave handler - returns true on success, false on failure
 
@@ -944,12 +969,15 @@ export default function CampaignEditPage() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-gray-700">Campaign Statistics</h2>
                 <button
-                  onClick={loadSummary}
-                  disabled={loadingSummary}
+                  onClick={() => {
+                    void loadSummary()
+                    void loadSentPreview()
+                  }}
+                  disabled={loadingSummary || loadingSentPreview}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   title="Refresh statistics"
                 >
-                  <RefreshCw className={`w-4 h-4 ${loadingSummary ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 ${loadingSummary || loadingSentPreview ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
               </div>
@@ -1032,6 +1060,39 @@ export default function CampaignEditPage() {
                 </div>
               </div>
 
+              {/* CRM engagement from activities (distinct recipients) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Unique open rate</p>
+                  <p className="text-xl font-semibold text-indigo-600">
+                    {campaignSummary?.engagementMetrics?.openRate !== null && campaignSummary?.engagementMetrics?.openRate !== undefined
+                      ? `${campaignSummary.engagementMetrics.openRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.engagementMetrics
+                      ? `${campaignSummary.engagementMetrics.uniqueOpens.toLocaleString()} unique recipients (activities)`
+                      : '—'}
+                  </p>
+                </div>
+                <div className="bg-white border rounded-lg p-3 shadow-sm">
+                  <p className="text-xs uppercase text-gray-500 mb-1">Unique click rate</p>
+                  <p className="text-xl font-semibold text-indigo-700">
+                    {campaignSummary?.engagementMetrics?.clickRate !== null && campaignSummary?.engagementMetrics?.clickRate !== undefined
+                      ? `${campaignSummary.engagementMetrics.clickRate.toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {campaignSummary?.engagementMetrics
+                      ? `${campaignSummary.engagementMetrics.uniqueClicks.toLocaleString()} unique recipients (activities)`
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-2 mb-3">
+                Open and click metrics use the CRM activities ledger (distinct people). Tracking requires the recipient to be linked to a CRM person when the event was recorded.
+              </p>
+
               {/* Failed emails + retry */}
               <div className="bg-white border rounded-lg shadow-sm">
                 <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -1084,6 +1145,45 @@ export default function CampaignEditPage() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Latest sent message body (ordered by sent_at desc on the API) */}
+              <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b bg-gray-50">
+                  <h3 className="font-semibold text-gray-900">Sent email preview</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Latest delivered message for this campaign (by send time; useful for multi-step sequences).
+                  </p>
+                </div>
+                <div className="p-4">
+                  {loadingSentPreview ? (
+                    <div className="flex items-center justify-center py-16 text-gray-500 text-sm">
+                      <RefreshCw className="w-5 h-5 animate-spin mr-2 text-gray-400" />
+                      Loading preview…
+                    </div>
+                  ) : !sentPreviewEmail ? (
+                    <p className="text-sm text-gray-500 text-center py-8">No sent emails yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Subject</p>
+                        <p className="text-sm font-medium text-gray-900 break-words">{sentPreviewEmail.subject || '—'}</p>
+                      </div>
+                      {campaignData?.emailFormat === 'text' ? (
+                        <pre className="text-sm text-gray-800 whitespace-pre-wrap break-words bg-gray-50 border rounded-lg p-4 max-h-[480px] overflow-auto font-sans">
+                          {sentPreviewEmail.body || ''}
+                        </pre>
+                      ) : (
+                        <iframe
+                          srcDoc={sentPreviewEmail.body || '<p></p>'}
+                          title="Sent email preview"
+                          className="w-full min-h-[320px] h-[480px] border border-gray-200 rounded-lg bg-white"
+                          sandbox="allow-same-origin"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

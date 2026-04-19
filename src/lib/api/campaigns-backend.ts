@@ -198,6 +198,13 @@ export interface CampaignSummary {
     unsubscribeRate: number | null;
     countUnsubscribed: number | null;
   };
+  /** Distinct CRM people from activities; denominator = counts.sent */
+  engagementMetrics: {
+    uniqueOpens: number;
+    uniqueClicks: number;
+    openRate: number | null;
+    clickRate: number | null;
+  };
 }
 
 export async function getCampaignSummary(campaignId: string): Promise<CampaignSummary> {
