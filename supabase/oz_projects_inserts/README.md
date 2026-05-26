@@ -10,5 +10,7 @@ Files:
 
 | File | Projects |
 |------|----------|
-| `insert_levi_tierramark_oz_projects.sql` | TierraMark at Camp Verde, Regal Apartments |
+| `insert_liva_tierramark_oz_projects.sql` | TierraMark at Camp Verde, Regal Apartments |
 | `insert_hidden_lake_hyatt_baltic_lakewire_oz_projects.sql` | Hidden Lake, Portland Hyatt, 491 Baltic, Lake Wire |
+| `insert_railroad_lofts_oz_projects.sql` | RailRoad Lofts (TX) |
+| `insert_urban_town_home_rialto_oz_projects.sql` | Urban Town Home (UTH) Rialto (CA) |
