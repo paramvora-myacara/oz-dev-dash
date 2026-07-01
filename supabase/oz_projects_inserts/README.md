@@ -15,3 +15,4 @@ Files:
 | `insert_railroad_lofts_oz_projects.sql` | RailRoad Lofts (TX) |
 | `insert_urban_town_home_rialto_oz_projects.sql` | Urban Town Home (UTH) Rialto (CA) |
 | `insert_redbrick_fund_v_oz_projects.sql` | Redbrick Opportunity Fund V (DC) |
+| `insert_7_eleven_silver_springs_nv_oz_projects.sql` | 7-Eleven Travel Center - Silver Springs (NV) |
